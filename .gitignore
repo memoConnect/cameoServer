@@ -3,7 +3,7 @@
 .*
 # except for .gitignore and .openshift
 !.gitignore
-!.openshift
+!.openshift*
 
 # Ignore Play! working directory #
 db
