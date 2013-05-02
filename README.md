@@ -1,4 +1,4 @@
 KolibriNetServer
 ================
 
-KolibriNet-Server
+We are still booting. Wait a Minute, please :)
