@@ -6,7 +6,7 @@ import play.api.mvc._
 object Application extends Controller {
   
   def index = Action {
-    Ok(views.html.index("KolibriNet: Version 0.001"))
+    Ok(views.html.index("KolibriNet"))
   }
   
 }

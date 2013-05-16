@@ -4,10 +4,10 @@
 	<info
 		organisation="kolibrinet"
 		module="kolibrinet_2.10"
-		revision="1.0-SNAPSHOT"
+		revision="0.01"
 		conf="plugin"
 		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom"
-		date="20130502010148"/>
+		date="20130516135041"/>
 	<dependencies>
 	</dependencies>
 </ivy-report>

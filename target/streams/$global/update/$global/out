@@ -1,2 +1,4 @@
 [0m[[0minfo[0m] [0mUpdating {file:/home/reimerei/dev/kolibrinet/}kolibrinet...[0m
+[0m[[0minfo[0m] [0mdownloading http://repo1.maven.org/maven2/org/mindrot/jbcrypt/0.3m/jbcrypt-0.3m.jar ...[0m
+[0m[[0minfo[0m] [0m	[SUCCESSFUL ] org.mindrot#jbcrypt;0.3m!jbcrypt.jar (209ms)[0m
 [0m[[0minfo[0m] [0mDone updating.[0m
