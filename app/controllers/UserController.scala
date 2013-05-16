@@ -15,6 +15,8 @@ import scala.Some
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
 
+
+
 /**
  * User: Björn Reimer
  * Date: 5/16/13
@@ -25,6 +27,7 @@ import play.api.libs.json.JsObject
 object UserController extends Controller with MongoController {
   // connection to collection in mongodb
   val userCollection: JSONCollection = db.collection[JSONCollection]("user")
+
 
   //****************** Helper *****************
 
@@ -47,6 +50,7 @@ object UserController extends Controller with MongoController {
   }
   val fromObjectId = (__ \ 'id).json.copyFrom((__ \ '_id \ '$oid).json.pick)
   val fromCreated = __.json.update((__ \ 'created).json.copyFrom((__ \ 'created \ '$date).json.pick))
+
 
   //****************** Transfomer *****************
 
@@ -76,9 +80,9 @@ object UserController extends Controller with MongoController {
       (__ \ 'password).json.prune
   }
 
+
   //****************** Actions *****************
 
-  // add user
   def createUser = Action(parse.json) {
     request =>
       val body: JsValue = request.body
@@ -108,5 +112,21 @@ object UserController extends Controller with MongoController {
           case None => NotFound(resKO(JsString("User not found: " + username)))
         }
       }
+  }
+
+  def deleteUser(username: String) = Action {
+    request =>
+      Async {
+        userCollection.remove[JsValue](Json.obj("username" -> username)).map{ lastError =>
+          if(lastError.ok)
+            Ok(resOK(JsString("User deleted: " + username)))
+          else
+            InternalServerError( resKO(JsString(lastError.stringify)) )
+        }
+      }
+
+
+
+
   }
 }
