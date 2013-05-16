@@ -7,15 +7,15 @@
 		revision="0.01"
 		conf="compile"
 		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom"
-		date="20130516135041"/>
+		date="20130516151933"/>
 	<dependencies>
 		<module organisation="org.mindrot" name="jbcrypt">
-			<revision name="0.3m" status="release" pubdate="20100517044639" resolver="public" artresolver="public" homepage="http://www.mindrot.org/" downloaded="true" searched="true" default="false" conf="default(compile), default, compile, runtime, master" position="57">
+			<revision name="0.3m" status="release" pubdate="20100517044639" resolver="public" artresolver="public" homepage="http://www.mindrot.org/" downloaded="false" searched="false" default="false" conf="default(compile), default, compile, runtime, master" position="57">
 				<license name="ISC/BSD License"/>
-				<metadata-artifact status="successful" details="" size="4717" time="190" location="/opt/play-2.1.1/framework/../repository/cache/org.mindrot/jbcrypt/ivy-0.3m.xml" searched="true" original-local-location="/opt/play-2.1.1/framework/../repository/cache/org.mindrot/jbcrypt/ivy-0.3m.xml.original" origin-is-local="false" origin-location="http://repo1.maven.org/maven2/org/mindrot/jbcrypt/0.3m/jbcrypt-0.3m.pom"/>
+				<metadata-artifact status="no" details="" size="2822" time="0" location="/opt/play-2.1.1/framework/../repository/cache/org.mindrot/jbcrypt/ivy-0.3m.xml" searched="false" origin-is-local="false" origin-location="http://repo1.maven.org/maven2/org/mindrot/jbcrypt/0.3m/jbcrypt-0.3m.pom"/>
 				<caller organisation="kolibrinet" name="kolibrinet_2.10" conf="compile" rev="0.3m" rev-constraint-default="0.3m" rev-constraint-dynamic="0.3m" callerrev="0.01"/>
 				<artifacts>
-					<artifact name="jbcrypt" type="jar" ext="jar" status="successful" details="" size="17750" time="209" location="/opt/play-2.1.1/framework/../repository/cache/org.mindrot/jbcrypt/jars/jbcrypt-0.3m.jar">
+					<artifact name="jbcrypt" type="jar" ext="jar" status="no" details="" size="17750" time="0" location="/opt/play-2.1.1/framework/../repository/cache/org.mindrot/jbcrypt/jars/jbcrypt-0.3m.jar">
 						<origin-location is-local="false" location="http://repo1.maven.org/maven2/org/mindrot/jbcrypt/0.3m/jbcrypt-0.3m.jar"/>
 					</artifact>
 				</artifacts>

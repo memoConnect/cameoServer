@@ -7,10 +7,13 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import org.mindrot.jbcrypt.BCrypt
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
-import play.api.libs.json.JsNumber
 import reactivemongo.bson.BSONObjectID
+import scala.concurrent.Future
+import play.modules.reactivemongo.json.collection.JSONCollection
+import play.api.libs.json.JsString
+import scala.Some
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsObject
 
 /**
  * User: Björn Reimer
@@ -21,12 +24,34 @@ import reactivemongo.bson.BSONObjectID
 
 object UserController extends Controller with MongoController {
   // connection to collection in mongodb
-  //def userCollection: JSONCollection = db.collection[JSONCollection]("user")
+  val userCollection: JSONCollection = db.collection[JSONCollection]("user")
 
+  //****************** Helper *****************
+
+  // empty Object
   val emptyObj = __.json.put(Json.obj())
 
+  /// Generate Object ID and creation date
+  val generateId = (__ \ '_id \ '$oid).json.put(JsString(BSONObjectID.generate.stringify))
+  val generateCreated = (__ \ 'created \ '$date).json.put(JsNumber((new java.util.Date).getTime))
+  val addObjectIdAndDate: Reads[JsObject] = __.json.update((generateId and generateCreated).reduce)
+
+  // generate result
+  def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
+
+  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
+
+  // convert object id and date between json and bson format
+  val toObjectId = Writes[String] {
+    s => Json.obj("_id" -> Json.obj("$oid" -> s))
+  }
+  val fromObjectId = (__ \ 'id).json.copyFrom((__ \ '_id \ '$oid).json.pick)
+  val fromCreated = __.json.update((__ \ 'created).json.copyFrom((__ \ 'created \ '$date).json.pick))
+
+  //****************** Transfomer *****************
+
   // Validates a user
-  def validateUser: Reads[JsObject] = (
+  val validateUser: Reads[JsObject] = (
 
     (__ \ 'username).json.pickBranch(Reads.of[JsString]) and
       (__ \ 'email).json.pickBranch(Reads.of[JsString] keepAnd Reads.email) and
@@ -37,29 +62,51 @@ object UserController extends Controller with MongoController {
     ).reduce
 
   // hash the password
-  def hashPassword: Reads[JsObject] = {
+  val hashPassword: Reads[JsObject] = {
     (__ \ 'password).json.update(of[JsString].map {
       case JsString(pass: String) => JsString(BCrypt.hashpw(pass, BCrypt.gensalt()))
     }
     )
   }
 
-  /// Generate Object ID and creation date
-  val generateId = (__ \ '_id \ '$oid).json.put(JsString(BSONObjectID.generate.stringify))
-  val generateCreated = (__ \ 'created \ '$date).json.put(JsNumber((new java.util.Date).getTime))
-  val addObjectIdAndDate: Reads[JsObject] = __.json.update((generateId and generateCreated).reduce)
+  // creates the output format for the user
+  val outputUser: Reads[JsObject] = {
+    fromCreated andThen
+      (__ \ '_id).json.prune andThen
+      (__ \ 'password).json.prune
+  }
 
+  //****************** Actions *****************
 
-  def addUser = Action(parse.json) {
+  // add user
+  def createUser = Action(parse.json) {
     request =>
       val body: JsValue = request.body
 
       body.transform(validateUser andThen hashPassword andThen addObjectIdAndDate).map {
-        jsRes => Ok(jsRes)
+        jsRes => Async {
+          userCollection.insert(jsRes).map {
+            lastError => InternalServerError(resKO(JsString("MongoError: " + lastError)))
+          }
+        }
+          Ok(resOK(jsRes.transform((__ \ 'username).json.pick).get))
       }.recoverTotal(
-        error => BadRequest(JsError.toFlatJson(error))
+        error => BadRequest(resKO(JsError.toFlatJson(error)))
       )
   }
 
-
+  def findUser(username: String) = Action {
+    request =>
+      Async {
+        val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> username)).one[JsValue]
+        futureUser.map {
+          case Some(u: JsValue) => u.transform(outputUser).map {
+            jsRes => Ok(resOK(jsRes))
+          }.recoverTotal {
+            error => BadRequest(resKO(JsError.toFlatJson(error)))
+          }
+          case None => NotFound(resKO(JsString("User not found: " + username)))
+        }
+      }
+  }
 }

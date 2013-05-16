@@ -1,6 +1,6 @@
 // @SOURCE:/home/reimerei/dev/kolibrinet/conf/routes
-// @HASH:b2b5a23f3233cd94e6e7cf4c7b40adba0e86b12b
-// @DATE:Thu May 16 11:32:54 CEST 2013
+// @HASH:2c82a65872863acfaa1a9f4d899b1a6b8faa32c6
+// @DATE:Thu May 16 15:56:29 CEST 2013
 
 package controllers;
 

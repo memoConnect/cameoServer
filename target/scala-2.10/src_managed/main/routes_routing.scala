@@ -1,6 +1,6 @@
 // @SOURCE:/home/reimerei/dev/kolibrinet/conf/routes
-// @HASH:b2b5a23f3233cd94e6e7cf4c7b40adba0e86b12b
-// @DATE:Thu May 16 11:32:54 CEST 2013
+// @HASH:2c82a65872863acfaa1a9f4d899b1a6b8faa32c6
+// @DATE:Thu May 16 15:56:29 CEST 2013
 
 
 import play.core._
@@ -33,13 +33,17 @@ private[this] lazy val controllers_Application_index0 = Route("GET", PathPattern
         
 
 // @LINE:7
-private[this] lazy val controllers_UserController_addUser1 = Route("PUT", PathPattern(List(StaticPart(Routes.prefix),StaticPart(Routes.defaultPrefix),StaticPart("admin/user"))))
+private[this] lazy val controllers_UserController_createUser1 = Route("POST", PathPattern(List(StaticPart(Routes.prefix),StaticPart(Routes.defaultPrefix),StaticPart("admin/user"))))
         
 
-// @LINE:10
-private[this] lazy val controllers_Assets_at2 = Route("GET", PathPattern(List(StaticPart(Routes.prefix),StaticPart(Routes.defaultPrefix),StaticPart("assets/"),DynamicPart("file", """.+""",false))))
+// @LINE:8
+private[this] lazy val controllers_UserController_findUser2 = Route("GET", PathPattern(List(StaticPart(Routes.prefix),StaticPart(Routes.defaultPrefix),StaticPart("admin/user/"),DynamicPart("username", """[^/]+""",true))))
         
-def documentation = List(("""GET""", prefix,"""controllers.Application.index"""),("""PUT""", prefix + (if(prefix.endsWith("/")) "" else "/") + """admin/user""","""controllers.UserController.addUser"""),("""GET""", prefix + (if(prefix.endsWith("/")) "" else "/") + """assets/$file<.+>""","""controllers.Assets.at(path:String = "/public", file:String)""")).foldLeft(List.empty[(String,String,String)]) { (s,e) => e.asInstanceOf[Any] match {
+
+// @LINE:11
+private[this] lazy val controllers_Assets_at3 = Route("GET", PathPattern(List(StaticPart(Routes.prefix),StaticPart(Routes.defaultPrefix),StaticPart("assets/"),DynamicPart("file", """.+""",false))))
+        
+def documentation = List(("""GET""", prefix,"""controllers.Application.index"""),("""POST""", prefix + (if(prefix.endsWith("/")) "" else "/") + """admin/user""","""controllers.UserController.createUser"""),("""GET""", prefix + (if(prefix.endsWith("/")) "" else "/") + """admin/user/$username<[^/]+>""","""controllers.UserController.findUser(username:String)"""),("""GET""", prefix + (if(prefix.endsWith("/")) "" else "/") + """assets/$file<.+>""","""controllers.Assets.at(path:String = "/public", file:String)""")).foldLeft(List.empty[(String,String,String)]) { (s,e) => e.asInstanceOf[Any] match {
   case r @ (_,_,_) => s :+ r.asInstanceOf[(String,String,String)]
   case l => s ++ l.asInstanceOf[List[(String,String,String)]] 
 }}
@@ -56,15 +60,23 @@ case controllers_Application_index0(params) => {
         
 
 // @LINE:7
-case controllers_UserController_addUser1(params) => {
+case controllers_UserController_createUser1(params) => {
    call { 
-        invokeHandler(controllers.UserController.addUser, HandlerDef(this, "controllers.UserController", "addUser", Nil,"PUT", """""", Routes.prefix + """admin/user"""))
+        invokeHandler(controllers.UserController.createUser, HandlerDef(this, "controllers.UserController", "createUser", Nil,"POST", """""", Routes.prefix + """admin/user"""))
    }
 }
         
 
-// @LINE:10
-case controllers_Assets_at2(params) => {
+// @LINE:8
+case controllers_UserController_findUser2(params) => {
+   call(params.fromPath[String]("username", None)) { (username) =>
+        invokeHandler(controllers.UserController.findUser(username), HandlerDef(this, "controllers.UserController", "findUser", Seq(classOf[String]),"GET", """""", Routes.prefix + """admin/user/$username<[^/]+>"""))
+   }
+}
+        
+
+// @LINE:11
+case controllers_Assets_at3(params) => {
    call(Param[String]("path", Right("/public")), params.fromPath[String]("file", None)) { (path, file) =>
         invokeHandler(controllers.Assets.at(path, file), HandlerDef(this, "controllers.Assets", "at", Seq(classOf[String], classOf[String]),"GET", """ Map static resources from the /public folder to the /assets URL path""", Routes.prefix + """assets/$file<.+>"""))
    }
