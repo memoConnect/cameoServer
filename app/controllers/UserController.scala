@@ -7,14 +7,13 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import org.mindrot.jbcrypt.BCrypt
-import reactivemongo.bson.BSONObjectID
 import scala.concurrent.Future
 import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json.JsString
 import scala.Some
-import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
-
+import helper.MongoHelper
+import reactivemongo.bson.BSONObjectID
 
 
 /**
@@ -28,9 +27,6 @@ object UserController extends Controller with MongoController {
   // connection to collection in mongodb
   val userCollection: JSONCollection = db.collection[JSONCollection]("user")
 
-
-  //****************** Helper *****************
-
   // empty Object
   val emptyObj = __.json.put(Json.obj())
 
@@ -41,7 +37,6 @@ object UserController extends Controller with MongoController {
 
   // generate result
   def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   // convert object id and date between json and bson format
@@ -52,7 +47,9 @@ object UserController extends Controller with MongoController {
   val fromCreated = __.json.update((__ \ 'created).json.copyFrom((__ \ 'created \ '$date).json.pick))
 
 
-  //****************** Transfomer *****************
+  /**
+   * JSON Transfomer
+   */
 
   // Validates a user
   val validateUser: Reads[JsObject] = (
@@ -62,7 +59,6 @@ object UserController extends Controller with MongoController {
       (__ \ 'password).json.pickBranch(Reads.of[JsString] keepAnd Reads.minLength[String](8)) and
       ((__ \ 'name).json.pickBranch(Reads.of[JsString]) or emptyObj) and
       ((__ \ 'phonenumber).json.pickBranch(Reads.of[JsString]) or emptyObj)
-
     ).reduce
 
   // hash the password
@@ -81,7 +77,10 @@ object UserController extends Controller with MongoController {
   }
 
 
-  //****************** Actions *****************
+
+  /**
+   * Actions
+   */
 
   def createUser = Action(parse.json) {
     request =>
@@ -117,16 +116,13 @@ object UserController extends Controller with MongoController {
   def deleteUser(username: String) = Action {
     request =>
       Async {
-        userCollection.remove[JsValue](Json.obj("username" -> username)).map{ lastError =>
-          if(lastError.ok)
-            Ok(resOK(JsString("User deleted: " + username)))
-          else
-            InternalServerError( resKO(JsString(lastError.stringify)) )
+        userCollection.remove[JsValue](Json.obj("username" -> username)).map {
+          lastError =>
+            if (lastError.ok)
+              Ok(resOK(JsString("User deleted: " + username)))
+            else
+              InternalServerError(resKO(JsString(lastError.stringify)))
         }
       }
-
-
-
-
   }
 }
