@@ -65,8 +65,8 @@ object MessageController extends Controller with MongoController with MongoHelpe
   // returned conversation
   val outputConversation: Reads[JsObject] = (
     fromCreated andThen
-    (__ \ '_id).json.prune andThen
-      (__ \ 'messages \\ 'created).json.prune
+    (__ \ '_id).json.prune /*andThen
+      (__ \ 'messages \\ 'created).json.prune*/
     )
 
 
