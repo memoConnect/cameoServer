@@ -23,29 +23,9 @@ import reactivemongo.bson.BSONObjectID
  */
 
 
-object UserController extends Controller with MongoController {
-  // connection to collection in mongodb
-  val userCollection: JSONCollection = db.collection[JSONCollection]("user")
+object UserController extends Controller with MongoController with MongoHelper{
 
-  // empty Object
-  val emptyObj = __.json.put(Json.obj())
-
-  /// Generate Object ID and creation date
-  val generateId = (__ \ '_id \ '$oid).json.put(JsString(BSONObjectID.generate.stringify))
-  val generateCreated = (__ \ 'created \ '$date).json.put(JsNumber((new java.util.Date).getTime))
-  val addObjectIdAndDate: Reads[JsObject] = __.json.update((generateId and generateCreated).reduce)
-
-  // generate result
-  def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
-
-  // convert object id and date between json and bson format
-  val toObjectId = Writes[String] {
-    s => Json.obj("_id" -> Json.obj("$oid" -> s))
-  }
-  val fromObjectId = (__ \ 'id).json.copyFrom((__ \ '_id \ '$oid).json.pick)
-  val fromCreated = __.json.update((__ \ 'created).json.copyFrom((__ \ 'created \ '$date).json.pick))
-
+  val userCollection: JSONCollection = db.collection[JSONCollection]("users")
 
   /**
    * JSON Transfomer
@@ -84,9 +64,9 @@ object UserController extends Controller with MongoController {
 
   def createUser = Action(parse.json) {
     request =>
-      val body: JsValue = request.body
+      val jsBody: JsValue = request.body
 
-      body.transform(validateUser andThen hashPassword andThen addObjectIdAndDate).map {
+      jsBody.transform(validateUser andThen hashPassword andThen addObjectIdAndDate).map {
         jsRes => Async {
           userCollection.insert(jsRes).map {
             lastError => InternalServerError(resKO(JsString("MongoError: " + lastError)))

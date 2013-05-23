@@ -1,10 +1,13 @@
 package helper
 
 import play.api.libs.json._
+import play.api.libs.json.Reads._
 import reactivemongo.bson.BSONObjectID
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.libs.json.JsNumber
+import play.api.libs.functional.syntax._
+
 
 /**
  * User: Björn Reimer
@@ -24,6 +27,9 @@ trait MongoHelper {
   /// Generate Object ID and creation date
   val generateId = (__ \ '_id \ '$oid).json.put(JsString(BSONObjectID.generate.stringify))
   val generateCreated = (__ \ 'created \ '$date).json.put(JsNumber((new java.util.Date).getTime))
+
+  val addObjectId: Reads[JsObject] = __.json.update(generateId)
+  val addCreateDate: Reads[JsObject] = __.json.update(generateCreated)
   val addObjectIdAndDate: Reads[JsObject] = __.json.update((generateId and generateCreated).reduce)
 
   // generate result
@@ -36,5 +42,9 @@ trait MongoHelper {
   }
   val fromObjectId = (__ \ 'id).json.copyFrom((__ \ '_id \ '$oid).json.pick)
   val fromCreated = __.json.update((__ \ 'created).json.copyFrom((__ \ 'created \ '$date).json.pick))
+
+  // add status message
+  def addStatus(status: String): Reads[JsObject] = __.json.update((__ \ 'status).json.put(JsString(status)))
+
 
 }
