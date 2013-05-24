@@ -5,13 +5,17 @@
 # Home page
 GET     /                                       controllers.Application.index
 
+# USER
 POST    /api/v1/admin/user                      controllers.UserController.createUser
 GET     /api/v1/admin/user/:username            controllers.UserController.findUser(username: String)
 DELETE  /api/v1/admin/user/:username            controllers.UserController.deleteUser(username: String)
-
+# MESSAGES
 POST    /api/v1/message                         controllers.MessageController.sendMessage
 GET     /api/v1/message/:messageId              controllers.MessageController.getMessage(messageId: String)
 GET     /api/v1/conversation/:conversationId    controllers.MessageController.getConversation(conversationId: String)
+#ASSETS
+POST    /api/v1/asset                           controllers.AssetController.uploadAsset
+
 
 
 
