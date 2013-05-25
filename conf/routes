@@ -14,7 +14,7 @@ POST    /api/v1/message                         controllers.MessageController.se
 GET     /api/v1/message/:messageId              controllers.MessageController.getMessage(messageId: String)
 GET     /api/v1/conversation/:conversationId    controllers.MessageController.getConversation(conversationId: String)
 #ASSETS
-POST    /api/v1/asset                           controllers.AssetController.uploadAsset
+#POST    /api/v1/asset                           controllers.AssetController.uploadAsset
 
 
 

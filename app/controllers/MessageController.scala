@@ -76,11 +76,9 @@ object MessageController extends Controller with MongoController with MongoHelpe
       (__ \ 'conversationId).json.pickBranch
     ).reduce
 
-  // create mongodb update query that adds the message to the messages array
+  // create mongodb update query that adds the message to the messages object
   def toConversationUpdateQuery(messageId: String): Reads[JsObject] = {
-    (__ \ '$set \ {
-      "messages." + messageId
-    }).json.copyFrom((__).json.pick[JsObject])
+    (__ \ '$set \ {"messages." + messageId}).json.copyFrom((__).json.pick[JsObject])
   }
 
   /**

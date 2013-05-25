@@ -12,7 +12,8 @@ object ApplicationBuild extends Build {
     jdbc,
     anorm,
     "org.reactivemongo" %% "play2-reactivemongo" % "0.9",
-    "org.mindrot" % "jbcrypt" % "0.3m"
+    "org.mindrot" % "jbcrypt" % "0.3m",
+    "info.schleichardt" %% "play-embed-mongo" % "0.2"
   )
 
 
