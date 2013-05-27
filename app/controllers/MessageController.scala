@@ -24,7 +24,20 @@ import scala.concurrent.Future
 
 object MessageController extends Controller with MongoController with MongoHelper {
 
-  val messageCollection: JSONCollection = db.collection[JSONCollection]("messages")
+  /**
+   * MongoDB helper
+   */
+
+  def findMessage(messageId: String, coll: JSONCollection): Future[Option[JsObject]] = {
+    coll.find(Json.obj({
+      "messages." + messageId
+    } -> Json.obj {
+      "$exists" -> true
+    }), Json.obj({
+      "messages." + messageId
+    } -> true)).one[JsObject]
+  }
+
   val conversationCollection: JSONCollection = db.collection[JSONCollection]("conversations")
 
   /**
@@ -65,7 +78,7 @@ object MessageController extends Controller with MongoController with MongoHelpe
   // returned conversation
   val outputConversation: Reads[JsObject] = (
     fromCreated andThen
-    (__ \ '_id).json.prune /*andThen
+      (__ \ '_id).json.prune /*andThen
       (__ \ 'messages \\ 'created).json.prune*/
     )
 
@@ -78,7 +91,9 @@ object MessageController extends Controller with MongoController with MongoHelpe
 
   // create mongodb update query that adds the message to the messages object
   def toConversationUpdateQuery(messageId: String): Reads[JsObject] = {
-    (__ \ '$set \ {"messages." + messageId}).json.copyFrom((__).json.pick[JsObject])
+    (__ \ '$set \ {
+      "messages." + messageId
+    }).json.copyFrom((__).json.pick[JsObject])
   }
 
   /**
@@ -147,11 +162,7 @@ object MessageController extends Controller with MongoController with MongoHelpe
   def getMessage(messageId: String) = Action {
     request =>
       Async {
-        val futureMessage: Future[Option[JsObject]] = conversationCollection.find(Json.obj(), Json.obj({
-          "messages." + messageId
-        } -> 1)).one[JsObject]
-
-        futureMessage.map {
+        findMessage(messageId, conversationCollection).map {
           case Some(m: JsObject) => m.transform(outputMessage(messageId) andThen addStatus("pending to send")).map {
             jsRes => Ok(resOK(jsRes))
           }.recoverTotal {
