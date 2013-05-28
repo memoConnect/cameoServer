@@ -22,4 +22,8 @@ object IdHelper {
     randomString(8)
   }
 
+  def generateAccessToken(): String = {
+    randomString(30)
+  }
+
 }

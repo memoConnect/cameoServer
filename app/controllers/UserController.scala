@@ -13,7 +13,7 @@ import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsObject
 import helper.MongoHelper
-import reactivemongo.bson.BSONObjectID
+import play.api.Logger
 
 
 /**
@@ -23,7 +23,7 @@ import reactivemongo.bson.BSONObjectID
  */
 
 
-object UserController extends Controller with MongoController with MongoHelper{
+object UserController extends Controller with MongoController with MongoHelper {
 
   val userCollection: JSONCollection = db.collection[JSONCollection]("users")
 
@@ -57,7 +57,6 @@ object UserController extends Controller with MongoController with MongoHelper{
   }
 
 
-
   /**
    * Actions
    */
@@ -72,7 +71,7 @@ object UserController extends Controller with MongoController with MongoHelper{
             lastError => InternalServerError(resKO(JsString("MongoError: " + lastError)))
           }
         }
-          Ok(resOK(jsRes.transform((__ \ 'username).json.pick).get))
+          Ok(resOK(jsRes.transform((__ \ 'username).json.pickBranch).get))
       }.recoverTotal(
         error => BadRequest(resKO(JsError.toFlatJson(error)))
       )
@@ -98,8 +97,10 @@ object UserController extends Controller with MongoController with MongoHelper{
       Async {
         userCollection.remove[JsValue](Json.obj("username" -> username)).map {
           lastError =>
-            if (lastError.ok)
-              Ok(resOK(JsString("User deleted: " + username)))
+            if (lastError.updated > 0)
+              Ok(resOK(Json.obj("deletedUser" -> username)))
+            else if (lastError.ok) {
+              NotFound(resKO(JsString("User not found")))}
             else
               InternalServerError(resKO(JsString(lastError.stringify)))
         }

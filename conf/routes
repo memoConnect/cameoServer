@@ -13,8 +13,12 @@ DELETE  /api/v1/admin/user/:username            controllers.UserController.delet
 POST    /api/v1/message                         controllers.MessageController.sendMessage
 GET     /api/v1/message/:messageId              controllers.MessageController.getMessage(messageId: String)
 GET     /api/v1/conversation/:conversationId    controllers.MessageController.getConversation(conversationId: String)
+# TOKENS
+GET     /api/v1/token                           controllers.TokenController.getToken
+DELETE  /api/v1/token/:token                    controllers.TokenController.deleteToken(token: String)
+
 #ASSETS
-#POST    /api/v1/asset                           controllers.AssetController.uploadAsset
+#POST    /api/v1/asset                          controllers.AssetController.uploadAsset
 
 
 

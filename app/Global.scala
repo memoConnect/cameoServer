@@ -16,7 +16,7 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
   // tell reactive mongo the port of the memory database created by embed mongo
   override def additionalEmbedMongoPortSettings(port: Int) = Map("mongodb.servers" -> List(s"localhost:$port").asJava)
 
-  // wraped action to modify the headers of every request
+  // wrap action to modify the headers of every request
   override def doFilter(action: EssentialAction): EssentialAction = EssentialAction { request =>
     action.apply(request).map(_.withHeaders(
       ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT",

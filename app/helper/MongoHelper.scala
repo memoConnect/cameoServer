@@ -45,6 +45,4 @@ trait MongoHelper {
 
   // add status message
   def addStatus(status: String): Reads[JsObject] = __.json.update((__ \ 'status).json.put(JsString(status)))
-
-
 }
