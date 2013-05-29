@@ -544,7 +544,9 @@
             &quot;sendTo&quot;: &quot;nickname&quot;,&#xd;
             &quot;Name&quot;: &quot;Gustav (optional)&quot;&#xd;
         }&#xd;
-    ]&#xd;
+    ],&#xd;
+    &quot;token&quot;:&quot;${token}&quot;&#xd;
+&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -619,7 +621,8 @@
             &quot;Name&quot;: &quot;Udo (optional)&quot;&#xd;
         }&#xd;
     ],&#xd;
-   &quot;conversationId&quot;:&quot;${cid}&quot;&#xd;
+   &quot;conversationId&quot;:&quot;${cid}&quot;,&#xd;
+    &quot;token&quot;:&quot;${token}&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>

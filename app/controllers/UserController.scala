@@ -23,9 +23,7 @@ import play.api.Logger
  */
 
 
-object UserController extends Controller with MongoController with MongoHelper {
-
-  val userCollection: JSONCollection = db.collection[JSONCollection]("users")
+object UserController extends MongoHelper {
 
   /**
    * JSON Transfomer
@@ -68,7 +66,7 @@ object UserController extends Controller with MongoController with MongoHelper {
       jsBody.transform(validateUser andThen hashPassword andThen addObjectIdAndDate).map {
         jsRes => Async {
           userCollection.insert(jsRes).map {
-            lastError => InternalServerError(resKO(JsString("MongoError: " + lastError)))
+            lastError => InternalServerError(resKO("MongoError: " + lastError))
           }
         }
           Ok(resOK(jsRes.transform((__ \ 'username).json.pickBranch).get))
@@ -87,7 +85,7 @@ object UserController extends Controller with MongoController with MongoHelper {
           }.recoverTotal {
             error => BadRequest(resKO(JsError.toFlatJson(error)))
           }
-          case None => NotFound(resKO(JsString("User not found: " + username)))
+          case None => NotFound(resKO("User not found: " + username))
         }
       }
   }
@@ -100,9 +98,9 @@ object UserController extends Controller with MongoController with MongoHelper {
             if (lastError.updated > 0)
               Ok(resOK(Json.obj("deletedUser" -> username)))
             else if (lastError.ok) {
-              NotFound(resKO(JsString("User not found")))}
+              NotFound(resKO("User not found"))}
             else
-              InternalServerError(resKO(JsString(lastError.stringify)))
+              InternalServerError(resKO(lastError.stringify))
         }
       }
   }

@@ -22,23 +22,7 @@ import scala.concurrent.Future
  */
 
 
-object MessageController extends Controller with MongoController with MongoHelper {
-
-  /**
-   * MongoDB helper
-   */
-
-  def findMessage(messageId: String, coll: JSONCollection): Future[Option[JsObject]] = {
-    coll.find(Json.obj({
-      "messages." + messageId
-    } -> Json.obj {
-      "$exists" -> true
-    }), Json.obj({
-      "messages." + messageId
-    } -> true)).one[JsObject]
-  }
-
-  val conversationCollection: JSONCollection = db.collection[JSONCollection]("conversations")
+object MessageController extends MongoHelper {
 
   /**
    * JSON Transformers
@@ -114,7 +98,7 @@ object MessageController extends Controller with MongoController with MongoHelpe
         message.transform(createConversation(messageId) andThen addObjectIdAndDate).map {
           jsRes => conversationCollection.insert(jsRes).map {
             lastError =>
-              InternalServerError(resKO(JsString("MongoError: " + lastError)))
+              InternalServerError(resKO("MongoError: " + lastError))
           }
         }.recoverTotal(
           error => InternalServerError(resKO(JsError.toFlatJson(error)))
@@ -126,7 +110,7 @@ object MessageController extends Controller with MongoController with MongoHelpe
         message.transform(toConversationUpdateQuery(messageId)).map {
           jsUpdate => {
             conversationCollection.update(Json.obj("conversationId" -> conversationId), jsUpdate).map {
-              lastError => InternalServerError(resKO(JsString("MongoError: " + lastError)))
+              lastError => InternalServerError(resKO("MongoError: " + lastError))
             }
 
           }
@@ -137,14 +121,19 @@ object MessageController extends Controller with MongoController with MongoHelpe
     Some("Sending not yet implemented")
   }
 
+  /**
+   * Helper
+   */
+  def findMessage(messageId: String, coll: JSONCollection): Future[Option[JsObject]] = {
+    coll.find(Json.obj({"messages." + messageId} -> Json.obj {"$exists" -> true}), Json.obj({"messages." + messageId} -> true)).one[JsObject]
+  }
 
   /**
    * Actions
    */
 
-  def sendMessage = Action(parse.json) {
+  def sendMessage = AuthenticateToken(requireAdminRight = false) {
     request =>
-
       val jsBody: JsValue = request.body
 
       jsBody.transform(validateMessage andThen addCreateDate andThen addMessageId).map {
@@ -168,7 +157,7 @@ object MessageController extends Controller with MongoController with MongoHelpe
           }.recoverTotal {
             error => InternalServerError(resKO(JsError.toFlatJson(error)))
           }
-          case None => NotFound(resKO(JsString("Message not found: " + messageId)))
+          case None => NotFound(resKO("Message not found: " + messageId))
         }
       }
   }
@@ -184,7 +173,7 @@ object MessageController extends Controller with MongoController with MongoHelpe
           }.recoverTotal {
             error => InternalServerError(resKO(JsError.toFlatJson(error)))
           }
-          case None => NotFound(resKO(JsString("Conversation not found: " + conversationId)))
+          case None => NotFound(resKO("Conversation not found: " + conversationId))
         }
       }
   }

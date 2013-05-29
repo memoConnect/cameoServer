@@ -13,15 +13,7 @@ import org.mindrot.jbcrypt.BCrypt
  * Date: 5/28/13
  * Time: 4:30 PM
  */
-object TokenController extends Controller with MongoController with MongoHelper {
-
-  val userCollection: JSONCollection = db.collection[JSONCollection]("users")
-  val tokenCollection: JSONCollection = db.collection[JSONCollection]("token")
-
-  /**
-   * Transformer
-   */
-
+object TokenController extends MongoHelper {
 
   /**
    * Future Actor to get Token   TODO
@@ -32,18 +24,18 @@ object TokenController extends Controller with MongoController with MongoHelper 
 
     futureUser.map {
       case None => {
-        Unauthorized(resKO(JsString("Wrong Username/Password")))
+        Unauthorized(resKO("Wrong Username/Password"))
       }
       case Some(u: JsValue) => {
         // check password
         if (!BCrypt.checkpw(pass, (u \ "password").asOpt[String].getOrElse(""))) {
           // wrong password
-          Unauthorized(resKO(JsString("Wrong Password/Password")))
+          Unauthorized(resKO("Wrong Password/Password"))
         }
         else {
           val token = createToken(user).transform(addCreateDate).get
           tokenCollection.insert(token).map {
-            lastError => InternalServerError(resKO(JsString("MongoError: " + lastError)))
+            lastError => InternalServerError(resKO("MongoError: " + lastError))
           }
           Ok(resOK(token.transform(fromCreated).get))
         }
@@ -77,7 +69,7 @@ object TokenController extends Controller with MongoController with MongoHelper 
   def getToken = Action {
     request =>
       request.headers.get("Authorization") match {
-        case None => BadRequest(resKO(JsString("No Authorization field in header")))
+        case None => BadRequest(resKO("No Authorization field in header"))
         case Some(basicAuth) => {
           val (user, pass) = decodeBasicAuth(basicAuth)
           Async {
@@ -95,10 +87,14 @@ object TokenController extends Controller with MongoController with MongoHelper 
             if (lastError.updated > 0)
               Ok(resOK(Json.obj("deletedToken" -> token)))
             else if (lastError.ok) {
-              NotFound(resKO(JsString("Token not found")))}
+              NotFound(resKO("Token not found"))}
             else
-              InternalServerError(resKO(JsString(lastError.stringify)))
+              InternalServerError(resKO(lastError.stringify))
         }
       }
   }
+
+
+
+
 }

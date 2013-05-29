@@ -3,10 +3,14 @@ package helper
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import reactivemongo.bson.BSONObjectID
+import play.api.libs.functional.syntax._
+import play.api.mvc._
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import play.api.libs.json.JsNumber
-import play.api.libs.functional.syntax._
+import play.modules.reactivemongo.json.collection.JSONCollection
+import play.modules.reactivemongo.MongoController
+import scala.concurrent.Future
 
 
 /**
@@ -19,7 +23,12 @@ import play.api.libs.functional.syntax._
  * Several Helper functions for interaction with MongoDB *
  */
 
-trait MongoHelper {
+trait MongoHelper extends Controller with MongoController {
+
+  // define collections
+  lazy val conversationCollection: JSONCollection = db.collection[JSONCollection]("conversations")
+  lazy val userCollection: JSONCollection = db.collection[JSONCollection]("users")
+  lazy val tokenCollection: JSONCollection = db.collection[JSONCollection]("token")
 
   // empty Object
   val emptyObj = __.json.put(Json.obj())
@@ -34,7 +43,12 @@ trait MongoHelper {
 
   // generate result
   def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
+
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
+
+  def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
+
+  def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   // convert object id and date between json and bson format
   val toObjectId = Writes[String] {
@@ -45,4 +59,37 @@ trait MongoHelper {
 
   // add status message
   def addStatus(status: String): Reads[JsObject] = __.json.update((__ \ 'status).json.put(JsString(status)))
+
+
+  // checks if the token belongs to the given userclass
+  def AuthenticateToken(requireAdminRight: Boolean)(f: Request[JsValue] => Result) = {
+    Action(parse.json) {
+      request => {
+        (request.body \ "token").asOpt[String] match {
+          case None => Unauthorized(resKO("No token"))
+          case Some(m) => Async {
+            // check if the token is in the database
+            val futureUser = tokenCollection.find(Json.obj("token" -> m)).one[JsValue]
+            futureUser.map {
+              case None => Unauthorized(resKO("Invalid Token"))
+              case Some(js) => {
+                // we found the token, check if it has the proper rights
+                if (requireAdminRight) {
+                  (js \ "isAdmin").asOpt[Boolean] match {
+                    case None => Unauthorized(resKO("This action requires admin privileges"))
+                    case Some(b: Boolean) => {
+                      if (!b) Unauthorized(resKO("This action requires admin privileges"))
+                      else f(request)
+                    }
+                  }
+                }
+                else
+                  f(request)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
 }
