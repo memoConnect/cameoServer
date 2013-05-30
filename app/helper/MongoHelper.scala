@@ -43,11 +43,8 @@ trait MongoHelper extends Controller with MongoController {
 
   // generate result
   def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
-
   def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
   def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   // convert object id and date between json and bson format

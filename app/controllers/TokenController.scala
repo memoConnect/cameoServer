@@ -30,7 +30,7 @@ object TokenController extends MongoHelper {
         // check password
         if (!BCrypt.checkpw(pass, (u \ "password").asOpt[String].getOrElse(""))) {
           // wrong password
-          Unauthorized(resKO("Wrong Password/Password"))
+          Unauthorized(resKO("Wrong Username/Password"))
         }
         else {
           val token = createToken(user).transform(addCreateDate).get
@@ -93,8 +93,4 @@ object TokenController extends MongoHelper {
         }
       }
   }
-
-
-
-
 }
