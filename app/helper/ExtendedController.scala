@@ -23,12 +23,19 @@ import scala.concurrent.Future
  * Several Helper functions for interaction with MongoDB *
  */
 
-trait MongoHelper extends Controller with MongoController {
+trait ExtendedController extends Controller with MongoController {
 
-  // define collections
+  /**
+    * MongoDB Collections
+    */
+
   lazy val conversationCollection: JSONCollection = db.collection[JSONCollection]("conversations")
   lazy val userCollection: JSONCollection = db.collection[JSONCollection]("users")
   lazy val tokenCollection: JSONCollection = db.collection[JSONCollection]("token")
+
+  /**
+   * Transformation Helper
+   */
 
   // empty Object
   val emptyObj = __.json.put(Json.obj())
@@ -57,10 +64,13 @@ trait MongoHelper extends Controller with MongoController {
   // add status message
   def addStatus(status: String): Reads[JsObject] = __.json.update((__ \ 'status).json.put(JsString(status)))
 
+  /**
+    * Authentication
+    */
 
   // checks if the token belongs to the given userclass
-  def AuthenticateToken(requireAdminRight: Boolean)(f: Request[JsValue] => Result) = {
-    Action(parse.json) {
+  def AuthenticateToken(requireAdminRights: Boolean = false)(f: Request[JsValue] => Result) = {
+    Action(parse.tolerantJson) {
       request => {
         (request.body \ "token").asOpt[String] match {
           case None => Unauthorized(resKO("No token"))
@@ -71,7 +81,7 @@ trait MongoHelper extends Controller with MongoController {
               case None => Unauthorized(resKO("Invalid Token"))
               case Some(js) => {
                 // we found the token, check if it has the proper rights
-                if (requireAdminRight) {
+                if (requireAdminRights) {
                   (js \ "isAdmin").asOpt[Boolean] match {
                     case None => Unauthorized(resKO("This action requires admin privileges"))
                     case Some(b: Boolean) => {

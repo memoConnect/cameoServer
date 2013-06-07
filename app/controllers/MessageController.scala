@@ -6,7 +6,7 @@ import play.api.libs.functional.syntax._
 
 import play.api.mvc.{Action, Controller}
 import play.modules.reactivemongo.MongoController
-import helper.{IdHelper, MongoHelper}
+import helper.{IdHelper, ExtendedController}
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
@@ -22,12 +22,11 @@ import scala.concurrent.Future
  */
 
 
-object MessageController extends MongoHelper {
+object MessageController extends ExtendedController {
 
   /**
    * JSON Transformers
    */
-
   val addMessageId: Reads[JsObject] = __.json.update((__ \ 'messageId).json.put(JsString(IdHelper.generateMessageId())))
   val addConversationId: Reads[JsObject] = (__ \ 'conversationId).json.put(JsString(IdHelper.generateConversationId()))
 
@@ -132,7 +131,7 @@ object MessageController extends MongoHelper {
    * Actions
    */
 
-  def sendMessage = AuthenticateToken(requireAdminRight = false) {
+  def sendMessage = AuthenticateToken() {
     request =>
       val jsBody: JsValue = request.body
 
@@ -148,7 +147,7 @@ object MessageController extends MongoHelper {
       )
   }
 
-  def getMessage(messageId: String) = Action {
+  def getMessage(messageId: String) = AuthenticateToken() {
     request =>
       Async {
         findMessage(messageId, conversationCollection).map {
@@ -162,7 +161,7 @@ object MessageController extends MongoHelper {
       }
   }
 
-  def getConversation(conversationId: String) = Action {
+  def getConversation(conversationId: String) = AuthenticateToken() {
     request =>
       Async {
         val futureConversation = conversationCollection.find(Json.obj("conversationId" -> conversationId)).one[JsObject]

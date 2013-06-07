@@ -12,7 +12,7 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsObject
-import helper.MongoHelper
+import helper.ExtendedController
 import play.api.Logger
 
 
@@ -23,7 +23,7 @@ import play.api.Logger
  */
 
 
-object UserController extends MongoHelper {
+object UserController extends ExtendedController {
 
   /**
    * JSON Transfomer
@@ -59,7 +59,7 @@ object UserController extends MongoHelper {
    * Actions
    */
 
-  def createUser = Action(parse.json) {
+  def createUser = Action(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
 

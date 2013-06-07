@@ -2,7 +2,7 @@ package controllers
 
 import play.api.mvc._
 import play.modules.reactivemongo.MongoController
-import helper.{IdHelper, MongoHelper}
+import helper.{IdHelper, ExtendedController}
 import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json.{Json, JsValue, JsString}
 import scala.concurrent.Future
@@ -13,7 +13,7 @@ import org.mindrot.jbcrypt.BCrypt
  * Date: 5/28/13
  * Time: 4:30 PM
  */
-object TokenController extends MongoHelper {
+object TokenController extends ExtendedController {
 
   /**
    * Future Actor to get Token   TODO
