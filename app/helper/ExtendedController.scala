@@ -10,7 +10,6 @@ import play.api.libs.json.JsString
 import play.api.libs.json.JsNumber
 import play.modules.reactivemongo.json.collection.JSONCollection
 import play.modules.reactivemongo.MongoController
-import scala.concurrent.Future
 
 
 /**
@@ -26,8 +25,8 @@ import scala.concurrent.Future
 trait ExtendedController extends Controller with MongoController {
 
   /**
-    * MongoDB Collections
-    */
+   * MongoDB Collections
+   */
 
   lazy val conversationCollection: JSONCollection = db.collection[JSONCollection]("conversations")
   lazy val userCollection: JSONCollection = db.collection[JSONCollection]("users")
@@ -50,8 +49,11 @@ trait ExtendedController extends Controller with MongoController {
 
   // generate result
   def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
+
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
+
   def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
+
   def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   // convert object id and date between json and bson format
@@ -65,38 +67,51 @@ trait ExtendedController extends Controller with MongoController {
   def addStatus(status: String): Reads[JsObject] = __.json.update((__ \ 'status).json.put(JsString(status)))
 
   /**
-    * Authentication
-    */
+   * Authentication
+   */
+
 
   // checks if the token belongs to the given userclass
-  def AuthenticateToken(requireAdminRights: Boolean = false)(f: Request[JsValue] => Result) = {
-    Action(parse.tolerantJson) {
-      request => {
-        (request.body \ "token").asOpt[String] match {
-          case None => Unauthorized(resKO("No token"))
-          case Some(m) => Async {
-            // check if the token is in the database
-            val futureUser = tokenCollection.find(Json.obj("token" -> m)).one[JsValue]
-            futureUser.map {
-              case None => Unauthorized(resKO("Invalid Token"))
-              case Some(js) => {
-                // we found the token, check if it has the proper rights
-                if (requireAdminRights) {
-                  (js \ "isAdmin").asOpt[Boolean] match {
-                    case None => Unauthorized(resKO("This action requires admin privileges"))
-                    case Some(b: Boolean) => {
-                      if (!b) Unauthorized(resKO("This action requires admin privileges"))
-                      else f(request)
-                    }
-                  }
-                }
-                else
-                  f(request)
+  def authenticate[T](token: String, requireAdminRights: Boolean = false)(f: Request[T] => Result)(implicit request: Request[T]): Result = {
+    Async {
+      // check if the token is in the database
+      val futureUser = tokenCollection.find(Json.obj("token" -> token)).one[JsValue]
+      futureUser.map {
+        case None => Unauthorized(resKO("Invalid Token"))
+        case Some(js) => {
+          // we found the token, check if it has the proper rights
+          if (requireAdminRights) {
+            (js \ "isAdmin").asOpt[Boolean] match {
+              case None => Unauthorized(resKO("This action requires admin privileges"))
+              case Some(b: Boolean) => {
+                if (!b) Unauthorized(resKO("This action requires admin privileges"))
+                else f(request)
               }
             }
           }
+          else
+            f(request)
         }
       }
     }
   }
+
+
+  def authenticatePOST(requireAdminRights: Boolean = false)(f: Request[JsValue] => Result) = {
+    Action(parse.tolerantJson) {
+      implicit request => {
+        (request.body \ "token").asOpt[String] match {
+          case None => Unauthorized(resKO("No token"))
+          case Some(m) => authenticate[JsValue](m, requireAdminRights)(f)
+        }
+      }
+    }
+  }
+
+  def authenticateGET(token: String, requireAdminRights: Boolean = false)(f: Request[AnyContent] => Result) = {
+    Action {
+      implicit request => authenticate[AnyContent](token, requireAdminRights)(f)(request)
+    }
+  }
+
 }

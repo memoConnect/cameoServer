@@ -4,12 +4,7 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-import play.api.mvc.{Action, Controller}
-import play.modules.reactivemongo.MongoController
 import helper.{IdHelper, ExtendedController}
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.None
 import scala.concurrent.Future
@@ -124,14 +119,20 @@ object MessageController extends ExtendedController {
    * Helper
    */
   def findMessage(messageId: String, coll: JSONCollection): Future[Option[JsObject]] = {
-    coll.find(Json.obj({"messages." + messageId} -> Json.obj {"$exists" -> true}), Json.obj({"messages." + messageId} -> true)).one[JsObject]
+    coll.find(Json.obj({
+      "messages." + messageId
+    } -> Json.obj {
+      "$exists" -> true
+    }), Json.obj({
+      "messages." + messageId
+    } -> true)).one[JsObject]
   }
 
   /**
    * Actions
    */
 
-  def sendMessage = AuthenticateToken() {
+  def sendMessage = authenticatePOST() {
     request =>
       val jsBody: JsValue = request.body
 
@@ -147,7 +148,7 @@ object MessageController extends ExtendedController {
       )
   }
 
-  def getMessage(messageId: String) = AuthenticateToken() {
+  def getMessage(messageId: String, token: String) = authenticateGET(token) {
     request =>
       Async {
         findMessage(messageId, conversationCollection).map {
@@ -161,18 +162,17 @@ object MessageController extends ExtendedController {
       }
   }
 
-  def getConversation(conversationId: String) = AuthenticateToken() {
+  def getConversation(conversationId: String, token: String) = authenticateGET(token) {
     request =>
       Async {
         val futureConversation = conversationCollection.find(Json.obj("conversationId" -> conversationId)).one[JsObject]
-
         futureConversation.map {
+          case None => NotFound(resKO("Conversation not found: " + conversationId))
           case Some(c: JsObject) => c.transform(outputConversation).map {
             jsRes => Ok(resOK(jsRes))
           }.recoverTotal {
             error => InternalServerError(resKO(JsError.toFlatJson(error)))
           }
-          case None => NotFound(resKO("Conversation not found: " + conversationId))
         }
       }
   }
