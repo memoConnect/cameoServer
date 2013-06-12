@@ -6,11 +6,11 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import org.mindrot.jbcrypt.BCrypt
-import scala.concurrent.Future
 import play.api.libs.json.JsString
-import scala.Some
 import play.api.libs.json.JsObject
 import helper.ExtendedController
+import reactivemongo.api.indexes.{IndexType, Index}
+import scala.concurrent.Future
 
 
 /**
@@ -52,13 +52,23 @@ object UserController extends ExtendedController {
     request =>
       val jsBody: JsValue = request.body
 
+      userCollection.indexesManager.ensure(Index(List("username" -> IndexType.Ascending), unique = true, sparse = true))
+
       jsBody.transform(validateUser andThen hashPassword andThen addObjectIdAndDate).map {
         jsRes => Async {
           userCollection.insert(jsRes).map {
-            lastError => InternalServerError(resKO("MongoError: " + lastError))
+            lastError => {
+              if (lastError.ok) {
+                Ok(resOK(jsRes.transform((__ \ 'username).json.pickBranch).get))
+              } else {
+                InternalServerError(resKO("MongoError: " + lastError))
+              }
+            }
+          }.recover {
+            case e =>
+              BadRequest(resKO("The username already exists"))
           }
         }
-          Ok(resOK(jsRes.transform((__ \ 'username).json.pickBranch).get))
       }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
   }
 
