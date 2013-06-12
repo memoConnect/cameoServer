@@ -11,12 +11,26 @@
       <stringProp name="TestPlan.user_define_classpath"></stringProp>
     </TestPlan>
     <hashTree>
-      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
+      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="local" enabled="false">
         <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
           <collectionProp name="Arguments.arguments"/>
         </elementProp>
         <stringProp name="HTTPSampler.domain">localhost</stringProp>
         <stringProp name="HTTPSampler.port">9000</stringProp>
+        <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+        <stringProp name="HTTPSampler.response_timeout"></stringProp>
+        <stringProp name="HTTPSampler.protocol"></stringProp>
+        <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+        <stringProp name="HTTPSampler.path"></stringProp>
+        <stringProp name="HTTPSampler.concurrentPool">4</stringProp>
+      </ConfigTestElement>
+      <hashTree/>
+      <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="remote" enabled="true">
+        <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
+          <collectionProp name="Arguments.arguments"/>
+        </elementProp>
+        <stringProp name="HTTPSampler.domain">kolibrinet01-kolibrinet.rhcloud.com</stringProp>
+        <stringProp name="HTTPSampler.port"></stringProp>
         <stringProp name="HTTPSampler.connect_timeout"></stringProp>
         <stringProp name="HTTPSampler.response_timeout"></stringProp>
         <stringProp name="HTTPSampler.protocol"></stringProp>
@@ -575,7 +589,7 @@
     &quot;recipients&quot;: [&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;email&quot;,&#xd;
-            &quot;sendTo&quot;: &quot;zeugs@posteo.de&quot;,&#xd;
+            &quot;sendTo&quot;: &quot;e@mail.de&quot;,&#xd;
             &quot;Name&quot;: &quot;Udo&quot;&#xd;
         },&#xd;
         {&#xd;
@@ -650,7 +664,7 @@
             <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           </HTTPSamplerProxy>
           <hashTree/>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Add Message to Conversation" enabled="false">
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Add Message to Conversation" enabled="true">
             <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
               <collectionProp name="Arguments.arguments">
@@ -662,7 +676,7 @@
         {&#xd;
             &quot;messageType&quot;: &quot;email&quot;,&#xd;
             &quot;sendTo&quot;: &quot;e@mail.de&quot;,&#xd;
-            &quot;Name&quot;: &quot;Udo (optional)&quot;&#xd;
+            &quot;Name&quot;: &quot;Udo&quot;&#xd;
         }&#xd;
     ],&#xd;
    &quot;conversationId&quot;:&quot;${cid}&quot;,&#xd;
