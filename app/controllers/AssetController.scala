@@ -2,8 +2,8 @@ package controllers
 
 import play.api.mvc.{Action, Controller}
 import play.modules.reactivemongo.MongoController
-import helper.ExtendedController
 import java.io.File
+import traits.ExtendedController
 
 /**
  * User: Björn Reimer

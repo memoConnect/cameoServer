@@ -1,10 +1,11 @@
 package controllers
 
 import play.api.mvc._
-import helper.{IdHelper, ExtendedController}
+import helper.{IdHelper}
 import play.api.libs.json.{Json, JsValue}
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
+import traits.ExtendedController
 
 /**
  * User: Björn Reimer

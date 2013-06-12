@@ -8,9 +8,9 @@ import play.api.libs.functional.syntax._
 import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.json.JsString
 import play.api.libs.json.JsObject
-import helper.ExtendedController
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.Future
+import traits.ExtendedController
 
 
 /**

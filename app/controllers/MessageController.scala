@@ -4,10 +4,13 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-import helper.{IdHelper, ExtendedController}
+import helper.{IdHelper}
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.None
 import scala.concurrent.Future
+import play.api.mvc.Result
+import play.api.Logger
+import traits.ExtendedController
 
 
 /**
@@ -34,13 +37,16 @@ object MessageController extends ExtendedController {
     ((__ \ 'assets).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(Reads.of[JsString])) or emptyObj) and
     (__ \ 'recipients).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(validateRecipient))).reduce
 
+  // Add username to message
+  def addUsername(username: String): Reads[JsObject] = __.json.update((__ \ 'username).json.put(JsString(username)))
+
   // Send Message result
   val sendMessageResult: Reads[JsObject] = ((__ \ 'conversationId).json.pickBranch and
     (__ \ 'messageId).json.pickBranch).reduce
 
   // Returned Message
   def outputMessage(messageId: String): Reads[JsObject] =
-    (__).json.copyFrom((__ \ 'messages \ messageId).json.pick[JsObject]) andThen
+    __.json.copyFrom((__ \ 'messages \ messageId).json.pick[JsObject]) andThen
       fromCreated andThen
       (__ \ 'password).json.prune
 
@@ -50,56 +56,61 @@ object MessageController extends ExtendedController {
     fromCreated andThen
       (__ \ '_id).json.prune
 
-  /*andThen
-       (__ \ 'messages \\ 'created).json.prune*/
   // create conversation from single message
-  def createConversation(messageId: String): Reads[JsObject] = ((__ \ 'messages \ messageId).json.copyFrom((__).json
+  def createConversation(messageId: String): Reads[JsObject] = ((__ \ 'messages \ messageId).json.copyFrom(__.json
     .pick[JsObject]) and
     (__ \ 'conversationId).json.pickBranch).reduce
 
-  // create mongodb update query that adds the message to the messages object
-  def toConversationUpdateQuery(messageId: String): Reads[JsObject] = {
+  // create mongodb update query that adds the message to the messages object in the conversation
+  def addToConversationUpdateQuery(messageId: String): Reads[JsObject] = {
     (__ \ '$set \ {
       "messages." + messageId
     }).json.copyFrom((__).json.pick[JsObject])
   }
 
-  /**
-   * Future Actors TODO convert to Akka actor
-   */
-  def addMessageToConversation(message: JsObject): Option[String] = {
+  def addMessageOk(message: JsObject): Result = {
+    sendMessageActor ! message
+    Ok(resOK(message.transform(sendMessageResult).getOrElse(JsString("Unable to create result"))))
+  }
 
-    val conversationId: String = (message \ "conversationId").as[String]
+  def addMessageToConversation(message: JsObject): Future[Result] = {
     val messageId: String = (message \ "messageId").as[String]
 
     // check if this conversationId exists
-    val futureCollection = conversationCollection.find(Json.obj("conversationId" -> conversationId)).one[JsObject]
+    val futureCollection = conversationCollection.find(getConversationId(message)).one[JsObject]
 
     futureCollection.map {
       case None => {
         // conversation does not exist yet, create new
         message.transform(createConversation(messageId) andThen addObjectIdAndDate).map {
-          jsRes => conversationCollection.insert(jsRes).map {
-            lastError =>
-              InternalServerError(resKO("MongoError: " + lastError))
+          jsRes => Async {
+            conversationCollection.insert(jsRes).map {
+              lastError => {
+                if (lastError.ok) {
+                  addMessageOk(message)
+                } else {
+                  InternalServerError(resKO("MongoError: " + lastError))
+                }
+              }
+            }
           }
         }.recoverTotal(error => InternalServerError(resKO(JsError.toFlatJson(error))))
-        //res = Some("Created new conversation: " + conversationId)
       }
       case Some(c: JsValue) => {
         // conversation does exist, add message to it
-        message.transform(toConversationUpdateQuery(messageId)).map {
-          jsUpdate => {
-            conversationCollection.update(Json.obj("conversationId" -> conversationId), jsUpdate).map {
-              lastError => InternalServerError(resKO("MongoError: " + lastError))
+        message.transform(addToConversationUpdateQuery(messageId)).map {
+          jsUpdate => Async {
+            conversationCollection.update(getConversationId(message), jsUpdate).map {
+              lastError => if (lastError.ok) {
+                addMessageOk(message)
+              } else {
+                InternalServerError(resKO("MongoError: " + lastError))
+              }
             }
-
           }
-        }
-        //res = Some("Added message to conversation: " + conversationId)
+        }.recoverTotal(error => InternalServerError(resKO(JsError.toFlatJson(error))))
       }
     }
-    Some("Sending not yet implemented")
   }
 
   /**
@@ -119,21 +130,21 @@ object MessageController extends ExtendedController {
    * Actions
    */
   def sendMessage = authenticatePOST() {
-    request =>
+    (username, request) =>
       val jsBody: JsValue = request.body
 
-      jsBody.transform(validateMessage andThen addCreateDate andThen addMessageId).map {
+      jsBody.transform(validateMessage andThen addCreateDate andThen addMessageId andThen addUsername(username)).map {
         jsRes => {
-          addMessageToConversation(jsRes) match {
-            case Some(m) => Ok(resOK(jsRes.transform(sendMessageResult andThen addStatus(m)).get))
-            case None => InternalServerError("Error")
+          Async {
+            Logger.debug("Received send message request from user " + username)
+            addMessageToConversation(jsRes)
           }
         }
       }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
   }
 
   def getMessage(messageId: String, token: String) = authenticateGET(token) {
-    request =>
+    (username, request) =>
       Async {
         findMessage(messageId, conversationCollection).map {
           case Some(m: JsObject) => m.transform(outputMessage(messageId) andThen addStatus("pending to send")).map {
@@ -147,7 +158,7 @@ object MessageController extends ExtendedController {
   }
 
   def getConversation(conversationId: String, token: String) = authenticateGET(token) {
-    request =>
+    (username, request) =>
       Async {
         val futureConversation = conversationCollection.find(Json.obj("conversationId" -> conversationId)).one[JsObject]
         futureConversation.map {

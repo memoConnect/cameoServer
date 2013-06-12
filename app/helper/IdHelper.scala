@@ -26,4 +26,8 @@ object IdHelper {
     randomString(30)
   }
 
+  def generateRecipientId(): String = {
+    randomString(8)
+  }
+
 }
