@@ -575,7 +575,7 @@
     &quot;recipients&quot;: [&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;email&quot;,&#xd;
-            &quot;sendTo&quot;: &quot;e@mail.de&quot;,&#xd;
+            &quot;sendTo&quot;: &quot;zeugs@posteo.de&quot;,&#xd;
             &quot;Name&quot;: &quot;Udo&quot;&#xd;
         },&#xd;
         {&#xd;
@@ -650,7 +650,7 @@
             <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           </HTTPSamplerProxy>
           <hashTree/>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Add Message to Conversation" enabled="true">
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Add Message to Conversation" enabled="false">
             <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
               <collectionProp name="Arguments.arguments">

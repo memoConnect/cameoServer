@@ -25,35 +25,35 @@ class SendMessageActor extends Actor with JsonTransformer with MongoCollections 
 
     val recipientsWithStatus: JsObject = recipients.foldLeft(Json.obj())((newRecipients: JsObject,
       recipient: JsObject) => {
-      def addRecipientWithStatus(status: String): JsObject = {
-        recipient.transform(addStatus(status)).map {
-          r => {
-            newRecipients.transform(__.json.update((__ \ IdHelper.generateRecipientId()).json.put(r)))
-          }.recoverTotal(error => {
-            Logger.error("Error adding to recipients with status: ")
-            newRecipients
-          })
-        }.recoverTotal(error => {
-          Logger.error("Error adding status to recipient: ")
-          newRecipients
-        })
-      }
+      // add recipient id
+      val recipientId = IdHelper.generateRecipientId()
 
-      (recipient \ "messageType").asOpt[String].getOrElse("none") match {
-        case "none" => addRecipientWithStatus("No MessageType given")
-        case "email" => {
-          val from = (user \ "email").asOpt[String].getOrElse("no email given")
-          val to = (recipient \ "sendTo").asOpt[String].getOrElse("no email given")
-          val subject = "Message from" + (user \ "name").asOpt[String].getOrElse("no name")
-          val body = (message \ "messageBody").asOpt[String].getOrElse("empty Body")
+      recipient.transform(__.json.update((__ \ 'recipientId).json.put(JsString(recipientId)))).map {
+        recipientWithId => {
+          def addRecipientWithStatus(status: String): JsObject = {
+            recipientWithId.transform(addStatus(status)).map {
+              recipientWithStatus =>
+                newRecipients.transform(__.json.update((__ \ recipientId).json.put(recipientWithStatus))).get
+            }.recoverTotal(error => {
+              Logger.error("Error adding status to recipient")
+              newRecipients
+            })
+          }
 
-          sendMailActor ! (from, to, subject, body)
-
-          addRecipientWithStatus("Email not implemented yet")
+          (recipientWithId \ "messageType").asOpt[String].getOrElse("none") match {
+            case "none" => addRecipientWithStatus("No MessageType given")
+            case "email" => {
+              sendMailActor !(recipientWithId, message, user)
+              addRecipientWithStatus("Email queued")
+            }
+            case "sms" => addRecipientWithStatus("SMS not implemented yet")
+            case m => addRecipientWithStatus("Unkown message type \'" + m + "\'")
+          }
         }
-        case "sms" => addRecipientWithStatus("SMS not implemented yet")
-        case m => addRecipientWithStatus("Unkown message type \'" + m + "\'")
-      }
+      }.recoverTotal(error => {
+        Logger.error("Error adding id to recipient")
+        newRecipients
+      })
     })
 
     message.transform(__.json.update((__ \ 'recipients).json.put(recipientsWithStatus))).map {

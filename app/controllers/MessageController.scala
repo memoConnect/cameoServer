@@ -4,12 +4,11 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-import helper.{IdHelper}
+import helper.IdHelper
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.None
 import scala.concurrent.Future
 import play.api.mvc.Result
-import play.api.Logger
 import traits.ExtendedController
 
 
@@ -117,13 +116,8 @@ object MessageController extends ExtendedController {
    * Helper
    */
   def findMessage(messageId: String, coll: JSONCollection): Future[Option[JsObject]] = {
-    coll.find(Json.obj({
-      "messages." + messageId
-    } -> Json.obj {
-      "$exists" -> true
-    }), Json.obj({
-      "messages." + messageId
-    } -> true)).one[JsObject]
+    coll.find(Json.obj("messages." + messageId -> Json.obj("$exists" -> true)), Json.obj("messages." + messageId ->
+      true)).one[JsObject]
   }
 
   /**
@@ -136,7 +130,6 @@ object MessageController extends ExtendedController {
       jsBody.transform(validateMessage andThen addCreateDate andThen addMessageId andThen addUsername(username)).map {
         jsRes => {
           Async {
-            Logger.debug("Received send message request from user " + username)
             addMessageToConversation(jsRes)
           }
         }
@@ -147,7 +140,7 @@ object MessageController extends ExtendedController {
     (username, request) =>
       Async {
         findMessage(messageId, conversationCollection).map {
-          case Some(m: JsObject) => m.transform(outputMessage(messageId) andThen addStatus("pending to send")).map {
+          case Some(m: JsObject) => m.transform(outputMessage(messageId)).map {
             jsRes => Ok(resOK(jsRes))
           }.recoverTotal {
             error => InternalServerError(resKO(JsError.toFlatJson(error)))
