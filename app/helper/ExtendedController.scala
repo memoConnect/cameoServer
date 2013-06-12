@@ -17,17 +17,14 @@ import play.modules.reactivemongo.MongoController
  * Date: 5/21/13
  * Time: 6:53 PM
  */
-
 /**
  * Several Helper functions for interaction with MongoDB *
  */
-
 trait ExtendedController extends Controller with MongoController {
 
   /**
    * MongoDB Collections
    */
-
   lazy val conversationCollection: JSONCollection = db.collection[JSONCollection]("conversations")
   lazy val userCollection: JSONCollection = db.collection[JSONCollection]("users")
   lazy val tokenCollection: JSONCollection = db.collection[JSONCollection]("token")
@@ -35,7 +32,6 @@ trait ExtendedController extends Controller with MongoController {
   /**
    * Transformation Helper
    */
-
   // empty Object
   val emptyObj = __.json.put(Json.obj())
 
@@ -49,11 +45,8 @@ trait ExtendedController extends Controller with MongoController {
 
   // generate result
   def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
-
   def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
   def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   // convert object id and date between json and bson format
@@ -69,10 +62,9 @@ trait ExtendedController extends Controller with MongoController {
   /**
    * Authentication
    */
-
-
   // checks if the token belongs to the given userclass
-  def authenticate[T](token: String, requireAdminRights: Boolean = false)(f: Request[T] => Result)(implicit request: Request[T]): Result = {
+  def authenticate[T](token: String, requireAdminRights: Boolean = false)(f: Request[T] => Result)(implicit request:
+  Request[T]): Result = {
     Async {
       // check if the token is in the database
       val futureUser = tokenCollection.find(Json.obj("token" -> token)).one[JsValue]
@@ -88,8 +80,7 @@ trait ExtendedController extends Controller with MongoController {
                 else f(request)
               }
             }
-          }
-          else
+          } else
             f(request)
         }
       }
@@ -110,7 +101,7 @@ trait ExtendedController extends Controller with MongoController {
 
   def authenticateGET(token: String, requireAdminRights: Boolean = false)(f: Request[AnyContent] => Result) = {
     Action {
-      implicit request => authenticate[AnyContent](token, requireAdminRights)(f)(request)
+      implicit request => authenticate[AnyContent](token, requireAdminRights)(f)
     }
   }
 

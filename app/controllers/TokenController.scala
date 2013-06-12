@@ -1,10 +1,8 @@
 package controllers
 
 import play.api.mvc._
-import play.modules.reactivemongo.MongoController
 import helper.{IdHelper, ExtendedController}
-import play.modules.reactivemongo.json.collection.JSONCollection
-import play.api.libs.json.{Json, JsValue, JsString}
+import play.api.libs.json.{Json, JsValue}
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
 
@@ -16,10 +14,9 @@ import org.mindrot.jbcrypt.BCrypt
 object TokenController extends ExtendedController {
 
   /**
-   * Future Actor to get Token   TODO
+   * Helper
    */
-
-  def checkUserAndGetToken(user: String, pass: String): Future[Result] = {
+  def checkUserAndReturnToken(user: String, pass: String): Future[Result] = {
     val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> user)).one[JsValue]
 
     futureUser.map {
@@ -31,8 +28,7 @@ object TokenController extends ExtendedController {
         if (!BCrypt.checkpw(pass, (u \ "password").asOpt[String].getOrElse(""))) {
           // wrong password
           Unauthorized(resKO("Wrong Username/Password"))
-        }
-        else {
+        } else {
           val token = createToken(user).transform(addCreateDate).get
           tokenCollection.insert(token).map {
             lastError => InternalServerError(resKO("MongoError: " + lastError))
@@ -43,10 +39,6 @@ object TokenController extends ExtendedController {
     }
   }
 
-  /**
-   * Helper
-   */
-
   // decode username and password
   def decodeBasicAuth(auth: String) = {
     val baStr = auth.replaceFirst("Basic ", "")
@@ -56,16 +48,12 @@ object TokenController extends ExtendedController {
 
   // create new token
   def createToken(user: String): JsValue = {
-    Json.obj(
-      "token" -> IdHelper.generateAccessToken(),
-      "username" -> user
-    )
+    Json.obj("token" -> IdHelper.generateAccessToken(), "username" -> user)
   }
 
   /**
    * Actions
    */
-
   def getToken = Action {
     request =>
       request.headers.get("Authorization") match {
@@ -73,7 +61,7 @@ object TokenController extends ExtendedController {
         case Some(basicAuth) => {
           val (user, pass) = decodeBasicAuth(basicAuth)
           Async {
-            checkUserAndGetToken(user, pass)
+            checkUserAndReturnToken(user, pass)
           }
         }
       }
@@ -87,8 +75,8 @@ object TokenController extends ExtendedController {
             if (lastError.updated > 0)
               Ok(resOK(Json.obj("deletedToken" -> token)))
             else if (lastError.ok) {
-              NotFound(resKO("Token not found"))}
-            else
+              NotFound(resKO("Token not found"))
+            } else
               InternalServerError(resKO(lastError.stringify))
         }
       }

@@ -1,19 +1,16 @@
 package controllers
 
-import play.modules.reactivemongo.MongoController
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Action
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import org.mindrot.jbcrypt.BCrypt
 import scala.concurrent.Future
-import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsObject
 import helper.ExtendedController
-import play.api.Logger
 
 
 /**
@@ -21,30 +18,23 @@ import play.api.Logger
  * Date: 5/16/13
  * Time: 10:58 AM
  */
-
-
 object UserController extends ExtendedController {
 
   /**
    * JSON Transfomer
    */
-
   // Validates a user
-  val validateUser: Reads[JsObject] = (
-
-    (__ \ 'username).json.pickBranch(Reads.of[JsString]) and
-      (__ \ 'email).json.pickBranch(Reads.of[JsString] keepAnd Reads.email) and
-      (__ \ 'password).json.pickBranch(Reads.of[JsString] keepAnd Reads.minLength[String](8)) and
-      ((__ \ 'name).json.pickBranch(Reads.of[JsString]) or emptyObj) and
-      ((__ \ 'phonenumber).json.pickBranch(Reads.of[JsString]) or emptyObj)
-    ).reduce
+  val validateUser: Reads[JsObject] = ((__ \ 'username).json.pickBranch(Reads.of[JsString]) and
+    (__ \ 'email).json.pickBranch(Reads.of[JsString] keepAnd Reads.email) and
+    (__ \ 'password).json.pickBranch(Reads.of[JsString] keepAnd Reads.minLength[String](8)) and
+    ((__ \ 'name).json.pickBranch(Reads.of[JsString]) or emptyObj) and
+    ((__ \ 'phonenumber).json.pickBranch(Reads.of[JsString]) or emptyObj)).reduce
 
   // hash the password
   val hashPassword: Reads[JsObject] = {
     (__ \ 'password).json.update(of[JsString].map {
       case JsString(pass: String) => JsString(BCrypt.hashpw(pass, BCrypt.gensalt()))
-    }
-    )
+    })
   }
 
   // creates the output format for the user
@@ -58,7 +48,6 @@ object UserController extends ExtendedController {
   /**
    * Actions
    */
-
   def createUser = Action(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
@@ -70,9 +59,7 @@ object UserController extends ExtendedController {
           }
         }
           Ok(resOK(jsRes.transform((__ \ 'username).json.pickBranch).get))
-      }.recoverTotal(
-        error => BadRequest(resKO(JsError.toFlatJson(error)))
-      )
+      }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
   }
 
   def findUser(username: String) = Action {
@@ -98,8 +85,8 @@ object UserController extends ExtendedController {
             if (lastError.updated > 0)
               Ok(resOK(Json.obj("deletedUser" -> username)))
             else if (lastError.ok) {
-              NotFound(resKO("User not found"))}
-            else
+              NotFound(resKO("User not found"))
+            } else
               InternalServerError(resKO(lastError.stringify))
         }
       }

@@ -15,8 +15,6 @@ import scala.concurrent.Future
  * Date: 5/21/13
  * Time: 7:08 PM
  */
-
-
 object MessageController extends ExtendedController {
 
   /**
@@ -26,46 +24,38 @@ object MessageController extends ExtendedController {
   val addConversationId: Reads[JsObject] = (__ \ 'conversationId).json.put(JsString(IdHelper.generateConversationId()))
 
   // Recipient Validator
-  val validateRecipient: Reads[JsObject] = (
-    (__ \ 'messageType).json.pickBranch(Reads.of[JsString]) and
-      (__ \ 'sendTo).json.pickBranch(Reads.of[JsString]) and
-      ((__ \ 'Name).json.pickBranch(Reads.of[JsString]) or emptyObj)
-    ).reduce
+  val validateRecipient: Reads[JsObject] = ((__ \ 'messageType).json.pickBranch(Reads.of[JsString]) and
+    (__ \ 'sendTo).json.pickBranch(Reads.of[JsString]) and
+    ((__ \ 'Name).json.pickBranch(Reads.of[JsString]) or emptyObj)).reduce
 
   // Message validator
-  val validateMessage: Reads[JsObject] = (
-    (__ \ 'messageBody).json.pickBranch(Reads.of[JsString]) and
-      ((__ \ 'conversationId).json.pickBranch(Reads.of[JsString]) or addConversationId) and
-      ((__ \ 'assets).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(Reads.of[JsString])) or emptyObj) and
-      (__ \ 'recipients).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(validateRecipient))
-    ).reduce
+  val validateMessage: Reads[JsObject] = ((__ \ 'messageBody).json.pickBranch(Reads.of[JsString]) and
+    ((__ \ 'conversationId).json.pickBranch(Reads.of[JsString]) or addConversationId) and
+    ((__ \ 'assets).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(Reads.of[JsString])) or emptyObj) and
+    (__ \ 'recipients).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(validateRecipient))).reduce
 
   // Send Message result
-  val sendMessageResult: Reads[JsObject] = (
-    (__ \ 'conversationId).json.pickBranch and
-      (__ \ 'messageId).json.pickBranch
-    ).reduce
+  val sendMessageResult: Reads[JsObject] = ((__ \ 'conversationId).json.pickBranch and
+    (__ \ 'messageId).json.pickBranch).reduce
 
   // Returned Message
-  def outputMessage(messageId: String): Reads[JsObject] = (
+  def outputMessage(messageId: String): Reads[JsObject] =
     (__).json.copyFrom((__ \ 'messages \ messageId).json.pick[JsObject]) andThen
       fromCreated andThen
       (__ \ 'password).json.prune
-    )
+
 
   // returned conversation
-  val outputConversation: Reads[JsObject] = (
+  val outputConversation: Reads[JsObject] =
     fromCreated andThen
-      (__ \ '_id).json.prune /*andThen
-      (__ \ 'messages \\ 'created).json.prune*/
-    )
+      (__ \ '_id).json.prune
 
-
+  /*andThen
+       (__ \ 'messages \\ 'created).json.prune*/
   // create conversation from single message
-  def createConversation(messageId: String): Reads[JsObject] = (
-    (__ \ 'messages \ messageId).json.copyFrom((__).json.pick[JsObject]) and
-      (__ \ 'conversationId).json.pickBranch
-    ).reduce
+  def createConversation(messageId: String): Reads[JsObject] = ((__ \ 'messages \ messageId).json.copyFrom((__).json
+    .pick[JsObject]) and
+    (__ \ 'conversationId).json.pickBranch).reduce
 
   // create mongodb update query that adds the message to the messages object
   def toConversationUpdateQuery(messageId: String): Reads[JsObject] = {
@@ -77,7 +67,6 @@ object MessageController extends ExtendedController {
   /**
    * Future Actors TODO convert to Akka actor
    */
-
   def addMessageToConversation(message: JsObject): Option[String] = {
 
     val conversationId: String = (message \ "conversationId").as[String]
@@ -94,9 +83,7 @@ object MessageController extends ExtendedController {
             lastError =>
               InternalServerError(resKO("MongoError: " + lastError))
           }
-        }.recoverTotal(
-          error => InternalServerError(resKO(JsError.toFlatJson(error)))
-        )
+        }.recoverTotal(error => InternalServerError(resKO(JsError.toFlatJson(error))))
         //res = Some("Created new conversation: " + conversationId)
       }
       case Some(c: JsValue) => {
@@ -131,7 +118,6 @@ object MessageController extends ExtendedController {
   /**
    * Actions
    */
-
   def sendMessage = authenticatePOST() {
     request =>
       val jsBody: JsValue = request.body
@@ -143,9 +129,7 @@ object MessageController extends ExtendedController {
             case None => InternalServerError("Error")
           }
         }
-      }.recoverTotal(
-        error => BadRequest(resKO(JsError.toFlatJson(error)))
-      )
+      }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
   }
 
   def getMessage(messageId: String, token: String) = authenticateGET(token) {

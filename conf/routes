@@ -9,10 +9,12 @@ GET     /                                       controllers.Application.index
 POST    /api/v1/admin/user                      controllers.UserController.createUser
 GET     /api/v1/admin/user/:username            controllers.UserController.findUser(username: String)
 DELETE  /api/v1/admin/user/:username            controllers.UserController.deleteUser(username: String)
+
 # MESSAGES
 POST    /api/v1/message                         controllers.MessageController.sendMessage
 GET     /api/v1/message/:messageId              controllers.MessageController.getMessage(messageId: String, token: String)
 GET     /api/v1/conversation/:conversationId    controllers.MessageController.getConversation(conversationId: String, token: String)
+
 # TOKENS
 GET     /api/v1/token                           controllers.TokenController.getToken
 DELETE  /api/v1/token/:token                    controllers.TokenController.deleteToken(token: String)

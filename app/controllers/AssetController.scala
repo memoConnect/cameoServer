@@ -10,10 +10,9 @@ import java.io.File
  * Date: 5/24/13
  * Time: 9:40 PM
  */
-object AssetController extends Controller with MongoController with ExtendedController{
+object AssetController extends Controller with MongoController with ExtendedController {
 
-  def uploadAsset(asset: File) = Action( request =>
+  def uploadAsset(asset: File) = Action(request =>
 
-    Ok(asset.getPath)
-  )
+    Ok(asset.getPath))
 }

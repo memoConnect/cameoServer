@@ -17,10 +17,9 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
   override def additionalEmbedMongoPortSettings(port: Int) = Map("mongodb.servers" -> List(s"localhost:$port").asJava)
 
   // wrap action to modify the headers of every request
-  override def doFilter(action: EssentialAction): EssentialAction = EssentialAction { request =>
-    action.apply(request).map(_.withHeaders(
-      ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT",
-      ACCESS_CONTROL_ALLOW_ORIGIN -> "*"
-    ))
+  override def doFilter(action: EssentialAction): EssentialAction = EssentialAction {
+    request =>
+      action.apply(request).map(_.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT",
+        ACCESS_CONTROL_ALLOW_ORIGIN -> "*"))
   }
 }

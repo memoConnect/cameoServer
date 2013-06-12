@@ -121,7 +121,7 @@
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
               <stringProp name="JSON_PATH">data.username</stringProp>
-              <stringProp name="EXPECTED_VALUE">test</stringProp>
+              <stringProp name="EXPECTED_VALUE">user</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
@@ -596,7 +596,7 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/message/${mid1}</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/message/${mid1}?token=${token}</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -666,7 +666,7 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/conversation/${cid}</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/conversation/${cid}?token=${token}</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
