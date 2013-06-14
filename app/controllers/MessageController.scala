@@ -115,8 +115,8 @@ object MessageController extends ExtendedController {
   /**
    * Helper
    */
-  def findMessage(messageId: String, coll: JSONCollection): Future[Option[JsObject]] = {
-    coll.find(Json.obj("messages." + messageId -> Json.obj("$exists" -> true)), Json.obj("messages." + messageId ->
+  def findMessage(messageId: String): Future[Option[JsObject]] = {
+    conversationCollection.find(Json.obj("messages." + messageId -> Json.obj("$exists" -> true)), Json.obj("messages." + messageId ->
       true)).one[JsObject]
   }
 
@@ -139,7 +139,7 @@ object MessageController extends ExtendedController {
   def getMessage(messageId: String, token: String) = authenticateGET(token) {
     (username, request) =>
       Async {
-        findMessage(messageId, conversationCollection).map {
+        findMessage(messageId).map {
           case Some(m: JsObject) => m.transform(outputMessage(messageId)).map {
             jsRes => Ok(resOK(jsRes))
           }.recoverTotal {

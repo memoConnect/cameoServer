@@ -30,4 +30,8 @@ object IdHelper {
     randomString(8)
   }
 
+  def generateContactId(): String = {
+    randomString(8)
+  }
+
 }

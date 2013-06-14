@@ -27,6 +27,8 @@ trait JsonTransformer {
   val addObjectIdAndDate: Reads[JsObject] = __.json.update((generateId and generateCreated).reduce)
 
   // generate result
+  def resOK() = Json.obj("res" -> "OK")
+
   def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
 
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
@@ -48,5 +50,6 @@ trait JsonTransformer {
   def getBranch(js: JsObject, key: String): JsObject = js.transform((__ \ key).json.pickBranch).getOrElse(Json.obj())
 
   def getConversationId(message: JsObject): JsObject = getBranch(message, "conversationId")
+
   def getMessageId(message: JsObject): JsObject = getBranch(message, "messageId")
 }
