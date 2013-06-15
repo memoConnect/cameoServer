@@ -23,7 +23,8 @@ DELETE  /api/v1/token/:token                    controllers.TokenController.dele
 POST    /api/v1/contact                         controllers.ContactsController.addContact
 GET     /api/v1/contacts                        controllers.ContactsController.getContacts(token: String)
 GET     /api/v1/contact/:contactId              controllers.ContactsController.getContact(contactId: String, token: String)
-GET     /api/v1/contact/group/:groupName        controllers.ContactsController.getGroup(groupName: String, token: String)
+GET     /api/v1/contact-groups                  controllers.ContactsController.getGroups(token: String)
+GET     /api/v1/contact-group/:groupName        controllers.ContactsController.getGroup(groupName: String, token: String)
 
 #ASSETS
 #POST    /api/v1/asset                          controllers.AssetController.uploadAsset

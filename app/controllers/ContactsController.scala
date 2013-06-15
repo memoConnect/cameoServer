@@ -129,25 +129,30 @@ object ContactsController extends ExtendedController {
       }
   }
 
-//  def getGroups(token: String) = authenticateGET(token) {
-//    (username, request) =>
-//      Async {
-//        // get contacts of this user
-//        userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
-//          case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
-//          case Some(u: JsObject) => {
-//
-//            (u \ "contacts").asOpt[JsObject].getOrElse(Json.obj()).fields.foldLeft(List[JsObject]())
-//            ((groups: Seq[JsObject], kv: (String, JsValue)) => {
-//              val g = (kv._2 \ "groups").asOpt[List[String]].getOrElse(List[String]())
-//
-//              g.map{ s: String => if(groups.exists(t => t.equals(s)))  }
-//
-//            })
-//
-//            Ok(resOK(result) )
-//          }
-//        }
-//      }
-//  }
+  def getGroups(token: String) = authenticateGET(token) {
+    (username, request) =>
+      Async {
+        // get contacts of this user
+        userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
+          case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
+          case Some(u: JsObject) => {
+            val contacts: JsObject = (u \ "contacts").asOpt[JsObject].getOrElse(Json.obj())
+
+            val result = contacts.fields.foldLeft(List[JsString]())((uniqueGroups: List[JsString], kv: (String,
+              JsValue)) => {
+              val contactGroups = (kv._2 \ "groups").asOpt[List[JsString]].getOrElse(List[JsString]())
+
+              contactGroups.foldLeft(uniqueGroups)((uniqueGroups: List[JsString], group: JsString) => {
+                if (uniqueGroups.exists((g: JsString) => g.equals(group))) {
+                  uniqueGroups
+                } else {
+                  uniqueGroups :+ group
+                }
+              })
+            })
+            Ok(resOK(JsArray(result)))
+          }
+        }
+      }
+  }
 }
