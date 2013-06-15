@@ -96,8 +96,9 @@ object ContactsController extends ExtendedController {
         userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
           case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
           case Some(u: JsObject) => {
-            u.transform(createArrayFromIdObject("contacts", fromCreated) andThen (__ \ 'contacts).json.pick[JsArray]).map {
-              jsContacts =>  Ok(resOK(jsContacts))
+            u.transform(createArrayFromIdObject("contacts", fromCreated) andThen (__ \ 'contacts).json.pick[JsArray])
+              .map {
+              jsContacts => Ok(resOK(jsContacts))
             }.recoverTotal {
               error => InternalServerError(resKO(JsError.toFlatJson(error)))
             }
@@ -105,4 +106,48 @@ object ContactsController extends ExtendedController {
         }
       }
   }
+
+  def getGroup(group: String, token: String) = authenticateGET(token) {
+    (username, request) =>
+      Async {
+        // get contacts of this user
+        userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
+          case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
+          case Some(u: JsObject) => {
+            val result: JsArray = JsArray((u \ "contacts").asOpt[JsObject].getOrElse(Json.obj()).fields.foldLeft
+              (Seq[JsObject]())((groupContacts: Seq[JsObject], kv) => {
+              val groups = (kv._2 \ "groups").asOpt[List[String]].getOrElse(List[String]())
+              if (groups.exists(s => s.equals(group))) {
+                groupContacts :+ kv._2.transform(__.json.pick(fromCreated)).getOrElse(Json.obj())
+              } else {
+                groupContacts
+              }
+            }))
+            Ok(resOK(result))
+          }
+        }
+      }
+  }
+
+//  def getGroups(token: String) = authenticateGET(token) {
+//    (username, request) =>
+//      Async {
+//        // get contacts of this user
+//        userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
+//          case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
+//          case Some(u: JsObject) => {
+//
+//            (u \ "contacts").asOpt[JsObject].getOrElse(Json.obj()).fields.foldLeft(List[JsObject]())
+//            ((groups: Seq[JsObject], kv: (String, JsValue)) => {
+//              val g = (kv._2 \ "groups").asOpt[List[String]].getOrElse(List[String]())
+//
+//              g.map{ s: String => if(groups.exists(t => t.equals(s)))  }
+//
+//            })
+//
+//            Ok(resOK(result) )
+//          }
+//        }
+//      }
+//  }
 }

@@ -55,8 +55,6 @@ class SendMailActor extends Actor with JsonTransformer with MongoCollections {
       val set = Json.obj("$set" -> Json.obj("messages." + messageId + ".recipients." + recipientId + ".status" ->
         JsString(status)))
 
-      Logger.debug("set: " + set.toString)
-
       conversationCollection.update(query, set).map {
         lastError => if (lastError.inError) {
           Logger.error("Error updating recipient")

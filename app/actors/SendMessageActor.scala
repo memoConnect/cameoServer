@@ -65,7 +65,6 @@ class SendMessageActor extends Actor with JsonTransformer with MongoCollections 
 
       // get current user
       userCollection.find(getBranch(message, "username")).one[JsObject].map {
-        case None => Logger.debug("none")
         case Some(user) => sendMessage(user, message)
       }
     }
