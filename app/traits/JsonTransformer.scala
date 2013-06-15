@@ -4,6 +4,7 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import reactivemongo.bson.BSONObjectID
 import play.api.libs.functional.syntax._
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -47,9 +48,34 @@ trait JsonTransformer {
   // add status message
   def addStatus(status: String): Reads[JsObject] = __.json.update((__ \ 'status).json.put(JsString(status)))
 
+  // helper to get a single key/value pair
   def getBranch(js: JsObject, key: String): JsObject = js.transform((__ \ key).json.pickBranch).getOrElse(Json.obj())
 
   def getConversationId(message: JsObject): JsObject = getBranch(message, "conversationId")
 
   def getMessageId(message: JsObject): JsObject = getBranch(message, "messageId")
+
+  // create array from id:JsObject JSON
+  def createArrayFromIdObject(key: String, reads: Reads[JsObject]): Reads[JsObject] = (__ \ key).json.update(Reads(
+    js => JsSuccess(JsArray(js.as[JsObject].fields.map {
+    case (key: String, value: JsObject) => value.transform(reads).getOrElse({
+      Logger.error("Error converting IdObject to array");
+      Json.obj()
+    })
+  }))))
+
+  def createIdObjectFromArray(key: String, idGenerator: () => String): Reads[JsObject] = (__ \ key).json.update(Reads
+    (js => {
+    val array: List[JsObject] = js.asOpt[List[JsObject]].getOrElse({
+      Logger.error("Error converting array to IdObject");
+      List()
+    })
+    val idObject = array.foldLeft(Json.obj())((idObject: JsObject, element: JsObject) => {
+      val objectId: String = idGenerator()
+      idObject.transform(__.json.update((__ \ objectId).json.put(element.transform(__.json.update((__ \ {
+        key.dropRight(1) + "Id"
+      }).json.put(JsString(objectId)))).get))).get
+    })
+    JsSuccess(idObject)
+  }))
 }

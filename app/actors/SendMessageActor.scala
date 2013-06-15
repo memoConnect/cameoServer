@@ -2,7 +2,6 @@ package actors
 
 import akka.actor.{Props, Actor}
 import play.api.Logger
-import helper.IdHelper
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import traits.{MongoCollections, JsonTransformer}
@@ -21,56 +20,44 @@ class SendMessageActor extends Actor with JsonTransformer with MongoCollections 
   lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
 
   def sendMessage(user: JsObject, message: JsObject) = {
-    val recipients: List[JsObject] = (message \ "recipients").asOpt[List[JsObject]].getOrElse(List())
 
-    val recipientsWithStatus: JsObject = recipients.foldLeft(Json.obj())((newRecipients: JsObject,
-      recipient: JsObject) => {
-      // add recipient id
-      val recipientId = IdHelper.generateRecipientId()
-
-      recipient.transform(__.json.update((__ \ 'recipientId).json.put(JsString(recipientId)))).map {
-        recipientWithId => {
-          def addRecipientWithStatus(status: String): JsObject = {
-            recipientWithId.transform(addStatus(status)).map {
-              recipientWithStatus =>
-                newRecipients.transform(__.json.update((__ \ recipientId).json.put(recipientWithStatus))).get
-            }.recoverTotal(error => {
-              Logger.error("Error adding status to recipient")
-              newRecipients
-            })
-          }
-
-          (recipientWithId \ "messageType").asOpt[String].getOrElse("none") match {
-            case "none" => addRecipientWithStatus("No MessageType given")
-            case "email" => {
-              sendMailActor !(recipientWithId, message, user)
-              addRecipientWithStatus("Email queued")
-            }
-            case "sms" => addRecipientWithStatus("SMS not implemented yet")
-            case m => addRecipientWithStatus("Unkown message type \'" + m + "\'")
-          }
-        }
-      }.recoverTotal(error => {
-        Logger.error("Error adding id to recipient")
-        newRecipients
-      })
+    val recipients: JsObject = (message \ "recipients").asOpt[JsObject].getOrElse({
+      Logger.error("error adding status to recipients");
+      Json.obj()
     })
 
-    message.transform(__.json.update((__ \ 'recipients).json.put(recipientsWithStatus))).map {
-      newMessage => {
-        val messageId = (newMessage \ "messageId").asOpt[String].getOrElse("")
-        val set = Json.obj("$set" -> Json.obj("messages." + messageId -> newMessage))
-        val query = getConversationId(newMessage)
+    val recipientsWithStatus  = JsObject(recipients.fields.map {
+      case (recipientId: String, recipient: JsObject) =>
 
-        conversationCollection.update(query, set).map {
-          lastError => if (lastError.inError) {
-            Logger.error("Error updating message: " + lastError.stringify)
-          }
+        def addRecipientStatus(status: String): (String, JsObject) = {
+          (recipientId, recipient.transform(__.json.update((__ \ 'status).json.put(JsString(status)))).get)
         }
+
+        // check for message type
+        (recipient \ "messageType").asOpt[String].getOrElse("none") match {
+          case "none" => addRecipientStatus("No MessageType given")
+          case "email" => {
+            sendMailActor !(recipient, message, user)
+            addRecipientStatus("Email queued")
+          }
+          case "sms" => addRecipientStatus("SMS not implemented yet")
+          case m => addRecipientStatus("Unkown message type \'" + m + "\'")
+        }
+    })
+
+    // add recipients with Status to message and save to db
+    val messageId = (message \ "messageId").asOpt[String].getOrElse("")
+    val set = Json.obj("$set" -> Json.obj("messages." + messageId + ".recipients" -> recipientsWithStatus))
+    val query = getConversationId(message)
+
+    conversationCollection.update(query, set).map {
+      lastError => if (lastError.inError) {
+        Logger.error("Error updating message: " + lastError.stringify)
       }
     }
-  }
 
+
+  }
 
   def receive = {
     case message: JsObject => {

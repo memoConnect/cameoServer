@@ -10,6 +10,7 @@ import play.api.libs.json.{JsString, Json, JsObject}
 import traits.{MongoCollections, JsonTransformer}
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
+import com.amazonaws.{AmazonServiceException, AmazonClientException}
 
 /**
  * User: Björn Reimer
@@ -41,11 +42,20 @@ class SendMailActor extends Actor with JsonTransformer with MongoCollections {
       val awsMessage = new Message().withBody(awsBody).withSubject(new Content().withData(subject))
       sendEmailRequest.setMessage(awsMessage)
 
-      val result = client.sendEmail(sendEmailRequest)
+      var status: String = ""
+      try {
+        val result = client.sendEmail(sendEmailRequest)
+        status = "Mail send. Id: " + result.getMessageId
+      } catch {
+        case ce: AmazonClientException => status = "Error sending Mail, Received AmazonClientException"
+        case se: AmazonServiceException => status = "Error sending Mail, Received AmazonServiceException"
+      }
 
       val query = Json.obj("messages." + messageId -> Json.obj("$exists" -> true))
-      val set = Json.obj("$set" -> Json.obj("messages." + messageId + ".recipients." + recipientId + ".status" -> JsString
-        ("Mail send. Id: " + result.getMessageId)))
+      val set = Json.obj("$set" -> Json.obj("messages." + messageId + ".recipients." + recipientId + ".status" ->
+        JsString(status)))
+
+      Logger.debug("set: " + set.toString)
 
       conversationCollection.update(query, set).map {
         lastError => if (lastError.inError) {
@@ -53,7 +63,7 @@ class SendMailActor extends Actor with JsonTransformer with MongoCollections {
         }
       }
 
-      Logger.info("Send Mail successfull")
+      Logger.info("SendMailActor: " +status)
     }
   }
 

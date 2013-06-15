@@ -5,11 +5,11 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
 import helper.IdHelper
-import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.None
 import scala.concurrent.Future
 import play.api.mvc.Result
 import traits.ExtendedController
+import play.api.Logger
 
 
 /**
@@ -44,16 +44,15 @@ object MessageController extends ExtendedController {
     (__ \ 'messageId).json.pickBranch).reduce
 
   // Returned Message
-  def outputMessage(messageId: String): Reads[JsObject] =
-    __.json.copyFrom((__ \ 'messages \ messageId).json.pick[JsObject]) andThen
-      fromCreated andThen
-      (__ \ 'password).json.prune
-
+  val outputMessage: Reads[JsObject] =
+    fromCreated andThen
+      createArrayFromIdObject("recipients", Reads(j => JsSuccess(j.as[JsObject])))
 
   // returned conversation
   val outputConversation: Reads[JsObject] =
     fromCreated andThen
-      (__ \ '_id).json.prune
+      (__ \ '_id).json.prune andThen
+      createArrayFromIdObject("messages", outputMessage)
 
   // create conversation from single message
   def createConversation(messageId: String): Reads[JsObject] = ((__ \ 'messages \ messageId).json.copyFrom(__.json
@@ -64,7 +63,7 @@ object MessageController extends ExtendedController {
   def addToConversationUpdateQuery(messageId: String): Reads[JsObject] = {
     (__ \ '$set \ {
       "messages." + messageId
-    }).json.copyFrom((__).json.pick[JsObject])
+    }).json.copyFrom(__.json.pick[JsObject])
   }
 
   def addMessageOk(message: JsObject): Result = {
@@ -116,7 +115,8 @@ object MessageController extends ExtendedController {
    * Helper
    */
   def findMessage(messageId: String): Future[Option[JsObject]] = {
-    conversationCollection.find(Json.obj("messages." + messageId -> Json.obj("$exists" -> true)), Json.obj("messages." + messageId ->
+    conversationCollection.find(Json.obj("messages." + messageId -> Json.obj("$exists" -> true)),
+      Json.obj("messages." + messageId ->
       true)).one[JsObject]
   }
 
@@ -127,7 +127,11 @@ object MessageController extends ExtendedController {
     (username, request) =>
       val jsBody: JsValue = request.body
 
-      jsBody.transform(validateMessage andThen addCreateDate andThen addMessageId andThen addUsername(username)).map {
+      jsBody.transform(validateMessage andThen
+        addCreateDate andThen
+        addMessageId andThen
+        addUsername(username) andThen
+        createIdObjectFromArray("recipients", IdHelper.generateRecipientId)).map {
         jsRes => {
           Async {
             addMessageToConversation(jsRes)
@@ -140,11 +144,12 @@ object MessageController extends ExtendedController {
     (username, request) =>
       Async {
         findMessage(messageId).map {
-          case Some(m: JsObject) => m.transform(outputMessage(messageId)).map {
-            jsRes => Ok(resOK(jsRes))
-          }.recoverTotal {
-            error => InternalServerError(resKO(JsError.toFlatJson(error)))
-          }
+          case Some(m: JsObject) =>
+            m.transform(__.json.copyFrom((__ \ 'messages \ messageId).json.pick[JsObject]) andThen outputMessage).map {
+              jsRes => Ok(resOK(jsRes))
+            }.recoverTotal {
+              error => InternalServerError(resKO(JsError.toFlatJson(error)))
+            }
           case None => NotFound(resKO("Message not found: " + messageId))
         }
       }

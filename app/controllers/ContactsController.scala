@@ -7,6 +7,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
 import scala.concurrent.Future
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -94,25 +95,12 @@ object ContactsController extends ExtendedController {
       Async {
         userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
           case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
-          case Some(u: JsObject) => (u \ "contacts").asOpt[JsObject] match {
-            case None => Ok(resOK(Json.obj()))
-            case Some(c: JsObject) => Ok(resOK(c))
-          }
-        }
-      }
-
-  }
-
-  def getContacts2(token: String) = authenticateGET(token) {
-    (username, request) =>
-      Async {
-        userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
-          case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
           case Some(u: JsObject) => {
-            val contacts = JsArray((__ \\ "contacts")(u).map {
-              contact => contact.transform(outputContact).getOrElse(Json.obj())
-            })
-            Ok(resOK(contacts))
+            u.transform(createArrayFromIdObject("contacts", fromCreated) andThen (__ \ 'contacts).json.pick[JsArray]).map {
+              jsContacts =>  Ok(resOK(jsContacts))
+            }.recoverTotal {
+              error => InternalServerError(resKO(JsError.toFlatJson(error)))
+            }
           }
         }
       }
