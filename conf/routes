@@ -27,7 +27,8 @@ GET     /api/v1/contact-groups                  controllers.ContactsController.g
 GET     /api/v1/contact-group/:groupName        controllers.ContactsController.getGroup(groupName: String, token: String)
 
 #ASSETS
-#POST    /api/v1/asset                          controllers.AssetController.uploadAsset
+POST    /api/v1/asset                           controllers.AssetController.uploadAsset(token: String, messageId: String)
+GET     /api/v1/asset/:assetId                  controllers.AssetController.getAsset(token: String, assetId: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

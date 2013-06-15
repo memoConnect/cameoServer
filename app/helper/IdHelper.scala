@@ -34,4 +34,8 @@ object IdHelper {
     randomString(8)
   }
 
+  def generateAssetId(): String = {
+    randomString(8)
+  }
+
 }

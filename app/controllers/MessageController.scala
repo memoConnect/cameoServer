@@ -10,6 +10,10 @@ import scala.concurrent.Future
 import play.api.mvc.Result
 import traits.ExtendedController
 import play.api.Logger
+import java.io.{InputStream, File}
+import reactivemongo.bson.BSONValue
+import reactivemongo.api.gridfs.GridFS
+import play.api.libs.iteratee.Enumerator
 
 
 /**
@@ -30,10 +34,17 @@ object MessageController extends ExtendedController {
     (__ \ 'sendTo).json.pickBranch(Reads.of[JsString]) and
     ((__ \ 'Name).json.pickBranch(Reads.of[JsString]) or emptyObj)).reduce
 
+  // Assest validator
+  val validateAsset: Reads[JsObject] = ((__ \ 'name).json.pickBranch(Reads.of[JsString]) and
+    (__ \ 'size).json.pickBranch(Reads.of[JsString]) and
+    (__ \ 'type).json.pickBranch(Reads.of[JsString]) and
+    (__ \ 'content).json.pickBranch(Reads.of[JsString])).reduce
+
   // Message validator
   val validateMessage: Reads[JsObject] = ((__ \ 'messageBody).json.pickBranch(Reads.of[JsString]) and
     ((__ \ 'conversationId).json.pickBranch(Reads.of[JsString]) or addConversationId) and
-    ((__ \ 'assets).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(Reads.of[JsString])) or emptyObj) and
+    //(__ \ 'assets).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(validateAsset)) and
+    (__ \ 'assets).json.put(Json.obj()) and
     (__ \ 'recipients).json.pickBranch(Reads.of[JsArray] keepAnd Reads.list(validateRecipient))).reduce
 
   // Add username to message
@@ -46,7 +57,8 @@ object MessageController extends ExtendedController {
   // Returned Message
   val outputMessage: Reads[JsObject] =
     fromCreated andThen
-      createArrayFromIdObject("recipients", Reads(j => JsSuccess(j.as[JsObject])))
+      createArrayFromIdObject("recipients", Reads(j => JsSuccess(j.as[JsObject]))) andThen
+      createArrayFromIdObject("assets", Reads(j => JsSuccess(j.as[JsObject])) )
 
   // returned conversation
   val outputConversation: Reads[JsObject] =
@@ -66,6 +78,9 @@ object MessageController extends ExtendedController {
     }).json.copyFrom(__.json.pick[JsObject])
   }
 
+  /**
+   * Helper
+   */
   def addMessageOk(message: JsObject): Result = {
     sendMessageActor ! message
     Ok(resOK(message.transform(sendMessageResult).getOrElse(JsString("Unable to create result"))))
@@ -73,6 +88,18 @@ object MessageController extends ExtendedController {
 
   def addMessageToConversation(message: JsObject): Future[Result] = {
     val messageId: String = (message \ "messageId").as[String]
+
+    // first save assets TODO: this is bad and memory intensive!
+//    val assets: Seq[JsValue] = message.transform((__ \ 'assets).json.pick[JsArray]).getOrElse({
+//      Logger.debug("Empty Assets"); JsArray()
+//    }).value
+//
+//    assets.map {
+//      asset: JsValue => {
+//        // save file to gridFS
+//        new sun.misc.BASE64Decoder().decodeBufferToByteBuffer((asset \ "content").as[String].substring(22))
+//      }
+//    }
 
     // check if this conversationId exists
     val futureCollection = conversationCollection.find(getConversationId(message)).one[JsObject]
@@ -111,33 +138,25 @@ object MessageController extends ExtendedController {
     }
   }
 
-  /**
-   * Helper
-   */
-  def findMessage(messageId: String): Future[Option[JsObject]] = {
-    conversationCollection.find(Json.obj("messages." + messageId -> Json.obj("$exists" -> true)),
-      Json.obj("messages." + messageId ->
-      true)).one[JsObject]
-  }
+
 
   /**
    * Actions
    */
-  def sendMessage = authenticatePOST() {
+  def sendMessage = authenticatePOST(maxLength = 5 * 1024 * 1024) {
     (username, request) =>
       val jsBody: JsValue = request.body
+      Async {
+        val contentResult = jsBody.transform(validateMessage andThen
+          addCreateDate andThen
+          addMessageId andThen
+          addUsername(username) andThen
+          createIdObjectFromArray("recipients", IdHelper.generateRecipientId)).map {
+          jsRes => addMessageToConversation(jsRes)
+        }.recoverTotal(error => Future(BadRequest(resKO(JsError.toFlatJson(error)))))
 
-      jsBody.transform(validateMessage andThen
-        addCreateDate andThen
-        addMessageId andThen
-        addUsername(username) andThen
-        createIdObjectFromArray("recipients", IdHelper.generateRecipientId)).map {
-        jsRes => {
-          Async {
-            addMessageToConversation(jsRes)
-          }
-        }
-      }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
+        contentResult
+      }
   }
 
   def getMessage(messageId: String, token: String) = authenticateGET(token) {

@@ -4,7 +4,7 @@ import akka.actor.{Props, Actor}
 import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Reads._
-import traits.{MongoCollections, JsonTransformer}
+import traits.{MongoHelper, JsonTransformer}
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.libs.concurrent.Akka
@@ -15,7 +15,7 @@ import play.api.Play.current
  * Date: 6/12/13
  * Time: 5:36 PM
  */
-class SendMessageActor extends Actor with JsonTransformer with MongoCollections {
+class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
 
   lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
 

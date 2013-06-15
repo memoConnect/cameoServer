@@ -7,7 +7,7 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail.model._
 import play.api.Play.current
 import play.api.libs.json.{JsString, Json, JsObject}
-import traits.{MongoCollections, JsonTransformer}
+import traits.{MongoHelper, JsonTransformer}
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import com.amazonaws.{AmazonServiceException, AmazonClientException}
@@ -17,7 +17,7 @@ import com.amazonaws.{AmazonServiceException, AmazonClientException}
  * Date: 6/12/13
  * Time: 8:01 PM
  */
-class SendMailActor extends Actor with JsonTransformer with MongoCollections {
+class SendMailActor extends Actor with JsonTransformer with MongoHelper {
 
   def receive = {
     case (recipient: JsObject, message: JsObject, user: JsObject) => {

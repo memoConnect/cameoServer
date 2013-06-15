@@ -9,6 +9,9 @@ import akka.actor.Props
 import actors.SendMessageActor
 import play.api.Play.current
 import play.api.Logger
+import reactivemongo.api.gridfs.GridFS
+import scala.concurrent.{Future, ExecutionContext}
+import reactivemongo.bson.BSONValue
 
 
 /**
@@ -19,7 +22,7 @@ import play.api.Logger
 /**
  * Several Helper functions for interaction with MongoDB *
  */
-trait ExtendedController extends Controller with MongoController with JsonTransformer with MongoCollections {
+trait ExtendedController extends Controller with MongoController with JsonTransformer with MongoHelper {
 
   lazy val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor], name = "sendMessage")
 
@@ -62,8 +65,8 @@ trait ExtendedController extends Controller with MongoController with JsonTransf
   }
 
 
-  def authenticatePOST(requireAdminRights: Boolean = false)(f: (String, Request[JsValue]) => Result) = {
-    Action(parse.tolerantJson) {
+  def authenticatePOST(maxLength: Int = 128 * 1024, requireAdminRights: Boolean = false)(f: (String, Request[JsValue]) => Result) = {
+    Action(parse.tolerantJson(maxLength)) {
       implicit request => {
         (request.body \ "token").asOpt[String] match {
           case None => Unauthorized(resKO("No token"))
@@ -73,10 +76,10 @@ trait ExtendedController extends Controller with MongoController with JsonTransf
     }
   }
 
-  def authenticateGET(token: String, requireAdminRights: Boolean = false)(f: (String,
-    Request[AnyContent]) => Result) = {
-    Action {
-      implicit request => authenticate[AnyContent](token, requireAdminRights)(f)
+  def authenticateGET[T](token: String, requireAdminRights: Boolean = false, bodyParser: BodyParser[T] = parse.empty)(f: (String,
+    Request[T]) => Result) = {
+    Action(bodyParser) {
+      implicit request => authenticate[T](token, requireAdminRights)(f)
     }
   }
 
