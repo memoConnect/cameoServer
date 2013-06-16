@@ -6,6 +6,7 @@ import play.api.libs.json.{Json, JsValue}
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
+import org.apache.http.HttpHeaders
 
 /**
  * User: Björn Reimer
@@ -58,7 +59,10 @@ object TokenController extends ExtendedController {
   def getToken = Action {
     request =>
       request.headers.get("Authorization") match {
-        case None => BadRequest(resKO("No Authorization field in header"))
+        case None => {
+          BadRequest(resKO("No Authorization field in header")).withHeaders(
+            WWW_AUTHENTICATE -> "user")
+        }
         case Some(basicAuth) => {
           val (user, pass) = decodeBasicAuth(basicAuth)
           Async {

@@ -30,9 +30,6 @@ object ContactsController extends ExtendedController {
 
   def outputContact: Reads[JsObject] = fromCreated
 
-  def outputContacts: Reads[JsObject] =
-    (__ \\ 'contacts).json.pickBranch(fromCreated)
-
   /**
    * Helper
    */
