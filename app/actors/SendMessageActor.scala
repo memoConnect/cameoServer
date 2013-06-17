@@ -18,6 +18,7 @@ import play.api.Play.current
 class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
 
   lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
+  lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
 
   def sendMessage(user: JsObject, message: JsObject) = {
 
@@ -44,7 +45,10 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
               sendMailActor !(recipient, message, user)
               addRecipientStatus("Email queued")
             }
-            case "sms" => addRecipientStatus("SMS not implemented yet")
+            case "sms" => {
+              sendSMSActor !(recipient, message, user)
+              addRecipientStatus("SMS queued")
+            }
             case m => addRecipientStatus("Unkown message type \'" + m + "\'")
           }
         }

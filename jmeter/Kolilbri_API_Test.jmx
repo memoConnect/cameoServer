@@ -258,10 +258,10 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-    &quot;username&quot;: &quot;test&quot;,&#xd;
+    &quot;username&quot;: &quot;Reimerei&quot;,&#xd;
     &quot;email&quot;: &quot;e@mail.de&quot;,&#xd;
     &quot;password&quot;: &quot;password&quot;,&#xd;
-    &quot;name&quot;: &quot;Otto Otter&quot;,&#xd;
+    &quot;name&quot;: &quot;Der Beste&quot;,&#xd;
     &quot;phonenumber&quot;: &quot;+49123456789&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
@@ -848,7 +848,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-    &quot;messageBody&quot;: &quot;Test Message 1&quot;,&#xd;
+    &quot;messageBody&quot;: &quot;A very important and promptly delivered message. With a bit of extra text so you can see how it will be cut in SMS messages and see the rest on KolibriNet&quot;,&#xd;
     &quot;assets&quot;: [&#xd;
         &quot;DfRr33&quot;,&#xd;
         &quot;44FF2&quot;&#xd;
@@ -862,9 +862,8 @@
         },&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;sms&quot;,&#xd;
-            &quot;sendTo&quot;: &quot;0123456789&quot;,&#xd;
-            &quot;Name&quot;: &quot;Otto&quot;,&#xd;
-            &quot;test&quot;:true&#xd;
+            &quot;sendTo&quot;: &quot;+491744560277&quot;,&#xd;
+            &quot;Name&quot;: &quot;Otto&quot;&#xd;
         },&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;otherUser&quot;,&#xd;
@@ -1287,16 +1286,7 @@
             <boolProp name="HTTPSampler.monitor">false</boolProp>
             <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           </HTTPSamplerProxy>
-          <hashTree>
-            <ResultSaver guiclass="ResultSaverGui" testclass="ResultSaver" testname="Save asset" enabled="true">
-              <stringProp name="FileSaver.filename"></stringProp>
-              <boolProp name="FileSaver.errorsonly">false</boolProp>
-              <boolProp name="FileSaver.skipautonumber">false</boolProp>
-              <boolProp name="FileSaver.skipsuffix">false</boolProp>
-              <boolProp name="FileSaver.successonly">false</boolProp>
-            </ResultSaver>
-            <hashTree/>
-          </hashTree>
+          <hashTree/>
         </hashTree>
         <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="Delete Stuff" enabled="true"/>
         <hashTree>
