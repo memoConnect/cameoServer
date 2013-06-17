@@ -28,7 +28,13 @@ class SendSMSActor extends Actor with JsonTransformer with MongoHelper {
       // add footer to sms
       val footer = "... more: http://kl.vc/c/" + conversationId
       // cut message, so it will fit in the sms with the footer.
-      val bodyWithFooter = body.substring(0, 160 - footer.length) + footer
+      val bodyWithFooter: String = {
+        if (footer.length + body.length > 160) {
+          body.substring(0, 160 - footer.length) + footer
+        } else {
+          body + footer
+        }
+      }
 
       Logger.info("SendSMSActor: Sending SMS to " + to + " from " + from)
 
