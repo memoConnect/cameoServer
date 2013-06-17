@@ -34,8 +34,6 @@ class SendSMSActor extends Actor with JsonTransformer with MongoHelper {
 
       val postBody = Json.obj("api_key" -> JsString(Play.configuration.getString("nexmo.key").getOrElse("")), "api_secret" -> JsString(Play.configuration.getString("nexmo.secret").getOrElse("")), "from" -> from, "to" -> to, "text" -> bodyWithFooter)
 
-      Logger.debug("Send to Nexmo: " + postBody.toString)
-
       val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 
       var status = ""
