@@ -22,26 +22,31 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
   def sendMessage(user: JsObject, message: JsObject) = {
 
     val recipients: JsObject = (message \ "recipients").asOpt[JsObject].getOrElse({
-      Logger.error("error adding status to recipients");
+      Logger.error("error adding status to recipients")
       Json.obj()
     })
 
-    val recipientsWithStatus  = JsObject(recipients.fields.map {
+    val recipientsWithStatus = JsObject(recipients.fields.map {
       case (recipientId: String, recipient: JsObject) =>
 
         def addRecipientStatus(status: String): (String, JsObject) = {
           (recipientId, recipient.transform(__.json.update((__ \ 'status).json.put(JsString(status)))).get)
         }
 
-        // check for message type
-        (recipient \ "messageType").asOpt[String].getOrElse("none") match {
-          case "none" => addRecipientStatus("No MessageType given")
-          case "email" => {
-            sendMailActor !(recipient, message, user)
-            addRecipientStatus("Email queued")
+        // check if we have a test run
+        if ((recipient \ "test").asOpt[Boolean].getOrElse(false)) {
+          addRecipientStatus("Testrun: no message send")
+        } else {
+          // check for message type
+          (recipient \ "messageType").asOpt[String].getOrElse("none") match {
+            case "none" => addRecipientStatus("No MessageType given")
+            case "email" => {
+              sendMailActor !(recipient, message, user)
+              addRecipientStatus("Email queued")
+            }
+            case "sms" => addRecipientStatus("SMS not implemented yet")
+            case m => addRecipientStatus("Unkown message type \'" + m + "\'")
           }
-          case "sms" => addRecipientStatus("SMS not implemented yet")
-          case m => addRecipientStatus("Unkown message type \'" + m + "\'")
         }
     })
 

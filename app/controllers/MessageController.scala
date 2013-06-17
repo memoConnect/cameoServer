@@ -32,6 +32,7 @@ object MessageController extends ExtendedController {
   // Recipient Validator
   val validateRecipient: Reads[JsObject] = ((__ \ 'messageType).json.pickBranch(Reads.of[JsString]) and
     (__ \ 'sendTo).json.pickBranch(Reads.of[JsString]) and
+    (( __ \ 'test).json.pickBranch(Reads.of[JsBoolean]) or emptyObj) and
     ((__ \ 'Name).json.pickBranch(Reads.of[JsString]) or emptyObj)).reduce
 
   // Assest validator

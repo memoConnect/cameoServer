@@ -47,8 +47,8 @@ class SendMailActor extends Actor with JsonTransformer with MongoHelper {
         val result = client.sendEmail(sendEmailRequest)
         status = "Mail send. Id: " + result.getMessageId
       } catch {
-        case ce: AmazonClientException => status = "Error sending Mail, Received AmazonClientException"
-        case se: AmazonServiceException => status = "Error sending Mail, Received AmazonServiceException"
+        case ce: AmazonClientException => status = "Error sending Mail, Could not connect to Amazon"; Logger.error("Error sending mail", ce)
+        case se: AmazonServiceException => status = "Error sending Mail, Could not connect to Amazon"; Logger.error("Error sending mail", se)
       }
 
       val query = Json.obj("messages." + messageId -> Json.obj("$exists" -> true))

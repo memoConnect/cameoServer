@@ -2,6 +2,10 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
+
+##
+##   API
+##
 GET     /api/v1                                 controllers.Application.index
 
 # USER
@@ -29,6 +33,14 @@ GET     /api/v1/contact-group/:groupName        controllers.ContactsController.g
 POST    /api/v1/asset                           controllers.AssetController.uploadAsset(token: String, messageId: String)
 GET     /api/v1/asset/:assetId                  controllers.AssetController.getAsset(token: String, assetId: String)
 
+##
+##   WebClient
+##
+
+# Redirect for Shorturls
+GET     /c/:id                                  controllers.ShortUrlController.redirect(urlType = "c", id: String)
+
 # The Webclient is static and comes from public/mobile
 GET     /                                       controllers.Assets.at(path="/public/mobile", file="index.html")
 GET     /*file                                  controllers.Assets.at(path="/public/mobile", file)
+
