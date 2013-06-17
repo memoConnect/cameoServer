@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.Action
+import play.api.mvc.{Result, AnyContent, Request, Action}
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
@@ -43,7 +43,7 @@ object UserController extends ExtendedController {
     fromCreated andThen
       (__ \ '_id).json.prune andThen
       (__ \ 'password).json.prune andThen
-    createArrayFromIdObject("conversations", (__ \ 'conversationId).json.pick[JsString])
+    createArrayFromIdObject("conversations", (__ \ 'conversationId).json.pick[JsString]) or emptyObj
   }
 
   /**
@@ -73,19 +73,26 @@ object UserController extends ExtendedController {
       }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
   }
 
-  def getUser(username: String) = Action {
-    request =>
-      Async {
-        val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> username)).one[JsValue]
-        futureUser.map {
-          case Some(u: JsValue) => u.transform(outputUser).map {
-            jsRes => Ok(resOK(jsRes))
-          }.recoverTotal {
-            error => BadRequest(resKO(JsError.toFlatJson(error)))
-          }
-          case None => NotFound(resKO("User not found: " + username))
+  def returnUser(username: String): Result = {
+    Async {
+      val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> username)).one[JsValue]
+      futureUser.map {
+        case Some(u: JsValue) => u.transform(outputUser).map {
+          jsRes => Ok(resOK(jsRes))
+        }.recoverTotal {
+          error => BadRequest(resKO(JsError.toFlatJson(error)))
         }
+        case None => NotFound(resKO("User not found: " + username))
       }
+    }
+  }
+
+  def getUser(username: String) = Action {
+    request => returnUser(username)
+  }
+
+  def getUserWithToken(token: String) = authenticateGET(token) {
+    (username, request) => returnUser(username)
   }
 
   def deleteUser(username: String) = Action {
