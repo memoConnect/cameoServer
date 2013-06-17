@@ -43,7 +43,7 @@ object UserController extends ExtendedController {
     fromCreated andThen
       (__ \ '_id).json.prune andThen
       (__ \ 'password).json.prune andThen
-    createArrayFromIdObject("conversations", (__ \ 'conversationId).json.pick[JsString]) or emptyObj
+      (createArrayFromIdObject("conversations", (__ \ 'conversationId).json.pick[JsString]) or emptyObj)
   }
 
   /**
