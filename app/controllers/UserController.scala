@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.{Result, AnyContent, Request, Action}
+import play.api.mvc.{Result, Action}
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
@@ -40,10 +40,11 @@ object UserController extends ExtendedController {
 
   // creates the output format for the user
   val outputUser: Reads[JsObject] = {
-    fromCreated andThen
+    createArrayFromIdObject("conversations", (__ \ 'conversationId).json.pick[JsString]) or __.json.pick[JsObject] andThen
+      createArrayFromIdObject("contacts", fromCreated) andThen
+      fromCreated andThen
       (__ \ '_id).json.prune andThen
-      (__ \ 'password).json.prune andThen
-      (createArrayFromIdObject("conversations", (__ \ 'conversationId).json.pick[JsString]) or emptyObj)
+      (__ \ 'password).json.prune
   }
 
   /**
