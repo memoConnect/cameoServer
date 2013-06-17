@@ -52,6 +52,7 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
             case m => addRecipientStatus("Unkown message type \'" + m + "\'")
           }
         }
+      case _ => Logger.error("Invalid recipient format in DB"); ("", Json.obj())
     })
 
     // add recipients with Status to message and save to db
@@ -64,8 +65,6 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
         Logger.error("Error updating message: " + lastError.stringify)
       }
     }
-
-
   }
 
   def receive = {
@@ -75,6 +74,7 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
       // get current user
       userCollection.find(getBranch(message, "username")).one[JsObject].map {
         case Some(user) => sendMessage(user, message)
+        case None => Logger.error("Error finding user in DB")
       }
     }
   }

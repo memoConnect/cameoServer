@@ -58,10 +58,11 @@ trait JsonTransformer {
   // create array from id:JsObject JSON
   def createArrayFromIdObject[T<:JsValue](key: String, reads: Reads[T]): Reads[JsObject] = (__ \ key).json.update(Reads(
     js => JsSuccess(JsArray(js.as[JsObject].fields.map {
-    case (key: String, value: T) => value.transform(reads).getOrElse({
+    case (key: String, value) => value.transform(reads).getOrElse({
       Logger.error("Error converting IdObject to array")
       Json.obj()
     })
+    case _ => Logger.error("Error converting IdObject to array"); Json.obj()
   }))))
 
   def createIdObjectFromArray(key: String, idGenerator: () => String): Reads[JsObject] = (__ \ key).json.update(Reads
