@@ -2,3 +2,10 @@
 # This is a simple post deploy hook executed after your application 
 # is deployed and started.  This script gets executed directly, so 
 # it could be python, php, ruby, etc.
+
+# clean up git repo
+echo "Cleaning git repo"
+cd ~/git/kolibrinet01.git/
+git reflog expire --expire-unreachable=now --all
+git gc --prune=now
+echo "Finished cleaning git repo"
