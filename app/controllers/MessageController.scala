@@ -165,7 +165,7 @@ object MessageController extends ExtendedController {
       Async {
         findMessage(messageId).map {
           case Some(m: JsObject) =>
-            m.transform(__.json.copyFrom((__ \ 'messages \ messageId).json.pick[JsObject]) andThen outputMessage).map {
+            m.transform(outputMessage).map {
               jsRes => Ok(resOK(jsRes))
             }.recoverTotal {
               error => InternalServerError(resKO(JsError.toFlatJson(error)))

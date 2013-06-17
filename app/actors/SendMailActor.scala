@@ -26,7 +26,11 @@ class SendMailActor extends Actor with JsonTransformer with MongoHelper {
       val subject = "[KolibriNet] Message from " + (user \ "name").asOpt[String].getOrElse("no name")
       val body = (message \ "messageBody").asOpt[String].getOrElse("empty Body")
       val messageId = (message \ "messageId").asOpt[String].getOrElse("")
-      val recipientId = (recipient \ "recipientId").asOpt[String].getOrElse("bla")
+      val recipientId = (recipient \ "recipientId").asOpt[String].getOrElse("")
+      val conversationId = (message \ "conversationId").asOpt[String].getOrElse("")
+
+      // add footer the mail
+      val bodyWithFooter = body + ("\n\n\n\n----------------------------------\nAnswer and view the entire conversation on Kolibrinet: http://kl.vc/c/" + conversationId)
 
       Logger.info("SendMailActor: Sending email to " + to + " from " + from + " with subject \'" + subject + "\'")
       val credentials = new BasicAWSCredentials(Play.configuration.getString("aws.accessKey").getOrElse(""),
@@ -38,7 +42,7 @@ class SendMailActor extends Actor with JsonTransformer with MongoHelper {
       val dest = new Destination().withToAddresses(to)
       sendEmailRequest.setDestination(dest)
       sendEmailRequest.setSource(from)
-      val awsBody = new Body().withText(new Content().withData(body))
+      val awsBody = new Body().withText(new Content().withData(bodyWithFooter))
       val awsMessage = new Message().withBody(awsBody).withSubject(new Content().withData(subject))
       sendEmailRequest.setMessage(awsMessage)
 

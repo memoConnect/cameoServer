@@ -857,17 +857,20 @@
         {&#xd;
             &quot;messageType&quot;: &quot;email&quot;,&#xd;
             &quot;sendTo&quot;: &quot;e@mail.de&quot;,&#xd;
-            &quot;Name&quot;: &quot;Udo&quot;&#xd;
+            &quot;Name&quot;: &quot;Udo&quot;,&#xd;
+            &quot;test&quot;:true&#xd;
         },&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;sms&quot;,&#xd;
             &quot;sendTo&quot;: &quot;0123456789&quot;,&#xd;
-            &quot;Name&quot;: &quot;Otto&quot;&#xd;
+            &quot;Name&quot;: &quot;Otto&quot;,&#xd;
+            &quot;test&quot;:true&#xd;
         },&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;otherUser&quot;,&#xd;
             &quot;sendTo&quot;: &quot;nickname&quot;,&#xd;
-            &quot;Name&quot;: &quot;Gustav&quot;&#xd;
+            &quot;Name&quot;: &quot;Gustav&quot;,&#xd;
+            &quot;test&quot;:true&#xd;
         }&#xd;
     ],&#xd;
     &quot;token&quot;:&quot;${token}&quot;&#xd;
@@ -916,7 +919,8 @@
         {&#xd;
             &quot;messageType&quot;: &quot;email&quot;,&#xd;
             &quot;sendTo&quot;: &quot;e@mail.de&quot;,&#xd;
-            &quot;Name&quot;: &quot;Udo&quot;&#xd;
+            &quot;Name&quot;: &quot;Udo&quot;,&#xd;
+            &quot;test&quot;:true&#xd;
         }&#xd;
     ],&#xd;
    &quot;conversationId&quot;:&quot;${cid}&quot;,&#xd;
@@ -1096,17 +1100,20 @@
         {&#xd;
             &quot;messageType&quot;: &quot;email&quot;,&#xd;
             &quot;sendTo&quot;: &quot;e@mail.de&quot;,&#xd;
-            &quot;Name&quot;: &quot;Udo&quot;&#xd;
+            &quot;Name&quot;: &quot;Udo&quot;,&#xd;
+            &quot;test&quot;:true&#xd;
         },&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;sms&quot;,&#xd;
             &quot;sendTo&quot;: &quot;0123456789&quot;,&#xd;
-            &quot;Name&quot;: &quot;Otto&quot;&#xd;
+            &quot;Name&quot;: &quot;Otto&quot;,&#xd;
+            &quot;test&quot;:true&#xd;
         },&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;otherUser&quot;,&#xd;
             &quot;sendTo&quot;: &quot;nickname&quot;,&#xd;
-            &quot;Name&quot;: &quot;Gustav&quot;&#xd;
+            &quot;Name&quot;: &quot;Gustav&quot;,&#xd;
+            &quot;test&quot;:true&#xd;
         }&#xd;
     ],&#xd;
     &quot;token&quot;:&quot;${token}&quot;&#xd;
@@ -1216,7 +1223,7 @@
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check asset 1" enabled="true">
               <stringProp name="JSON_PATH">data.assets[0].assetId</stringProp>
               <stringProp name="EXPECTED_VALUE">${ass1}</stringProp>
-              <boolProp name="JSONVALIDATION">false</boolProp>
+              <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
           </hashTree>

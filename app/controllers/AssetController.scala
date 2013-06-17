@@ -6,9 +6,12 @@ import reactivemongo.api.gridfs.ReadFile
 import reactivemongo.bson._
 import scala.concurrent.Future
 import play.api.libs.json.{JsString, Json}
-import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 import reactivemongo.api.gridfs.GridFS
 import helper.IdHelper
+import play.api.Logger
+import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
+
+
 
 /**
  * User: Björn Reimer
@@ -32,28 +35,31 @@ object AssetController extends ExtendedController {
           case None => BadRequest(resKO("Message not found"))
           case Some(message) => {
             // add message and asset ids to file
-            val futureUpdate = for {file <- futureFile
+            val futureLastError = for {file <- futureFile
               updateResult <- {
-                val res = gridFS.files.update(BSONDocument("_id" -> file.id), BSONDocument("$set" -> BSONDocument("messageId" -> messageId, "assetId" -> assetId)))
-
+                gridFS.files.update(BSONDocument("_id" -> file.id), BSONDocument("$set" -> BSONDocument("messageId" -> messageId, "assetId" -> assetId)))
+              }
+              lastError <- {
                 // create asset object
                 val jsAsset = Json.obj("name" -> file.filename, "size" -> JsString(String.valueOf(file.chunkSize)), "type" -> file.contentType, "assetId" -> assetId)
-
                 // add asset to message
                 val set = Json.obj("$set" -> Json.obj("messages." + messageId + ".assets." + assetId -> jsAsset))
-                conversationCollection.update(getConversationId(message), set).map {
-                  lastError => if (lastError.inError) {
-                    InternalServerError(resKO("Error updating message: " + lastError.stringify))
-                  }
-                }
-                res
-              }} yield updateResult
+                val query = getConversationId(message)
+                conversationCollection.update(query, set)
+              }} yield lastError
 
             Async {
-              futureUpdate.map {
-                case _ => Ok(resOK(Json.obj("assetId" -> assetId)))
-              }.recover {
-                case _ => InternalServerError(resKO("Error saving file to gridFS"))
+              futureLastError.map {
+                {
+                  case lastError => {
+                    if (lastError.inError) {
+                      Logger.error("Error updating message: " + lastError.stringify)
+                      InternalServerError(resKO("Error updating message: " + lastError.stringify))
+                    } else {
+                      Ok(resOK(Json.obj("assetId" -> assetId)))
+                    }
+                  }
+                }
               }
             }
           }
