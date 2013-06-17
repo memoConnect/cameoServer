@@ -107,6 +107,13 @@ object MessageController extends ExtendedController {
 
     futureCollection.map {
       case None => {
+
+        // add this conversation to the users collections
+        val cid = (message \ "conversationId").asOpt[String].getOrElse("none")
+        val set = Json.obj("$set" -> Json.obj("conversations." + cid  -> getConversationId(message)))
+        userCollection.update(getBranch(message, "username"), set)
+
+
         // conversation does not exist yet, create new
         message.transform(createConversation(messageId) andThen addObjectIdAndDate).map {
           jsRes => Async {

@@ -10,7 +10,7 @@ GET     /api/v1                                 controllers.Application.index
 
 # USER
 POST    /api/v1/admin/user                      controllers.UserController.createUser
-GET     /api/v1/admin/user/:username            controllers.UserController.findUser(username: String)
+GET     /api/v1/admin/user/:username            controllers.UserController.getUser(username: String)
 DELETE  /api/v1/admin/user/:username            controllers.UserController.deleteUser(username: String)
 
 # MESSAGES

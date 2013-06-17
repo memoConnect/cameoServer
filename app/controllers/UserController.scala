@@ -28,7 +28,8 @@ object UserController extends ExtendedController {
     (__ \ 'email).json.pickBranch(Reads.of[JsString] keepAnd Reads.email) and
     (__ \ 'password).json.pickBranch(Reads.of[JsString] keepAnd Reads.minLength[String](8)) and
     ((__ \ 'name).json.pickBranch(Reads.of[JsString]) or emptyObj) and
-    ((__ \ 'phonenumber).json.pickBranch(Reads.of[JsString]) or emptyObj)).reduce
+    ((__ \ 'phonenumber).json.pickBranch(Reads.of[JsString]) or emptyObj) and
+    (__ \ 'conversations).json.put(Json.obj())).reduce
 
   // hash the password
   val hashPassword: Reads[JsObject] = {
@@ -41,9 +42,9 @@ object UserController extends ExtendedController {
   val outputUser: Reads[JsObject] = {
     fromCreated andThen
       (__ \ '_id).json.prune andThen
-      (__ \ 'password).json.prune
+      (__ \ 'password).json.prune andThen
+    createArrayFromIdObject("conversations", (__ \ 'conversationId).json.pick[JsString])
   }
-
 
   /**
    * Actions
@@ -72,7 +73,7 @@ object UserController extends ExtendedController {
       }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
   }
 
-  def findUser(username: String) = Action {
+  def getUser(username: String) = Action {
     request =>
       Async {
         val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> username)).one[JsValue]
