@@ -29,13 +29,9 @@ trait JsonTransformer {
 
   // generate result
   def resOK() = Json.obj("res" -> "OK")
-
   def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
-
   def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
   def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   // convert object id and date between json and bson format
@@ -50,9 +46,7 @@ trait JsonTransformer {
 
   // helper to get a single key/value pair
   def getBranch(js: JsObject, key: String): JsObject = js.transform((__ \ key).json.pickBranch).getOrElse(Json.obj())
-
   def getConversationId(message: JsObject): JsObject = getBranch(message, "conversationId")
-
   def getMessageId(message: JsObject): JsObject = getBranch(message, "messageId")
 
   // create array from id:JsObject JSON

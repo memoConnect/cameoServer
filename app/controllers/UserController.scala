@@ -29,6 +29,7 @@ object UserController extends ExtendedController {
     (__ \ 'password).json.pickBranch(Reads.of[JsString] keepAnd Reads.minLength[String](8)) and
     ((__ \ 'name).json.pickBranch(Reads.of[JsString]) or emptyObj) and
     ((__ \ 'phonenumber).json.pickBranch(Reads.of[JsString]) or emptyObj) and
+    (__ \ 'contacts).json.put(Json.obj()) and
     (__ \ 'conversations).json.put(Json.obj())).reduce
 
   // hash the password
