@@ -1,3 +1,4 @@
+import com.github.play2war.plugin.{Play2WarKeys, Play2WarPlugin}
 import sbt._
 import Keys._
 import play.Project._
@@ -5,7 +6,7 @@ import play.Project._
 object ApplicationBuild extends Build {
 
   val appName         = "kolibrinet"
-  val appVersion      = "0.01"
+  val appVersion      = "0.1"
 
   val appDependencies = Seq(
     // Add your project dependencies here,
@@ -20,7 +21,10 @@ object ApplicationBuild extends Build {
 
 
   val main = play.Project(appName, appVersion, appDependencies)
+    .settings(Play2WarPlugin.play2WarSettings: _*)
     .settings(
+    Play2WarKeys.servletVersion := "3.0",
+    Play2WarKeys.targetName := Some("kolibri")
     // Add your own project settings here
   )
 
