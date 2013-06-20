@@ -49,6 +49,8 @@ class SendSMSActor extends Actor with JsonTransformer with MongoHelper {
               val jsResponse = nexmoResponse.json
               if ((jsResponse \ "status").asOpt[String].getOrElse("fail").equals("0")) {
                 "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" + (jsResponse \ "network").asOpt[String].getOrElse("none")
+
+
               } else {
                 "Error sending message: " + (jsResponse \ "error-text").asOpt[String].getOrElse("none")
               }
@@ -57,19 +59,18 @@ class SendSMSActor extends Actor with JsonTransformer with MongoHelper {
             }
           }
           Logger.info("SendSMSActor: " + status)
-        }
-      }
 
-      val query = Json.obj("messages." + messageId -> Json.obj("$exists" -> true))
-      val set = Json.obj("$set" -> Json.obj("messages." + messageId + ".recipients." + recipientId + ".status" ->
-        JsString(status)))
+          val query = Json.obj("messages." + messageId -> Json.obj("$exists" -> true))
+          val set = Json.obj("$set" -> Json.obj("messages." + messageId + ".recipients." + recipientId + ".status" ->
+            JsString(status)))
 
-      conversationCollection.update(query, set).map {
-        lastError => if (lastError.inError) {
-          Logger.error("Error updating recipient")
+          conversationCollection.update(query, set).map {
+            lastError => if (lastError.inError) {
+              Logger.error("Error updating recipient")
+            }
+          }
         }
       }
     }
   }
-
 }
