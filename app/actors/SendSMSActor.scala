@@ -42,20 +42,21 @@ class SendSMSActor extends Actor with JsonTransformer with MongoHelper {
 
       val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 
-      var status = ""
-
       response.map {
         nexmoResponse => {
-          if (nexmoResponse.status < 300) {
-            val jsResponse = nexmoResponse.json
-            if ((jsResponse \ "status").asOpt[String].getOrElse("fail").equals("0")) {
-              status = "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" + (jsResponse \ "network").asOpt[String].getOrElse("none")
+          val status = {
+            if (nexmoResponse.status < 300) {
+              val jsResponse = nexmoResponse.json
+              if ((jsResponse \ "status").asOpt[String].getOrElse("fail").equals("0")) {
+                "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" + (jsResponse \ "network").asOpt[String].getOrElse("none")
+              } else {
+                "Error sending message: " + (jsResponse \ "error-text").asOpt[String].getOrElse("none")
+              }
             } else {
-              status = "Error sending message: " + (jsResponse \ "error-text").asOpt[String].getOrElse("none")
+              "Error connecting to Nexmo: " + nexmoResponse.statusText
             }
-          } else {
-            status = "Error connecting to Nexmo: " + nexmoResponse.statusText
           }
+          Logger.info("SendSMSActor: " + status)
         }
       }
 
@@ -68,8 +69,6 @@ class SendSMSActor extends Actor with JsonTransformer with MongoHelper {
           Logger.error("Error updating recipient")
         }
       }
-
-      Logger.info("SendSMSActor: " + status)
     }
   }
 
