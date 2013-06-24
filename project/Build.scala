@@ -24,8 +24,7 @@ object ApplicationBuild extends Build {
     .settings(Play2WarPlugin.play2WarSettings: _*)
     .settings(
     Play2WarKeys.servletVersion := "3.0",
-    Play2WarKeys.targetName := Some("kolibri")
-    // Add your own project settings here
+    Play2WarKeys.targetName := Some("ROOT")
   )
 
 }
