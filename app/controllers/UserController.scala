@@ -3,14 +3,9 @@ package controllers
 import play.api.mvc.{Result, Action}
 
 import play.api.libs.json._
-import play.api.libs.json.Reads._
-import play.api.libs.functional.syntax._
-import org.mindrot.jbcrypt.BCrypt
-import play.api.libs.json.JsString
-import play.api.libs.json.JsObject
-import reactivemongo.api.indexes.{IndexType, Index}
-import scala.concurrent.Future
 import traits.ExtendedController
+import models.User
+import reactivemongo.core.errors.DatabaseException
 
 
 /**
@@ -21,69 +16,44 @@ import traits.ExtendedController
 object UserController extends ExtendedController {
 
   /**
-   * JSON Transfomer
-   */
-  // Validates a user
-  val validateUser: Reads[JsObject] = ((__ \ 'username).json.pickBranch(Reads.of[JsString]) and
-    (__ \ 'email).json.pickBranch(Reads.of[JsString] keepAnd Reads.email) and
-    (__ \ 'password).json.pickBranch(Reads.of[JsString] keepAnd Reads.minLength[String](8)) and
-    ((__ \ 'name).json.pickBranch(Reads.of[JsString]) or emptyObj) and
-    ((__ \ 'phonenumber).json.pickBranch(Reads.of[JsString]) or emptyObj) and
-    (__ \ 'contacts).json.put(Json.obj()) and
-    (__ \ 'conversations).json.put(Json.obj())).reduce
-
-  // hash the password
-  val hashPassword: Reads[JsObject] = {
-    (__ \ 'password).json.update(of[JsString].map {
-      case JsString(pass: String) => JsString(BCrypt.hashpw(pass, BCrypt.gensalt()))
-    })
-  }
-
-  // creates the output format for the user
-  val outputUser: Reads[JsObject] = {
-    createArrayFromIdObject("conversations", (__ \ 'conversationId).json.pick[JsString]) or __.json.pick[JsObject] andThen
-      createArrayFromIdObject("contacts", fromCreated) andThen
-      fromCreated andThen
-      (__ \ '_id).json.prune andThen
-      (__ \ 'password).json.prune
-  }
-
-  /**
    * Actions
    */
   def createUser = Action(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
 
-      userCollection.indexesManager.ensure(Index(List("username" -> IndexType.Ascending), unique = true, sparse = true))
-
-      jsBody.transform(validateUser andThen hashPassword andThen addObjectIdAndDate).map {
-        jsRes => Async {
-          userCollection.insert(jsRes).map {
-            lastError => {
-              if (lastError.ok) {
-                Ok(resOK(jsRes.transform((__ \ 'username).json.pickBranch).get))
-              } else {
-                InternalServerError(resKO("MongoError: " + lastError))
+      jsBody.validate[User](User.inputReads).map {
+        user =>
+          Async {
+            userCollection.insert(Json.toJson(user)).map {
+              lastError => {
+                if (lastError.ok) {
+                  Ok(resOK(Json.toJson(user)(User.outputWrites)))
+                } else {
+                  InternalServerError(resKO("MongoError: " + lastError))
+                }
               }
+            }.recover {
+              // deal with exceptions from duplicate usernames or emails
+              case de: DatabaseException =>
+                if (de.getMessage().contains("username")) {
+                  BadRequest(resKO("The username already exists"))
+                } else if (de.getMessage().contains("email")) {
+                  BadRequest(resKO("The email already exists"))
+                } else {
+                  BadRequest(resKO("Error: " + de.getMessage()))
+                }
+              case e => InternalServerError(resKO("Mongo Error: " + e.toString))
+
             }
-          }.recover {
-            case e =>
-              BadRequest(resKO("The username already exists"))
           }
-        }
       }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
   }
 
   def returnUser(username: String): Result = {
     Async {
-      val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> username)).one[JsValue]
-      futureUser.map {
-        case Some(u: JsValue) => u.transform(outputUser).map {
-          jsRes => Ok(resOK(jsRes))
-        }.recoverTotal {
-          error => BadRequest(resKO(JsError.toFlatJson(error)))
-        }
+      userCollection.find(Json.obj("username" -> username)).one[User].map {
+        case Some(user: User) => Ok(resOK(Json.toJson(user)(User.outputWrites)))
         case None => NotFound(resKO("User not found: " + username))
       }
     }

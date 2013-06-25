@@ -5,9 +5,8 @@ import traits.ExtendedController
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
-import helper.IdHelper
 import scala.concurrent.Future
-import play.api.Logger
+import models.Contact
 
 /**
  * User: Björn Reimer
@@ -46,42 +45,34 @@ object ContactsController extends ExtendedController {
   def addContact = authenticatePOST() {
     (username, request) =>
       val jsBody: JsValue = request.body
-
-      val contactId = IdHelper.generateMessageId()
-
-      jsBody.transform(validateContact andThen addCreateDate andThen addContactId(contactId)).map {
-        jsContact => {
-          val query = Json.obj("username" -> username)
-          val set = Json.obj("$set" -> Json.obj("contacts." + contactId -> jsContact))
+      jsBody.validate[Contact](Contact.inputReads).map {
+        contact =>
           Async {
+            val query = Json.obj("username" -> username)
+            val set = Json.obj("$push" -> Json.obj("contacts" -> Json.toJson(contact)))
             userCollection.update(query, set).map {
               lastError => {
                 if (lastError.ok) {
-                  Ok(resOK(Json.obj("contactId" -> contactId)))
+                  Ok(resOK(Json.toJson(contact)(Contact.outputWrites)))
                 } else {
                   InternalServerError(resKO("MongoError: " + lastError))
                 }
               }
             }
           }
-        }
-      }.recoverTotal {
-        error => BadRequest(resKO(JsError.toFlatJson(error)))
-      }
+      }.recoverTotal(e => BadRequest(JsError.toFlatJson(e)))
   }
 
   def getContact(contactId: String, token: String) = authenticateGET(token) {
     (username, request) => Async {
-      userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
-        case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
-        case Some(u: JsObject) => (u \ "contacts" \ contactId).asOpt[JsObject] match {
-          case None => NotFound(resKO("Contact not found: " + contactId))
-          case Some(c: JsObject) =>
-            c.transform(outputContact).map {
-              jsRes => Ok(resOK(jsRes))
-            }.recoverTotal {
-              error => InternalServerError(resKO(JsError.toFlatJson(error)))
-            }
+      val query = Json.obj("username" -> username) ++ Json.obj("contacts.contactId" -> contactId)
+      val filter = Json.obj("contacts.$" -> 1)
+
+      userCollection.find(query, filter).one[JsObject].map {
+        case None => NotFound(resKO("The contact does not exist"))
+        case Some(user: JsObject) => (user \ "contacts")(0).asOpt[Contact] match {
+          case None => NotFound(resKO("The contact does not exist"))
+          case Some(contact: Contact) => Ok(resOK(Json.toJson(contact)(Contact.outputWrites)))
         }
       }
     }
@@ -90,15 +81,11 @@ object ContactsController extends ExtendedController {
   def getContacts(token: String) = authenticateGET(token) {
     (username, request) =>
       Async {
-        userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
-          case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
-          case Some(u: JsObject) => {
-            u.transform(createArrayFromIdObject("contacts", fromCreated) andThen (__ \ 'contacts).json.pick[JsArray])
-              .map {
-              jsContacts => Ok(resOK(jsContacts))
-            }.recoverTotal {
-              error => InternalServerError(resKO(JsError.toFlatJson(error)))
-            }
+        val futureContacts = getArray[Contact](userCollection, "username", username, "contacts", Contact.defaultReads)
+        futureContacts.map {
+          contactsOpt => contactsOpt match {
+            case None => BadRequest(resKO("Unable to get contacts"))
+            case Some(contacts) => Ok(resOK(toSortedArray[Contact](contacts, Contact.outputWrites, _.name)))
           }
         }
       }
@@ -107,20 +94,15 @@ object ContactsController extends ExtendedController {
   def getGroup(group: String, token: String) = authenticateGET(token) {
     (username, request) =>
       Async {
-        // get contacts of this user
-        userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
-          case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
-          case Some(u: JsObject) => {
-            val result: JsArray = JsArray((u \ "contacts").asOpt[JsObject].getOrElse(Json.obj()).fields.foldLeft
-              (Seq[JsObject]())((groupContacts: Seq[JsObject], kv) => {
-              val groups = (kv._2 \ "groups").asOpt[List[String]].getOrElse(List[String]())
-              if (groups.exists(s => s.equals(group))) {
-                groupContacts :+ kv._2.transform(__.json.pick(fromCreated)).getOrElse(Json.obj())
-              } else {
-                groupContacts
-              }
-            }))
-            Ok(resOK(result))
+        val futureContacts = getArray[Contact](userCollection, "username", username, "contacts", Contact.defaultReads)
+        futureContacts.map {
+          contactsOpt => contactsOpt match {
+            case None => BadRequest(resKO("Unable to get contacts"))
+            case Some(contacts) => {
+              val filtered = contacts.filter(_.groups.contains(group))
+              Ok(resOK(toSortedArray[Contact](filtered, Contact.outputWrites, _.name)))
+            }
+
           }
         }
       }
@@ -129,25 +111,14 @@ object ContactsController extends ExtendedController {
   def getGroups(token: String) = authenticateGET(token) {
     (username, request) =>
       Async {
-        // get contacts of this user
-        userCollection.find(Json.obj("username" -> username)).one[JsObject].map {
-          case None => NotFound(resKO(Json.obj("invalidUser" -> username)))
-          case Some(u: JsObject) => {
-            val contacts: JsObject = (u \ "contacts").asOpt[JsObject].getOrElse(Json.obj())
-
-            val result = contacts.fields.foldLeft(List[JsString]())((uniqueGroups: List[JsString], kv: (String,
-              JsValue)) => {
-              val contactGroups = (kv._2 \ "groups").asOpt[List[JsString]].getOrElse(List[JsString]())
-
-              contactGroups.foldLeft(uniqueGroups)((uniqueGroups: List[JsString], group: JsString) => {
-                if (uniqueGroups.exists((g: JsString) => g.equals(group))) {
-                  uniqueGroups
-                } else {
-                  uniqueGroups :+ group
-                }
-              })
-            })
-            Ok(resOK(JsArray(result)))
+        val futureContacts = getArray[Contact](userCollection, "username", username, "contacts", Contact.defaultReads)
+        futureContacts.map {
+          contactsOpt => contactsOpt match {
+            case None => BadRequest(resKO("Unable to get contacts"))
+            case Some(contacts) => {
+              val groups = contacts.flatMap(_.groups).distinct
+              Ok(resOK(JsArray(groups.sorted.map(JsString(_)))))
+            }
           }
         }
       }

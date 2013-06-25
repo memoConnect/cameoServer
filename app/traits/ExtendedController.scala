@@ -22,7 +22,7 @@ import reactivemongo.bson.BSONValue
 /**
  * Several Helper functions for interaction with MongoDB *
  */
-trait ExtendedController extends Controller with MongoController with JsonTransformer with MongoHelper {
+trait ExtendedController extends Controller with MongoController with JsonTransformer with MongoHelper with ModelHelper {
 
   lazy val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor], name = "sendMessage")
 
