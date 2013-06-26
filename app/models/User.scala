@@ -28,19 +28,11 @@ case class User(
 
 object User extends ModelHelper with MongoHelper {
 
-  // create index to unsure unique usernames
+  // create index to unsure unique usernames and emails
   userCollection.indexesManager.ensure(Index(List("username" -> IndexType.Ascending), unique = true, sparse = true))
   userCollection.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true, sparse = true))
 
-  implicit val defaultReads: Reads[User] = Reads {
-    js => js.transform(fromMongoDates).map {
-      user: JsValue => user.as[User](Json.reads[User])
-    }
-  }
-
-  implicit val defaultWrites: Writes[User] = Writes {
-    user => Json.toJson[User](user)(Json.writes[User]).transform(toMongoDates).getOrElse(Json.obj())
-  }
+  implicit val mongoFormat = createMongoFormat(Json.reads[User], Json.writes[User])
 
   val inputReads: Reads[User] = (
     (__ \ 'username).read[String] and
@@ -59,10 +51,12 @@ object User extends ModelHelper with MongoHelper {
       Json.obj("email" -> user.email) ++
       toJsonOrEmpty(user.phonenumber, "phonenumber") ++
       toJsonOrEmpty(user.name, "name") ++
-      Json.obj("contacts" -> toSortedArray[Contact](user.contacts, Contact.outputWrites, user => user.name)) ++
+      Json.obj("contacts" -> toSortedArray[Contact](user.contacts, Contact.outputWrites, Contact.sortWith)) ++
       Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)))) ++
+      Json.obj("created" -> defaultDateFormat.format(user.created)) ++
       Json.obj("lastUpdated" -> defaultDateFormat.format(user.lastUpdated))
   }
+
 
 
 }

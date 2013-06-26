@@ -4,6 +4,7 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import java.text.SimpleDateFormat
 import org.mindrot.jbcrypt.BCrypt
+import scala.collection.generic.Sorted
 
 /**
  * User: Björn Reimer
@@ -28,8 +29,8 @@ trait ModelHelper {
     }
   }
 
-  def toSortedArray[T](array: Seq[T], writes: Writes[T], sortBy: ((T) => String)): JsArray = {
-    JsArray(array.sortBy(sortBy).map(Json.toJson[T](_)(writes)))
+  def toSortedArray[T](array: Seq[T], writes: Writes[T], sortWith: ((T,T) => Boolean)): JsArray = {
+    JsArray(array.sortWith(sortWith).map(Json.toJson[T](_)(writes)))
   }
 
   val hashPassword: Reads[String] = Reads[String] {

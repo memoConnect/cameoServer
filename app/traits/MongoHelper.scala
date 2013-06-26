@@ -36,14 +36,26 @@ trait MongoHelper extends JsonTransformer {
       __.json.update((__ \ 'lastUpdated).json.copyFrom((__ \ 'lastUpdated \ '$date).json.pick[JsNumber]) or emptyObj)
   }
 
+  def createMongoReads[T](reads: Reads[T]): Reads[T] = Reads {
+    js => js.transform(fromMongoDates).map {
+      contact: JsValue => contact.as[T](reads)
+    }
+  }
+
+  def createMongoWrites[T](writes: Writes[T]): Writes[T] = Writes {
+        obj: T => Json.toJson[T](obj)(writes).transform(toMongoDates).getOrElse(Json.obj())
+  }
+
+  def createMongoFormat[T](reads: Reads[T], writes: Writes[T]) = Format(createMongoReads(reads), createMongoWrites(writes))
+
   // get Array from Document
-  def getArray[T](collection: JSONCollection, queryKey: String, queryValue: String, arrayKey: String, reads: Reads[T]): Future[Option[Seq[T]]] = {
+  def getArray[T](queryKey: String, queryValue: String, arrayKey: String)(implicit collection: JSONCollection, format: Format[T]): Future[Option[Seq[T]]] = {
     val query = Json.obj(queryKey -> queryValue)
     val filter = Json.obj(arrayKey -> 1)
 
     collection.find(query, filter).one[JsObject].map {
       case None => None
-      case Some(js: JsObject) => Some( (js \ arrayKey).asOpt[Seq[T]](Reads.seq[T](reads)).getOrElse(Seq()))
+      case Some(js: JsObject) => Some( (js \ arrayKey).asOpt[Seq[T]](Reads.seq[T](format)).getOrElse(Seq()))
     }
   }
 

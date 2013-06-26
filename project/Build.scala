@@ -6,10 +6,9 @@ import play.Project._
 object ApplicationBuild extends Build {
 
   val appName         = "kolibrinet"
-  val appVersion      = "0.1"
+  val appVersion      = "0.2"
 
   val appDependencies = Seq(
-    // Add your project dependencies here,
     jdbc,
     anorm,
     "org.reactivemongo" %% "play2-reactivemongo" % "0.9",

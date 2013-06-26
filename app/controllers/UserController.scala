@@ -15,9 +15,6 @@ import reactivemongo.core.errors.DatabaseException
  */
 object UserController extends ExtendedController {
 
-  /**
-   * Actions
-   */
   def createUser = Action(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body

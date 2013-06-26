@@ -65,8 +65,8 @@ trait ExtendedController extends Controller with MongoController with JsonTransf
   }
 
 
-  def authenticatePOST(maxLength: Int = 128 * 1024, requireAdminRights: Boolean = false)(f: (String, Request[JsValue]) => Result) = {
-    Action(parse.tolerantJson(maxLength)) {
+  def authenticatePOST(requireAdminRights: Boolean = false)(f: (String, Request[JsValue]) => Result) = {
+    Action(parse.tolerantJson) {
       implicit request => {
         (request.body \ "token").asOpt[String] match {
           case None => Unauthorized(resKO("No token"))

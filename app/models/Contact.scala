@@ -24,16 +24,10 @@ case class Contact(
 
 object Contact extends ModelHelper with MongoHelper {
 
-  implicit val defaultReads: Reads[Contact] = Reads {
-    js => js.transform(fromMongoDates).map {
-      contact: JsValue => contact.as[Contact](Json.reads[Contact])
-    }
-  }
+  // Writing to/reading from MongoDB
+  implicit val mongoFormat = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
-  implicit val defaultWrites: Writes[Contact] = Writes {
-    contact => Json.toJson[Contact](contact)(Json.writes[Contact]).transform(toMongoDates).getOrElse(Json.obj())
-  }
-
+  // Input/output format for the API
   val inputReads: Reads[Contact] = (
     Reads.pure[String](IdHelper.generateContactId()) and
     ((__ \ 'name).read[String] or Reads.pure(IdHelper.generateContactId())) and
@@ -54,6 +48,10 @@ object Contact extends ModelHelper with MongoHelper {
         Json.obj("groups" -> contact.groups) ++
         Json.obj("contactId" -> contact.contactId) ++
         Json.obj("lastUpdated" -> defaultDateFormat.format(contact.lastUpdated))
+  }
+
+  val sortWith = {
+    (c1: Contact, c2: Contact) => c1.name < c2.name
   }
 }
 
