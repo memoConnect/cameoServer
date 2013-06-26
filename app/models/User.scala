@@ -23,7 +23,7 @@ case class User(
                  conversations: Seq[String],
                  created: Date,
                  lastUpdated: Date
-               )
+                 )
 
 
 object User extends ModelHelper with MongoHelper {
@@ -36,27 +36,26 @@ object User extends ModelHelper with MongoHelper {
 
   val inputReads: Reads[User] = (
     (__ \ 'username).read[String] and
-    (__ \ 'email).read[String](email) and
-    (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
-    (__ \ 'name).readNullable[String] and
-    (__ \ 'phonenumber).readNullable[String] and
-    Reads.pure[Seq[Contact]](Seq[Contact]()) and
-    Reads.pure(Seq[String]()) and
-    Reads.pure[Date](new Date) and
-    Reads.pure[Date](new Date))(User.apply _)
+      (__ \ 'email).read[String](email) and
+      (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
+      (__ \ 'name).readNullable[String] and
+      (__ \ 'phonenumber).readNullable[String] and
+      Reads.pure[Seq[Contact]](Seq[Contact]()) and
+      Reads.pure(Seq[String]()) and
+      Reads.pure[Date](new Date) and
+      Reads.pure[Date](new Date))(User.apply _)
 
   val outputWrites: Writes[User] = Writes {
     user =>
       Json.obj("username" -> user.username) ++
-      Json.obj("email" -> user.email) ++
-      toJsonOrEmpty(user.phonenumber, "phonenumber") ++
-      toJsonOrEmpty(user.name, "name") ++
-      Json.obj("contacts" -> toSortedArray[Contact](user.contacts, Contact.outputWrites, Contact.sortWith)) ++
-      Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)))) ++
-      Json.obj("created" -> defaultDateFormat.format(user.created)) ++
-      Json.obj("lastUpdated" -> defaultDateFormat.format(user.lastUpdated))
+        Json.obj("email" -> user.email) ++
+        toJsonOrEmpty(user.phonenumber, "phonenumber") ++
+        toJsonOrEmpty(user.name, "name") ++
+        Json.obj("contacts" -> toSortedArray[Contact](user.contacts, Contact.outputWrites, Contact.sortWith)) ++
+        Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)))) ++
+        addCreated(user.created) ++
+        addLastUpdated(user.lastUpdated)
   }
-
 
 
 }

@@ -7,6 +7,8 @@ import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
 import org.apache.http.HttpHeaders
+import models.Token
+import java.util.Date
 
 /**
  * User: Björn Reimer
@@ -31,11 +33,11 @@ object TokenController extends ExtendedController {
           // wrong password
           Unauthorized(resKO("Wrong Username/Password"))
         } else {
-          val token = createToken(user).transform(addCreateDate).get
+          val token = new Token(IdHelper.generateAccessToken(), user, false, new Date)
           tokenCollection.insert(token).map {
             lastError => InternalServerError(resKO("MongoError: " + lastError))
           }
-          Ok(resOK(token.transform(fromCreated).get))
+          Ok(resOK(Json.toJson(token)(Token.outputWrites)))
         }
       }
     }

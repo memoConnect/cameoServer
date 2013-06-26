@@ -3,6 +3,7 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
+import traits.MongoHelper
 
 /**
  * User: Björn Reimer
@@ -16,9 +17,9 @@ case class Recipient(
                       sendTo: String
                       )
 
-object Recipient {
+object Recipient extends MongoHelper{
 
-  implicit val mongoFormat = Json.format[Recipient]
+  implicit val mongoFormat = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
   val inputReads = (
     Reads.pure[String](IdHelper.generateRecipientId()) and

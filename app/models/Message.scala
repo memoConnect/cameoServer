@@ -43,7 +43,8 @@ object Message extends MongoHelper with ModelHelper {
         Json.obj("messageBody" -> m.messageBody) ++
         Json.obj("from" -> m.from) ++
         Json.obj("sendStatus" -> m.sendStatus) ++
-        Json.obj("created" -> defaultDateFormat.format(m.created))
+        addCreated(m.created)
+
   }
 
   val sortWith = {

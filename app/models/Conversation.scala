@@ -32,7 +32,8 @@ object Conversation extends MongoHelper with ModelHelper{
         Json.obj("recipients" -> toSortedArray[Recipient](conversation.recipients, Recipient.outputWrites, Recipient.sortWith)) ++
         Json.obj("messages" -> toSortedArray[Message](conversation.messages, Message.outputWrites, Message.sortWith)) ++
         Json.obj("created" -> defaultDateFormat.format(conversation.created)) ++
-        Json.obj("lastUpdated" -> defaultDateFormat.format(conversation.lastUpdated))
+        addCreated(conversation.created) ++
+        addLastUpdated(conversation.lastUpdated)
   }
 
 }

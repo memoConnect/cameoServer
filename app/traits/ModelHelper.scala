@@ -5,6 +5,7 @@ import play.api.libs.json.Reads._
 import java.text.SimpleDateFormat
 import org.mindrot.jbcrypt.BCrypt
 import scala.collection.generic.Sorted
+import java.util.Date
 
 /**
  * User: Björn Reimer
@@ -33,12 +34,18 @@ trait ModelHelper {
     JsArray(array.sortWith(sortWith).map(Json.toJson[T](_)(writes)))
   }
 
+  def addCreated(date: Date): JsObject = {
+    Json.obj("created" -> defaultDateFormat.format(date))
+  }
+
+  def addLastUpdated(date: Date): JsObject = {
+    Json.obj("lastUpdated" -> defaultDateFormat.format(date))
+  }
+
   val hashPassword: Reads[String] = Reads[String] {
     js => js.asOpt[String] match {
       case None => JsError("No password")
       case Some(pass) => JsSuccess(BCrypt.hashpw(pass, BCrypt.gensalt()))
     }
   }
-
-
 }

@@ -47,7 +47,7 @@ object Contact extends ModelHelper with MongoHelper {
         toJsonOrEmpty(contact.username, "username") ++
         Json.obj("groups" -> contact.groups) ++
         Json.obj("contactId" -> contact.contactId) ++
-        Json.obj("lastUpdated" -> defaultDateFormat.format(contact.lastUpdated))
+        addLastUpdated(contact.lastUpdated)
   }
 
   val sortWith = {
