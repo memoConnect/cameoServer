@@ -4,14 +4,14 @@ import java.util.Date
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
-import traits.{MongoHelper, ModelHelper}
+import traits.{MongoHelper, Model}
 
 /**
  * User: Björn Reimer
  * Date: 6/25/13
  * Time: 5:53 PM
  */
-case class Contact(
+case class Contact (
                     contactId: String,
                     name: String,
                     email: Option[String],
@@ -22,10 +22,11 @@ case class Contact(
                     lastUpdated: Date
                   )
 
-object Contact extends ModelHelper with MongoHelper {
+object Contact extends Model[Contact]
+{
 
-  // Writing to/reading from MongoDB
-  implicit val mongoFormat = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
+  implicit val collection = userCollection
+  implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
   // Input/output format for the API
   val inputReads: Reads[Contact] = (
@@ -50,7 +51,7 @@ object Contact extends ModelHelper with MongoHelper {
         addLastUpdated(contact.lastUpdated)
   }
 
-  val sortWith = {
+  override val sortWith = {
     (c1: Contact, c2: Contact) => c1.name < c2.name
   }
 }

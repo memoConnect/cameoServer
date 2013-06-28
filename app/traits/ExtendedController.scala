@@ -22,9 +22,18 @@ import reactivemongo.bson.BSONValue
 /**
  * Several Helper functions for interaction with MongoDB *
  */
-trait ExtendedController extends Controller with MongoController with JsonTransformer with MongoHelper with ModelHelper {
+trait ExtendedController extends Controller with MongoController with MongoHelper {
 
   lazy val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor], name = "sendMessage")
+
+  /**
+   * Generate Result
+   */
+  def resOK() = Json.obj("res" -> "OK")
+  def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
+  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
+  def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
+  def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   /**
    * Authentication

@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.{ModelHelper, MongoHelper}
+import traits.{Model, MongoHelper}
 import play.api.libs.json._
 
 /**
@@ -16,9 +16,12 @@ case class Token(
                   created: Date
                   )
 
-object Token extends MongoHelper with ModelHelper {
+object Token extends MongoHelper with Model[Token] {
 
-  implicit val mongoFormat = createMongoFormat(Json.reads[Token], Json.writes[Token])
+  implicit val collection = tokenCollection
+  implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
+
+  val inputReads = Json.reads[Token]
 
   val outputWrites = Writes[Token] {
     t =>

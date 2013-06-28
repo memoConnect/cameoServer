@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.{ModelHelper, MongoHelper}
+import traits.{Model, MongoHelper}
 import play.api.libs.json._
 import helper.IdHelper
 import play.api.libs.functional.syntax._
@@ -18,13 +18,16 @@ case class Message(
                     from: String,
                     created: Date,
                     sendStatus: JsObject,
-                    recipients: Option[Seq[Recipient]]
+                    recipients: Option[Seq[Recipient]],
+                    testRun: Option[Boolean]
                     )
 
 
-object Message extends MongoHelper with ModelHelper {
+object Message extends MongoHelper with Model[Message] {
 
-  implicit val mongoFormat = createMongoFormat(Json.reads[Message], Json.writes[Message])
+  implicit val collection = conversationCollection
+  implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
+
 
   val inputReads = (
     Reads.pure[String](IdHelper.generateMessageId()) and
@@ -33,7 +36,8 @@ object Message extends MongoHelper with ModelHelper {
       Reads.pure[String]("") and
       Reads.pure[Date](new Date) and
       Reads.pure[JsObject](Json.obj()) and
-      (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads))
+      (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads)) and
+      Reads.pure(None)
     )(Message.apply _)
 
   val outputWrites = Writes[Message] {
@@ -43,11 +47,11 @@ object Message extends MongoHelper with ModelHelper {
         Json.obj("messageBody" -> m.messageBody) ++
         Json.obj("from" -> m.from) ++
         Json.obj("sendStatus" -> m.sendStatus) ++
+        Json.obj("recipients" -> Recipient.toSortedArray(m.recipients.getOrElse(Seq()))) ++
         addCreated(m.created)
-
   }
 
-  val sortWith = {
+  override val sortWith = {
     (m1: Message, m2: Message) => m1.created.before(m2.created)
   }
 }

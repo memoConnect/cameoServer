@@ -27,12 +27,6 @@ trait JsonTransformer {
   val addCreateDate: Reads[JsObject] = __.json.update(generateCreated)
   val addObjectIdAndDate: Reads[JsObject] = __.json.update((generateId and generateCreated).reduce)
 
-  // generate result
-  def resOK() = Json.obj("res" -> "OK")
-  def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
-  def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-  def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   // convert object id and date between json and bson format
   val toObjectId = Writes[String] {

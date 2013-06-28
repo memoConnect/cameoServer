@@ -32,11 +32,7 @@ object MessageController extends ExtendedController {
             case None => {
               //create new conversation
               val conversation: Conversation = new Conversation(
-                IdHelper.generateConversationId(),
-                new Date,
-                new Date,
-                Seq(),
-                Seq())
+                IdHelper.generateConversationId(), new Date, new Date, Seq(), Seq())
 
               conversationCollection.insert(conversation)
               conversation.conversationId
@@ -58,12 +54,12 @@ object MessageController extends ExtendedController {
               lastError =>
                 if (!lastError.updatedExisting) {
                   BadRequest(resKO("The conversation does not exist"))
-                } else if (lastError.ok) {
-                  Ok(resOK(Json.toJson(newMessage)(Message.outputWrites)))
-                } else {
+                } else if (lastError.inError) {
                   Logger.debug("Mongo Error: " + lastError.stringify + " Query: " + query.toString + " Set: " + set
                     .toString)
                   InternalServerError(resKO("DB Error"))
+                } else {
+                  Ok(resOK(Message.toJson(newMessage)))
                 }
             }
           }
@@ -81,7 +77,7 @@ object MessageController extends ExtendedController {
           case None => NotFound(resKO("messageId not found"))
           case Some(js) => (js \ "messages")(0).asOpt[Message] match {
             case None => NotFound(resKO("messageId not found"))
-            case Some(m) => Ok(resOK(Json.toJson(m)(Message.outputWrites)))
+            case Some(m) => Ok(resOK(Message.toJson(m)))
           }
         }
       }

@@ -18,12 +18,12 @@ import play.api.libs.functional.syntax._
  */
 trait MongoHelper extends JsonTransformer {
 
-  lazy val mongoDB = ReactiveMongoPlugin.db
+  val mongoDB = ReactiveMongoPlugin.db
 
-  lazy val conversationCollection: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
-  lazy val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
-  lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("token")
-  lazy val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
+  val conversationCollection: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
+  val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
+  val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("token")
+  val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
 
   // converts dates and ids to mongo format ($date and $oid)
   val toMongoDates: Reads[JsObject] = {
@@ -47,17 +47,6 @@ trait MongoHelper extends JsonTransformer {
   }
 
   def createMongoFormat[T](reads: Reads[T], writes: Writes[T]) = Format(createMongoReads(reads), createMongoWrites(writes))
-
-  // get Array from Document
-  def getArray[T](queryKey: String, queryValue: String, arrayKey: String)(implicit collection: JSONCollection, format: Format[T]): Future[Option[Seq[T]]] = {
-    val query = Json.obj(queryKey -> queryValue)
-    val filter = Json.obj(arrayKey -> 1)
-
-    collection.find(query, filter).one[JsObject].map {
-      case None => None
-      case Some(js: JsObject) => Some( (js \ arrayKey).asOpt[Seq[T]](Reads.seq[T](format)).getOrElse(Seq()))
-    }
-  }
 
   // find message in conversation
   def findMessage(messageId: String): Future[Option[JsObject]] = {

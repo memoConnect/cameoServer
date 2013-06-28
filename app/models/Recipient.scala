@@ -3,7 +3,7 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
-import traits.MongoHelper
+import traits.{Model, MongoHelper}
 
 /**
  * User: Björn Reimer
@@ -17,9 +17,10 @@ case class Recipient(
                       sendTo: String
                       )
 
-object Recipient extends MongoHelper{
+object Recipient extends Model[Recipient] {
 
-  implicit val mongoFormat = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
+  implicit val collection = userCollection
+  implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
   val inputReads = (
     Reads.pure[String](IdHelper.generateRecipientId()) and
@@ -30,7 +31,7 @@ object Recipient extends MongoHelper{
 
   val outputWrites = Json.writes[Recipient]
 
-  val sortWith = {
+  override val sortWith = {
     (r1: Recipient, r2: Recipient) => r1.name < r2.name
   }
 }

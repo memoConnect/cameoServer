@@ -1,6 +1,6 @@
 package models
 
-import traits.{MongoHelper, ModelHelper}
+import traits.{MongoHelper, Model}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -26,13 +26,15 @@ case class User(
                  )
 
 
-object User extends ModelHelper with MongoHelper {
+object User extends Model[User] {
 
   // create index to unsure unique usernames and emails
   userCollection.indexesManager.ensure(Index(List("username" -> IndexType.Ascending), unique = true, sparse = true))
   userCollection.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true, sparse = true))
 
-  implicit val mongoFormat = createMongoFormat(Json.reads[User], Json.writes[User])
+  implicit val collection = userCollection
+  implicit val mongoFormat: Format[User] = createMongoFormat(Json.reads[User], Json.writes[User])
+
 
   val inputReads: Reads[User] = (
     (__ \ 'username).read[String] and
@@ -51,8 +53,8 @@ object User extends ModelHelper with MongoHelper {
         Json.obj("email" -> user.email) ++
         toJsonOrEmpty(user.phonenumber, "phonenumber") ++
         toJsonOrEmpty(user.name, "name") ++
-        Json.obj("contacts" -> toSortedArray[Contact](user.contacts, Contact.outputWrites, Contact.sortWith)) ++
-        Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)))) ++
+        Json.obj("contacts" -> Contact.toSortedArray(user.contacts)) ++
+        Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)).distinct)) ++
         addCreated(user.created) ++
         addLastUpdated(user.lastUpdated)
   }

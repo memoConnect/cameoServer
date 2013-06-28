@@ -9,7 +9,9 @@ import play.api.libs.json.{JsString, Json}
 import reactivemongo.api.gridfs.GridFS
 import helper.IdHelper
 import play.api.Logger
+import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 
+//import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 
 
 /**

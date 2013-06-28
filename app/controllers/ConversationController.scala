@@ -18,7 +18,7 @@ object ConversationController extends ExtendedController{
 
         conversationCollection.find(query).one[Conversation].map {
           case None => NotFound(resKO("The conversation does not exist"))
-          case Some(conversation) => Ok(resOK(Json.toJson(conversation)(Conversation.outputWrites)))
+          case Some(conversation) => Ok(resOK(Conversation.toJson(conversation)))
         }
       }
   }

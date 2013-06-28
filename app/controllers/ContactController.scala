@@ -44,7 +44,7 @@ object ContactController extends ExtendedController {
         case None => NotFound(resKO("The contact does not exist"))
         case Some(user: JsObject) => (user \ "contacts")(0).asOpt[Contact] match {
           case None => NotFound(resKO("The contact does not exist"))
-          case Some(contact: Contact) => Ok(resOK(Json.toJson(contact)(Contact.outputWrites)))
+          case Some(contact: Contact) => Ok(resOK(Contact.toJson(contact)))
         }
       }
     }
@@ -53,14 +53,11 @@ object ContactController extends ExtendedController {
   def getContacts(token: String) = authenticateGET(token) {
     (username, request) =>
       Async {
-        implicit val collection = userCollection
-        implicit val format = Contact.mongoFormat
-
-        val futureContacts = getArray[Contact]("username", username, "contacts")
+        val futureContacts = Contact.getArray("username", username, "contacts")
         futureContacts.map {
           contactsOpt => contactsOpt match {
             case None => BadRequest(resKO("Unable to get contacts"))
-            case Some(contacts) => Ok(resOK(toSortedArray[Contact](contacts, Contact.outputWrites, Contact.sortWith)))
+            case Some(contacts) => Ok(resOK(Contact.toSortedArray(contacts)))
           }
         }
       }
@@ -69,16 +66,13 @@ object ContactController extends ExtendedController {
   def getGroup(group: String, token: String) = authenticateGET(token) {
     (username, request) =>
       Async {
-        implicit val collection = userCollection
-        implicit val format = Contact.mongoFormat
-
-        val futureContacts = getArray[Contact]("username", username, "contacts")
+        val futureContacts = Contact.getArray("username", username, "contacts")
         futureContacts.map {
           contactsOpt => contactsOpt match {
             case None => BadRequest(resKO("Unable to get contacts"))
             case Some(contacts) => {
               val filtered = contacts.filter(_.groups.contains(group))
-              Ok(resOK(toSortedArray[Contact](filtered, Contact.outputWrites, Contact.sortWith)))
+              Ok(resOK(Contact.toSortedArray(filtered)))
             }
           }
         }
@@ -88,10 +82,7 @@ object ContactController extends ExtendedController {
   def getGroups(token: String) = authenticateGET(token) {
     (username, request) =>
       Async {
-        implicit val collection = userCollection
-        implicit val format = Contact.mongoFormat
-
-        val futureContacts = getArray[Contact]("username", username, "contacts")
+        val futureContacts = Contact.getArray("username", username, "contacts")
         futureContacts.map {
           contactsOpt => contactsOpt match {
             case None => BadRequest(resKO("Unable to get contacts"))
