@@ -17,7 +17,6 @@ case class Message(
                     messageBody: String,
                     from: String,
                     created: Date,
-                    sendStatus: JsObject,
                     recipients: Option[Seq[Recipient]],
                     testRun: Option[Boolean]
                     )
@@ -35,7 +34,6 @@ object Message extends MongoHelper with Model[Message] {
       (__ \ 'messageBody).read[String] and
       Reads.pure[String]("") and
       Reads.pure[Date](new Date) and
-      Reads.pure[JsObject](Json.obj()) and
       (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads)) and
       Reads.pure(None)
     )(Message.apply _)
@@ -46,7 +44,6 @@ object Message extends MongoHelper with Model[Message] {
         Json.obj("conversationId" -> JsString(m.conversationId.getOrElse("none"))) ++
         Json.obj("messageBody" -> m.messageBody) ++
         Json.obj("from" -> m.from) ++
-        Json.obj("sendStatus" -> m.sendStatus) ++
         Json.obj("recipients" -> Recipient.toSortedArray(m.recipients.getOrElse(Seq()))) ++
         addCreated(m.created)
   }

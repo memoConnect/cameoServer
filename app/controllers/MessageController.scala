@@ -9,6 +9,8 @@ import traits.ExtendedController
 import play.api.Logger
 import models.{Conversation, Recipient, Message}
 import java.util.Date
+import scala.concurrent.Future
+import reactivemongo.core.commands.LastError
 
 
 /**
@@ -19,6 +21,66 @@ import java.util.Date
 object MessageController extends ExtendedController {
 
   /**
+   * Helper
+   */
+
+  // check if we need to create a new conversation
+  def makeSureConversationExists(implicit message: Message): Future[String] = {
+    message.conversationId match {
+      case None => {
+        //create new conversation
+        val conversation: Conversation = new Conversation(IdHelper.generateConversationId(), new Date,
+          new Date, Seq(), Seq())
+
+        conversationCollection.insert(conversation).map {
+          lastError => conversation.conversationId
+        }
+      }
+      case Some(c) => Future(c)
+    }
+  }
+
+  // get recipients form conversation and add those new from this message
+  def createMessage(conversationId: String, username: String)(implicit message: Message): Future[Message] = {
+    def newMessageWithRecipients(recipients: Seq[Recipient]): Message = {
+      message.copy(recipients = Some(recipients), conversationId = Some(conversationId), from = username)
+    }
+    // get recipients from conversation
+    val query = Json.obj("conversationId" -> conversationId)
+    conversationCollection.find(query).one[Conversation].map {
+      case None => {
+        Logger.error("Could not find conversation: " + conversationId)
+        newMessageWithRecipients(message.recipients.getOrElse(Seq()))
+      }
+      case Some(c) => newMessageWithRecipients(c.recipients ++ message.recipients.getOrElse(Seq()))
+    }
+  }
+
+  // add this conversation to the user object
+  def addConversationToUser(conversationId: String, username: String)(implicit message: Message): Future[LastError] = {
+    // add this conversation to this user
+    val query = Json.obj("username" -> username)
+    val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
+    userCollection.update(query, set)
+  }
+
+  // add message to conversation
+  def addMessageToConversation(conversationId: String, newMessage: Message)
+                              (implicit message: Message): Future[LastError] = {
+    val query = Json.obj("conversationId" -> conversationId)
+    val set = Json.obj("$push" -> Json.obj("messages" -> newMessage))
+    conversationCollection.update(query, set)
+  }
+
+  // add recipient(s) from message to conversation
+  def addRecipientsToConversation(conversationId: String)(implicit message: Message): Future[LastError] = {
+    val recipients = message.recipients.getOrElse(Seq())
+    val query = Json.obj("conversationId" -> conversationId)
+    val set = Json.obj("$pushAll" -> Json.obj("recipients" -> recipients))
+    conversationCollection.update(query, set)
+  }
+
+  /**
    * Actions
    */
   def sendMessage = authenticatePOST() {
@@ -26,41 +88,31 @@ object MessageController extends ExtendedController {
       val jsBody: JsValue = request.body
 
       jsBody.validate[Message](Message.inputReads).map {
-        message => {
-          // check if we need to create a new conversation
-          val conversationId: String = message.conversationId match {
-            case None => {
-              //create new conversation
-              val conversation: Conversation = new Conversation(
-                IdHelper.generateConversationId(), new Date, new Date, Seq(), Seq())
+        implicit message => {
+          /*
+           * The execution starts here
+           */
+          val errors = for {
 
-              conversationCollection.insert(conversation)
-              conversation.conversationId
-            }
-            case Some(c) => c
-          }
-          val recipients: Seq[Recipient] = message.recipients.getOrElse(Seq())
+            conversationId <- makeSureConversationExists
+            newMessage <- createMessage(conversationId, username)
+            userError <- addConversationToUser(conversationId, username)
+            messageError <- addMessageToConversation(conversationId, newMessage)
+            recipientError <- addRecipientsToConversation(conversationId)
 
-          val newMessage = message.copy(sendStatus = Json.obj("state" -> "queued"), recipients = None,
-            conversationId = Some(conversationId), from = username)
+          } yield (userError.ok && messageError.ok && recipientError.ok, newMessage)
 
-          // add message and recipient to conversation
+          // check result and send response
           Async {
-            val query = Json.obj("conversationId" -> conversationId)
-            val set = Json.obj("$push" -> Json.obj("messages" -> newMessage)) ++ Json.obj("$pushAll" -> Json.obj
-              ("recipients" -> recipients))
-
-            conversationCollection.update(query, set).map {
-              lastError =>
-                if (!lastError.updatedExisting) {
-                  BadRequest(resKO("The conversation does not exist"))
-                } else if (lastError.inError) {
-                  Logger.debug("Mongo Error: " + lastError.stringify + " Query: " + query.toString + " Set: " + set
-                    .toString)
-                  InternalServerError(resKO("DB Error"))
-                } else {
-                  Ok(resOK(Message.toJson(newMessage)))
-                }
+            errors.map {
+              case (true, newMessage) => {
+                sendMessageActor ! newMessage
+                Ok(resOK(Message.toJson(newMessage)))
+              }
+              case (false, newMessage) => {
+                Logger.error("Error adding message to conversation: " + Message.toJson(newMessage))
+                InternalServerError(resKO("DB Error"))
+              }
             }
           }
         }

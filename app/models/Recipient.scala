@@ -14,7 +14,8 @@ case class Recipient(
                       recipientId: String,
                       name: String,
                       messageType: String,
-                      sendTo: String
+                      sendTo: String,
+                      sendStatus: Option[String]
                       )
 
 object Recipient extends Model[Recipient] {
@@ -26,10 +27,20 @@ object Recipient extends Model[Recipient] {
     Reads.pure[String](IdHelper.generateRecipientId()) and
       (__ \ 'name).read[String] and
       (__ \ 'messageType).read[String] and
-      (__ \ 'sendTo).read[String]
+      (__ \ 'sendTo).read[String] and
+      Reads.pure(None)
     )(Recipient.apply _)
 
-  val outputWrites = Json.writes[Recipient]
+  val outputWrites = Writes[Recipient] {
+    r =>
+      Json.obj("recipientId" -> r.recipientId) ++
+      Json.obj("name" -> r.name) ++
+      Json.obj("messageType" -> r.messageType) ++
+      Json.obj("sendTo" -> r.sendTo) ++
+      toJsonOrEmpty(r.sendStatus, "sendStatus")
+  }
+
+  Json.writes[Recipient]
 
   override val sortWith = {
     (r1: Recipient, r2: Recipient) => r1.name < r2.name

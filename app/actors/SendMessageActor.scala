@@ -9,6 +9,7 @@ import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
+import models.{Recipient, Message}
 
 /**
  * User: Björn Reimer
@@ -20,62 +21,56 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
   lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
   lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
 
-  def sendMessage(user: JsObject, message: JsObject) = {
-
-    val recipients: JsObject = (message \ "recipients").asOpt[JsObject].getOrElse({
-      Logger.error("error adding status to recipients")
-      Json.obj()
-    })
-
-    val recipientsWithStatus = JsObject(recipients.fields.map {
-      case (recipientId: String, recipient: JsObject) =>
-
-        def addRecipientStatus(status: String): (String, JsObject) = {
-          (recipientId, recipient.transform(__.json.update((__ \ 'status).json.put(JsString(status)))).get)
-        }
-
-        // check if we have a test run
-        if ((recipient \ "test").asOpt[Boolean].getOrElse(false)) {
-          addRecipientStatus("Testrun: no message send")
-        } else {
-          // check for message type
-          (recipient \ "messageType").asOpt[String].getOrElse("none") match {
-            case "none" => addRecipientStatus("No MessageType given")
-            case "email" => {
-              sendMailActor !(recipient, message, user)
-              addRecipientStatus("Email queued")
-            }
-            case "sms" => {
-              sendSMSActor !(recipient, message, user)
-              addRecipientStatus("SMS queued")
-            }
-            case m => addRecipientStatus("Unkown message type \'" + m + "\'")
-          }
-        }
-      case _ => Logger.error("Invalid recipient format in DB"); ("", Json.obj())
-    })
-
-    // add recipients with Status to message and save to db
-    val messageId = (message \ "messageId").asOpt[String].getOrElse("")
-    val set = Json.obj("$set" -> Json.obj("messages." + messageId + ".recipients" -> recipientsWithStatus))
-    val query = getConversationId(message)
-
-    conversationCollection.update(query, set).map {
-      lastError => if (lastError.inError) {
-        Logger.error("Error updating message: " + lastError.stringify)
-      }
-    }
-  }
-
   def receive = {
-    case message: JsObject => {
-      Logger.info("SendMessageActor: Sending message with id " + (message \ "messageId").as[String])
+    case message: Message => {
+      Logger.info("SendMessageActor: Sending message with id " + message.messageId)
 
-      // get current user
-      userCollection.find(getBranch(message, "username")).one[JsObject].map {
-        case Some(user) => sendMessage(user, message)
-        case None => Logger.error("Error finding user in DB")
+      val recipients = message.recipients.getOrElse(Seq())
+
+      val recipientsWithStatus = recipients.map {
+
+
+        recipient: Recipient =>
+
+          def recipientAddStatus(status: String) = {
+            recipient.copy(sendStatus = Some(status))
+          }
+
+
+          // check if we have a test run
+          if (message.testRun.getOrElse(false)) {
+            recipientAddStatus("testrun: message not send")
+          } else {
+            // check for message type
+            recipient.messageType match {
+              case "none" => recipientAddStatus("No MessageType given")
+              case "email" => {
+                //sendMailActor !(recipient, message, user)
+                recipientAddStatus("Email queued")
+              }
+              case "sms" => {
+                //sendSMSActor !(recipient, message, user)
+                recipientAddStatus("SMS queued")
+              }
+              case m => recipientAddStatus("Unkown message type \'" + m + "\'")
+            }
+          }
       }
+
+      // add recipients with Status to message and save to db
+      val query = Json.obj("conversationId" -> message.conversationId, "messages.messageId" -> message.messageId)
+      val set = Json.obj("$set" -> Json.obj("messages.$.recipients" -> recipientsWithStatus.map(Recipient.toJson(_))))
+
+      conversationCollection.update(query, set).map {
+        lastError => if (lastError.inError) {
+          Logger.error("Error updating message: " + lastError.stringify)
+        }
+          else if(lastError.updatedExisting)
+        {
+          Logger.debug("updated: " + set.toString())
+        }
+      }
+
     }
   }
 }
