@@ -15,7 +15,8 @@ case class Recipient(
                       name: String,
                       messageType: String,
                       sendTo: String,
-                      sendStatus: Option[String]
+                      sendStatus: Option[String] ,
+                      testRun: Option[Boolean]
                       )
 
 object Recipient extends Model[Recipient] {
@@ -28,7 +29,8 @@ object Recipient extends Model[Recipient] {
       (__ \ 'name).read[String] and
       (__ \ 'messageType).read[String] and
       (__ \ 'sendTo).read[String] and
-      Reads.pure(None)
+      Reads.pure(None) and
+      (__ \ 'test).readNullable[Boolean]
     )(Recipient.apply _)
 
   val outputWrites = Writes[Recipient] {

@@ -17,8 +17,7 @@ case class Message(
                     messageBody: String,
                     from: String,
                     created: Date,
-                    recipients: Option[Seq[Recipient]],
-                    testRun: Option[Boolean]
+                    recipients: Option[Seq[Recipient]]
                     )
 
 
@@ -34,8 +33,7 @@ object Message extends MongoHelper with Model[Message] {
       (__ \ 'messageBody).read[String] and
       Reads.pure[String]("") and
       Reads.pure[Date](new Date) and
-      (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads)) and
-      Reads.pure(None)
+      (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads))
     )(Message.apply _)
 
   val outputWrites = Writes[Message] {

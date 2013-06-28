@@ -893,7 +893,7 @@
     &quot;recipients&quot;: [&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;email&quot;,&#xd;
-            &quot;sendTo&quot;: &quot;e@mail.de&quot;,&#xd;
+            &quot;sendTo&quot;: &quot;zeugs@posteo.de&quot;,&#xd;
             &quot;name&quot;: &quot;Udo&quot;,&#xd;
             &quot;test&quot;:true&#xd;
         },&#xd;

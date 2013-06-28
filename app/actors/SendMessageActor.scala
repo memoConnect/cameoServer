@@ -38,14 +38,14 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
 
 
           // check if we have a test run
-          if (message.testRun.getOrElse(false)) {
+          if (recipient.testRun.getOrElse(false)) {
             recipientAddStatus("testrun: message not send")
           } else {
             // check for message type
             recipient.messageType match {
               case "none" => recipientAddStatus("No MessageType given")
               case "email" => {
-                //sendMailActor !(recipient, message, user)
+                sendMailActor ! (recipient, message)
                 recipientAddStatus("Email queued")
               }
               case "sms" => {
@@ -64,10 +64,6 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
       conversationCollection.update(query, set).map {
         lastError => if (lastError.inError) {
           Logger.error("Error updating message: " + lastError.stringify)
-        }
-          else if(lastError.updatedExisting)
-        {
-          Logger.debug("updated: " + set.toString())
         }
       }
 
