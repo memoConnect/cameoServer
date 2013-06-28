@@ -49,7 +49,7 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
                 recipientAddStatus("Email queued")
               }
               case "sms" => {
-                //sendSMSActor !(recipient, message, user)
+                sendSMSActor !(recipient, message)
                 recipientAddStatus("SMS queued")
               }
               case m => recipientAddStatus("Unkown message type \'" + m + "\'")
