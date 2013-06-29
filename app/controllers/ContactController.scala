@@ -57,7 +57,7 @@ object ContactController extends ExtendedController {
         futureContacts.map {
           contactsOpt => contactsOpt match {
             case None => BadRequest(resKO("Unable to get contacts"))
-            case Some(contacts) => Ok(resOK(Contact.toSortedArray(contacts)))
+            case Some(contacts) => Ok(resOK(Contact.toSortedJsonArray(contacts)))
           }
         }
       }
@@ -72,7 +72,7 @@ object ContactController extends ExtendedController {
             case None => BadRequest(resKO("Unable to get contacts"))
             case Some(contacts) => {
               val filtered = contacts.filter(_.groups.contains(group))
-              Ok(resOK(Contact.toSortedArray(filtered)))
+              Ok(resOK(Contact.toSortedJsonArray(filtered)))
             }
           }
         }

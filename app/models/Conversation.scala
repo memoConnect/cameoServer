@@ -35,8 +35,8 @@ object Conversation extends Model[Conversation] {
   val outputWrites = Writes[Conversation] {
     conversation =>
       Json.obj("conversationId" -> conversation.conversationId) ++
-        Json.obj("recipients" -> Recipient.toSortedArray(conversation.recipients)) ++
-        Json.obj("messages" -> Message.toSortedArray(conversation.messages)) ++
+        Recipient.toSortedJsonArray("recipients", conversation.recipients) ++
+        Message.toSortedJsonArray("messages", conversation.messages) ++
         Json.obj("created" -> defaultDateFormat.format(conversation.created)) ++
         addCreated(conversation.created) ++
         addLastUpdated(conversation.lastUpdated)

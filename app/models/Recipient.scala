@@ -39,7 +39,7 @@ object Recipient extends Model[Recipient] {
       Json.obj("name" -> r.name) ++
       Json.obj("messageType" -> r.messageType) ++
       Json.obj("sendTo" -> r.sendTo) ++
-      toJsonOrEmpty(r.sendStatus, "sendStatus")
+      toJsonOrEmpty("sendStatus", r.sendStatus)
   }
 
   Json.writes[Recipient]

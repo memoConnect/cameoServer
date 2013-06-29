@@ -47,15 +47,4 @@ trait MongoHelper extends JsonTransformer {
   }
 
   def createMongoFormat[T](reads: Reads[T], writes: Writes[T]) = Format(createMongoReads(reads), createMongoWrites(writes))
-
-  // find message in conversation
-  def findMessage(messageId: String): Future[Option[JsObject]] = {
-    conversationCollection.find(Json.obj("messages." + messageId -> Json.obj("$exists" -> true)), Json.obj("messages." + messageId ->
-      true)).one[JsObject].map {
-      case Some(m: JsObject) =>
-        val res: JsObject = m.transform(__.json.copyFrom((__ \ 'messages \ messageId).json.pick[JsObject])).getOrElse(Json.obj())
-        Some(res)
-      case None => None
-    }
-  }
 }

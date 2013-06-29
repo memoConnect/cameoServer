@@ -43,9 +43,9 @@ object Contact extends Model[Contact]
   val outputWrites: Writes[Contact] = Writes {
     contact =>
       Json.obj("name" -> contact.name) ++
-        toJsonOrEmpty(contact.email, "email") ++
-        toJsonOrEmpty(contact.phonenumber, "phonenumber") ++
-        toJsonOrEmpty(contact.username, "username") ++
+        toJsonOrEmpty("email", contact.email) ++
+        toJsonOrEmpty("phonenumber", contact.phonenumber) ++
+        toJsonOrEmpty("username", contact.username) ++
         Json.obj("groups" -> contact.groups) ++
         Json.obj("contactId" -> contact.contactId) ++
         addLastUpdated(contact.lastUpdated)

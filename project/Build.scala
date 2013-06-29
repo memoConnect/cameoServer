@@ -8,6 +8,8 @@ object ApplicationBuild extends Build {
   val appName         = "kolibrinet"
   val appVersion      = "0.2"
 
+  scalaVersion        := "2.10.2"
+
   val appDependencies = Seq(
     jdbc,
     anorm,

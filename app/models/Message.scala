@@ -17,7 +17,8 @@ case class Message(
                     messageBody: String,
                     from: String,
                     created: Date,
-                    recipients: Option[Seq[Recipient]]
+                    recipients: Option[Seq[Recipient]],
+                    assets: Option[Seq[Asset]]
                     )
 
 
@@ -33,7 +34,8 @@ object Message extends MongoHelper with Model[Message] {
       (__ \ 'messageBody).read[String] and
       Reads.pure[String]("") and
       Reads.pure[Date](new Date) and
-      (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads))
+      (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads)) and
+      Reads.pure(None)
     )(Message.apply _)
 
   val outputWrites = Writes[Message] {
@@ -42,7 +44,8 @@ object Message extends MongoHelper with Model[Message] {
         Json.obj("conversationId" -> JsString(m.conversationId.getOrElse("none"))) ++
         Json.obj("messageBody" -> m.messageBody) ++
         Json.obj("from" -> m.from) ++
-        Json.obj("recipients" -> Recipient.toSortedArray(m.recipients.getOrElse(Seq()))) ++
+        Recipient.toSortedJsonArrayOrEmpty("recipients", m.recipients) ++
+        Asset.toSortedJsonArrayOrEmpty("assets", m.assets) ++
         addCreated(m.created)
   }
 

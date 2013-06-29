@@ -4,7 +4,6 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import java.text.SimpleDateFormat
 import org.mindrot.jbcrypt.BCrypt
-import scala.collection.generic.Sorted
 import java.util.Date
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,27 +28,40 @@ trait Model[A] extends MongoHelper {
    * Helper
    */
 
-  def toJsonOrEmpty(value: Option[String], key: String): JsObject = {
+  def toJson(model: A): JsValue = {
+    Json.toJson[A](model)(outputWrites)
+  }
+
+  def toJsonOrEmpty(key: String, value: Option[String]): JsObject = {
     value match {
       case Some(s) => Json.obj(key -> JsString(s))
       case None => Json.obj()
     }
   }
 
-  def toJsonArrayOrEmpty(value: Option[Seq[String]], key: String): JsObject = {
+  def toJsonArrayOrEmpty(key: String, value: Option[Seq[String]]): JsObject = {
     value match {
       case Some(s) => Json.obj(key -> JsArray(s.map(JsString(_))))
       case None => Json.obj()
     }
   }
 
-  def toSortedArray(array: Seq[A]): JsArray = {
+  def toSortedJsonArray(key: String, array: Seq[A]): JsObject = {
+    Json.obj(key -> JsArray(array.sortWith(sortWith).map(Json.toJson[A](_)(outputWrites))))
+  }
+
+  def toSortedJsonArray(array: Seq[A]): JsArray = {
     JsArray(array.sortWith(sortWith).map(Json.toJson[A](_)(outputWrites)))
   }
 
-  def toJson(model: A) : JsValue = {
-    Json.toJson[A](model)(outputWrites)
+  def toSortedJsonArrayOrEmpty(key: String, array: Option[Seq[A]]): JsObject = {
+    array match {
+      case Some(a) => Json.obj(key -> JsArray(a.sortWith(sortWith).map(Json.toJson[A](_)(outputWrites))))
+      case None => Json.obj()
+    }
   }
+
+
 
   // get Array from Document
   def getArray(queryKey: String, queryValue: String, arrayKey: String): Future[Option[Seq[A]]] = {
@@ -58,7 +70,7 @@ trait Model[A] extends MongoHelper {
 
     collection.find(query, filter).one[JsObject].map {
       case None => None
-      case Some(js: JsObject) => Some( (js \ arrayKey).asOpt[Seq[A]](Reads.seq[A]).getOrElse(Seq()))
+      case Some(js: JsObject) => Some((js \ arrayKey).asOpt[Seq[A]](Reads.seq[A]).getOrElse(Seq()))
     }
   }
 

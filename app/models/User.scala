@@ -51,10 +51,10 @@ object User extends Model[User] {
     user =>
       Json.obj("username" -> user.username) ++
         Json.obj("email" -> user.email) ++
-        toJsonOrEmpty(user.phonenumber, "phonenumber") ++
-        toJsonOrEmpty(user.name, "name") ++
-        Json.obj("contacts" -> Contact.toSortedArray(user.contacts)) ++
-        Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)).distinct)) ++
+        toJsonOrEmpty("phonenumber", user.phonenumber) ++
+        toJsonOrEmpty("name", user.name) ++
+  //      Contact.toSortedJsonArray("contacts", user.contacts) ++
+  //      Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)).distinct)) ++
         addCreated(user.created) ++
         addLastUpdated(user.lastUpdated)
   }
