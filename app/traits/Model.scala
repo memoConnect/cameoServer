@@ -8,27 +8,31 @@ import java.util.Date
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
+import play.api.Logger
 
 /**
  * User: Björn Reimer
  * Date: 6/25/13
  * Time: 6:46 PM
  */
+case class OutputLimits(offset: Int, limit: Int)
+
 trait Model[A] extends MongoHelper {
 
   implicit val collection: JSONCollection
   implicit val mongoFormat: Format[A]
 
-  val inputReads: Reads[A]
-  val outputWrites: Writes[A]
+  def inputReads: Reads[A]
+  def outputWrites(implicit ol: OutputLimits): Writes[A]
 
   val sortWith = (o1: A, o2: A) => true
+
 
   /**
    * Helper
    */
 
-  def toJson(model: A): JsValue = {
+  def toJson(model: A)(implicit ol: OutputLimits = OutputLimits(0,0)): JsValue = {
     Json.toJson[A](model)(outputWrites)
   }
 
@@ -46,22 +50,36 @@ trait Model[A] extends MongoHelper {
     }
   }
 
-  def toSortedJsonArray(key: String, array: Seq[A]): JsObject = {
-    Json.obj(key -> JsArray(array.sortWith(sortWith).map(Json.toJson[A](_)(outputWrites))))
+  def toSortedJsonArray(array: Seq[A])(implicit ol: OutputLimits) : JsArray = toSortedJsonArray(array, outputWrites)
+
+  def toSortedJsonArray(array: Seq[A], writes: Writes[A])(implicit ol: OutputLimits) : JsArray = {
+    val sorted = array.sortWith(sortWith).map(Json.toJson[A](_)(writes))
+
+    def mustBePositive(i: Int) = if (i < 0) 0 else i
+    val start = mustBePositive(math.min(ol.offset, sorted.size-1))
+    val end = mustBePositive(
+      ol.limit match {
+        case 0 => sorted.size
+        case _ => math.min(start + ol.limit, sorted.size)
+      })
+
+    Logger.debug("o: " + ol.offset + " l: " + ol.limit)
+
+    val subset = sorted.slice(start, end)
+    JsArray(subset)
+
   }
 
-  def toSortedJsonArray(array: Seq[A]): JsArray = {
-    JsArray(array.sortWith(sortWith).map(Json.toJson[A](_)(outputWrites)))
+  def toSortedJsonObject(key: String, array: Seq[A])(implicit ol: OutputLimits): JsObject = {
+    Json.obj(key -> toSortedJsonArray(array))
   }
 
-  def toSortedJsonArrayOrEmpty(key: String, array: Option[Seq[A]]): JsObject = {
+  def toSortedJsonObjectOrEmpty(key: String, array: Option[Seq[A]])(implicit ol: OutputLimits): JsObject = {
     array match {
-      case Some(a) => Json.obj(key -> JsArray(a.sortWith(sortWith).map(Json.toJson[A](_)(outputWrites))))
+      case Some(a) => toSortedJsonObject(key, a)
       case None => Json.obj()
     }
   }
-
-
 
   // get Array from Document
   def getArray(queryKey: String, queryValue: String, arrayKey: String): Future[Option[Seq[A]]] = {

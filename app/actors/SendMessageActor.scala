@@ -33,7 +33,6 @@ class SendMessageActor extends Actor with MongoHelper {
             recipient.copy(sendStatus = Some(status))
           }
 
-
           // check if we have a test run
           if (recipient.testRun.getOrElse(false)) {
             recipientAddStatus("testrun: message not send")

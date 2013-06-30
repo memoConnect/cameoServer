@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.Model
+import traits.{OutputLimits, Model}
 import play.api.libs.json._
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.{Future, ExecutionContext}
@@ -30,13 +30,13 @@ object Conversation extends Model[Conversation] {
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation],
     Json.writes[Conversation])
 
-  val inputReads = Json.reads[Conversation]
+  def inputReads = Json.reads[Conversation]
 
-  val outputWrites = Writes[Conversation] {
+  def outputWrites(implicit ol: OutputLimits) = Writes[Conversation] {
     conversation =>
       Json.obj("conversationId" -> conversation.conversationId) ++
-        Recipient.toSortedJsonArray("recipients", conversation.recipients) ++
-        Message.toSortedJsonArray("messages", conversation.messages) ++
+        Recipient.toSortedJsonObject("recipients", conversation.recipients) ++
+        Message.toSortedJsonObject("messages", conversation.messages) ++
         Json.obj("created" -> defaultDateFormat.format(conversation.created)) ++
         addCreated(conversation.created) ++
         addLastUpdated(conversation.lastUpdated)
@@ -52,6 +52,10 @@ object Conversation extends Model[Conversation] {
   def find(conversationId: String): Future[Option[Conversation]] = {
     val query = Json.obj("conversationId" -> conversationId)
     collection.find(query).one[Conversation]
+  }
+
+  override val sortWith = {
+    (c1: Conversation, c2: Conversation) => c1.created.after(c2.created)
   }
 
 }

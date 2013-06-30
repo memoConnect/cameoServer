@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.Model
+import traits.{OutputLimits, Model}
 import play.api.libs.json._
 import helper.IdHelper
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,9 +27,9 @@ case class Asset (
     implicit val mongoFormat: Format[Asset] = createMongoFormat(Json.reads[Asset], Json.writes[Asset])
 
     // Input/output format for the API
-    val inputReads: Reads[Asset] = Json.reads[Asset]
+    def inputReads: Reads[Asset] = Json.reads[Asset]
 
-    val outputWrites: Writes[Asset] = Writes {
+    def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)): Writes[Asset] = Writes {
       asset =>
         Json.obj("assetId" -> asset.assetId) ++
         Json.obj("name" -> asset.filename) ++

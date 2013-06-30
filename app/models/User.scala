@@ -1,6 +1,6 @@
 package models
 
-import traits.{MongoHelper, Model}
+import traits.{OutputLimits, MongoHelper, Model}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -37,7 +37,7 @@ object User extends Model[User] {
   implicit val mongoFormat: Format[User] = createMongoFormat(Json.reads[User], Json.writes[User])
 
 
-  val inputReads: Reads[User] = (
+  def inputReads: Reads[User] = (
     (__ \ 'username).read[String] and
       (__ \ 'email).read[String](email) and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
@@ -48,7 +48,7 @@ object User extends Model[User] {
       Reads.pure[Date](new Date) and
       Reads.pure[Date](new Date))(User.apply _)
 
-  val outputWrites: Writes[User] = Writes {
+  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)): Writes[User] = Writes {
     user =>
       Json.obj("username" -> user.username) ++
         Json.obj("email" -> user.email) ++

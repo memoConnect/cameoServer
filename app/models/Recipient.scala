@@ -3,7 +3,7 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
-import traits.{Model, MongoHelper}
+import traits.{OutputLimits, Model, MongoHelper}
 
 /**
  * User: Björn Reimer
@@ -24,7 +24,7 @@ object Recipient extends Model[Recipient] {
   implicit val collection = userCollection
   implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
-  val inputReads = (
+  def inputReads = (
     Reads.pure[String](IdHelper.generateRecipientId()) and
       (__ \ 'name).read[String] and
       (__ \ 'messageType).read[String] and
@@ -33,7 +33,7 @@ object Recipient extends Model[Recipient] {
       (__ \ 'test).readNullable[Boolean]
     )(Recipient.apply _)
 
-  val outputWrites = Writes[Recipient] {
+  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)) = Writes[Recipient] {
     r =>
       Json.obj("recipientId" -> r.recipientId) ++
       Json.obj("name" -> r.name) ++

@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.{Model, MongoHelper}
+import traits.{OutputLimits, Model, MongoHelper}
 import play.api.libs.json._
 import helper.IdHelper
 import play.api.libs.functional.syntax._
@@ -31,7 +31,7 @@ object Message extends MongoHelper with Model[Message] {
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
 
-  val inputReads = (
+  def inputReads = (
     Reads.pure[String](IdHelper.generateMessageId()) and
       (__ \ 'conversationId).readNullable[String] and
       (__ \ 'messageBody).read[String] and
@@ -41,14 +41,14 @@ object Message extends MongoHelper with Model[Message] {
       Reads.pure(None)
     )(Message.apply _)
 
-  val outputWrites = Writes[Message] {
+  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)) = Writes[Message] {
     m =>
       Json.obj("messageId" -> m.messageId) ++
         Json.obj("conversationId" -> JsString(m.conversationId.getOrElse("none"))) ++
         Json.obj("messageBody" -> m.messageBody) ++
         Json.obj("from" -> m.from) ++
-        Recipient.toSortedJsonArrayOrEmpty("recipients", m.recipients) ++
-        Asset.toSortedJsonArrayOrEmpty("assets", m.assets) ++
+        Recipient.toSortedJsonObjectOrEmpty("recipients", m.recipients)(OutputLimits(0,0)) ++
+        Asset.toSortedJsonObjectOrEmpty("assets", m.assets) ++
         addCreated(m.created)
   }
 

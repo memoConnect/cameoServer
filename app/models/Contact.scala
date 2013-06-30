@@ -4,7 +4,7 @@ import java.util.Date
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
-import traits.{MongoHelper, Model}
+import traits.{OutputLimits, MongoHelper, Model}
 
 /**
  * User: Björn Reimer
@@ -29,7 +29,7 @@ object Contact extends Model[Contact]
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
   // Input/output format for the API
-  val inputReads: Reads[Contact] = (
+  def inputReads: Reads[Contact] = (
     Reads.pure[String](IdHelper.generateContactId()) and
     ((__ \ 'name).read[String] or Reads.pure(IdHelper.generateContactId())) and
     (__ \ 'email).readNullable[String] and
@@ -40,7 +40,7 @@ object Contact extends Model[Contact]
     Reads.pure[Date](new Date)
     )(Contact.apply _)
 
-  val outputWrites: Writes[Contact] = Writes {
+  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)): Writes[Contact] = Writes {
     contact =>
       Json.obj("name" -> contact.name) ++
         toJsonOrEmpty("email", contact.email) ++

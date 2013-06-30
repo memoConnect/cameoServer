@@ -1,6 +1,6 @@
 package controllers
 
-import traits.ExtendedController
+import traits.{OutputLimits, ExtendedController}
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
@@ -50,11 +50,12 @@ object ContactController extends ExtendedController {
     }
   }
 
-  def getContacts(token: String) = authenticateGET(token) {
+  def getContacts(token: String, offset: Int, limit: Int) = authenticateGET(token) {
     (username, request) =>
       Async {
         val futureContacts = Contact.getArray("username", username, "contacts")
         futureContacts.map {
+          implicit val outputLimits = OutputLimits(offset, limit)
           contactsOpt => contactsOpt match {
             case None => BadRequest(resKO("Unable to get contacts"))
             case Some(contacts) => Ok(resOK(Contact.toSortedJsonArray(contacts)))
@@ -63,11 +64,12 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroup(group: String, token: String) = authenticateGET(token) {
+  def getGroup(group: String, token: String, offset: Int, limit: Int) = authenticateGET(token) {
     (username, request) =>
       Async {
         val futureContacts = Contact.getArray("username", username, "contacts")
         futureContacts.map {
+          implicit val outputLimits = OutputLimits(offset, limit)
           contactsOpt => contactsOpt match {
             case None => BadRequest(resKO("Unable to get contacts"))
             case Some(contacts) => {
