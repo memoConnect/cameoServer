@@ -16,7 +16,7 @@ import play.api.libs.functional.syntax._
  * Date: 6/12/13
  * Time: 7:10 PM
  */
-trait MongoHelper extends JsonTransformer {
+trait MongoHelper {
 
   val mongoDB = ReactiveMongoPlugin.db
 
@@ -24,6 +24,8 @@ trait MongoHelper extends JsonTransformer {
   val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
   val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("token")
   val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
+
+  val emptyObj = __.json.put(Json.obj())
 
   // converts dates and ids to mongo format ($date and $oid)
   val toMongoDates: Reads[JsObject] = {

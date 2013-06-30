@@ -4,7 +4,7 @@ import akka.actor.Actor
 import play.api.{Play, Logger}
 import play.api.Play.current
 import play.api.libs.json.{JsString, Json}
-import traits.{MongoHelper, JsonTransformer}
+import traits.MongoHelper
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.libs.ws.WS
@@ -15,7 +15,7 @@ import models.{User, Recipient}
  * Date: 6/12/13
  * Time: 8:01 PM
  */
-class SendSMSActor extends Actor with JsonTransformer with MongoHelper {
+class SendSMSActor extends Actor with MongoHelper {
 
   def receive = {
     case (recipient: Recipient, message: models.Message) => {

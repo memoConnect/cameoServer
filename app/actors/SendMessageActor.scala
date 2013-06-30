@@ -3,8 +3,7 @@ package actors
 import akka.actor.{Props, Actor}
 import play.api.Logger
 import play.api.libs.json._
-import play.api.libs.json.Reads._
-import traits.{MongoHelper, JsonTransformer}
+import traits.MongoHelper
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.libs.concurrent.Akka
@@ -16,7 +15,7 @@ import models.{Recipient, Message}
  * Date: 6/12/13
  * Time: 5:36 PM
  */
-class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
+class SendMessageActor extends Actor with MongoHelper {
 
   lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
   lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
@@ -43,7 +42,7 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
             recipient.messageType match {
               case "none" => recipientAddStatus("No MessageType given")
               case "email" => {
-                sendMailActor ! (recipient, message)
+                sendMailActor !(recipient, message)
                 recipientAddStatus("Email queued")
               }
               case "sms" => {
