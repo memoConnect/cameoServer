@@ -23,7 +23,7 @@ class SendMailActor extends Actor with JsonTransformer with MongoHelper {
   def receive = {
     case (recipient: Recipient, message: models.Message) => {
       // get user
-      userCollection.find(Json.obj("username" -> message.from)).one[User].map {
+      User.find(message.from).map {
         case Some(user) =>
           val from = "kolibri-test@jaymob.de"
           val to = recipient.sendTo
@@ -64,6 +64,7 @@ class SendMailActor extends Actor with JsonTransformer with MongoHelper {
 
           }
 
+          // save status of mail
           val query = Json.obj("conversationId" -> message.conversationId) ++ Json.obj("messages.messageId.recipients" +
             ".recipientId" -> recipient.recipientId)
           val set = Json.obj("$set" -> Json.obj("messages.recipients.$.status" -> status))

@@ -7,6 +7,7 @@ import play.api.libs.json.Reads._
 import java.util.Date
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -57,6 +58,11 @@ object User extends Model[User] {
   //      Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)).distinct)) ++
         addCreated(user.created) ++
         addLastUpdated(user.lastUpdated)
+  }
+
+  def find(username: String): Future[Option[User]] = {
+    val query = Json.obj("username" -> username)
+    collection.find(query).one[User]
   }
 
 

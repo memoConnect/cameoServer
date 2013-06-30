@@ -5,6 +5,9 @@ import traits.{Model, MongoHelper}
 import play.api.libs.json._
 import helper.IdHelper
 import play.api.libs.functional.syntax._
+import scala.concurrent.{ExecutionContext, Future}
+import play.api.Logger
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -47,6 +50,41 @@ object Message extends MongoHelper with Model[Message] {
         Recipient.toSortedJsonArrayOrEmpty("recipients", m.recipients) ++
         Asset.toSortedJsonArrayOrEmpty("assets", m.assets) ++
         addCreated(m.created)
+  }
+
+  def find(messageId: String, conversationId: String): Future[Option[Message]] = {
+    find(Json.obj("conversationId" -> conversationId, "messages.messageId" -> messageId))
+  }
+
+  def find(messageId: String): Future[Option[Message]] = {
+    find(Json.obj("messages.messageId" -> messageId))
+  }
+
+  def find(query: JsObject): Future[Option[Message]] = {
+    val filter = Json.obj("messages.$" -> 1)
+    collection.find(query, filter).cursor[JsObject].toList.map {
+      list =>
+        list.size match {
+          case 0 => None
+          case 1 => {
+            (list(0) \ "messages")(0).validate[Message].map {
+              message =>
+                if (message.messageId.equals((query \ "messageId").asOpt[String].getOrElse(message.messageId))) {
+                  Some(message)
+                } else {
+                  Logger.error("Received message with wrong Id: " + message.messageId + " Query: " + query.toString)
+                  None
+                }
+            }.recoverTotal{
+              e => None
+            }
+          }
+          case _ => {
+            Logger.error("CRITICAL: MessageId is not unique! query: " + query.toString)
+            None
+          }
+        }
+    }
   }
 
   override val sortWith = {

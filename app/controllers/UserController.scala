@@ -49,7 +49,7 @@ object UserController extends ExtendedController {
 
   def returnUser(username: String): Result = {
     Async {
-      userCollection.find(Json.obj("username" -> username)).one[User].map {
+      User.find(username).map {
         case Some(user: User) => Ok(resOK(Json.toJson(user)(User.outputWrites)))
         case None => NotFound(resKO("User not found: " + username))
       }

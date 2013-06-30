@@ -1,12 +1,10 @@
 package models
 
 import java.util.Date
-import traits.{Model, MongoHelper}
+import traits.Model
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import helper.IdHelper
 import reactivemongo.api.indexes.{IndexType, Index}
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 
 /**
@@ -25,10 +23,12 @@ case class Conversation(
 
 object Conversation extends Model[Conversation] {
 
-  conversationCollection.indexesManager.ensure(Index(List("conversationId" -> IndexType.Ascending), unique = true, sparse = true))
+  conversationCollection.indexesManager.ensure(Index(List("conversationId" -> IndexType.Ascending), unique = true,
+    sparse = true))
 
   implicit val collection = conversationCollection
-  implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
+  implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation],
+    Json.writes[Conversation])
 
   val inputReads = Json.reads[Conversation]
 
@@ -40,6 +40,18 @@ object Conversation extends Model[Conversation] {
         Json.obj("created" -> defaultDateFormat.format(conversation.created)) ++
         addCreated(conversation.created) ++
         addLastUpdated(conversation.lastUpdated)
+  }
+
+  val summaryWrites = Writes[Conversation] {
+    c =>
+      Json.obj("conversationId" -> c.conversationId) ++
+        Conversation.addLastUpdated(c.lastUpdated) ++
+        Json.obj("numberOfMessages: " -> c.messages.length)
+  }
+
+  def find(conversationId: String): Future[Option[Conversation]] = {
+    val query = Json.obj("conversationId" -> conversationId)
+    collection.find(query).one[Conversation]
   }
 
 }

@@ -46,8 +46,7 @@ object MessageController extends ExtendedController {
       message.copy(recipients = Some(recipients), conversationId = Some(conversationId), from = username)
     }
     // get recipients from conversation
-    val query = Json.obj("conversationId" -> conversationId)
-    conversationCollection.find(query).one[Conversation].map {
+    Conversation.find(conversationId).map {
       case None => {
         Logger.error("Could not find conversation: " + conversationId)
         newMessageWithRecipients(message.recipients.getOrElse(Seq()))
@@ -89,16 +88,14 @@ object MessageController extends ExtendedController {
 
       jsBody.validate[Message](Message.inputReads).map {
         implicit message => {
-          /*
-           * The execution starts here
-           */
-          val errors = for {
 
+          // execute steps asynchronously
+          val errors = for {
             conversationId <- makeSureConversationExists
             newMessage <- createMessage(conversationId, username)
             userError <- addConversationToUser(conversationId, username)
-            messageError <- addMessageToConversation(conversationId, newMessage)
             recipientError <- addRecipientsToConversation(conversationId)
+            messageError <- addMessageToConversation(conversationId, newMessage)
 
           } yield (userError.ok && messageError.ok && recipientError.ok, newMessage)
 
@@ -110,7 +107,7 @@ object MessageController extends ExtendedController {
                 Ok(resOK(Message.toJson(newMessage)))
               }
               case (false, newMessage) => {
-                Logger.error("Error adding message to conversation: " + Message.toJson(newMessage))
+                Logger.error("Error sending message: " + Message.toJson(newMessage))
                 InternalServerError(resKO("DB Error"))
               }
             }
@@ -122,12 +119,9 @@ object MessageController extends ExtendedController {
   def getMessage(messageId: String, token: String) = authenticateGET(token) {
     (username, request) =>
       Async {
-        val query = Json.obj("messages.messageId" -> messageId)
-        val filter = Json.obj("messages.$" -> 1)
-
-        conversationCollection.find(query, filter).one[JsObject].map {
-          case None => NotFound(resKO("messageId not found"))
-          case Some(js) => (js \ "messages")(0).asOpt[Message] match {
+        val message = Message.find(messageId)
+        message.map{
+          option => option match {
             case None => NotFound(resKO("messageId not found"))
             case Some(m) => Ok(resOK(Message.toJson(m)))
           }

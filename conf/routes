@@ -20,6 +20,7 @@ GET        /api/v1/message/:messageId               controllers.MessageControlle
 
 # CONVERSATIONS
 GET        /api/v1/conversation/:conversationId     controllers.ConversationController.getConversation(conversationId: String, token: String)
+GET        /api/v1/conversations                    controllers.ConversationController.getConversations(token: String)
 
 # TOKENS
 GET        /api/v1/token                            controllers.TokenController.getToken

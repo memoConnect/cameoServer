@@ -28,8 +28,6 @@ class SendMessageActor extends Actor with JsonTransformer with MongoHelper {
       val recipients = message.recipients.getOrElse(Seq())
 
       val recipientsWithStatus = recipients.map {
-
-
         recipient: Recipient =>
 
           def recipientAddStatus(status: String) = {

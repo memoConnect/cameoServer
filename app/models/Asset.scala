@@ -4,6 +4,8 @@ import java.util.Date
 import traits.Model
 import play.api.libs.json._
 import helper.IdHelper
+import scala.concurrent.{ExecutionContext, Future}
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -33,6 +35,11 @@ case class Asset (
         Json.obj("name" -> asset.filename) ++
         Json.obj("type" -> asset.fileType) ++
         Json.obj("size" -> asset.filesize)
+    }
+
+    def find(assetId: String): Future[Option[Asset]] = {
+      val query = Json.obj("assetId" -> assetId)
+      collection.find(query).one[Asset]
     }
 
     override val sortWith = {
