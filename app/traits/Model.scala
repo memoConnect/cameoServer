@@ -63,8 +63,6 @@ trait Model[A] extends MongoHelper {
         case _ => math.min(start + ol.limit, sorted.size)
       })
 
-    Logger.debug("o: " + ol.offset + " l: " + ol.limit)
-
     val subset = sorted.slice(start, end)
     JsArray(subset)
 
