@@ -6,6 +6,7 @@
 ##
 ##   API
 ##
+
 GET        /api/v1                                  controllers.Application.index
 
 # USER
@@ -33,7 +34,7 @@ GET        /api/v1/contact/:contactId               controllers.ContactControlle
 GET        /api/v1/contact-groups                   controllers.ContactController.getGroups(token: String)
 GET        /api/v1/contact-group/:groupName         controllers.ContactController.getGroup(groupName: String, token: String, offset: Int ?= 0, limit: Int ?= 0)
 
-#ASSETS
+# ASSETS
 POST       /api/v1/asset                            controllers.AssetController.uploadAsset(token: String, messageId: String)
 GET        /api/v1/asset/:assetId                   controllers.AssetController.getAsset(token: String, assetId: String)
 

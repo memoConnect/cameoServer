@@ -21,8 +21,7 @@ case class Token(
 
 object Token extends MongoHelper with Model[Token] {
 
-  userCollection.indexesManager.ensure(Index(List("token" -> IndexType.Ascending), unique = true, sparse = true))
-
+  tokenCollection.indexesManager.ensure(Index(List("token" -> IndexType.Ascending), unique = true, sparse = true))
 
   implicit val collection = tokenCollection
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
