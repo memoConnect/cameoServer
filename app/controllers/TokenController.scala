@@ -37,7 +37,8 @@ object TokenController extends ExtendedController {
           tokenCollection.insert(token).map {
             lastError => InternalServerError(resKO("MongoError: " + lastError))
           }
-          Ok(resOK(Json.toJson(token)(Token.outputWrites)))
+          Ok(resOK(Json.toJson(token)(Token.outputWrites))).withHeaders(
+            ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization")
         }
       }
     }
@@ -63,8 +64,7 @@ object TokenController extends ExtendedController {
       request.headers.get("Authorization") match {
         case None => {
           BadRequest(resKO("No Authorization field in header")).withHeaders(
-            WWW_AUTHENTICATE -> "user",
-            ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization")
+            WWW_AUTHENTICATE -> "user")
         }
         case Some(basicAuth) => {
           val (user, pass) = decodeBasicAuth(basicAuth)

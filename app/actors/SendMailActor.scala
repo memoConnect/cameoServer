@@ -12,6 +12,7 @@ import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import com.amazonaws.{AmazonServiceException, AmazonClientException}
 import models.{User, Recipient}
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -64,15 +65,24 @@ class SendMailActor extends Actor with MongoHelper {
 
           }
 
-          // save status of mail
-          val query = Json.obj("conversationId" -> message.conversationId) ++ Json.obj("messages.messageId.recipients" +
-            ".recipientId" -> recipient.recipientId)
-          val set = Json.obj("$set" -> Json.obj("messages.recipients.$.status" -> status))
-
-          conversationCollection.update(query, set).map {
-            lastError => if (lastError.inError) {
-              Logger.error("Error updating recipient")
+          val res = for {
+            messagePosition <- models.Message.getMessagePosition(message.conversationId.getOrElse(""),
+              message.messageId)
+            lastError <- {
+              val query = Json.obj("conversationId" -> message.conversationId) ++ Json.obj("messages." + messagePosition +
+                ".recipients.recipientId" -> recipient.recipientId)
+              val set = Json.obj("$set" -> Json.obj("messages." + messagePosition + ".recipients.$.sendStatus" -> status))
+              conversationCollection.update(query, set)
             }
+          } yield lastError
+
+          res.map {
+            case(lastError: LastError) =>
+              if (lastError.inError) {
+                Logger.error("Error updating recipient")
+              } else if (!lastError.updatedExisting) {
+                Logger.error("SendMailActor: nothing updated")
+              }
           }
 
           Logger.info("SendMailActor: " + status)

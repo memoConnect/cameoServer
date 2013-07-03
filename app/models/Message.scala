@@ -90,5 +90,17 @@ object Message extends MongoHelper with Model[Message] {
   override val sortWith = {
     (m1: Message, m2: Message) => m1.created.before(m2.created)
   }
+
+  // gets the position of a message in a conversation
+  def getMessagePosition(conversationId: String, messageId: String): Future[Int] ={
+
+    val query = Json.obj("conversationId" -> conversationId)
+
+    conversationCollection.find(query).one[Conversation].map{
+      case None => -1
+      case Some(c) => c.messages.indexWhere(m => {Logger.debug(m.messageId); m.messageId.equals(messageId)})
+    }
+
+  }
 }
 
