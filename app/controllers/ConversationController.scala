@@ -2,7 +2,7 @@ package controllers
 
 import play.api.libs.json.{JsArray, Json}
 import traits.{OutputLimits, ExtendedController}
-import models.{User, Conversation}
+import models.{Message, User, Conversation}
 import scala.concurrent.Future
 import play.api.Logger
 
@@ -41,9 +41,15 @@ object ConversationController extends ExtendedController {
 
       Async {
         futureConversations.map {
-          c => {
+          conversationList => {
             implicit val outputLimits = OutputLimits(offset, limit)
-            val res = Conversation.toSortedJsonArray(c)
+            val array = Conversation.toSortedJsonArray(conversationList, Conversation.summaryWrites)
+
+            val res = Json.obj(
+              "numberOfConversations" -> conversationList.size,
+              "conversations" -> array
+            )
+
             Ok(resOK(res))
           }
         }

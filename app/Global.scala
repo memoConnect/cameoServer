@@ -19,7 +19,7 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
   // wrap action to modify the headers of every request
   override def doFilter(action: EssentialAction): EssentialAction = EssentialAction {
     request =>
-      action.apply(request).map(_.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT",
+      action.apply(request).map(_.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT, OPTIONS",
         ACCESS_CONTROL_ALLOW_ORIGIN -> "*"))
   }
 }
