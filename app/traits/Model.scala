@@ -90,7 +90,7 @@ trait Model[A] extends MongoHelper {
     }
   }
 
-  val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm")
+  val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
 
   def addCreated(date: Date): JsObject = {
     Json.obj("created" -> defaultDateFormat.format(date))

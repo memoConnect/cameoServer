@@ -2,10 +2,7 @@ package traits
 
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
-import scala.concurrent.{ExecutionContext, Future}
-import ExecutionContext.Implicits.global
 import play.modules.reactivemongo.json.collection.JSONCollection
-import scala.Some
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
@@ -40,13 +37,16 @@ trait MongoHelper {
 
   def createMongoReads[T](reads: Reads[T]): Reads[T] = Reads {
     js => js.transform(fromMongoDates).map {
-      contact: JsValue => contact.as[T](reads)
+      obj: JsValue => obj.as[T](reads)
     }
   }
 
   def createMongoWrites[T](writes: Writes[T]): Writes[T] = Writes {
-        obj: T => Json.toJson[T](obj)(writes).transform(toMongoDates).getOrElse(Json.obj())
+    obj: T => Json.toJson[T](obj)(writes).transform(toMongoDates).getOrElse(Json.obj())
   }
 
-  def createMongoFormat[T](reads: Reads[T], writes: Writes[T]) = Format(createMongoReads(reads), createMongoWrites(writes))
+  def createMongoFormat[T](
+                            reads: Reads[T],
+                            writes: Writes[T]
+                            ) = Format(createMongoReads(reads), createMongoWrites(writes))
 }
