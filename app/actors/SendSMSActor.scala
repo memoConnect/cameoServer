@@ -54,10 +54,8 @@ class SendSMSActor extends Actor with MongoHelper {
                   if ((jsResponse \ "status").asOpt[String].getOrElse("fail").equals("0")) {
                     "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
                       (jsResponse \ "network").asOpt[String].getOrElse("none")
-
-
                   } else {
-                    "Error sending SMS message: " + (jsResponse \ "error-text").asOpt[String].getOrElse("none")
+                    "Error sending SMS message. Response: " + jsResponse.toString
                   }
                 } else {
                   "Error connecting to Nexmo: " + nexmoResponse.statusText
