@@ -4,11 +4,10 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import java.text.SimpleDateFormat
 import org.mindrot.jbcrypt.BCrypt
-import java.util.Date
+import java.util.{TimeZone, Date}
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
-import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -23,6 +22,7 @@ trait Model[A] extends MongoHelper {
   implicit val mongoFormat: Format[A]
 
   def inputReads: Reads[A]
+
   def outputWrites(implicit ol: OutputLimits): Writes[A]
 
   val sortWith = (o1: A, o2: A) => true
@@ -32,7 +32,7 @@ trait Model[A] extends MongoHelper {
    * Helper
    */
 
-  def toJson(model: A)(implicit ol: OutputLimits = OutputLimits(0,0)): JsValue = {
+  def toJson(model: A)(implicit ol: OutputLimits = OutputLimits(0, 0)): JsValue = {
     Json.toJson[A](model)(outputWrites)
   }
 
@@ -50,13 +50,17 @@ trait Model[A] extends MongoHelper {
     }
   }
 
-  def toSortedJsonArray(array: Seq[A])(implicit ol: OutputLimits) : JsArray = toSortedJsonArray(array, outputWrites)
+  def toSortedJsonArray(array: Seq[A])(implicit ol: OutputLimits): JsArray = toSortedJsonArray(array, outputWrites)
 
-  def toSortedJsonArray(array: Seq[A], writes: Writes[A])(implicit ol: OutputLimits) : JsArray = {
+  def toSortedJsonArray(array: Seq[A], writes: Writes[A])(implicit ol: OutputLimits): JsArray = {
     val sorted = array.sortWith(sortWith).map(Json.toJson[A](_)(writes))
 
-    def mustBePositive(i: Int) = if (i < 0) 0 else i
-    val start = mustBePositive(math.min(ol.offset, sorted.size-1))
+    def mustBePositive(i: Int) = if (i < 0) {
+      0
+    } else {
+      i
+    }
+    val start = mustBePositive(math.min(ol.offset, sorted.size - 1))
     val end = mustBePositive(
       ol.limit match {
         case 0 => sorted.size
@@ -91,6 +95,7 @@ trait Model[A] extends MongoHelper {
   }
 
   val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+  defaultDateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"))
 
   def addCreated(date: Date): JsObject = {
     Json.obj("created" -> defaultDateFormat.format(date))

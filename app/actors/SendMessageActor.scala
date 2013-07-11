@@ -62,8 +62,6 @@ class SendMessageActor extends Actor with MongoHelper {
           Json.obj("lastMessage" -> Json.toJson(message))
         ))
 
-      Logger.debug("SET: " + set.toString())
-
       conversationCollection.update(query, set).map {
         lastError => if (lastError.inError) {
           Logger.error("Error updating message: " + lastError.stringify)
