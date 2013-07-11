@@ -62,7 +62,7 @@ object Conversation extends Model[Conversation] {
   }
 
   override val sortWith = {
-    (c1: Conversation, c2: Conversation) => c1.created.after(c2.created)
+    (c1: Conversation, c2: Conversation) => c1.lastUpdated.after(c2.lastUpdated)
   }
 
 }
