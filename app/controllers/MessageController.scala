@@ -30,7 +30,7 @@ object MessageController extends ExtendedController {
       case None => {
         //create new conversation
         val conversation: Conversation = new Conversation(IdHelper.generateConversationId(), new Date,
-          new Date, Seq(), Seq())
+          new Date, Seq(), Seq(), None)
 
         conversationCollection.insert(conversation).map {
           lastError => conversation.conversationId

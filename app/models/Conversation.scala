@@ -18,7 +18,8 @@ case class Conversation(
                          created: Date,
                          lastUpdated: Date,
                          recipients: Seq[Recipient],
-                         messages: Seq[Message]
+                         messages: Seq[Message],
+                         lastMessage: Option[Message]
                          )
 
 object Conversation extends Model[Conversation] {
@@ -46,7 +47,13 @@ object Conversation extends Model[Conversation] {
     c =>
       Json.obj("conversationId" -> c.conversationId) ++
         Conversation.addLastUpdated(c.lastUpdated) ++
-        Json.obj("numberOfMessages: " -> c.messages.length)
+        Json.obj("numberOfMessages: " -> c.messages.length) ++
+        Json.obj("lastMessage" -> {
+          c.lastMessage match {
+            case Some(m: Message) => Message.toJson(m)
+            case _ => Json.obj()
+          }
+        })
   }
 
   def find(conversationId: String): Future[Option[Conversation]] = {
