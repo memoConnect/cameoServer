@@ -34,7 +34,8 @@ case class Asset (
         Json.obj("assetId" -> asset.assetId) ++
         Json.obj("name" -> asset.filename) ++
         Json.obj("type" -> asset.fileType) ++
-        Json.obj("size" -> asset.filesize)
+        Json.obj("size" -> asset.filesize) ++
+        addCreated(asset.created)
     }
 
     def find(assetId: String): Future[Option[Asset]] = {
@@ -43,6 +44,6 @@ case class Asset (
     }
 
     override val sortWith = {
-      (a1: Asset, a2: Asset) => a1.filename < a2.filename
+      (a1: Asset, a2: Asset) => a1.created.before(a2.created)
     }
   }

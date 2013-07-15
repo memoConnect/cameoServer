@@ -50,10 +50,11 @@ object Conversation extends Model[Conversation] {
         Json.obj("numberOfMessages: " -> c.messages.length) ++
         Json.obj("lastMessage" -> {
           c.lastMessage match {
-            case Some(m: Message) => Message.toJson(m)
+            case Some(m: Message) => JsString(m.from + ": " + m.messageBody)
             case _ => Json.obj()
           }
-        })
+        }) ++
+        Json.obj("recipients" -> c.recipients.mkString(", "))
   }
 
   def find(conversationId: String): Future[Option[Conversation]] = {

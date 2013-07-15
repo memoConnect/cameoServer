@@ -16,7 +16,7 @@ object ShortUrlController extends Controller {
       val redirectTo = Play.configuration.getString("shortUrl.redirectTo").getOrElse("derp")
 
       urlType match {
-        case "c" => Redirect(redirectTo + "/#conversation?c=" + id)
+        case "c" => Redirect(redirectTo + "/conversation/" + id)
         case _ => Redirect(redirectTo)
       }
   }

@@ -5,10 +5,10 @@ import play.Project._
 
 object ApplicationBuild extends Build {
 
-  val appName         = "kolibrinet"
-  val appVersion      = "0.2"
+  val appName = "kolibrinet"
+  val appVersion = "0.2"
 
-  scalaVersion        := "2.10.2"
+  scalaVersion := "2.10.2"
 
   val appDependencies = Seq(
     jdbc,
@@ -20,12 +20,12 @@ object ApplicationBuild extends Build {
     "javax.mail" % "mail" % "1.4.7"
   )
 
-
   val main = play.Project(appName, appVersion, appDependencies)
     .settings(Play2WarPlugin.play2WarSettings: _*)
     .settings(
     Play2WarKeys.servletVersion := "3.0",
     Play2WarKeys.targetName := Some("ROOT")
   )
+
 
 }

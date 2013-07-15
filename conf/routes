@@ -47,5 +47,6 @@ GET            /api/v1/asset/:assetId                      controllers.AssetCont
 GET            /c/:id                                      controllers.ShortUrlController.redirect(urlType = "c", id: String)
 
 # The Webclient is static and comes from public/mobile
+GET            /static/*file                               controllers.Assets.at(path="/public/mobile/static", file)
+GET            /*foo                                       controllers.Application.staticAssets(path="/public/mobile", file="index.html", foo)
 GET            /                                           controllers.Assets.at(path="/public/mobile", file="index.html")
-GET            /*file                                      controllers.Assets.at(path="/public/mobile", file)
