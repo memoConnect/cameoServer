@@ -1593,7 +1593,17 @@
               <collectionProp name="HTTPFileArgs.files">
                 <elementProp name="/home/reimerei/dev/kolibrinet/jmeter/testpic.gif" elementType="HTTPFileArg">
                   <stringProp name="File.path">/home/reimerei/dev/kolibrinet/jmeter/testpic.gif</stringProp>
-                  <stringProp name="File.paramname">file</stringProp>
+                  <stringProp name="File.paramname">file[0]</stringProp>
+                  <stringProp name="File.mimetype">image/gif</stringProp>
+                </elementProp>
+                <elementProp name="/home/reimerei/dev/kolibrinet/jmeter/testpic2.gif" elementType="HTTPFileArg">
+                  <stringProp name="File.path">/home/reimerei/dev/kolibrinet/jmeter/testpic2.gif</stringProp>
+                  <stringProp name="File.paramname">file[1]</stringProp>
+                  <stringProp name="File.mimetype">image/gif</stringProp>
+                </elementProp>
+                <elementProp name="/home/reimerei/dev/kolibrinet/jmeter/testpic3.gif" elementType="HTTPFileArg">
+                  <stringProp name="File.path">/home/reimerei/dev/kolibrinet/jmeter/testpic3.gif</stringProp>
+                  <stringProp name="File.paramname">file[2]</stringProp>
                   <stringProp name="File.mimetype">image/gif</stringProp>
                 </elementProp>
               </collectionProp>
@@ -1679,15 +1689,9 @@
           </HTTPSamplerProxy>
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check asset 1" enabled="true">
-              <stringProp name="JSON_PATH">data.assets[0].assetId</stringProp>
+              <stringProp name="JSON_PATH">data.assets[4].assetId</stringProp>
               <stringProp name="EXPECTED_VALUE">${ass1}</stringProp>
-              <boolProp name="JSONVALIDATION">true</boolProp>
-            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
-            <hashTree/>
-            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check asset 2" enabled="true">
-              <stringProp name="JSON_PATH">data.assets[1].assetId</stringProp>
-              <stringProp name="EXPECTED_VALUE">${ass2}</stringProp>
-              <boolProp name="JSONVALIDATION">true</boolProp>
+              <boolProp name="JSONVALIDATION">false</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
           </hashTree>
@@ -1784,7 +1788,7 @@
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
           </hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Delete Token" enabled="true">
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Delete Token" enabled="false">
             <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
               <collectionProp name="Arguments.arguments">
