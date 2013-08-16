@@ -4,7 +4,7 @@ git submodule foreach git pull
 git commit -a -m "updated webclient submodule"
 git branch -D deploy
 git checkout -b deploy
-sed -i '/target\//d' .gitignore
+cp gitignore_deploy .gitignore
 ./sbt clean compile stage
 git add . -A
 git commit -m "deploy"
