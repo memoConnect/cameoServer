@@ -25,7 +25,7 @@ GET            /api/v1/conversations                       controllers.Conversat
 
 # TOKENS
 GET            /api/v1/token                               controllers.TokenController.getToken
-OPTIONS        /api/v1/token                               controllers.TokenController.getToken
+OPTIONS        /api/v1/token                               controllers.TokenController.getTokenOptions
 DELETE         /api/v1/token/:token                        controllers.TokenController.deleteToken(token: String)
 
 # CONTACTS
