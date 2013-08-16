@@ -61,6 +61,18 @@ object TokenController extends ExtendedController {
    */
   def getToken = Action {
     request =>
+      request.headers.get("authorization") match {
+        case None => {
+          BadRequest(resKO("No Authorization field in header")).withHeaders(
+            WWW_AUTHENTICATE -> "user")
+        }
+        case Some(basicAuth) => {
+          val (user, pass) = decodeBasicAuth(basicAuth)
+          Async {
+            checkUserAndReturnToken(user, pass)
+          }
+        }
+      }
       request.headers.get("Authorization") match {
         case None => {
           BadRequest(resKO("No Authorization field in header")).withHeaders(
@@ -77,6 +89,18 @@ object TokenController extends ExtendedController {
 
   def getTokenOptions = Action {
     request =>
+      request.headers.get("authorization") match {
+        case None => {
+          BadRequest(resKO("No Authorization field in header")).withHeaders(
+            WWW_AUTHENTICATE -> "user")
+        }
+        case Some(basicAuth) => {
+          val (user, pass) = decodeBasicAuth(basicAuth)
+          Async {
+            checkUserAndReturnToken(user, pass)
+          }
+        }
+      }
       request.headers.get("Authorization") match {
         case None => {
           BadRequest(resKO("No Authorization field in header")).withHeaders(
