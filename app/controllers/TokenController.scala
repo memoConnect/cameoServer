@@ -61,7 +61,7 @@ object TokenController extends ExtendedController {
    */
   def getToken = Action {
     request =>
-      request.headers.get("Authorization") match {
+      request.headers.get("authorization") match {
         case None => {
           BadRequest(resKO("No Authorization field in header")).withHeaders(
             WWW_AUTHENTICATE -> "user")
