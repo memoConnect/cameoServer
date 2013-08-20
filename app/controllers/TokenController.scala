@@ -6,7 +6,6 @@ import play.api.libs.json.{Json, JsValue}
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
-import org.apache.http.HttpHeaders
 import models.Token
 import java.util.Date
 
@@ -61,18 +60,6 @@ object TokenController extends ExtendedController {
    */
   def getToken = Action {
     request =>
-      request.headers.get("authorization") match {
-        case None => {
-          BadRequest(resKO("No Authorization field in header")).withHeaders(
-            WWW_AUTHENTICATE -> "user")
-        }
-        case Some(basicAuth) => {
-          val (user, pass) = decodeBasicAuth(basicAuth)
-          Async {
-            checkUserAndReturnToken(user, pass)
-          }
-        }
-      }
       request.headers.get("Authorization") match {
         case None => {
           BadRequest(resKO("No Authorization field in header")).withHeaders(
@@ -89,30 +76,7 @@ object TokenController extends ExtendedController {
 
   def getTokenOptions = Action {
     request =>
-      request.headers.get("authorization") match {
-        case None => {
-          BadRequest(resKO("No Authorization field in header")).withHeaders(
-            WWW_AUTHENTICATE -> "user")
-        }
-        case Some(basicAuth) => {
-          val (user, pass) = decodeBasicAuth(basicAuth)
-          Async {
-            checkUserAndReturnToken(user, pass)
-          }
-        }
-      }
-      request.headers.get("Authorization") match {
-        case None => {
-          BadRequest(resKO("No Authorization field in header")).withHeaders(
-            WWW_AUTHENTICATE -> "user")
-        }
-        case Some(basicAuth) => {
-          val (user, pass) = decodeBasicAuth(basicAuth)
-          Async {
-            checkUserAndReturnToken(user, pass)
-          }
-        }
-      }
+      Ok()
   }
 
   def deleteToken(token: String) = Action {
@@ -120,12 +84,14 @@ object TokenController extends ExtendedController {
       Async {
         tokenCollection.remove[JsValue](Json.obj("token" -> token)).map {
           lastError =>
-            if (lastError.updated > 0)
+            if (lastError.updated > 0) {
               Ok(resOK(Json.obj("deletedToken" -> token)))
+            }
             else if (lastError.ok) {
               NotFound(resKO("Token not found"))
-            } else
+            } else {
               InternalServerError(resKO(lastError.stringify))
+            }
         }
       }
   }
