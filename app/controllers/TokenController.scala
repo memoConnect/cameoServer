@@ -76,7 +76,7 @@ object TokenController extends ExtendedController {
 
   def getTokenOptions = Action {
     request =>
-      Ok()
+      Ok("")
   }
 
   def deleteToken(token: String) = Action {
