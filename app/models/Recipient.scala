@@ -3,7 +3,11 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
-import traits.{OutputLimits, Model, MongoHelper}
+import traits.{OutputLimits, Model}
+import scala.concurrent.{ExecutionContext, Future}
+import reactivemongo.core.commands.LastError
+import play.api.Logger
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -15,7 +19,7 @@ case class Recipient(
                       name: String,
                       messageType: String,
                       sendTo: String,
-                      sendStatus: Option[String] ,
+                      sendStatus: Option[String],
                       testRun: Option[Boolean]
                       )
 
@@ -33,18 +37,50 @@ object Recipient extends Model[Recipient] {
       (__ \ 'test).readNullable[Boolean]
     )(Recipient.apply _)
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)) = Writes[Recipient] {
+  def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)) = Writes[Recipient] {
     r =>
       Json.obj("recipientId" -> r.recipientId) ++
-      Json.obj("name" -> r.name) ++
-      Json.obj("messageType" -> r.messageType) ++
-      Json.obj("sendTo" -> r.sendTo) ++
-      toJsonOrEmpty("sendStatus", r.sendStatus)
+        Json.obj("name" -> r.name) ++
+        Json.obj("messageType" -> r.messageType) ++
+        Json.obj("sendTo" -> r.sendTo) ++
+        toJsonOrEmpty("sendStatus", r.sendStatus)
   }
 
   Json.writes[Recipient]
 
   override val sortWith = {
     (r1: Recipient, r2: Recipient) => r1.name < r2.name
+  }
+
+  /*
+   * Helper
+   */
+
+  def updateRecipientStatus(message: Message, recipient: Recipient, newStatus: String): Future[Option[String]] = {
+
+    val res = for {
+      messagePosition <- models.Message.getMessagePosition(message.conversationId.getOrElse(""),
+        message.messageId)
+      lastError <- {
+        val query = Json.obj("conversationId" -> message.conversationId) ++ Json.obj("messages." +
+          messagePosition +
+          ".recipients.recipientId" -> recipient.recipientId)
+        val set = Json.obj("$set" -> Json.obj("messages." + messagePosition + ".recipients.$.sendStatus" ->
+          newStatus))
+        conversationCollection.update(query, set)
+      }
+    } yield lastError
+
+    res.map {
+      case (lastError: LastError) =>
+        if (lastError.inError) {
+          val error = "Error updating recipient status"
+          Logger.error(error)
+          Some(error)
+        }
+        else {
+          None
+        }
+    }
   }
 }

@@ -1,13 +1,12 @@
 package controllers
 
 import play.api.libs.json._
-import play.api.libs.json.Reads._
 
 import helper.IdHelper
 import scala.None
 import traits.ExtendedController
 import play.api.Logger
-import models.{Conversation, Recipient, Message}
+import models.{User, Conversation, Recipient, Message}
 import java.util.Date
 import scala.concurrent.Future
 import reactivemongo.core.commands.LastError
@@ -40,7 +39,7 @@ object MessageController extends ExtendedController {
     }
   }
 
-  // get recipients form conversation and add those new from this message
+  // get recipients from conversation and add those new from this message
   def createMessage(conversationId: String, username: String)(implicit message: Message): Future[Message] = {
     def newMessageWithRecipients(recipients: Seq[Recipient]): Message = {
       message.copy(recipients = Some(recipients), conversationId = Some(conversationId), from = username)
@@ -56,11 +55,27 @@ object MessageController extends ExtendedController {
   }
 
   // add this conversation to the user object
-  def addConversationToUser(conversationId: String, username: String)(implicit message: Message): Future[LastError] = {
-    // add this conversation to this user
-    val query = Json.obj("username" -> username)
-    val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
-    userCollection.update(query, set)
+  def addConversationToUser(conversationId: String, username: String): Future[Option[String]] = {
+    //get the user
+    User.find(username).map {
+      case None => {
+        val em: String = "Could not find User"
+        Logger.error(em)
+        Some(em)
+      }
+      case Some(u) => {
+        // check if the user already has this conversation
+        if (!u.conversations.contains(conversationId)) {
+          // add it if he does not have it
+          val query = Json.obj("username" -> username)
+          val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
+          Logger.debug("Added conversationId " + conversationId + " to user " + username)
+
+          userCollection.update(query, set)
+        }
+        None
+      }
+    }
   }
 
   // add message to conversation
@@ -93,11 +108,11 @@ object MessageController extends ExtendedController {
           val errors = for {
             conversationId <- makeSureConversationExists
             newMessage <- createMessage(conversationId, username)
-            userError <- addConversationToUser(conversationId, username)
+            userRes <- addConversationToUser(conversationId, username)
             recipientError <- addRecipientsToConversation(conversationId)
             messageError <- addMessageToConversation(conversationId, newMessage)
 
-          } yield (userError.ok && messageError.ok && recipientError.ok, newMessage)
+          } yield (userRes.isEmpty && messageError.ok && recipientError.ok, newMessage)
 
           // check result and send response
           Async {
@@ -120,7 +135,7 @@ object MessageController extends ExtendedController {
     (username, request) =>
       Async {
         val message = Message.find(messageId)
-        message.map{
+        message.map {
           option => option match {
             case None => NotFound(resKO("messageId not found"))
             case Some(m) => Ok(resOK(Message.toJson(m)))
@@ -128,4 +143,6 @@ object MessageController extends ExtendedController {
         }
       }
   }
+
+
 }

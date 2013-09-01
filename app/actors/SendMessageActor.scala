@@ -20,6 +20,7 @@ class SendMessageActor extends Actor with MongoHelper {
 
   lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
   lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
+  lazy val sendKolibriActor = Akka.system.actorOf(Props[SendKolibriActor], name = "sendKolibri")
 
   def receive = {
     case message: Message => {
@@ -48,6 +49,10 @@ class SendMessageActor extends Actor with MongoHelper {
               case "sms" => {
                 sendSMSActor !(recipient, message)
                 recipientAddStatus("SMS queued")
+              }
+              case "otherUser" => {
+                sendKolibriActor ! (recipient, message)
+                recipientAddStatus("KolibriMessage queued")
               }
               case m => recipientAddStatus("Unkown message type \'" + m + "\'")
             }

@@ -19,12 +19,14 @@ import reactivemongo.core.commands.LastError
  * Date: 6/12/13
  * Time: 8:01 PM
  */
+
 class SendMailActor extends Actor with MongoHelper {
 
   def receive = {
     case (recipient: Recipient, message: models.Message) => {
       // get user
       User.find(message.from).map {
+        case None => Logger.error("SendMailActor: Error finding sender in DB")
         case Some(user) =>
           val from = "kolibri-test@jaymob.de"
           val to = recipient.sendTo
@@ -62,28 +64,9 @@ class SendMailActor extends Actor with MongoHelper {
               status = "Error sending Mail, Could not connect to Amazon"
               Logger.error("Error sending mail", se)
             }
-
           }
 
-          val res = for {
-            messagePosition <- models.Message.getMessagePosition(message.conversationId.getOrElse(""),
-              message.messageId)
-            lastError <- {
-              val query = Json.obj("conversationId" -> message.conversationId) ++ Json.obj("messages." + messagePosition +
-                ".recipients.recipientId" -> recipient.recipientId)
-              val set = Json.obj("$set" -> Json.obj("messages." + messagePosition + ".recipients.$.sendStatus" -> status))
-              conversationCollection.update(query, set)
-            }
-          } yield lastError
-
-          res.map {
-            case(lastError: LastError) =>
-              if (lastError.inError) {
-                Logger.error("Error updating recipient")
-              } else if (!lastError.updatedExisting) {
-                Logger.error("SendMailActor: nothing updated")
-              }
-          }
+          Recipient.updateRecipientStatus(message, recipient, status)
 
           Logger.info("SendMailActor: " + status)
       }
