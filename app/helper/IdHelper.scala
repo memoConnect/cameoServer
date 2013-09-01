@@ -38,4 +38,8 @@ object IdHelper {
     randomString(8)
   }
 
+  def generatePurl(): String = {
+    randomString(10)
+  }
+
 }

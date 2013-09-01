@@ -21,6 +21,7 @@ trait MongoHelper {
   val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
   val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("token")
   val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
+  val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
 
   val emptyObj = __.json.put(Json.obj())
 

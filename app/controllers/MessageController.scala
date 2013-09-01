@@ -59,9 +59,7 @@ object MessageController extends ExtendedController {
     //get the user
     User.find(username).map {
       case None => {
-        val em: String = "Could not find User"
-        Logger.error(em)
-        Some(em)
+        None
       }
       case Some(u) => {
         // check if the user already has this conversation
@@ -97,7 +95,7 @@ object MessageController extends ExtendedController {
   /**
    * Actions
    */
-  def sendMessage = authenticatePOST() {
+  def sendMessage = authenticatePOST(hasToBeRegistered = false) {
     (username, request) =>
       val jsBody: JsValue = request.body
 

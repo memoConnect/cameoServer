@@ -8,7 +8,7 @@ import traits.MongoHelper
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.libs.ws.WS
-import models.{User, Recipient}
+import models.{Purl, User, Recipient}
 
 /**
  * User: Björn Reimer
@@ -28,7 +28,7 @@ class SendSMSActor extends Actor with MongoHelper {
           val body = message.messageBody
 
           // add footer to sms
-          val footer = "... more: http://kl.vc/c/" + message.conversationId.getOrElse("")
+          val footer = "... more: http://kl.vc/p/" + Purl.createPurl(message.conversationId.get, recipient)
           // cut message, so it will fit in the sms with the footer.
           val bodyWithFooter: String = {
             if (footer.length + body.length > 160) {

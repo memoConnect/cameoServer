@@ -14,7 +14,8 @@ import reactivemongo.api.indexes.{IndexType, Index}
  */
 case class Token(
                   token: String,
-                  username: String,
+                  username: Option[String],
+                  purl: Option[String],
                   isAdmin: Boolean,
                   created: Date
                   )
@@ -31,7 +32,6 @@ object Token extends MongoHelper with Model[Token] {
   def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)) = Writes[Token] {
     t =>
       Json.obj("token" -> t.token) ++
-        Json.obj("username" -> t.username) ++
         addCreated(t.created)
   }
 

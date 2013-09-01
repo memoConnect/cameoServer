@@ -39,6 +39,9 @@ GET            /api/v1/contact-group/:groupName            controllers.ContactCo
 POST           /api/v1/asset                               controllers.AssetController.uploadAsset(token: String, messageId: String)
 GET            /api/v1/asset/:assetId                      controllers.AssetController.getAsset(token: String, assetId: String)
 
+# PURLS
+GET             /api/v1/purl/:purl                          controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0)
+
 ##
 ##   WebClient
 ##

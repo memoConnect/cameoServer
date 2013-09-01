@@ -11,7 +11,7 @@ import traits.MongoHelper
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import com.amazonaws.{AmazonServiceException, AmazonClientException}
-import models.{User, Recipient}
+import models.{Purl, User, Recipient}
 import reactivemongo.core.commands.LastError
 
 /**
@@ -35,7 +35,7 @@ class SendMailActor extends Actor with MongoHelper {
 
           // add footer to the mail
           val bodyWithFooter = body + ("\n\n\n\n----------------------------------\nAnswer and view the entire " +
-            "conversation on Kolibrinet: http://kl.vc/c/" + message.conversationId.getOrElse(""))
+            "conversation on Kolibrinet: http://kl.vc/p/" + Purl.createPurl(message.conversationId.get, recipient))
 
           Logger.info("SendMailActor: Sending email to " + to + " from " + from + " with subject \'" + subject + "\'")
           val credentials = new BasicAWSCredentials(Play.configuration.getString("aws.accessKey").getOrElse(""),
