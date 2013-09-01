@@ -54,7 +54,7 @@ object Conversation extends Model[Conversation] {
             case _ => Json.obj()
           }
         }) ++
-        Json.obj("recipients" -> c.recipients.mkString(", "))
+        Json.obj("recipients" -> c.recipients.map{_.name})
   }
 
   def find(conversationId: String): Future[Option[Conversation]] = {
