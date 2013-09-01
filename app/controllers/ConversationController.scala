@@ -1,10 +1,9 @@
 package controllers
 
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.Json
 import traits.{OutputLimits, ExtendedController}
-import models.{Message, User, Conversation}
+import models.{User, Conversation}
 import scala.concurrent.Future
-import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -19,14 +18,14 @@ object ConversationController extends ExtendedController {
         implicit val outputLimits = OutputLimits(offset, limit)
         Conversation.find(conversationId).map {
           case None => NotFound(resKO("The conversation does not exist"))
-          case Some(conversation) =>  Ok(resOK(Conversation.toJson(conversation)))
+          case Some(conversation) => Ok(resOK(Conversation.toJson(conversation)))
         }
       }
   }
 
   def getConversations(token: String, offset: Int, limit: Int) = authenticateGET(token) {
     (username, request) =>
-      def getConversations(ids: Seq[String]): Future[List[Conversation]] = {
+      def getUserConversations(ids: Seq[String]): Future[List[Conversation]] = {
         val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
         conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].toList
       }
@@ -35,7 +34,13 @@ object ConversationController extends ExtendedController {
         user <- User.find(username)
         conversations <- user match {
           case None => Future(Seq())
-          case Some(u) => getConversations(u.conversations)
+          case Some(u) => {
+            if (u.conversations.length > 0) {
+              getUserConversations(u.conversations)
+            } else {
+              Future(Seq())
+            }
+          }
         }
       } yield conversations
 

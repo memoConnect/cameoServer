@@ -1614,7 +1614,7 @@
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get asset id" enabled="true">
               <stringProp name="VAR">ass1</stringProp>
-              <stringProp name="JSONPATH">data.assetId</stringProp>
+              <stringProp name="JSONPATH">data.assetIds[0]</stringProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor>
             <hashTree/>
           </hashTree>
@@ -1657,7 +1657,7 @@
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get asset id" enabled="true">
               <stringProp name="VAR">ass2</stringProp>
-              <stringProp name="JSONPATH">data.assetId</stringProp>
+              <stringProp name="JSONPATH">data.assetIds[0]</stringProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor>
             <hashTree/>
           </hashTree>
@@ -1689,7 +1689,7 @@
           </HTTPSamplerProxy>
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check asset 1" enabled="true">
-              <stringProp name="JSON_PATH">data.assets[4].assetId</stringProp>
+              <stringProp name="JSON_PATH">data.assets[1].assetId</stringProp>
               <stringProp name="EXPECTED_VALUE">${ass1}</stringProp>
               <boolProp name="JSONVALIDATION">false</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>

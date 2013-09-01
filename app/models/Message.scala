@@ -98,7 +98,7 @@ object Message extends MongoHelper with Model[Message] {
 
     conversationCollection.find(query).one[Conversation].map{
       case None => -1
-      case Some(c) => c.messages.indexWhere(m => {Logger.debug(m.messageId); m.messageId.equals(messageId)})
+      case Some(c) => c.messages.indexWhere(m => {m.messageId.equals(messageId)})
     }
 
   }

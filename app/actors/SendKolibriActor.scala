@@ -3,7 +3,6 @@ package actors
 import akka.actor.Actor
 import traits.MongoHelper
 import models.Recipient
-import scala.Some
 import controllers.MessageController
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
@@ -21,19 +20,18 @@ class SendKolibriActor extends Actor with MongoHelper {
     case (recipient: Recipient, message: models.Message) => {
 
       // we only need to add the conversation to the user, no real "sending" is involved
-      val status = MessageController.addConversationToUser(message.conversationId.get, recipient.name).map {
-//        case None => "Kolibri Message sent"
-//        case Some(error) => "error"
-        d => "d"
+      val status = MessageController.addConversationToUser(message.conversationId.get, recipient.sendTo).map {
+                case None => "Kolibri Message sent"
+                case Some(error) => "error"
       }
 
       status.map {
         statusMessage => {
+          Recipient.updateRecipientStatus(message, recipient, statusMessage)
           Logger.info("SendKolibriActor: " + statusMessage)
         }
       }
 
-      //      Recipient.updateRecipientStatus(message, recipient, messageStatus)
     }
   }
 }
