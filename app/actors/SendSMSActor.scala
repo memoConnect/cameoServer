@@ -8,7 +8,7 @@ import traits.MongoHelper
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.libs.ws.WS
-import models.{Purl, User, Recipient}
+import models.{Purl, Recipient}
 
 /**
  * User: Björn Reimer
@@ -19,55 +19,51 @@ class SendSMSActor extends Actor with MongoHelper {
 
   def receive = {
     case (recipient: Recipient, message: models.Message) => {
-      // get user
-      User.find(message.from).map {
-        case None => Logger.error("SendSMSActor: Error finding sender in DB")
-        case Some(user) =>
-          val from = user.name.getOrElse("Kolibrinet")
-          val to = recipient.sendTo
-          val body = message.messageBody
 
-          // add footer to sms
-          val footer = "... more: http://kl.vc/p/" + Purl.createPurl(message.conversationId.get, recipient)
-          // cut message, so it will fit in the sms with the footer.
-          val bodyWithFooter: String = {
-            if (footer.length + body.length > 160) {
-              body.substring(0, 160 - footer.length) + footer
-            } else {
-              body + footer
-            }
-          }
+      val from = message.from
+      val to = recipient.sendTo
+      val body = message.messageBody
 
-          Logger.info("SendSMSActor: Sending SMS to " + to + " from " + from)
+      // add footer to sms
+      val footer = "... more: http://kl.vc/p/" + Purl.createPurl(message.conversationId.get, recipient)
+      // cut message, so it will fit in the sms with the footer.
+      val bodyWithFooter: String = {
+        if (footer.length + body.length > 160) {
+          body.substring(0, 160 - footer.length) + footer
+        } else {
+          body + footer
+        }
+      }
 
-          val postBody = Json.obj("api_key" -> JsString(Play.configuration.getString("nexmo.key").getOrElse("")),
-            "api_secret" -> JsString(Play.configuration.getString("nexmo.secret").getOrElse("")), "from" -> from,
-            "to" -> to, "text" -> bodyWithFooter)
+      Logger.info("SendSMSActor: Sending SMS to " + to + " from " + from)
 
-          val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
+      val postBody = Json.obj("api_key" -> JsString(Play.configuration.getString("nexmo.key").getOrElse("")),
+        "api_secret" -> JsString(Play.configuration.getString("nexmo.secret").getOrElse("")), "from" -> from,
+        "to" -> to, "text" -> bodyWithFooter)
 
-          response.map {
-            nexmoResponse => {
-              val status = {
-                if (nexmoResponse.status < 300) {
-                  val jsResponse = nexmoResponse.json
-                  if ((jsResponse \ "status").asOpt[String].getOrElse("fail").equals("0")) {
-                    "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
-                      (jsResponse \ "network").asOpt[String].getOrElse("none")
-                  } else {
-                    "Error sending SMS message. Response: " + jsResponse.toString
-                  }
-                } else {
-                  "Error connecting to Nexmo: " + nexmoResponse.statusText
-                }
+      val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
+
+      response.map {
+        nexmoResponse => {
+          val status = {
+            if (nexmoResponse.status < 300) {
+              val jsResponse = nexmoResponse.json
+              if ((jsResponse \ "status").asOpt[String].getOrElse("fail").equals("0")) {
+                "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
+                  (jsResponse \ "network").asOpt[String].getOrElse("none")
+              } else {
+                "Error sending SMS message. Response: " + jsResponse.toString
               }
-
-              Recipient.updateRecipientStatus(message, recipient, status)
-
-              Logger.info("SendSMSActor: " + status)
-
+            } else {
+              "Error connecting to Nexmo: " + nexmoResponse.statusText
             }
           }
+
+          Recipient.updateRecipientStatus(message, recipient, status)
+
+          Logger.info("SendSMSActor: " + status)
+
+        }
       }
     }
   }
