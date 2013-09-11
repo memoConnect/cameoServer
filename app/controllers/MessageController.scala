@@ -126,7 +126,7 @@ object MessageController extends ExtendedController {
             }
           }
         }
-      }.recoverTotal(e => BadRequest(JsError.toFlatJson(e)))
+      }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
   }
 
   def getMessage(messageId: String, token: String) = authenticateGET(token) {

@@ -22,7 +22,7 @@ class SendKolibriActor extends Actor with MongoHelper {
       // we only need to add the conversation to the user, no real "sending" is involved
       val status = MessageController.addConversationToUser(message.conversationId.get, recipient.sendTo).map {
                 case None => "Kolibri Message sent"
-                case Some(error) => "error"
+                case Some(error) => error
       }
 
       status.map {
