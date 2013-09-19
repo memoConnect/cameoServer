@@ -69,9 +69,6 @@ object Recipient extends Model[Recipient] {
         val set = Json.obj("$set" -> Json.obj("messages." + messagePosition + ".recipients.$.sendStatus" ->
           newStatus))
 
-        Logger.debug("SET: " + set.toString)
-        Logger.debug("QUERY: " + query.toString)
-
         conversationCollection.update(query, set)
       }
     } yield lastError

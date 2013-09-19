@@ -67,7 +67,7 @@
     &quot;email&quot;: &quot;e@mail.de&quot;,&#xd;
     &quot;password&quot;: &quot;password&quot;,&#xd;
     &quot;name&quot;: &quot;Otto Otter&quot;,&#xd;
-    &quot;phonenumber&quot;: &quot;+49123456789&quot;,&#xd;
+    &quot;phonenumber&quot;: &quot;+49123456&quot;,&#xd;
     &quot;otherKey&quot;:&quot;value&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
@@ -561,7 +561,7 @@
     &quot;email&quot;: &quot;e2@mail.de&quot;,&#xd;
     &quot;password&quot;: &quot;password&quot;,&#xd;
     &quot;name&quot;: &quot;Reimerei&quot;,&#xd;
-    &quot;phonenumber&quot;: &quot;+491234567892&quot;&#xd;
+    &quot;phonenumber&quot;: &quot;+491744560277&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -585,7 +585,7 @@
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
               <stringProp name="JSON_PATH">data</stringProp>
-              <stringProp name="EXPECTED_VALUE">test</stringProp>
+              <stringProp name="EXPECTED_VALUE">test2</stringProp>
               <boolProp name="JSONVALIDATION">false</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
@@ -1548,7 +1548,7 @@
             <hashTree/>
           </hashTree>
         </hashTree>
-        <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="Assets" enabled="true"/>
+        <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="Assets" enabled="false"/>
         <hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Send Message with Asset" enabled="false">
             <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>

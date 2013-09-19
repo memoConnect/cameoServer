@@ -70,5 +70,12 @@ object Purl extends Model[Purl] {
     purl.purl
   }
 
+  def createPurl(conversationId: String, user: User): String = {
+    // TODO get recipientID
+    val purl = new Purl(IdHelper.generatePurl(), conversationId, "registered", "", Some(user.username), None, None)
 
+    // write to db and return purl
+    purlCollection.insert(purl)
+    purl.purl
+  }
 }

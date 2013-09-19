@@ -1,24 +1,27 @@
 package actors
 
-import akka.actor.Actor
+import akka.actor.{Props, Actor}
 import traits.MongoHelper
 import models.{User, Recipient}
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.Logger
-
+import play.api.libs.concurrent.Akka
+import play.api.Play.current
 /**
  * User: Björn Reimer
  * Date: 8/30/13
  * Time: 8:24 PM
  */
 
+
 class SendKolibriActor extends Actor with MongoHelper {
+
+  lazy val notificationActor = Akka.system.actorOf(Props[NotificationActor], name = "Notification")
+
 
   def receive = {
     case (recipient: Recipient, message: models.Message) => {
-
-      Logger.debug("HERE")
 
       // we only need to add the conversation to the user, no real "sending" is involved
       val status = User.addConversation(message.conversationId.get, recipient.sendTo).map {
@@ -32,6 +35,10 @@ class SendKolibriActor extends Actor with MongoHelper {
       status.map {
         statusMessage => {
           Recipient.updateStatus(message, recipient, statusMessage)
+
+          // send notification to user
+          notificationActor ! (recipient.sendTo, message)
+
           Logger.info("SendKolibriActor: " + statusMessage)
         }
       }
