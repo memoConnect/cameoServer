@@ -8,7 +8,7 @@ import play.api.libs.concurrent.Akka
 import akka.actor.Props
 import actors.SendMessageActor
 import play.api.Play.current
-import models.{Purl, Token}
+import models.Token
 
 
 /**
@@ -43,7 +43,7 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
 
   // checks if the token belongs to the given userclass
   def authenticate[T](token: String, requireAdminRights: Boolean = false, hasToBeRegistered: Boolean = true)(
-    f: (String, Request[T]) => Result
+    f: (Token, Request[T]) => Result
     )(implicit request: Request[T]): Result = {
     Async {
       // check if the token is in the database
@@ -57,18 +57,14 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
             Unauthorized(resKO("This action requires admin privileges"))
           }
           else {
-            // now check if this a registered user or just coming in via a purl
+            // check if this a registered user or just coming in via a purl
             tokenObject.username match {
-              case Some(username) => f(username, request)
-              case None => if (hasToBeRegistered) {
-                Unauthorized(resKO("This action is only available to registered users"))
-              } else {
-                Async {
-                  // get name from purl
-                  Purl.find(tokenObject.purl.get).map {
-                    case None => Unauthorized("Purl not found")
-                    case Some(purl) => f(purl.name.get, request)
-                  }
+              case Some(username) => f(tokenObject, request)
+              case None => {
+                if (hasToBeRegistered) {
+                  Unauthorized(resKO("This action is only available to registered users"))
+                } else {
+                  f(tokenObject, request)
                 }
               }
             }
@@ -80,12 +76,12 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
 
 
   def authenticatePOST(requireAdminRights: Boolean = false, hasToBeRegistered: Boolean = true)
-                      (f: (String, Request[JsValue]) => Result) = {
+                      (f: (Token, Request[JsValue]) => Result) = {
     Action(parse.tolerantJson) {
       implicit request => {
         (request.body \ "token").asOpt[String] match {
           case None => Unauthorized(resKO("No token"))
-          case Some(m) => authenticate[JsValue](m, requireAdminRights, hasToBeRegistered)(f)
+          case Some(m) => authenticate[JsValue](m, requireAdminRights, true)(f)
         }
       }
     }
@@ -97,7 +93,7 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
                           bodyParser: BodyParser[T] = parse.empty,
                           hasToBeRegistered: Boolean = true
                           )(
-                          f: (String, Request[T]) => Result
+                          f: (Token, Request[T]) => Result
                           ) = {
     Action(bodyParser) {
       implicit request => authenticate[T](token, requireAdminRights)(f)

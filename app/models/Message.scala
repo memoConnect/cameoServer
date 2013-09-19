@@ -18,7 +18,8 @@ case class Message(
                     messageId: String,
                     conversationId: Option[String],
                     messageBody: String,
-                    from: String,
+                    from: String,                           // Name to be displayed next to Message
+                    fromRecipientId: String,        // Recipient Id of the sender
                     created: Date,
                     recipients: Option[Seq[Recipient]],
                     assets: Option[Seq[Asset]]
@@ -30,11 +31,11 @@ object Message extends MongoHelper with Model[Message] {
   implicit val collection = conversationCollection
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
-
   def inputReads = (
     Reads.pure[String](IdHelper.generateMessageId()) and
       (__ \ 'conversationId).readNullable[String] and
       (__ \ 'messageBody).read[String] and
+      Reads.pure[String]("") and
       Reads.pure[String]("") and
       Reads.pure[Date](new Date) and
       (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads)) and

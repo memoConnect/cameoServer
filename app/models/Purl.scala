@@ -19,6 +19,7 @@ case class Purl(
                  purl: String,
                  conversationId: String,
                  userType: String,
+                 recipientId: String,
                  username: Option[String],
                  name: Option[String],
                  token: Option[String]
@@ -51,20 +52,17 @@ object Purl extends Model[Purl] {
   /*
    * Helper
    */
-  def createPurl(conversationId: String, recipient: Recipient): String =
-  {
+  def createPurl(conversationId: String, recipient: Recipient): String = {
     // check if the recipient is another user or not
-    val purl: Purl = if(recipient.messageType.toLowerCase().equals("otherUser"))
-    {
+    val purl: Purl = if (recipient.messageType.toLowerCase().equals("otherUser")) {
       // we are sending to another user => only need username
-      new Purl(IdHelper.generatePurl(), conversationId, "registered", Some(recipient.sendTo), None, None)
+      new Purl(IdHelper.generatePurl(), conversationId, "registered", recipient.recipientId, Some(recipient.sendTo), None, None)
     }
-    else
-    {
+    else {
       // we are sending to another user => create new (temporary) token, save Display name
       val token = new Token(IdHelper.generateAccessToken(), None, Some(IdHelper.generatePurl()), false, new Date)
       tokenCollection.insert(token)
-      new Purl(token.purl.get, conversationId, "unregistered", None, Some(recipient.name), Some(token.token))
+      new Purl(token.purl.get, conversationId, "unregistered", recipient.recipientId, None, Some(recipient.name), Some(token.token))
     }
 
     // write to db and return purl

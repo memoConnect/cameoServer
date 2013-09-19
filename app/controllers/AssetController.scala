@@ -9,7 +9,7 @@ import play.api.libs.json._
 import reactivemongo.api.gridfs.GridFS
 import helper.IdHelper
 import play.api.Logger
-import models.{Asset, Message}
+import models.{Token, Asset, Message}
 import scala.Some
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 import java.util.Date
@@ -28,7 +28,7 @@ object AssetController extends ExtendedController {
 
   def uploadAsset(token: String, messageId: String) =
     authenticateGET[MultipartFormData[Future[ReadFile[BSONValue]]]](token, bodyParser = gridFSBodyParser(gridFS)) {
-      (username, request) => {
+      (tokenObject: Token, request) => {
         val futureFiles = request.body.files
         Async {
           // check if the message exist
@@ -93,7 +93,7 @@ object AssetController extends ExtendedController {
 
 
   def getAsset(token: String, assetId: String) = authenticateGET(token) {
-    (username, request) =>
+    (tokenObject: Token, request) =>
       Async {
         val file = gridFS.find(BSONDocument("assetId" -> new BSONString(assetId)))
         // Frontend always wants inline

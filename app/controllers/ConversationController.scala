@@ -2,7 +2,7 @@ package controllers
 
 import play.api.libs.json.Json
 import traits.{OutputLimits, ExtendedController}
-import models.{User, Conversation}
+import models.{Token, User, Conversation}
 import scala.concurrent.Future
 
 /**
@@ -13,7 +13,7 @@ import scala.concurrent.Future
 object ConversationController extends ExtendedController {
 
   def getConversation(conversationId: String, token: String, offset: Int, limit: Int) = authenticateGET(token) {
-    (username, request) =>
+    (tokenObject: Token, request) =>
       Async {
         implicit val outputLimits = OutputLimits(offset, limit)
         Conversation.find(conversationId).map {
@@ -24,14 +24,14 @@ object ConversationController extends ExtendedController {
   }
 
   def getConversations(token: String, offset: Int, limit: Int) = authenticateGET(token) {
-    (username, request) =>
+    (tokenObject: Token, request) =>
       def getUserConversations(ids: Seq[String]): Future[List[Conversation]] = {
         val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
         conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].toList
       }
 
       val futureConversations = for {
-        user <- User.find(username)
+        user <- User.find(tokenObject.username.get)
         conversations <- user match {
           case None => Future(Seq())
           case Some(u) => {

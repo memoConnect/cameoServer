@@ -66,7 +66,7 @@ class SendMailActor extends Actor with MongoHelper {
             }
           }
 
-          Recipient.updateRecipientStatus(message, recipient, status)
+          Recipient.updateStatus(message, recipient, status)
 
           Logger.info("SendMailActor: " + status)
       }

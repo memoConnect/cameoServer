@@ -4,7 +4,7 @@ import traits.{OutputLimits, ExtendedController}
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
-import models.Contact
+import models.{Token, Contact}
 import play.api.Logger
 
 /**
@@ -15,12 +15,12 @@ import play.api.Logger
 object ContactController extends ExtendedController {
 
   def addContact = authenticatePOST() {
-    (username, request) =>
+    (tokenObject: Token, request) =>
       val jsBody: JsValue = request.body
       jsBody.validate[Contact](Contact.inputReads).map {
         contact =>
           Async {
-            val query = Json.obj("username" -> username)
+            val query = Json.obj("username" -> tokenObject.username.get)
             val set = Json.obj("$push" -> Json.obj("contacts" -> Json.toJson(contact)))
             userCollection.update(query, set).map {
               lastError => {
@@ -36,8 +36,8 @@ object ContactController extends ExtendedController {
   }
 
   def getContact(contactId: String, token: String) = authenticateGET(token) {
-    (username, request) => Async {
-      val query = Json.obj("username" -> username) ++ Json.obj("contacts.contactId" -> contactId)
+    (tokenObject: Token, request) => Async {
+      val query = Json.obj("username" -> tokenObject.username.get) ++ Json.obj("contacts.contactId" -> contactId)
       val filter = Json.obj("contacts.$" -> 1)
 
       userCollection.find(query, filter).one[JsObject].map {
@@ -51,9 +51,9 @@ object ContactController extends ExtendedController {
   }
 
   def getContacts(token: String, offset: Int, limit: Int) = authenticateGET(token) {
-    (username, request) =>
+    (tokenObject: Token, request) =>
       Async {
-        val futureContacts = Contact.getArray("username", username, "contacts")
+        val futureContacts = Contact.getArray("username", tokenObject.username.get, "contacts")
         futureContacts.map {
           implicit val outputLimits = OutputLimits(offset, limit)
           contactsOpt => contactsOpt match {
@@ -65,9 +65,9 @@ object ContactController extends ExtendedController {
   }
 
   def getGroup(group: String, token: String, offset: Int, limit: Int) = authenticateGET(token) {
-    (username, request) =>
+    (tokenObject: Token, request) =>
       Async {
-        val futureContacts = Contact.getArray("username", username, "contacts")
+        val futureContacts = Contact.getArray("username", tokenObject.username.get, "contacts")
         futureContacts.map {
           implicit val outputLimits = OutputLimits(offset, limit)
           contactsOpt => contactsOpt match {
@@ -82,9 +82,9 @@ object ContactController extends ExtendedController {
   }
 
   def getGroups(token: String) = authenticateGET(token) {
-    (username, request) =>
+    (tokenObject, request) =>
       Async {
-        val futureContacts = Contact.getArray("username", username, "contacts")
+        val futureContacts = Contact.getArray("username", tokenObject.username.get, "contacts")
         futureContacts.map {
           contactsOpt => contactsOpt match {
             case None => BadRequest(resKO("Unable to get contacts"))

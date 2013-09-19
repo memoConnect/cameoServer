@@ -6,6 +6,7 @@ import play.api.libs.json._
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -54,7 +55,7 @@ object Conversation extends Model[Conversation] {
             case _ => Json.obj()
           }
         }) ++
-        Json.obj("recipients" -> c.recipients.map{_.name})
+        Json.obj("recipients" -> c.recipients.map { _.name })
   }
 
   def find(conversationId: String): Future[Option[Conversation]] = {
@@ -64,6 +65,18 @@ object Conversation extends Model[Conversation] {
 
   override val sortWith = {
     (c1: Conversation, c2: Conversation) => c1.lastUpdated.after(c2.lastUpdated)
+  }
+
+  def addMessage(message: Message) = {
+    val query = Json.obj("conversationId" -> message.conversationId.get)
+    val set = Json.obj("$push" -> Json.obj("messages" -> message))
+    collection.update(query, set).map {
+      lastError => {
+        if (lastError.inError) {
+          Logger.error("Error adding message to conversation: " + lastError.stringify)
+        }
+      }
+    }
   }
 
 }

@@ -1,6 +1,6 @@
 package models
 
-import traits.{OutputLimits, MongoHelper, Model}
+import traits.{OutputLimits, Model}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -8,6 +8,7 @@ import java.util.Date
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -48,14 +49,14 @@ object User extends Model[User] {
       Reads.pure[Date](new Date) and
       Reads.pure[Date](new Date))(User.apply _)
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)): Writes[User] = Writes {
+  def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[User] = Writes {
     user =>
       Json.obj("username" -> user.username) ++
         Json.obj("email" -> user.email) ++
         toJsonOrEmpty("phonenumber", user.phonenumber) ++
         toJsonOrEmpty("name", user.name) ++
-  //      Contact.toSortedJsonArray("contacts", user.contacts) ++
-  //      Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)).distinct)) ++
+        //      Contact.toSortedJsonArray("contacts", user.contacts) ++
+        //      Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)).distinct)) ++
         addCreated(user.created) ++
         addLastUpdated(user.lastUpdated)
   }
@@ -65,5 +66,25 @@ object User extends Model[User] {
     collection.find(query).one[User]
   }
 
-
+  // add this conversation to the user object
+  def addConversation(conversationId: String, username: String): Future[Boolean] = {
+    //get the user
+    User.find(username).flatMap {
+      user => {
+        // check if the user already has this conversation
+        if (!user.get.conversations.contains(conversationId)) {
+          // add it if he does not have it
+          val query = Json.obj("username" -> username)
+          val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
+          Logger.debug("Added conversationId " + conversationId + " to user " + username)
+          userCollection.update(query, set).map {
+            lastError => lastError.updatedExisting
+          }
+        }
+        else {
+          Future(true)
+        }
+      }
+    }
+  }
 }

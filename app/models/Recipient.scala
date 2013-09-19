@@ -56,9 +56,10 @@ object Recipient extends Model[Recipient] {
    * Helper
    */
 
-  def updateRecipientStatus(message: Message, recipient: Recipient, newStatus: String): Future[Option[String]] = {
+  def updateStatus(message: Message, recipient: Recipient, newStatus: String): Future[Option[String]] = {
 
     val res = for {
+    // TODO: find a trick to do this without the message position
       messagePosition <- models.Message.getMessagePosition(message.conversationId.getOrElse(""),
         message.messageId)
       lastError <- {
@@ -67,6 +68,10 @@ object Recipient extends Model[Recipient] {
           ".recipients.recipientId" -> recipient.recipientId)
         val set = Json.obj("$set" -> Json.obj("messages." + messagePosition + ".recipients.$.sendStatus" ->
           newStatus))
+
+        Logger.debug("SET: " + set.toString)
+        Logger.debug("QUERY: " + query.toString)
+
         conversationCollection.update(query, set)
       }
     } yield lastError
@@ -78,7 +83,11 @@ object Recipient extends Model[Recipient] {
           Logger.error(error)
           Some(error)
         }
-        else {
+        else if (!lastError.updatedExisting) {
+          val error = "Nothing updated"
+          Logger.error(error)
+          Some(error)
+        } else {
           None
         }
     }

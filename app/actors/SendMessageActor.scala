@@ -38,7 +38,11 @@ class SendMessageActor extends Actor with MongoHelper {
           // check if we have a test run
           if (recipient.testRun.getOrElse(false)) {
             recipientAddStatus("testrun: message not send")
-          } else {
+            // do not send the message to the sender
+          } else if (message.fromRecipientId.equals(recipient.recipientId)) {
+            recipientAddStatus("Sender of message")
+          }
+          else {
             // check for message type
             recipient.messageType match {
               case "none" => recipientAddStatus("No MessageType given")
