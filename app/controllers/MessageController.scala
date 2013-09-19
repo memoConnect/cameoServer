@@ -55,7 +55,7 @@ object MessageController extends ExtendedController {
 
     from.map {
       case (name, id) => {
-        val newMessage = message.copy(from = name, fromRecipientId = id, conversationId = Some(conversationId),
+        val newMessage = message.copy(from = name, fromRecipientId = Some(id), conversationId = Some(conversationId),
           recipients = Some(recipients))
         Conversation.addMessage(newMessage)
         newMessage

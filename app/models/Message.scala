@@ -19,7 +19,7 @@ case class Message(
                     conversationId: Option[String],
                     messageBody: String,
                     from: String,                           // Name to be displayed next to Message
-                    fromRecipientId: String,        // Recipient Id of the sender
+                    fromRecipientId: Option[String],                // Recipient Id of the sender
                     created: Date,
                     recipients: Option[Seq[Recipient]],
                     assets: Option[Seq[Asset]]
@@ -36,7 +36,7 @@ object Message extends MongoHelper with Model[Message] {
       (__ \ 'conversationId).readNullable[String] and
       (__ \ 'messageBody).read[String] and
       Reads.pure[String]("") and
-      Reads.pure[String]("") and
+      Reads.pure(None) and
       Reads.pure[Date](new Date) and
       (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads)) and
       Reads.pure(None)
