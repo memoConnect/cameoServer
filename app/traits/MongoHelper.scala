@@ -7,6 +7,9 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+import play.api.libs.concurrent.Akka
+import akka.actor.Props
+import actors.{SendKolibriActor, SendSMSActor, SendMailActor, SendMessageActor}
 
 /**
  * User: Björn Reimer
@@ -14,6 +17,12 @@ import play.api.libs.functional.syntax._
  * Time: 7:10 PM
  */
 trait MongoHelper {
+
+  // TODO : create seperate trait
+  lazy val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor], name = "sendMessage")
+  lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
+  lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
+  lazy val sendKolibriActor = Akka.system.actorOf(Props[SendKolibriActor], name = "sendKolibri")
 
   val mongoDB = ReactiveMongoPlugin.db
 

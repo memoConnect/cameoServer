@@ -18,10 +18,6 @@ import java.util.Date
  */
 class SendMessageActor extends Actor with MongoHelper {
 
-  lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
-  lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
-  lazy val sendKolibriActor = Akka.system.actorOf(Props[SendKolibriActor], name = "sendKolibri")
-
   def receive = {
     case message: Message => {
       Logger.info("SendMessageActor: Sending message with id " + message.messageId)
@@ -47,11 +43,11 @@ class SendMessageActor extends Actor with MongoHelper {
             recipient.messageType match {
               case "none" => recipientAddStatus("No MessageType given")
               case "email" => {
-                sendMailActor !(recipient, message)
+                sendMailActor ! (recipient, message)
                 recipientAddStatus("Email queued")
               }
               case "sms" => {
-                sendSMSActor !(recipient, message)
+                sendSMSActor ! (recipient, message)
                 recipientAddStatus("SMS queued")
               }
               case "otherUser" => {

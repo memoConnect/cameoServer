@@ -6,7 +6,7 @@ import play.api.mvc._
 import play.modules.reactivemongo.MongoController
 import play.api.libs.concurrent.Akka
 import akka.actor.Props
-import actors.SendMessageActor
+import actors.{SendKolibriActor, SendSMSActor, SendMailActor, SendMessageActor}
 import play.api.Play.current
 import models.Token
 
@@ -21,7 +21,6 @@ import models.Token
  */
 trait ExtendedController extends Controller with MongoController with MongoHelper {
 
-  lazy val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor], name = "sendMessage")
 
   /**
    * Generate Result

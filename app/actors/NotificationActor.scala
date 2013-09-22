@@ -16,8 +16,6 @@ import ExecutionContext.Implicits.global
  */
 class NotificationActor extends Actor with MongoHelper {
 
-  lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
-
   def receive = {
     // notify user that a message has been received
     case (username: String, message: Message) => {
