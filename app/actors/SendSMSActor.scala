@@ -3,13 +3,13 @@ package actors
 import akka.actor.Actor
 import play.api.{Play, Logger}
 import play.api.Play.current
-import play.api.libs.json.{JsString, Json}
+import play.api.libs.json.{JsValue, JsString, Json}
 import traits.MongoHelper
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.libs.ws.WS
-import models.{Message, User, Purl, Recipient}
 import scala.concurrent.Future
+import models.{User, Message, Purl, Recipient}
 
 /**
  * User: Björn Reimer
@@ -28,22 +28,32 @@ class SendSMSActor extends Actor with MongoHelper {
 
     response.map {
       nexmoResponse => {
-        val status = {
+        val messages: Seq[String] = {
           if (nexmoResponse.status < 300) {
+
             val jsResponse = nexmoResponse.json
-            if ((jsResponse \ "status").asOpt[String].getOrElse("fail").equals("0")) {
-              "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
-                (jsResponse \ "network").asOpt[String].getOrElse("none")
-            } else {
-              "Error sending SMS message. Response: " + jsResponse.toString
+
+            val messageReports = (jsResponse \ "messages").asOpt[Seq[JsValue]].getOrElse(Seq())
+
+            messageReports.map {
+              report => {
+                if ((report \ "status").asOpt[String].get.equals("0")) {
+                  "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
+                    (jsResponse \ "network").asOpt[String].getOrElse("none")
+                } else {
+                  "Error sending SMS message. Response: " + jsResponse.toString
+                }
+              }
             }
           } else {
-            "Error connecting to Nexmo: " + nexmoResponse.statusText
+            Seq("Error connecting to Nexmo: " + nexmoResponse.statusText)
           }
         }
 
-        Logger.info("SendSMSActor: Sent SMS to " + to + " from " + from + " STATUS: " + status)
-        status
+        val message = messages.mkString
+
+        Logger.info("SendSMSActor: Sent SMS to " + to + " from " + from + " STATUS: " + message)
+        message
       }
     }
   }
