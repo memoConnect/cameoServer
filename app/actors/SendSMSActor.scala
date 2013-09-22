@@ -38,8 +38,8 @@ class SendSMSActor extends Actor with MongoHelper {
             messageReports.map {
               report => {
                 if ((report \ "status").asOpt[String].get.equals("0")) {
-                  "SMS Send. Id: " + (jsResponse \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
-                    (jsResponse \ "network").asOpt[String].getOrElse("none")
+                  "SMS Send. Id: " + (report \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
+                    (report \ "network").asOpt[String].getOrElse("none")
                 } else {
                   "Error sending SMS message. Response: " + jsResponse.toString
                 }
