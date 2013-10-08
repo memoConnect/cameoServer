@@ -14,5 +14,5 @@ cp gitignore_deploy .gitignore
 ./sbt clean compile stage
 git add . -A
 git commit -m "deploy"
-git push -f openshift deploy:master
+git push -f openshift_stage deploy:master
 git checkout $branch

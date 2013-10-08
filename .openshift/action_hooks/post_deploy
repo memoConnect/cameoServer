@@ -5,6 +5,6 @@
 
 # clean up git repo
 echo "Cleaning git repo"
-cd ~/git/kolibrinet01.git/
+cd ~/git/${OPENSHIFT_APP_NAME}.git/
 git reflog expire --expire-unreachable=now --all
 git gc --prune=now
