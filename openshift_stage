@@ -2,13 +2,12 @@
 
 # get newest web-client
 cd public
-git checkout master
+git checkout dev
 git pull
 cd ..
 
 # pull and build server
 branch=$(git rev-parse --abbrev-ref HEAD)
-git commit -a -m "updated webclient submodule"
 git branch -D deploy
 git checkout -b deploy
 cp gitignore_deploy .gitignore
