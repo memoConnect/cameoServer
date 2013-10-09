@@ -36,6 +36,10 @@ trait Model[A] extends MongoHelper {
     Json.toJson[A](model)(outputWrites)
   }
 
+  def toJsonCustomWrites(model: A, writes: Writes[A])(implicit ol: OutputLimits = OutputLimits(0, 0)): JsValue = {
+    Json.toJson[A](model)(writes)
+  }
+
   def toJsonOrEmpty(key: String, value: Option[String]): JsObject = {
     value match {
       case Some(s) => Json.obj(key -> JsString(s))

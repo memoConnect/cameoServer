@@ -23,6 +23,16 @@ object ConversationController extends ExtendedController {
       }
   }
 
+  def getConversationSummary(conversationId: String, token: String) = authenticateGET(token) {
+    (tokenObject: Token, request) =>
+      Async {
+        Conversation.find(conversationId).map {
+          case None => NotFound(resKO("The conversation does not exist"))
+          case Some(conversation) => Ok(resOK(Conversation.toJsonCustomWrites(conversation, Conversation.summaryWrites)))
+        }
+      }
+  }
+
   def getConversations(token: String, offset: Int, limit: Int) = authenticateGET(token) {
     (tokenObject: Token, request) =>
       def getUserConversations(ids: Seq[String]): Future[List[Conversation]] = {

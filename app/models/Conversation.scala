@@ -39,6 +39,7 @@ object Conversation extends Model[Conversation] {
       Json.obj("conversationId" -> conversation.conversationId) ++
         Recipient.toSortedJsonObject("recipients", conversation.recipients) ++
         Message.toSortedJsonObject("messages", conversation.messages) ++
+        Json.obj("numberOfMessages" -> conversation.messages.length) ++
         Json.obj("created" -> defaultDateFormat.format(conversation.created)) ++
         addCreated(conversation.created) ++
         addLastUpdated(conversation.lastUpdated)
@@ -48,7 +49,7 @@ object Conversation extends Model[Conversation] {
     c =>
       Json.obj("conversationId" -> c.conversationId) ++
         Conversation.addLastUpdated(c.lastUpdated) ++
-        Json.obj("numberOfMessages: " -> c.messages.length) ++
+        Json.obj("numberOfMessages" -> c.messages.length) ++
         Json.obj("lastMessage" -> {
           c.lastMessage match {
             case Some(m: Message) => JsString(m.from + ": " + m.messageBody)
