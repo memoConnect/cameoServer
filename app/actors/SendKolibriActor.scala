@@ -17,7 +17,6 @@ import play.api.Play.current
 
 class SendKolibriActor extends Actor with MongoHelper {
 
-  lazy val notificationActor = Akka.system.actorOf(Props[NotificationActor], name = "Notification")
 
 
   def receive = {

@@ -18,12 +18,6 @@ import actors.{SendKolibriActor, SendSMSActor, SendMailActor, SendMessageActor}
  */
 trait MongoHelper {
 
-  // TODO : create seperate trait
-  lazy val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor], name = "sendMessage")
-  lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
-  lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
-  lazy val sendKolibriActor = Akka.system.actorOf(Props[SendKolibriActor], name = "sendKolibri")
-
   val mongoDB = ReactiveMongoPlugin.db
 
   val conversationCollection: JSONCollection = mongoDB.collection[JSONCollection]("conversations")

@@ -132,7 +132,7 @@ object MessageController extends ExtendedController {
                   User.addConversation(m.conversationId.get, tokenObject.username.get)
                 }
 
-                sendMessageActor ! m
+                actors.sendMessageActor ! m
 
                 Ok(resOK(Message.toJson(m)))
               }
