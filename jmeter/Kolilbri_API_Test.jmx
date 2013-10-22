@@ -262,7 +262,7 @@
     &quot;email&quot;: &quot;e@mail.de&quot;,&#xd;
     &quot;password&quot;: &quot;password&quot;,&#xd;
     &quot;name&quot;: &quot;Reimerei&quot;,&#xd;
-    &quot;phonenumber&quot;: &quot;+4917&quot;&#xd;
+    &quot;phonenumber&quot;: &quot;user1&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -561,7 +561,7 @@
     &quot;email&quot;: &quot;e2@mail.de&quot;,&#xd;
     &quot;password&quot;: &quot;password&quot;,&#xd;
     &quot;name&quot;: &quot;Reimerei&quot;,&#xd;
-    &quot;phonenumber&quot;: &quot;1234&quot;&#xd;
+    &quot;phonenumber&quot;: &quot;user2&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -969,9 +969,8 @@
         },&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;sms&quot;,&#xd;
-            &quot;sendTo&quot;: &quot;+491744560277&quot;,&#xd;
-            &quot;name&quot;: &quot;Otto&quot;,&#xd;
-            &quot;test&quot;:true&#xd;
+            &quot;sendTo&quot;: &quot;anon1&quot;,&#xd;
+            &quot;name&quot;: &quot;Otto&quot;&#xd;
         },&#xd;
         {&#xd;
             &quot;messageType&quot;: &quot;otherUser&quot;,&#xd;

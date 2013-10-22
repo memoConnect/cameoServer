@@ -18,7 +18,7 @@ object PurlController extends ExtendedController {
   /**
    * Actions
    */
-  def getPurl(purl: String, offset: Int, limit: Int) = Action {
+  def getPurl(purl: String, offset: Int, limit: Int, token: String) = Action {
     request =>
       Async {
         // define output limits for conversation
@@ -36,9 +36,33 @@ object PurlController extends ExtendedController {
                   NotFound(resKO(er))
                 }
                 case Some(conversation) => {
-                  val res = Json.obj("context" -> Purl.toJson(purlObject), "conversation" -> Conversation.toJson
-                    (conversation))
-                  Ok(resOK(res))
+
+                  // check if the user behind this purl is registered or anon
+                  if (purlObject.username.isDefined) {
+                    // registered user, check if the token is right
+                    Async {
+                      models.Token.find(token).map {
+                        case None => {
+                          Unauthorized(resKO(Json.obj("context" -> Purl.toJson(purlObject)), "no/invalid token"))
+                        }
+                        case Some(tokenObject) => {
+                          if (tokenObject.username.getOrElse("invalid").equals(purlObject.username.get)) {
+                            val res = Json.obj("context" -> Purl.toJson(purlObject),
+                              "conversation" -> Conversation.toJson
+                              (conversation))
+                            Ok(resOK(res))
+                          } else {
+                            Unauthorized(resKO(Json.obj("context" -> Purl.toJson(purlObject)), "token not authorized"))
+                          }
+                        }
+                      }
+                    }
+                  } else {
+                    // anon user, we don't care about the token
+                    val res = Json.obj("context" -> Purl.toJson(purlObject), "conversation" -> Conversation.toJson
+                      (conversation))
+                    Ok(resOK(res))
+                  }
                 }
               }
             }

@@ -80,4 +80,14 @@ object Conversation extends Model[Conversation] {
     }
   }
 
+//  def checkAccessRights(conversation: Conversation, user: String): Boolean = {
+//    conversation.recipients.exists(r => {
+//      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
+//      if (r.messageType.equals("otherUser")) {
+//        r.sendTo.equals(user)
+//      } else {
+//        r.name.equals(user)
+//      }
+//    })
+//  }
 }

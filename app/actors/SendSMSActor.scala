@@ -20,6 +20,8 @@ class SendSMSActor extends Actor with MongoHelper {
 
   def sendSMS(from: String, to: String, body: String): Future[String] = {
 
+    Logger.debug("SendSMSActor: To: " + to + " Content: " + body)
+
     val postBody = Json.obj("api_key" -> JsString(Play.configuration.getString("nexmo.key").getOrElse("")),
       "api_secret" -> JsString(Play.configuration.getString("nexmo.secret").getOrElse("")), "from" -> from,
       "to" -> to, "text" -> body)

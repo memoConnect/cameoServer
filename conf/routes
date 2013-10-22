@@ -41,7 +41,7 @@ POST           /api/v1/asset                                       controllers.A
 GET            /api/v1/asset/:assetId                              controllers.AssetController.getAsset(token: String, assetId: String)
 
 # PURLS
-GET            /api/v1/purl/:purl                                  controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0)
+GET            /api/v1/purl/:purl                                  controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0, token: String ?= "")
 
 ##
 ##   WebClient
