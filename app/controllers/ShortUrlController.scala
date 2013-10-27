@@ -13,13 +13,11 @@ object ShortUrlController extends Controller {
 
   def redirect(urlType: String, id: String) = Action {
     request =>
-      val prodRedirect = Play.configuration.getString("shortUrl.redirectTo").getOrElse("derp")
-      val stageRedirect = Play.configuration.getString("shortUrl.redirectTo").getOrElse("derp")
+      val redirect = Play.configuration.getString("shortUrl.redirectTo").getOrElse("derp")
 
       urlType match {
-        case "p" => Redirect(prodRedirect + "/purl/" + id)
-        case "p" => Redirect(stageRedirect + "/purl/" + id)
-        case _ => Redirect(redirectTo)
+        case "p" => Redirect(redirect + "/purl/" + id)
+        case _ => Redirect(redirect + "/purl/" + id)
       }
   }
 }
