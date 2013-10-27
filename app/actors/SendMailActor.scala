@@ -35,7 +35,7 @@ class SendMailActor extends Actor with MongoHelper {
 
           // add footer to the mail
           val bodyWithFooter = body + ("\n\n\n\n----------------------------------\nAnswer and view the entire " +
-            "conversation on Kolibrinet: http://kl.vc/p/" + Purl.createPurl(message.conversationId.get, recipient))
+            "conversation on Kolibrinet: " + Play.configuration.getString("shortUrl.address") + "/p/" + Purl.createPurl(message.conversationId.get, recipient))
 
           Logger.info("SendMailActor: Sending email to " + to + " from " + from + " with subject \'" + subject + "\'")
           val credentials = new BasicAWSCredentials(Play.configuration.getString("aws.accessKey").getOrElse(""),

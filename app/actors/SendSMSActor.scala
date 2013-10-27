@@ -69,7 +69,7 @@ class SendSMSActor extends Actor with MongoHelper {
       val body = message.messageBody
 
       // add footer to sms
-      val footer = "... more: http://kl.vc/p/" + Purl.createPurl(message.conversationId.get, recipient)
+      val footer = "... more: http://" + Play.configuration.getString("shortUrl.address") + "/p/" + Purl.createPurl(message.conversationId.get, recipient)
       // cut message, so it will fit in the sms with the footer.
       val bodyWithFooter: String = {
         if (footer.length + body.length > 160) {
@@ -92,7 +92,7 @@ class SendSMSActor extends Actor with MongoHelper {
       val body = message.messageBody
 
       // add footer to sms
-      val footer = "... more: http://kl.vc/p/" + Purl.createPurl(message.conversationId.get, user)
+      val footer = "... more: http://" + Play.configuration.getString("shortUrl.address") + "/p/" + Purl.createPurl(message.conversationId.get, user)
       // cut message, so it will fit in the sms with the footer.
       val bodyWithFooter: String = {
         if (footer.length + body.length > 160) {

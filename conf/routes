@@ -50,6 +50,7 @@ GET            /api/v1/purl/:purl                                  controllers.P
 # Redirect for Shorturls
 GET            /c/:id                                              controllers.ShortUrlController.redirect(urlType = "c", id: String)
 GET            /p/:id                                              controllers.ShortUrlController.redirect(urlType = "p", id: String)
+GET            /s/:id                                              controllers.ShortUrlController.redirect(urlType = "s", id: String)
 
 # The Webclient is static and comes from public/mobile
 GET            /static/*file                                       controllers.Assets.at(path="/public/mobile/static", file)
