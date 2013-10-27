@@ -18,8 +18,8 @@ object ShortUrlController extends Controller {
 
       urlType match {
         case "p" => Redirect(prodRedirect + "/purl/" + id)
-        case "p" => Redirect(stageRedirect + "/purl/" + id)
-        case _ => Redirect(redirectTo)
+        case "s" => Redirect(stageRedirect + "/purl/" + id)
+        case _ => Redirect(prodRedirect)
       }
   }
 }
