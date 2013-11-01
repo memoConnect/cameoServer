@@ -1,14 +1,9 @@
 package traits
 
 import play.api.libs.json._
-import play.api.libs.json.Reads._
 import play.api.mvc._
 import play.modules.reactivemongo.MongoController
-import play.api.libs.concurrent.Akka
-import akka.actor.Props
-import actors.{SendKolibriActor, SendSMSActor, SendMailActor, SendMessageActor}
-import play.api.Play.current
-import models.Token
+import models.{Purl, Token}
 
 
 /**
@@ -31,7 +26,10 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
 
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
-  def resKO(data: JsValue, error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error) ++ Json.obj("data" -> data)
+  def resKO(
+             data: JsValue,
+             error: String
+             ) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error) ++ Json.obj("data" -> data)
 
   def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
 
@@ -43,9 +41,14 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
   case class AuthenticatedRequest[T](user: String, private val request: Request[T]) extends WrappedRequest(request)
 
   // checks if the token belongs to the given userclass
-  def authenticate[T](token: String, requireAdminRights: Boolean = false, hasToBeRegistered: Boolean = true)(
-    f: (Token, Request[T]) => Result
-    )(implicit request: Request[T]): Result = {
+  def authenticate[T](
+                       token: String,
+                       requireAdminRights: Boolean,
+                       hasToBeRegistered: Boolean,
+                       conversationId: Option[String]
+                       )(
+                       f: (Token, Request[T]) => Result
+                       )(implicit request: Request[T]): Result = {
     Async {
       // check if the token is in the database
       val futureToken = tokenCollection.find(Json.obj("token" -> token)).one[Token]
@@ -63,7 +66,22 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
               case Some(username) => f(tokenObject, request)
               case None => {
                 if (hasToBeRegistered) {
-                  Unauthorized(resKO("This action is only available to registered users"))
+                  // check if we are allow to see this particular conversation
+                  if (conversationId.isDefined) {
+                    Async {
+                      Purl.find(tokenObject.purl.getOrElse("")).map {
+                        case None => Unauthorized(resKO("You are not allowed to view this conversation"))
+                        case Some(p: Purl) => if (p.conversationId.equals(conversationId.get)) {
+                          f(tokenObject, request)
+                        } else {
+                          Unauthorized(resKO("You are not allowed to view this conversation"))
+                        }
+                      }
+                    }
+                  } else {
+                    Unauthorized(resKO("This action is only available to registered users"))
+                  }
+
                 } else {
                   f(tokenObject, request)
                 }
@@ -80,9 +98,9 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
                       (f: (Token, Request[JsValue]) => Result) = {
     Action(parse.tolerantJson) {
       implicit request => {
-        (request.body \ "token").asOpt[String] match {
+        (request.body \ "token").asOpt[String] match {   //TODO: tidy up
           case None => Unauthorized(resKO("No token"))
-          case Some(m) => authenticate[JsValue](m, requireAdminRights, hasToBeRegistered)(f)
+          case Some(m: String) => authenticate[JsValue](m, requireAdminRights, hasToBeRegistered, None)(f)
         }
       }
     }
@@ -92,12 +110,13 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
                           token: String,
                           requireAdminRights: Boolean = false,
                           bodyParser: BodyParser[T] = parse.empty,
-                          hasToBeRegistered: Boolean = true
+                          hasToBeRegistered: Boolean = true,
+                          conversationId: Option[String] = None
                           )(
                           f: (Token, Request[T]) => Result
                           ) = {
     Action(bodyParser) {
-      implicit request => authenticate[T](token, requireAdminRights)(f)
+      implicit request => authenticate[T](token, requireAdminRights, hasToBeRegistered, conversationId)(f)
     }
   }
 

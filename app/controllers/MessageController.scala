@@ -147,10 +147,8 @@ object MessageController extends ExtendedController {
       Async {
         val message = Message.find(messageId)
         message.map {
-          option => option match {
-            case None => NotFound(resKO("messageId not found"))
-            case Some(m) => Ok(resOK(Message.toJson(m)))
-          }
+          case None => NotFound(resKO("messageId not found"))
+          case Some(m) => Ok(resOK(Message.toJson(m)))
         }
       }
   }

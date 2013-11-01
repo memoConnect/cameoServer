@@ -12,7 +12,7 @@ import scala.concurrent.Future
  */
 object ConversationController extends ExtendedController {
 
-  def getConversation(conversationId: String, token: String, offset: Int, limit: Int) = authenticateGET(token) {
+  def getConversation(conversationId: String, token: String, offset: Int, limit: Int) = authenticateGET(token, conversationId=Some(conversationId)) {
     (tokenObject: Token, request) =>
       Async {
         implicit val outputLimits = OutputLimits(offset, limit)
@@ -23,7 +23,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversationSummary(conversationId: String, token: String) = authenticateGET(token) {
+  def getConversationSummary(conversationId: String, token: String) = authenticateGET(token, conversationId=Some(conversationId)) {
     (tokenObject: Token, request) =>
       Async {
         Conversation.find(conversationId).map {
