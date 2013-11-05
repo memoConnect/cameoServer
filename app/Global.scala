@@ -9,7 +9,8 @@ import info.schleichardt.play.embed.mongo.DynamicEmbedMongoPort
 import play.api.mvc.EssentialAction
 import scala.collection.JavaConverters._
 import play.api.http.HeaderNames._
-
+import scala.concurrent.ExecutionContext
+import ExecutionContext.Implicits.global
 
 object Global extends GlobalSettings with DynamicEmbedMongoPort {
 
