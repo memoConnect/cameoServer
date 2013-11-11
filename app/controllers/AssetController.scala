@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.MultipartFormData
+import play.api.mvc.{Action, MultipartFormData}
 import traits.ExtendedController
 import reactivemongo.api.gridfs.ReadFile
 import reactivemongo.bson._
@@ -78,8 +78,10 @@ object AssetController extends ExtendedController {
 
                     if (errors.length > 0) {
                       Logger.error("Error updating message: " + errors)
-                      InternalServerError(resKO(JsArray(errors.map { case (id,
-                      error) => Json.obj(id -> error.stringify) })))
+                      InternalServerError(resKO(JsArray(errors.map {
+                        case (id,
+                        error) => Json.obj(id -> error.stringify)
+                      })))
                     } else {
                       Ok(resOK(Json.obj("assetIds" -> results.map { case (id, error) => id })))
                     }
@@ -91,9 +93,9 @@ object AssetController extends ExtendedController {
       }
     }
 
-
-  def getAsset(token: String, assetId: String) = authenticateGET(token) {
-    (tokenObject: Token, request) =>
+  // TODO: reenable authentification
+  def getAsset(token: String, assetId: String) = Action {
+    request =>
       Async {
         val file = gridFS.find(BSONDocument("assetId" -> new BSONString(assetId)))
         // Frontend always wants inline
@@ -103,5 +105,6 @@ object AssetController extends ExtendedController {
         //          case _ => serve(gridFS, file)
         //        }
       }
+
   }
 }
