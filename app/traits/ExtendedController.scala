@@ -98,7 +98,8 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
                       (f: (Token, Request[JsValue]) => Result) = {
     Action(parse.tolerantJson) {
       implicit request => {
-        (request.body \ "token").asOpt[String] match {   //TODO: tidy up
+        (request.body \ "token").asOpt[String] match {
+          //TODO: tidy up
           case None => Unauthorized(resKO("No token"))
           case Some(m: String) => authenticate[JsValue](m, requireAdminRights, hasToBeRegistered, None)(f)
         }

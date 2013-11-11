@@ -8,6 +8,7 @@
 ##
 
 GET            /api/v1                                             controllers.Application.index
+POST            /api/v1                                             controllers.Application.index
 
 # USER
 POST           /api/v1/admin/user                                  controllers.UserController.createUser

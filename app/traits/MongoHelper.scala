@@ -7,9 +7,6 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
-import play.api.libs.concurrent.Akka
-import akka.actor.Props
-import actors.{SendKolibriActor, SendSMSActor, SendMailActor, SendMessageActor}
 
 /**
  * User: Björn Reimer
