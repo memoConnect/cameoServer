@@ -60,7 +60,7 @@ object Purl extends Model[Purl] {
     }
     else {
       // we are sending to anon user => create new (temporary) token, save Display name
-      val token = new Token(IdHelper.generateAccessToken(), None, Some(IdHelper.generatePurl()), "anon", new Date)
+      val token = new Token(IdHelper.generateAccessToken(), None, Some(IdHelper.generatePurl()), Some("anon"), new Date)
       tokenCollection.insert(token)
       new Purl(token.purl.get, conversationId, "unregistered", recipient.recipientId, None, Some(recipient.name), Some(token.token))
     }

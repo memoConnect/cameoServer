@@ -37,8 +37,8 @@ object AssetController extends ExtendedController {
       } else {
         val futureFiles = request.body.files
         // check if the message exist
-        Message.find(messageId).map {
-          case None => BadRequest(resKO("Message not found"))
+        Message.find(messageId).flatMap {
+          case None => Future.successful(BadRequest(resKO("Message not found")))
           case Some(message) => {
             val futureAssetIds: Seq[Future[(String, LastError)]] = futureFiles.map {
               futureFile => {

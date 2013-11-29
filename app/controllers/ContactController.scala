@@ -17,11 +17,11 @@ import play.api.libs.concurrent.Execution.Implicits._
  */
 object ContactController extends ExtendedController {
 
-  def checkIfAllowed[A](doAction: ((AuthRequest[A]) => Future[SimpleResult]))(implicit request: AuthRequest[A]): Future[SimpleResult] = {
+  def checkIfAllowed[A](action: => Future[SimpleResult])(implicit request: AuthRequest[A]): Future[SimpleResult] = {
 
     // we can only do this if there is a user account associated with this token
     if (request.token.username.isDefined) {
-      doAction(request)
+      action
     } else {
       Future.successful(Unauthorized(resKO("No user account")))
     }
@@ -29,13 +29,10 @@ object ContactController extends ExtendedController {
 
   def addContact() = AuthAction.async(parse.tolerantJson) {
     implicit request => checkIfAllowed {
-      request =>
-
         val jsBody: JsValue = request.body
-
         jsBody.validate[Contact](Contact.inputReads).map {
           contact =>
-            val query = Json.obj("username" -> "a") //tokenObject.username.get)
+            val query = Json.obj("username" -> request.token.username.get)
           val set = Json.obj("$push" -> Json.obj("contacts" -> Json.toJson(contact)))
             userCollection.update(query, set).map {
               lastError => {
@@ -53,7 +50,6 @@ object ContactController extends ExtendedController {
 
   def getContact(contactId: String, token: String) = AuthAction.async(parse.tolerantJson) {
     implicit request => checkIfAllowed {
-      request =>
         val query = Json.obj("username" -> request.token.username.get) ++ Json.obj("contacts.contactId" -> contactId)
         val filter = Json.obj("contacts.$" -> 1)
 
@@ -69,7 +65,6 @@ object ContactController extends ExtendedController {
 
   def getContacts(token: String, offset: Int, limit: Int) = AuthAction.async(parse.tolerantJson) {
     implicit request => checkIfAllowed {
-      request =>
         implicit val outputLimits = OutputLimits(offset, limit)
         Contact.getArray("username", request.token.username.get, "contacts").map {
           case None => BadRequest(resKO("Unable to get contacts"))
@@ -80,7 +75,6 @@ object ContactController extends ExtendedController {
 
   def getGroup(group: String, token: String, offset: Int, limit: Int) = AuthAction.async(parse.tolerantJson) {
     implicit request => checkIfAllowed {
-      request =>
         implicit val outputLimits = OutputLimits(offset, limit)
         Contact.getArray("username", request.token.username.get, "contacts").map {
           case None => BadRequest(resKO("Unable to get contacts"))
@@ -94,7 +88,6 @@ object ContactController extends ExtendedController {
 
   def getGroups(token: String) = AuthAction.async(parse.tolerantJson) {
     implicit request => checkIfAllowed {
-      request =>
         Contact.getArray("username", request.token.username.get, "contacts").map {
           case None => BadRequest(resKO("Unable to get contacts"))
           case Some(contacts) => {

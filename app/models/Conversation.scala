@@ -80,14 +80,19 @@ object Conversation extends Model[Conversation] {
     }
   }
 
-//  def checkAccessRights(conversation: Conversation, user: String): Boolean = {
-//    conversation.recipients.exists(r => {
-//      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
-//      if (r.messageType.equals("otherUser")) {
-//        r.sendTo.equals(user)
-//      } else {
-//        r.name.equals(user)
-//      }
-//    })
-//  }
+  def getFromList(ids: Seq[String]): Future[List[Conversation]] = {
+    val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
+    conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].collect[List]()
+  }
+
+  def hasMember(conversation: Conversation, user: String): Boolean = {
+    conversation.recipients.exists(r => {
+      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
+      if (r.messageType.equals("otherUser")) {
+        r.sendTo.equals(user)
+      } else {
+        r.name.equals(user)
+      }
+    })
+  }
 }
