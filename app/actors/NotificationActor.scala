@@ -6,8 +6,7 @@ import traits.MongoHelper
 import models.{User, Message}
 import play.api.Logger
 import play.api.libs.concurrent.Akka
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Execution.Implicits._
 
 /**
  * User: Björn Reimer

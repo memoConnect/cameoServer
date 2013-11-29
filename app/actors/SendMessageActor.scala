@@ -4,8 +4,7 @@ import akka.actor.{Props, Actor}
 import play.api.Logger
 import play.api.libs.json._
 import traits.MongoHelper
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
 import models.{Recipient, Message}

@@ -14,53 +14,30 @@ import models.{Purl, Token}
 /**
  * Several Helper functions for interaction with MongoDB *
  */
-trait ExtendedController extends Controller with MongoController with MongoHelper {
-
-
-  /**
-   * Generate Result
-   */
-  def resOK() = Json.obj("res" -> "OK")
-
-  def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
-  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
-
-  def resKO(
-             data: JsValue,
-             error: String
-             ) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error) ++ Json.obj("data" -> data)
-
-  def resOK(data: String) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
-
-  def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
+trait ExtendedController extends Controller with MongoController with MongoHelper with ResultHelper {
 
   /**
    * Authentication
    */
-  case class AuthenticatedRequest[T](user: String, private val request: Request[T]) extends WrappedRequest(request)
+  //case class AuthenticatedRequest[T](user: String, private val request: Request[T]) extends WrappedRequest(request)
 
   // checks if the token belongs to the given userclass
-  def authenticate[T](
-                       token: String,
-                       requireAdminRights: Boolean,
-                       hasToBeRegistered: Boolean,
-                       conversationId: Option[String]
-                       )(
-                       f: (Token, Request[T]) => Result
-                       )(implicit request: Request[T]): Result = {
+  def authenticate[T](token: String,
+                      requireAdminRights: Boolean,
+                      hasToBeRegistered: Boolean,
+                      conversationId: Option[String])
+                     (f: (Token, Request[T]) => Result)
+                     (implicit request: Request[T]): Result = {
     Async {
       // check if the token is in the database
       val futureToken = tokenCollection.find(Json.obj("token" -> token)).one[Token]
       futureToken.map {
         case None => Unauthorized(resKO("Invalid Token"))
         case Some(tokenObject) => {
-
           // we found the token, check if it has the proper rights
-          if (requireAdminRights && !tokenObject.isAdmin) {
+          if (requireAdminRights ) {
             Unauthorized(resKO("This action requires admin privileges"))
-          }
-          else {
+          } else {
             // check if this a registered user or just coming in via a purl
             tokenObject.username match {
               case Some(username) => f(tokenObject, request)
@@ -107,15 +84,11 @@ trait ExtendedController extends Controller with MongoController with MongoHelpe
     }
   }
 
-  def authenticateGET[T](
-                          token: String,
-                          requireAdminRights: Boolean = false,
-                          bodyParser: BodyParser[T] = parse.empty,
-                          hasToBeRegistered: Boolean = true,
-                          conversationId: Option[String] = None
-                          )(
-                          f: (Token, Request[T]) => Result
-                          ) = {
+  def authenticateGET[T](token: String,
+                         requireAdminRights: Boolean = false,
+                         bodyParser: BodyParser[T] = parse.empty,
+                         hasToBeRegistered: Boolean = true,
+                         conversationId: Option[String] = None)(f: (Token, Request[T]) => Result) = {
     Action(bodyParser) {
       implicit request => authenticate[T](token, requireAdminRights, hasToBeRegistered, conversationId)(f)
     }

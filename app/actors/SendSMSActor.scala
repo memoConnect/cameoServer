@@ -5,8 +5,7 @@ import play.api.{Play, Logger}
 import play.api.Play.current
 import play.api.libs.json.{JsValue, JsString, Json}
 import traits.MongoHelper
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WS
 import scala.concurrent.Future
 import models.{User, Message, Purl, Recipient}

@@ -4,6 +4,8 @@ import play.api.libs.json.Json
 import traits.{OutputLimits, ExtendedController}
 import models.{Token, User, Conversation}
 import scala.concurrent.Future
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 /**
  * User: Björn Reimer

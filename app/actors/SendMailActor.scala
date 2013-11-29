@@ -8,8 +8,7 @@ import com.amazonaws.services.simpleemail.model._
 import play.api.Play.current
 import play.api.libs.json.Json
 import traits.MongoHelper
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Execution.Implicits._
 import com.amazonaws.{AmazonServiceException, AmazonClientException}
 import models.{Purl, User, Recipient}
 import reactivemongo.core.commands.LastError

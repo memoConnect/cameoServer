@@ -16,7 +16,7 @@ case class Token(
                   token: String,
                   username: Option[String],
                   purl: Option[String],
-                  isAdmin: Boolean,
+                  userClass: Option[String],
                   created: Date
                   )
 

@@ -3,6 +3,8 @@ package controllers
 import play.api.mvc.{Action, Controller}
 import play.api.Play
 import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 /**
  * User: Björn Reimer

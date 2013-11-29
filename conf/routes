@@ -7,7 +7,7 @@
 ##   API
 ##
 
-GET            /api/v1                                             controllers.Application.index
+GET             /api/v1                                             controllers.Application.index
 POST            /api/v1                                             controllers.Application.index
 
 # USER

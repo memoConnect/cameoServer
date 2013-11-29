@@ -5,6 +5,8 @@ import play.api.libs.json.Json
 import traits.{OutputLimits, ExtendedController}
 import models.{Conversation, Purl}
 import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 /**
  * User: Björn Reimer

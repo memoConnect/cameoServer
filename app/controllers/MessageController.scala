@@ -10,6 +10,8 @@ import models._
 import java.util.Date
 import scala.concurrent.Future
 import scala.Some
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 
 /**

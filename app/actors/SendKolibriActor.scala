@@ -3,8 +3,7 @@ package actors
 import akka.actor.{Props, Actor}
 import traits.MongoHelper
 import models.{User, Recipient}
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Logger
 import play.api.libs.concurrent.Akka
 import play.api.Play.current

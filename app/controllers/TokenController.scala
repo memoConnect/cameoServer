@@ -8,6 +8,8 @@ import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
 import models.Token
 import java.util.Date
+import play.api.libs.concurrent.Execution.Implicits._
+
 
 /**
  * User: Björn Reimer
@@ -32,7 +34,7 @@ object TokenController extends ExtendedController {
           // wrong password
           Unauthorized(resKO("Wrong Username/Password"))
         } else {
-          val token = new Token(IdHelper.generateAccessToken(), Some(user), None, false, new Date)
+          val token = new Token(IdHelper.generateAccessToken(), Some(user), None, "user", new Date)
           tokenCollection.insert(token).map {
             lastError => InternalServerError(resKO("MongoError: " + lastError))
           }

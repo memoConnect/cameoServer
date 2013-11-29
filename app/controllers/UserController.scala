@@ -6,6 +6,7 @@ import play.api.libs.json._
 import traits.ExtendedController
 import models.{Token, User}
 import reactivemongo.core.errors.DatabaseException
+import play.api.libs.concurrent.Execution.Implicits._
 
 
 /**
