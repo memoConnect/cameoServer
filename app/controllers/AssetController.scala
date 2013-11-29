@@ -9,11 +9,14 @@ import play.api.libs.json._
 import reactivemongo.api.gridfs.GridFS
 import helper.IdHelper
 import play.api.Logger
-import models.{Token, Asset, Message}
-import scala.Some
+import models._
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 import java.util.Date
 import reactivemongo.core.commands.LastError
+import play.api.libs.json.JsArray
+import reactivemongo.bson.BSONDateTime
+import reactivemongo.bson.BSONString
+import scala.Some
 
 /**
  * User: Björn Reimer
@@ -73,9 +76,7 @@ object AssetController extends ExtendedController {
               Async {
                 Future.sequence(futureAssetIds).map {
                   results =>
-
                     val errors = results.filter(_._2.inError)
-
                     if (errors.length > 0) {
                       Logger.error("Error updating message: " + errors)
                       InternalServerError(resKO(JsArray(errors.map {
@@ -83,7 +84,13 @@ object AssetController extends ExtendedController {
                         error) => Json.obj(id -> error.stringify)
                       })))
                     } else {
-                      Ok(resOK(Json.obj("assetIds" -> results.map { case (id, error) => id })))
+                      // add assetIds to the media list of this user TODO: all users of the conversation
+                      results.map {
+                        case (id, error) => User.addMedia(tokenObject.username.getOrElse(""), id)
+                      }
+                      Ok(resOK(Json.obj("assetIds" -> results.map {
+                        case (id, error) => id
+                      })))
                     }
                 }
               }
@@ -106,5 +113,22 @@ object AssetController extends ExtendedController {
         //        }
       }
 
+  }
+
+  def getMedia(token: String) = authenticateGET(token) {
+    (tokenObject: Token, request) =>
+      Async {
+        User.find(tokenObject.username.getOrElse("")).map {
+          case None => NotFound(resKO("invalid user"))
+          case Some(user) => {
+            val list = user.media.getOrElse(Seq())
+            val res = Json.obj(
+              "numberOfAssets" -> list.size,
+              "assets" -> list
+            )
+            Ok(resOK(res))
+          }
+        }
+      }
   }
 }
