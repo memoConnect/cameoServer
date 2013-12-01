@@ -64,6 +64,9 @@ object AssetController extends ExtendedController {
                         file.contentType.getOrElse("unknown"),
                         new Date)
 
+                      // add asset to user TODO: all users of the conversation
+                      User.addMedia(tokenObject.username.getOrElse(""), asset)
+
                       // add asset to message
                       val query = Json.obj("conversationId" -> message.conversationId,
                         "messages.messageId" -> message.messageId)
@@ -84,10 +87,6 @@ object AssetController extends ExtendedController {
                         error) => Json.obj(id -> error.stringify)
                       })))
                     } else {
-                      // add assetIds to the media list of this user TODO: all users of the conversation
-                      results.map {
-                        case (id, error) => User.addMedia(tokenObject.username.getOrElse(""), id)
-                      }
                       Ok(resOK(Json.obj("assetIds" -> results.map {
                         case (id, error) => id
                       })))
@@ -121,11 +120,9 @@ object AssetController extends ExtendedController {
         User.find(tokenObject.username.getOrElse("")).map {
           case None => NotFound(resKO("invalid user"))
           case Some(user) => {
-            val list = user.media.getOrElse(Seq())
-            val res = Json.obj(
-              "numberOfAssets" -> list.size,
-              "assets" -> list
-            )
+            val res =
+              Json.obj("numberOfAssets" -> user.media.getOrElse(Seq()).size) ++
+                Asset.toSortedJsonObjectOrEmpty("assets", user.media)
             Ok(resOK(res))
           }
         }

@@ -22,7 +22,7 @@ case class User(
                  phonenumber: Option[String],
                  contacts: Seq[Contact],
                  conversations: Seq[String],
-                 media: Option[List[String]], // List of assets that should be included in the media wall
+                 media: Option[List[Asset]], // List of assets that should be included in the media wall
                  created: Date,
                  lastUpdated: Date
                  )
@@ -88,9 +88,9 @@ object User extends Model[User] {
     }
   }
 
-  def addMedia(username: String, assetId: String) {
+  def addMedia(username: String, asset: Asset) {
     val query = Json.obj("username" -> username)
-    val set = Json.obj("$addToSet" -> Json.obj("media" -> assetId))
+    val set = Json.obj("$addToSet" -> Json.obj("media" -> asset))
     userCollection.update(query, set).map {
       lastError => lastError.updatedExisting
     }
