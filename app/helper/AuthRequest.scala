@@ -17,14 +17,19 @@ class AuthRequest[A](val token: Token, request: Request[A], userClass: UserClass
 
 object AuthAction extends ActionBuilder[AuthRequest] with ResultHelper {
 
+  val REQUEST_TOKEN = "token"
+  val REQUEST_TOKEN_MISSING = "no token"
+  val REQUEST_ACCESS_DENIED = "not allowed"
+  val EMPTY_USER = ""
+
   def invokeBlock[A](request: Request[A], block: (AuthRequest[A]) => Future[SimpleResult]) = {
     // check if a token is passed
-    request.getQueryString("token") match {
-      case None => Future.successful(Results.Unauthorized("no token"))
+    request.getQueryString(REQUEST_TOKEN) match {
+      case None => Future.successful(Results.Unauthorized(REQUEST_TOKEN_MISSING))
       case Some(token) => {
         Token.find(token).flatMap {
-          case None => Future.successful(Results.Unauthorized("not allowed"))
-          case Some(tokenObject) => block(new AuthRequest[A](tokenObject, request, Authentication.getUserClass(tokenObject.userClass.getOrElse(""))))
+          case None => Future.successful(Results.Unauthorized(REQUEST_ACCESS_DENIED))
+          case Some(tokenObject) => block(new AuthRequest[A](tokenObject, request, Authentication.getUserClass(tokenObject.userClass.getOrElse(AuthAction.EMPTY_USER))))
         }
       }
     }

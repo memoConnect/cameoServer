@@ -23,6 +23,10 @@ package services
 //}
 object Authentication {
 
+  val AUTH_ADMIN = "admin"
+  val AUTH_USER = "user"
+  val AUTH_ANON = "anon"
+
   case class UserClass(
                             name: String,
                             isAdmin: Boolean, // can perform admin action, this does nothing yet
@@ -37,9 +41,9 @@ object Authentication {
   def getUserClass(name: String): UserClass = {
     // TODO: find a better way to do this, use statics
     name match {
-      case "admin" => UserClass("admin", isAdmin = true, accessIfMember = true, createNew = true, uploadAssets = true)
-      case "user" => UserClass("user", isAdmin = false, accessIfMember = true, createNew = true, uploadAssets = true)
-      case "anon" => UserClass("anon", isAdmin = false, accessIfMember = true, createNew = false, uploadAssets = true)
+      case AUTH_ADMIN => UserClass(AUTH_ADMIN, isAdmin = true, accessIfMember = true, createNew = true, uploadAssets = true)
+      case AUTH_USER => UserClass(AUTH_USER, isAdmin = false, accessIfMember = true, createNew = true, uploadAssets = true)
+      case AUTH_ANON => UserClass(AUTH_ANON, isAdmin = false, accessIfMember = true, createNew = false, uploadAssets = true)
     }
   }
 

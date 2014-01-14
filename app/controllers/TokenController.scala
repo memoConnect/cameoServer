@@ -9,6 +9,7 @@ import traits.ExtendedController
 import models.Token
 import java.util.Date
 import play.api.libs.concurrent.Execution.Implicits._
+import services.Authentication
 
 
 /**
@@ -34,7 +35,7 @@ object TokenController extends ExtendedController {
           // wrong password
           Unauthorized(resKO("Wrong Username/Password"))
         } else {
-          val token = new Token(IdHelper.generateAccessToken(), Some(user), None, Some("user"), new Date)
+          val token = new Token(IdHelper.generateAccessToken(), Some(user), None, Some(Authentication.AUTH_USER), new Date)
           tokenCollection.insert(token).map {
             lastError => InternalServerError(resKO("MongoError: " + lastError))
           }
@@ -65,7 +66,7 @@ object TokenController extends ExtendedController {
       request.headers.get("Authorization") match {
         case None => {
           BadRequest(resKO("No Authorization field in header")).withHeaders(
-            WWW_AUTHENTICATE -> "user")
+            WWW_AUTHENTICATE -> Authentication.AUTH_USER)
         }
         case Some(basicAuth) => {
           val (user, pass) = decodeBasicAuth(basicAuth)

@@ -21,7 +21,7 @@ object ConversationController extends ExtendedController {
   def checkIfAllowed[A](conversationId: String)(action: (Conversation) => SimpleResult)(implicit request: AuthRequest[A]): Future[SimpleResult] = {
 
     // Check if the user has the proper rights
-    val userClass: UserClass = Authentication.getUserClass(request.token.userClass.getOrElse(""))
+    val userClass: UserClass = Authentication.getUserClass(request.token.userClass.getOrElse(AuthAction.EMPTY_USER))
 
     if (!userClass.accessIfMember) {
       Future.successful(Unauthorized)
