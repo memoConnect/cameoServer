@@ -1,7 +1,7 @@
 package controllers
 
 import traits.{OutputLimits, ExtendedController}
-import models.{Token, User, Purl, Conversation}
+import models.{User, Purl, Conversation}
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.SimpleResult
@@ -46,9 +46,9 @@ object ConversationController extends ExtendedController {
             }
             result <- {
               if (Conversation.hasMember(conversation, user)) {
-                action(conversation)
+                Future.successful(action(conversation))
               } else {
-                Unauthorized
+                Future.successful(Unauthorized)
               }
             }
           } yield result

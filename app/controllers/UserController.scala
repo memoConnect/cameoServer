@@ -1,13 +1,14 @@
 package controllers
 
-import play.api.mvc.{Result, Action}
+import play.api.mvc.{SimpleResult, Action}
 
 import play.api.libs.json._
 import traits.ExtendedController
-import models.{Token, User}
+import models.User
 import reactivemongo.core.errors.DatabaseException
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.AuthAction
+import scala.concurrent.Future
 
 
 /**
@@ -17,70 +18,62 @@ import helper.AuthAction
  */
 object UserController extends ExtendedController {
 
-  def createUser = Action(parse.tolerantJson) {
+  def createUser = Action.async(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
 
       jsBody.validate[User](User.inputReads).map {
         user =>
-          Async {
-            userCollection.insert(Json.toJson(user)).map {
-              lastError => {
-                if (lastError.ok) {
-                  Ok(resOK(Json.toJson(user)(User.outputWrites)))
-                } else {
-                  InternalServerError(resKO("MongoError: " + lastError))
-                }
+          userCollection.insert(Json.toJson(user)).map {
+            lastError => {
+              if (lastError.ok) {
+                Ok(resOK(Json.toJson(user)(User.outputWrites)))
+              } else {
+                InternalServerError(resKO("MongoError: " + lastError))
               }
-            }.recover {
-              // deal with exceptions from duplicate usernames or emails
-              case de: DatabaseException =>
-                if (de.getMessage().contains("username")) {
-                  BadRequest(resKO("The username already exists"))
-                } else if (de.getMessage().contains("email")) {
-                  BadRequest(resKO("The email already exists"))
-                } else {
-                  BadRequest(resKO("Error: " + de.getMessage()))
-                }
-              case e => InternalServerError(resKO("Mongo Error: " + e.toString))
-
             }
+          }.recover {
+            // deal with exceptions from duplicate usernames or emails
+            case de: DatabaseException =>
+              if (de.getMessage().contains("username")) {
+                BadRequest(resKO("The username already exists"))
+              } else if (de.getMessage().contains("email")) {
+                BadRequest(resKO("The email already exists"))
+              } else {
+                BadRequest(resKO("Error: " + de.getMessage()))
+              }
+            case e => InternalServerError(resKO("Mongo Error: " + e.toString))
           }
-      }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
+      }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
   }
 
-  def returnUser(username: String): Result = {
-    Async {
-      User.find(username).map {
-        case Some(user: User) => Ok(resOK(Json.toJson(user)(User.outputWrites)))
-        case None => NotFound(resKO("User not found: " + username))
-      }
+  def returnUser(username: String): Future[SimpleResult] = {
+    User.find(username).map {
+      case Some(user: User) => Ok(resOK(Json.toJson(user)(User.outputWrites)))
+      case None => NotFound(resKO("User not found: " + username))
     }
   }
 
-  def getUser(username: String) = Action {
+  def getUser(username: String) = Action.async {
     request => returnUser(username)
   }
 
-  def getUserWithToken(token: String) = AuthAction {
+  def getUserWithToken(token: String) = AuthAction.async {
     (request) =>
       val tokenObject = request.token
       returnUser(tokenObject.username.get)
   }
 
-  def deleteUser(username: String) = Action {
+  def deleteUser(username: String) = Action.async {
     request =>
-      Async {
-        userCollection.remove[JsValue](Json.obj("username" -> username)).map {
-          lastError =>
-            if (lastError.updated > 0)
-              Ok(resOK(Json.obj("deletedUser" -> username)))
-            else if (lastError.ok) {
-              NotFound(resKO("User not found"))
-            } else
-              InternalServerError(resKO(lastError.stringify))
-        }
+      userCollection.remove[JsValue](Json.obj("username" -> username)).map {
+        lastError =>
+          if (lastError.updated > 0)
+            Ok(resOK(Json.obj("deletedUser" -> username)))
+          else if (lastError.ok) {
+            NotFound(resKO("User not found"))
+          } else
+            InternalServerError(resKO(lastError.stringify))
       }
   }
-
 }

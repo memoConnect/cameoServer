@@ -22,7 +22,7 @@ object TokenController extends ExtendedController {
   /**
    * Helper
    */
-  def checkUserAndReturnToken(user: String, pass: String): Future[Result] = {
+  def checkUserAndReturnToken(user: String, pass: String): Future[SimpleResult] = {
     val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> user)).one[JsValue]
 
     futureUser.map {
@@ -61,8 +61,8 @@ object TokenController extends ExtendedController {
   /**
    * Actions
    */
-  def getToken = Action {
-    request =>
+  def getToken = Action.async {
+    request => {
       request.headers.get("Authorization") match {
         case None => {
           BadRequest(resKO("No Authorization field in header")).withHeaders(
@@ -70,11 +70,10 @@ object TokenController extends ExtendedController {
         }
         case Some(basicAuth) => {
           val (user, pass) = decodeBasicAuth(basicAuth)
-          Async {
-            checkUserAndReturnToken(user, pass)
-          }
+          checkUserAndReturnToken(user, pass)
         }
       }
+    }
   }
 
   def getTokenOptions = Action {
@@ -82,20 +81,19 @@ object TokenController extends ExtendedController {
       Ok("")
   }
 
-  def deleteToken(token: String) = Action {
+  def deleteToken(token: String) = Action.async {
     request =>
-      Async {
-        tokenCollection.remove[JsValue](Json.obj("token" -> token)).map {
-          lastError =>
-            if (lastError.updated > 0) {
-              Ok(resOK(Json.obj("deletedToken" -> token)))
-            }
-            else if (lastError.ok) {
-              NotFound(resKO("Token not found"))
-            } else {
-              InternalServerError(resKO(lastError.stringify))
-            }
-        }
+      tokenCollection.remove[JsValue](Json.obj("token" -> token)).map {
+        lastError =>
+          if (lastError.updated > 0) {
+            Ok(resOK(Json.obj("deletedToken" -> token)))
+          }
+          else if (lastError.ok) {
+            NotFound(resKO("Token not found"))
+          } else {
+            InternalServerError(resKO(lastError.stringify))
+          }
       }
+
   }
 }

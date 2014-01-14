@@ -27,7 +27,6 @@ object AssetController extends ExtendedController {
   val gridFS = new GridFS(db)
   gridFS.ensureIndex()
 
-
   def uploadAsset(token: String, messageId: String) = AuthAction.async(gridFSBodyParser(gridFS)) {
     implicit request =>
       val userClass: UserClass = Authentication.getUserClass(request.token.userClass.getOrElse(AuthAction.EMPTY_USER))
