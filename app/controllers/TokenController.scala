@@ -65,8 +65,8 @@ object TokenController extends ExtendedController {
     request => {
       request.headers.get("Authorization") match {
         case None => {
-          BadRequest(resKO("No Authorization field in header")).withHeaders(
-            WWW_AUTHENTICATE -> Authentication.AUTH_USER)
+          Future.successful(BadRequest(resKO("No Authorization field in header")).withHeaders(
+            WWW_AUTHENTICATE -> Authentication.AUTH_USER))
         }
         case Some(basicAuth) => {
           val (user, pass) = decodeBasicAuth(basicAuth)
