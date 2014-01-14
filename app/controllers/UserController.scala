@@ -7,6 +7,7 @@ import traits.ExtendedController
 import models.{Token, User}
 import reactivemongo.core.errors.DatabaseException
 import play.api.libs.concurrent.Execution.Implicits._
+import helper.AuthAction
 
 
 /**
@@ -61,8 +62,10 @@ object UserController extends ExtendedController {
     request => returnUser(username)
   }
 
-  def getUserWithToken(token: String) = authenticateGET(token) {
-    (tokenObject: Token, request) => returnUser(tokenObject.username.get)
+  def getUserWithToken(token: String) = AuthAction {
+    (request) =>
+      val tokenObject = request.token
+      returnUser(tokenObject.username.get)
   }
 
   def deleteUser(username: String) = Action {

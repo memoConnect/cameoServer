@@ -2,7 +2,7 @@ package controllers
 
 import play.api.libs.json._
 
-import helper.IdHelper
+import helper.{AuthAction, IdHelper}
 import scala.None
 import traits.ExtendedController
 import play.api.Logger
@@ -11,7 +11,6 @@ import java.util.Date
 import scala.concurrent.Future
 import scala.Some
 import play.api.libs.concurrent.Execution.Implicits._
-
 
 
 /**
@@ -110,9 +109,10 @@ object MessageController extends ExtendedController {
   /**
    * Actions
    */
-  def sendMessage = authenticatePOST(hasToBeRegistered = false) {
-    (tokenObject: Token, request) =>
+  def sendMessage = AuthAction.async(parse.tolerantJson) {
+    (request) =>
       val jsBody: JsValue = request.body
+      val tokenObject = request.token
 
       jsBody.validate[Message](Message.inputReads).map {
         implicit message => {
@@ -126,32 +126,28 @@ object MessageController extends ExtendedController {
           } yield newMessage
 
           // send response
-          Async {
-            newMessage.map {
-              m => {
-                // add conversation to user if registered
-                if (tokenObject.username.isDefined) {
-                  User.addConversation(m.conversationId.get, tokenObject.username.get)
-                }
-
-                actors.sendMessageActor ! m
-
-                Ok(resOK(Message.toJson(m)))
+          newMessage.map {
+            m => {
+              // add conversation to user if registered
+              if (tokenObject.username.isDefined) {
+                User.addConversation(m.conversationId.get, tokenObject.username.get)
               }
+
+              actors.sendMessageActor ! m
+
+              Ok(resOK(Message.toJson(m)))
             }
           }
         }
-      }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
+      }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
   }
 
-  def getMessage(messageId: String, token: String) = authenticateGET(token) {
-    (tokenObject: Token, request) =>
-      Async {
-        val message = Message.find(messageId)
-        message.map {
-          case None => NotFound(resKO("messageId not found"))
-          case Some(m) => Ok(resOK(Message.toJson(m)))
-        }
+  def getMessage(messageId: String, token: String) = AuthAction.async {
+    (request) =>
+      val message = Message.find(messageId)
+      message.map {
+        case None => NotFound(resKO("messageId not found"))
+        case Some(m) => Ok(resOK(Message.toJson(m)))
       }
   }
 

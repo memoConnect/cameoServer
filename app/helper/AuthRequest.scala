@@ -24,7 +24,7 @@ object AuthAction extends ActionBuilder[AuthRequest] with ResultHelper {
       case Some(token) => {
         Token.find(token).flatMap {
           case None => Future.successful(Results.Unauthorized("not allowed"))
-          case Some(tokenObject) => block(new AuthRequest[A](tokenObject, request, Authentication.getUserClass(tokenObject.userClass)))
+          case Some(tokenObject) => block(new AuthRequest[A](tokenObject, request, Authentication.getUserClass(tokenObject.userClass.getOrElse(""))))
         }
       }
     }

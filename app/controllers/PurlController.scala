@@ -6,6 +6,7 @@ import traits.{OutputLimits, ExtendedController}
 import models.{Conversation, Purl}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
+import helper.AuthAction
 
 
 /**
@@ -20,7 +21,8 @@ object PurlController extends ExtendedController {
   /**
    * Actions
    */
-  def getPurl(purl: String, offset: Int, limit: Int, token: String) = Action {
+  // TODO asyncs fixen
+  def getPurl(purl: String, offset: Int, limit: Int, token: String) = AuthAction {
     request =>
       Async {
         // define output limits for conversation

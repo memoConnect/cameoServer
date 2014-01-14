@@ -34,7 +34,7 @@ object TokenController extends ExtendedController {
           // wrong password
           Unauthorized(resKO("Wrong Username/Password"))
         } else {
-          val token = new Token(IdHelper.generateAccessToken(), Some(user), None, "user", new Date)
+          val token = new Token(IdHelper.generateAccessToken(), Some(user), None, Some("user"), new Date)
           tokenCollection.insert(token).map {
             lastError => InternalServerError(resKO("MongoError: " + lastError))
           }

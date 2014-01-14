@@ -35,7 +35,7 @@ object Authentication {
   }
 
   def getUserClass(name: String): UserClass = {
-    // TODO: find a better way to do this
+    // TODO: find a better way to do this, use statics
     name match {
       case "admin" => UserClass("admin", isAdmin = true, accessIfMember = true, createNew = true, uploadAssets = true)
       case "user" => UserClass("user", isAdmin = false, accessIfMember = true, createNew = true, uploadAssets = true)
