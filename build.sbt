@@ -7,7 +7,7 @@ resolvers += "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositori
 libraryDependencies ++= Seq(
             jdbc,
             anorm,
-           "org.reactivemongo" %% "play2-reactivemongo" % "0.10.0-SNAPSHOT",
+           "org.reactivemongo" %% "play2-reactivemongo" % "0.10.2",
            "org.mindrot" % "jbcrypt" % "0.3m",
            "info.schleichardt" %% "play-embed-mongo" % "0.2",
            "com.amazonaws" % "aws-java-sdk" % "1.3.21",
