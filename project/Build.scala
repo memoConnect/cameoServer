@@ -17,7 +17,8 @@ object ApplicationBuild extends Build {
     "org.mindrot" % "jbcrypt" % "0.3m",
     "info.schleichardt" %% "play-embed-mongo" % "0.2",
     "com.amazonaws" % "aws-java-sdk" % "1.3.21",
-    "javax.mail" % "mail" % "1.4.7"
+    "javax.mail" % "mail" % "1.4.7",
+    "org.specs2" %% "specs2" % "2.3.7" % "test"
   )
 
   val main = play.Project(appName, appVersion, appDependencies)
