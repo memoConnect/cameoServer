@@ -8,6 +8,8 @@ import java.util.Date
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import play.api.Logger
+import helper.IdHelper
 
 /**
  * User: Björn Reimer
@@ -20,13 +22,13 @@ case class User(
                  password: String,
                  name: Option[String],
                  phonenumber: Option[String],
+                 userkey: String,
                  contacts: Seq[Contact],
                  conversations: Seq[String],
                  media: Option[List[Asset]], // List of assets that should be included in the media wall
                  created: Date,
                  lastUpdated: Date
                  )
-
 
 object User extends Model[User] {
 
@@ -35,8 +37,8 @@ object User extends Model[User] {
   userCollection.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true, sparse = true))
 
   implicit val collection = userCollection
+  //migration is missing
   implicit val mongoFormat: Format[User] = createMongoFormat(Json.reads[User], Json.writes[User])
-
 
   def inputReads: Reads[User] = (
     (__ \ 'username).read[String] and
@@ -44,6 +46,7 @@ object User extends Model[User] {
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       (__ \ 'name).readNullable[String] and
       (__ \ 'phonenumber).readNullable[String] and
+      Reads.pure(IdHelper.generateUserKey()) and
       Reads.pure[Seq[Contact]](Seq[Contact]()) and
       Reads.pure(Seq[String]()) and
       Reads.pure(None) and
@@ -56,6 +59,7 @@ object User extends Model[User] {
         Json.obj("email" -> user.email) ++
         toJsonOrEmpty("phonenumber", user.phonenumber) ++
         toJsonOrEmpty("name", user.name) ++
+        Json.obj("userkey" -> user.userkey) ++
         //      Contact.toSortedJsonArray("contacts", user.contacts) ++
         //      Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)).distinct)) ++
         addCreated(user.created) ++
@@ -88,6 +92,18 @@ object User extends Model[User] {
     }
   }
 
+
+  // add UserKey to user is missing
+  def addUserKey(username: String) = {
+    val userKey = IdHelper.generateUserKey()
+
+    val query = Json.obj("username" -> username)
+    val set = Json.obj("$set" -> Json.obj("userKey" -> userKey))
+    userCollection.update(query, set)
+
+    userKey
+  }
+
   def addMedia(username: String, asset: Asset) {
     val query = Json.obj("username" -> username)
     val set = Json.obj("$addToSet" -> Json.obj("media" -> asset))
@@ -96,3 +112,4 @@ object User extends Model[User] {
     }
   }
 }
+

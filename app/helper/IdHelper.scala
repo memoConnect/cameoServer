@@ -43,4 +43,7 @@ object IdHelper {
     randomString(10)
   }
 
+  def generateUserKey(): String = {
+    randomString(96)
+  }
 }
