@@ -22,7 +22,7 @@ case class User(
                  password: String,
                  name: Option[String],
                  phonenumber: Option[String],
-                 userkey: Option[String],
+                 userkey: String,
                  contacts: Seq[Contact],
                  conversations: Seq[String],
                  created: Date,
@@ -36,8 +36,8 @@ object User extends Model[User] {
   userCollection.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true, sparse = true))
 
   implicit val collection = userCollection
+  //migration is missing
   implicit val mongoFormat: Format[User] = createMongoFormat(Json.reads[User], Json.writes[User])
-
 
   def inputReads: Reads[User] = (
     (__ \ 'username).read[String] and
@@ -45,7 +45,7 @@ object User extends Model[User] {
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       (__ \ 'name).readNullable[String] and
       (__ \ 'phonenumber).readNullable[String] and
-      (__ \ 'userkey).readNullable[String] and //.getOrElse(addUserKey(_username), ???
+      Reads.pure(IdHelper.generateUserKey()) and
       Reads.pure[Seq[Contact]](Seq[Contact]()) and
       Reads.pure(Seq[String]()) and
       Reads.pure[Date](new Date) and
@@ -57,7 +57,7 @@ object User extends Model[User] {
         Json.obj("email" -> user.email) ++
         toJsonOrEmpty("phonenumber", user.phonenumber) ++
         toJsonOrEmpty("name", user.name) ++
-        Json.obj("userkey" -> user.userkey.getOrElse[String](addUserKey(user.username))) ++
+        Json.obj("userkey" -> user.userkey) ++
         //      Contact.toSortedJsonArray("contacts", user.contacts) ++
         //      Json.obj("conversations" -> JsArray(user.conversations.map(JsString(_)).distinct)) ++
         addCreated(user.created) ++
