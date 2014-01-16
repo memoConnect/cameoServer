@@ -25,6 +25,7 @@ case class User(
                  userkey: String,
                  contacts: Seq[Contact],
                  conversations: Seq[String],
+                 media: Option[List[Asset]], // List of assets that should be included in the media wall
                  created: Date,
                  lastUpdated: Date
                  )
@@ -48,6 +49,7 @@ object User extends Model[User] {
       Reads.pure(IdHelper.generateUserKey()) and
       Reads.pure[Seq[Contact]](Seq[Contact]()) and
       Reads.pure(Seq[String]()) and
+      Reads.pure(None) and
       Reads.pure[Date](new Date) and
       Reads.pure[Date](new Date))(User.apply _)
 
@@ -79,7 +81,6 @@ object User extends Model[User] {
           // add it if he does not have it
           val query = Json.obj("username" -> username)
           val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
-          Logger.debug("Added conversationId " + conversationId + " to user " + username)
           userCollection.update(query, set).map {
             lastError => lastError.updatedExisting
           }
@@ -91,6 +92,7 @@ object User extends Model[User] {
     }
   }
 
+
   // add UserKey to user is missing
   def addUserKey(username: String) = {
     val userKey = IdHelper.generateUserKey()
@@ -101,4 +103,13 @@ object User extends Model[User] {
 
     userKey
   }
+
+  def addMedia(username: String, asset: Asset) {
+    val query = Json.obj("username" -> username)
+    val set = Json.obj("$addToSet" -> Json.obj("media" -> asset))
+    userCollection.update(query, set).map {
+      lastError => lastError.updatedExisting
+    }
+  }
 }
+

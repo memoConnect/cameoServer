@@ -49,12 +49,12 @@ trait Model[A] extends MongoHelper {
 
   def toJsonArrayOrEmpty(key: String, value: Option[Seq[String]]): JsObject = {
     value match {
-      case Some(s) => Json.obj(key -> JsArray(s.map(JsString(_))))
+      case Some(s) => Json.obj(key -> JsArray(s.map(JsString)))
       case None => Json.obj()
     }
   }
 
-  def toSortedJsonArray(array: Seq[A])(implicit ol: OutputLimits): JsArray = toSortedJsonArray(array, outputWrites)
+  def toSortedJsonArray(array: Seq[A])(implicit ol: OutputLimits  = OutputLimits(0,0)): JsArray = toSortedJsonArray(array, outputWrites)
 
   def toSortedJsonArray(array: Seq[A], writes: Writes[A])(implicit ol: OutputLimits): JsArray = {
     val sorted = array.sortWith(sortWith).map(Json.toJson[A](_)(writes))
@@ -76,11 +76,11 @@ trait Model[A] extends MongoHelper {
 
   }
 
-  def toSortedJsonObject(key: String, array: Seq[A])(implicit ol: OutputLimits): JsObject = {
+  def toSortedJsonObject(key: String, array: Seq[A])(implicit ol: OutputLimits = OutputLimits(0,0)): JsObject = {
     Json.obj(key -> toSortedJsonArray(array))
   }
 
-  def toSortedJsonObjectOrEmpty(key: String, array: Option[Seq[A]])(implicit ol: OutputLimits): JsObject = {
+  def toSortedJsonObjectOrEmpty(key: String, array: Option[Seq[A]])(implicit ol: OutputLimits = OutputLimits(0,0)): JsObject = {
     array match {
       case Some(a) => toSortedJsonObject(key, a)
       case None => Json.obj()
