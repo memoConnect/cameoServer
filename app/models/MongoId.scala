@@ -14,6 +14,10 @@ import play.api.libs.json.Reads._
 case class MongoId(id: String) {
 
   override def toString = id
+
+  def toJson: JsString = {
+    JsString(id)
+  }
 }
 
 object MongoId {
@@ -30,4 +34,5 @@ object MongoId {
   implicit def mongoWrites: Writes[MongoId] = Writes {
     id => Json.obj("$oid" -> id.id)
   }
+
 }

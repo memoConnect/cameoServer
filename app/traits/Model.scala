@@ -22,7 +22,6 @@ trait Model[A] extends MongoHelper {
   implicit val mongoFormat: Format[A]
 
   def inputReads: Reads[A]
-
   def outputWrites(implicit ol: OutputLimits): Writes[A]
 
   val sortWith = (o1: A, o2: A) => true
