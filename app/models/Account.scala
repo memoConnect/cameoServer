@@ -6,12 +6,15 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import reactivemongo.api.indexes.{IndexType, Index}
 import java.util.Date
-
+import scala.concurrent.ExecutionContext
+import ExecutionContext.Implicits.global
 /**
  * User: Björn Reimer
  * Date: 1/16/14
  * Time: 4:19 PM
  */
+
+
 case class Account(
                     id: MongoId,
                     loginName: String,
@@ -22,12 +25,16 @@ case class Account(
                     created: Date,
                     lastUpdated: Date
                     )
+{
+  def toJson:JsValue = Json.toJson(this)(Account.outputWrites)
+
+}
 
 object Account extends Model[Account] {
 
-  val collection = accountCollection
+  implicit def col = accountCollection
 
-  userCollection.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
+  col.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
 
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
 

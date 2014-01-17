@@ -28,7 +28,7 @@ object Conversation extends Model[Conversation] {
   conversationCollection.indexesManager.ensure(Index(List("conversationId" -> IndexType.Ascending), unique = true,
     sparse = true))
 
-  implicit val collection = conversationCollection
+  implicit val col = conversationCollection
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation],
     Json.writes[Conversation])
 
@@ -61,7 +61,7 @@ object Conversation extends Model[Conversation] {
 
   def find(conversationId: String): Future[Option[Conversation]] = {
     val query = Json.obj("conversationId" -> conversationId)
-    collection.find(query).one[Conversation]
+    col.find(query).one[Conversation]
   }
 
   override val sortWith = {
@@ -71,7 +71,7 @@ object Conversation extends Model[Conversation] {
   def addMessage(message: Message) = {
     val query = Json.obj("conversationId" -> message.conversationId.get)
     val set = Json.obj("$push" -> Json.obj("messages" -> message))
-    collection.update(query, set).map {
+    col.update(query, set).map {
       lastError => {
         if (lastError.inError) {
           Logger.error("Error adding message to conversation: " + lastError.stringify)

@@ -36,7 +36,7 @@ object User extends Model[User] {
   userCollection.indexesManager.ensure(Index(List("username" -> IndexType.Ascending), unique = true, sparse = true))
   userCollection.indexesManager.ensure(Index(List("email" -> IndexType.Ascending), unique = true, sparse = true))
 
-  implicit val collection = userCollection
+  implicit val col = userCollection
   //migration is missing
   implicit val mongoFormat: Format[User] = createMongoFormat(Json.reads[User], Json.writes[User])
 
@@ -68,7 +68,7 @@ object User extends Model[User] {
 
   def find(username: String): Future[Option[User]] = {
     val query = Json.obj("username" -> username)
-    collection.find(query).one[User]
+    col.find(query).one[User]
   }
 
   // add this conversation to the user object

@@ -28,7 +28,7 @@ case class Message(
 
 object Message extends MongoHelper with Model[Message] {
 
-  implicit val collection = conversationCollection
+  implicit val col = conversationCollection
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
   def inputReads = (
@@ -63,7 +63,7 @@ object Message extends MongoHelper with Model[Message] {
 
   def find(query: JsObject): Future[Option[Message]] = {
     val filter = Json.obj("messages.$" -> 1)
-    collection.find(query, filter).cursor[JsObject].collect[List](1000, stopOnError = false).map {
+    col.find(query, filter).cursor[JsObject].collect[List](1000, stopOnError = false).map {
       list =>
         list.size match {
           case 0 => None

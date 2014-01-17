@@ -25,7 +25,7 @@ case class Contact (
 object Contact extends Model[Contact]
 {
 
-  implicit val collection = userCollection
+  implicit val col = userCollection
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
   // Input/output format for the API

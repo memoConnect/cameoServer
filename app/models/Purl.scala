@@ -29,7 +29,7 @@ object Purl extends Model[Purl] {
 
   purlCollection.indexesManager.ensure(Index(List("purl" -> IndexType.Ascending), unique = true, sparse = true))
 
-  implicit val collection = purlCollection
+  implicit val col = purlCollection
   implicit val mongoFormat: Format[Purl] = createMongoFormat(Json.reads[Purl], Json.writes[Purl])
 
   // Input/output format for the API
@@ -46,7 +46,7 @@ object Purl extends Model[Purl] {
 
   def find(purl: String): Future[Option[Purl]] = {
     val query = Json.obj("purl" -> purl)
-    collection.find(query).one[Purl]
+    col.find(query).one[Purl]
   }
 
   /*

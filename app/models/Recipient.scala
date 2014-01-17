@@ -25,7 +25,7 @@ case class Recipient(
 
 object Recipient extends Model[Recipient] {
 
-  implicit val collection = userCollection
+  implicit val col = userCollection
   implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
   def inputReads = (

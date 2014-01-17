@@ -24,7 +24,7 @@ object Token extends MongoHelper with Model[Token] {
 
   tokenCollection.indexesManager.ensure(Index(List("token" -> IndexType.Ascending), unique = true, sparse = true))
 
-  implicit val collection = tokenCollection
+  implicit val col = tokenCollection
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
   def inputReads = Json.reads[Token]
@@ -37,6 +37,6 @@ object Token extends MongoHelper with Model[Token] {
 
   def find(token: String): Future[Option[Token]] = {
     val query = Json.obj("token" -> token)
-    collection.find(query).one[Token]
+    col.find(query).one[Token]
   }
 }

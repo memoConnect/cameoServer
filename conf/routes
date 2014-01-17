@@ -7,7 +7,10 @@
 ##   API
 ##
 
-GET             /api/v1                                             controllers.Application.index
+GET            /api/v1                                             controllers.Application.index
+
+# ACCOUNT
+POST           /api/v1/account                                     controllers.AccountController.createAccount
 
 # USER
 POST           /api/v1/admin/user                                  controllers.UserController.createUser

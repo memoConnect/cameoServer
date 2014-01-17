@@ -17,13 +17,13 @@ trait MongoHelper {
 
   val mongoDB = ReactiveMongoPlugin.db
 
-  val conversationCollection: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
-  val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
-  val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
-  val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")
-  val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("token")
-  val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
-  val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
+  lazy val conversationCollection: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
+  lazy val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
+  lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
+  lazy val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")
+  lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("token")
+  lazy val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
+  lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
 
   val emptyObj = __.json.put(Json.obj())
 

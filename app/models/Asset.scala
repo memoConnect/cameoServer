@@ -23,7 +23,7 @@ case class Asset (
   object Asset extends Model[Asset]
   {
 
-    implicit val collection = conversationCollection
+    implicit val col = conversationCollection
     implicit val mongoFormat: Format[Asset] = createMongoFormat(Json.reads[Asset], Json.writes[Asset])
 
     // Input/output format for the API
@@ -40,7 +40,7 @@ case class Asset (
 
     def find(assetId: String): Future[Option[Asset]] = {
       val query = Json.obj("assetId" -> assetId)
-      collection.find(query).one[Asset]
+      col.find(query).one[Asset]
     }
 
     override val sortWith = {

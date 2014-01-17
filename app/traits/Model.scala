@@ -18,7 +18,7 @@ case class OutputLimits(offset: Int, limit: Int)
 
 trait Model[A] extends MongoHelper {
 
-  implicit val collection: JSONCollection
+  implicit def col: JSONCollection
   implicit val mongoFormat: Format[A]
 
   def inputReads: Reads[A]
@@ -91,7 +91,7 @@ trait Model[A] extends MongoHelper {
     val query = Json.obj(queryKey -> queryValue)
     val filter = Json.obj(arrayKey -> 1)
 
-    collection.find(query, filter).one[JsObject].map {
+    col.find(query, filter).one[JsObject].map {
       case None => None
       case Some(js: JsObject) => Some((js \ arrayKey).asOpt[Seq[A]](Reads.seq[A]).getOrElse(Seq()))
     }
