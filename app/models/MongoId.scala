@@ -4,6 +4,7 @@ import reactivemongo.bson.BSONObjectID
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
+import helper.IdHelper
 
 /**
  * User: Björn Reimer
@@ -23,16 +24,16 @@ case class MongoId(id: String) {
 object MongoId {
 
   def create(): MongoId = {
-    new MongoId(BSONObjectID.generate.stringify)
+    new MongoId(IdHelper.generateMongoId())
   }
 
   implicit def mongoReads: Reads[MongoId] =
-    (__ \ '$oid).read[String].map {
+    (__ \ 'mongoId).read[String].map {
       l => MongoId(l)
     }
 
   implicit def mongoWrites: Writes[MongoId] = Writes {
-    id => Json.obj("$oid" -> id.id)
+    id => Json.obj("mongoId" -> id.id)
   }
 
 }

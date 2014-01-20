@@ -5,8 +5,9 @@ import play.api.libs.functional.syntax._
 import java.util.Date
 import traits.{OutputLimits, Model}
 import play.api.libs.json.Reads._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import helper.IdHelper
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -17,11 +18,13 @@ import helper.IdHelper
 
 case class Identity(
                      id: MongoId,
+                     accountId: Option[MongoId],
                      displayName: Option[String],
                      userKey: String,
                      contacts: Seq[Contact],
                      conversations: Seq[MongoId],
                      assets: Seq[Asset],
+                     tokens: Seq[MongoId],
                      created: Date,
                      lastUpdated: Date
                      ) {
@@ -38,18 +41,19 @@ object Identity extends Model[Identity] {
 
   def inputReads: Reads[Identity] = (
     Reads.pure[MongoId](MongoId.create()) and
+      Reads.pure[Option[MongoId]](None) and
       (__ \ 'displayName).readNullable[String] and
       Reads.pure[String](IdHelper.generateUserKey()) and
       Reads.pure[Seq[Contact]](Seq()) and
       Reads.pure[Seq[MongoId]](Seq()) and
       Reads.pure[Seq[Asset]](Seq()) and
+      Reads.pure[Seq[MongoId]](Seq()) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date())
     )(Identity.apply _)
 
   def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Identity] = Writes {
     i =>
-      Json.obj("id" -> i.toJson) ++
         toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         addCreated(i.created) ++
@@ -61,11 +65,13 @@ object Identity extends Model[Identity] {
     col.find(query).one[Identity]
   }
 
-  def create(): MongoId = {
+  def create(accountId: Option[MongoId]): MongoId = {
     val identity = new Identity(
       MongoId.create(),
+      accountId,
       None,
       IdHelper.generateUserKey(),
+      Seq(),
       Seq(),
       Seq(),
       Seq(),

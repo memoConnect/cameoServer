@@ -24,7 +24,7 @@ object AccountController extends ExtendedController {
     request =>
       val jsBody: JsValue = request.body
 
-      jsBody.validate[Account](Account.inputReads).map {
+      jsBody.validate[Account](Account.createReads).map {
         account =>
           accountCollection.insert(account).map {
             lastError => {
@@ -35,7 +35,7 @@ object AccountController extends ExtendedController {
               }
             }
           }.recover {
-            // deal with exceptions from duplicate usernames or emails
+            // deal with exceptions from duplicate loginNames
             case de: DatabaseException =>
               if (de.getMessage().contains("loginName")) {
                 BadRequest(resKO("The username already exists"))

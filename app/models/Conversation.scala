@@ -22,7 +22,8 @@ case class Conversation(
                          messages: Seq[Message],
                          lastMessage: Option[Message]
                          ) {
-  def toJson: JsValue = Json.toJson(this)(Conversation.outputWrites)
+
+  def toJson(implicit ol: OutputLimits): JsValue = Json.toJson(this)(Conversation.outputWrites)
 
 }
 

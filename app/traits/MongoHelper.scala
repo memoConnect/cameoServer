@@ -40,7 +40,7 @@ trait MongoHelper {
 
   // converts id to _id
   val toMongoId: Reads[JsObject] = {
-    __.json.update((__ \ '_id).json.copyFrom((__ \ 'id).json.pick[JsString]) or emptyObj) andThen
+    __.json.update((__ \ '_id).json.copyFrom((__ \ 'id).json.pick[JsValue]) or emptyObj) andThen
       (__ \ 'id).json.prune
   }
 

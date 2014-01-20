@@ -15,6 +15,10 @@ object IdHelper {
     Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
   }
 
+  def generateMongoId(): String ={
+    randomString(30)
+  }
+
   def generateMessageId(): String = {
     randomString(8)
   }
