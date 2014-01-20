@@ -63,7 +63,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-  &quot;loginName&quot;: &quot;user&quot;,&#xd;
+  &quot;loginName&quot;: &quot;test&quot;,&#xd;
   &quot;password&quot;: &quot;password&quot;,&#xd;
   &quot;email&quot;: &quot;mail&quot;,&#xd;
   &quot;phoneNumber&quot;: &quot;12335&quot;&#xd;
@@ -90,7 +90,7 @@
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
               <stringProp name="JSON_PATH">data.loginName</stringProp>
-              <stringProp name="EXPECTED_VALUE">user</stringProp>
+              <stringProp name="EXPECTED_VALUE">test</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
@@ -102,7 +102,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-  &quot;loginName&quot;: &quot;user1&quot;,&#xd;
+  &quot;loginName&quot;: &quot;test1&quot;,&#xd;
   &quot;password&quot;: &quot;password&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
@@ -127,7 +127,7 @@
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
               <stringProp name="JSON_PATH">data.loginName</stringProp>
-              <stringProp name="EXPECTED_VALUE">user1</stringProp>
+              <stringProp name="EXPECTED_VALUE">test1</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
@@ -139,7 +139,7 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-  &quot;loginName&quot;: &quot;user&quot;,&#xd;
+  &quot;loginName&quot;: &quot;test&quot;,&#xd;
   &quot;password&quot;: &quot;password&quot;,&#xd;
   &quot;email&quot;: &quot;mail&quot;,&#xd;
   &quot;phoneNumber&quot;: &quot;12335&quot;&#xd;
@@ -191,7 +191,7 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/account/user</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/account/test</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -203,7 +203,7 @@
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check user name" enabled="true">
               <stringProp name="JSON_PATH">data.loginName</stringProp>
-              <stringProp name="EXPECTED_VALUE">user</stringProp>
+              <stringProp name="EXPECTED_VALUE">test</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
@@ -230,7 +230,7 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/identity/$IdentityId</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/identity/${identityId}</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -241,9 +241,9 @@
           </HTTPSamplerProxy>
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check identity" enabled="true">
-              <stringProp name="JSON_PATH">data.id</stringProp>
-              <stringProp name="EXPECTED_VALUE">IdentityId</stringProp>
-              <boolProp name="JSONVALIDATION">true</boolProp>
+              <stringProp name="JSON_PATH">data.userKey</stringProp>
+              <stringProp name="EXPECTED_VALUE"></stringProp>
+              <boolProp name="JSONVALIDATION">false</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get identity id" enabled="true">
@@ -262,7 +262,7 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/account/user1</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/account/test1</stringProp>
             <stringProp name="HTTPSampler.method">DELETE</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -305,202 +305,7 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/account/user1</stringProp>
-            <stringProp name="HTTPSampler.method">GET</stringProp>
-            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <boolProp name="HTTPSampler.monitor">false</boolProp>
-            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
-          </HTTPSamplerProxy>
-          <hashTree>
-            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
-              <collectionProp name="Asserion.test_strings">
-                <stringProp name="51512">404</stringProp>
-              </collectionProp>
-              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
-              <boolProp name="Assertion.assume_success">true</boolProp>
-              <intProp name="Assertion.test_type">8</intProp>
-            </ResponseAssertion>
-            <hashTree/>
-          </hashTree>
-        </hashTree>
-        <GenericController guiclass="LogicControllerGui" testclass="GenericController" testname="Account" enabled="false"/>
-        <hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Add Account" enabled="true">
-            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-              <collectionProp name="Arguments.arguments">
-                <elementProp name="" elementType="HTTPArgument">
-                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value">{&#xd;
-    &quot;username&quot;: &quot;user&quot;,&#xd;
-    &quot;email&quot;: &quot;e@mail.de&quot;,&#xd;
-    &quot;password&quot;: &quot;password&quot;,&#xd;
-    &quot;name&quot;: &quot;Otto Otter&quot;,&#xd;
-    &quot;phonenumber&quot;: &quot;49174&quot;,&#xd;
-    &quot;otherKey&quot;:&quot;value&quot;&#xd;
-}</stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-              </collectionProp>
-            </elementProp>
-            <stringProp name="HTTPSampler.domain"></stringProp>
-            <stringProp name="HTTPSampler.port"></stringProp>
-            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
-            <stringProp name="HTTPSampler.response_timeout"></stringProp>
-            <stringProp name="HTTPSampler.protocol"></stringProp>
-            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/admin/user</stringProp>
-            <stringProp name="HTTPSampler.method">POST</stringProp>
-            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <boolProp name="HTTPSampler.monitor">false</boolProp>
-            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
-          </HTTPSamplerProxy>
-          <hashTree>
-            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
-              <stringProp name="JSON_PATH">data</stringProp>
-              <stringProp name="EXPECTED_VALUE">test</stringProp>
-              <boolProp name="JSONVALIDATION">false</boolProp>
-            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
-            <hashTree/>
-          </hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Add User (dublicate)" enabled="true">
-            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-              <collectionProp name="Arguments.arguments">
-                <elementProp name="" elementType="HTTPArgument">
-                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value">{&#xd;
-    &quot;username&quot;: &quot;user&quot;,&#xd;
-    &quot;email&quot;: &quot;e@mail.de&quot;,&#xd;
-    &quot;password&quot;: &quot;password&quot;,&#xd;
-    &quot;name&quot;: &quot;Otto Otter&quot;,&#xd;
-    &quot;phonenumber&quot;: &quot;3456789&quot;,&#xd;
-    &quot;otherKey&quot;:&quot;value&quot;&#xd;
-}</stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-              </collectionProp>
-            </elementProp>
-            <stringProp name="HTTPSampler.domain"></stringProp>
-            <stringProp name="HTTPSampler.port"></stringProp>
-            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
-            <stringProp name="HTTPSampler.response_timeout"></stringProp>
-            <stringProp name="HTTPSampler.protocol"></stringProp>
-            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/admin/user</stringProp>
-            <stringProp name="HTTPSampler.method">POST</stringProp>
-            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <boolProp name="HTTPSampler.monitor">false</boolProp>
-            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
-          </HTTPSamplerProxy>
-          <hashTree>
-            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Response Assertion" enabled="true">
-              <collectionProp name="Asserion.test_strings">
-                <stringProp name="51508">400</stringProp>
-              </collectionProp>
-              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
-              <boolProp name="Assertion.assume_success">true</boolProp>
-              <intProp name="Assertion.test_type">8</intProp>
-            </ResponseAssertion>
-            <hashTree/>
-          </hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Get User" enabled="true">
-            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-              <collectionProp name="Arguments.arguments">
-                <elementProp name="" elementType="HTTPArgument">
-                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value"></stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-              </collectionProp>
-            </elementProp>
-            <stringProp name="HTTPSampler.domain"></stringProp>
-            <stringProp name="HTTPSampler.port"></stringProp>
-            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
-            <stringProp name="HTTPSampler.response_timeout"></stringProp>
-            <stringProp name="HTTPSampler.protocol"></stringProp>
-            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/admin/user/user</stringProp>
-            <stringProp name="HTTPSampler.method">GET</stringProp>
-            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <boolProp name="HTTPSampler.monitor">false</boolProp>
-            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
-          </HTTPSamplerProxy>
-          <hashTree>
-            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
-              <stringProp name="JSON_PATH">data.username</stringProp>
-              <stringProp name="EXPECTED_VALUE">user</stringProp>
-              <boolProp name="JSONVALIDATION">true</boolProp>
-            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
-            <hashTree/>
-          </hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Delete User" enabled="true">
-            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
-              <collectionProp name="Arguments.arguments"/>
-            </elementProp>
-            <stringProp name="HTTPSampler.domain"></stringProp>
-            <stringProp name="HTTPSampler.port"></stringProp>
-            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
-            <stringProp name="HTTPSampler.response_timeout"></stringProp>
-            <stringProp name="HTTPSampler.protocol"></stringProp>
-            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/admin/user/user</stringProp>
-            <stringProp name="HTTPSampler.method">DELETE</stringProp>
-            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
-            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
-            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
-            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
-            <boolProp name="HTTPSampler.monitor">false</boolProp>
-            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
-          </HTTPSamplerProxy>
-          <hashTree>
-            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
-              <collectionProp name="HeaderManager.headers">
-                <elementProp name="" elementType="Header">
-                  <stringProp name="Header.name">Content-Type</stringProp>
-                  <stringProp name="Header.value">text/plain</stringProp>
-                </elementProp>
-              </collectionProp>
-            </HeaderManager>
-            <hashTree/>
-            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
-              <stringProp name="JSON_PATH">res</stringProp>
-              <stringProp name="EXPECTED_VALUE">OK</stringProp>
-              <boolProp name="JSONVALIDATION">false</boolProp>
-            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
-            <hashTree/>
-          </hashTree>
-          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Check deletion" enabled="true">
-            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
-            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-              <collectionProp name="Arguments.arguments">
-                <elementProp name="" elementType="HTTPArgument">
-                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
-                  <stringProp name="Argument.value"></stringProp>
-                  <stringProp name="Argument.metadata">=</stringProp>
-                </elementProp>
-              </collectionProp>
-            </elementProp>
-            <stringProp name="HTTPSampler.domain"></stringProp>
-            <stringProp name="HTTPSampler.port"></stringProp>
-            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
-            <stringProp name="HTTPSampler.response_timeout"></stringProp>
-            <stringProp name="HTTPSampler.protocol"></stringProp>
-            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/admin/user/user</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/account/test1</stringProp>
             <stringProp name="HTTPSampler.method">GET</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -532,8 +337,7 @@
                   <stringProp name="Argument.value">{&#xd;
     &quot;username&quot;: &quot;test&quot;,&#xd;
     &quot;email&quot;: &quot;e@mail.de&quot;,&#xd;
-    &quot;password&quot;: &quot;password&quot;,&#xd;
-    &quot;name&quot;: &quot;Reimerei&quot;,&#xd;
+    &quot;password&quot;: &quot;password&quot;, &#xd;
     &quot;phonenumber&quot;: &quot;user1&quot;&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
@@ -2182,7 +1986,7 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/account/user</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/account/test</stringProp>
             <stringProp name="HTTPSampler.method">DELETE</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
