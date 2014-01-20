@@ -20,7 +20,10 @@ case class Contact (
                     username: Option[String],
                     created: Date,
                     lastUpdated: Date
-                  )
+                  )      {
+  def toJson:JsValue = Json.toJson(this)(Contact.outputWrites)
+
+}
 
 object Contact extends Model[Contact]
 {

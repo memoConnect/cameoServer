@@ -21,7 +21,10 @@ case class Conversation(
                          recipients: Seq[Recipient],
                          messages: Seq[Message],
                          lastMessage: Option[Message]
-                         )
+                         ) {
+  def toJson: JsValue = Json.toJson(this)(Conversation.outputWrites)
+
+}
 
 object Conversation extends Model[Conversation] {
 
@@ -56,7 +59,9 @@ object Conversation extends Model[Conversation] {
             case _ => Json.obj()
           }
         }) ++
-        Json.obj("recipients" -> c.recipients.map { _.name })
+        Json.obj("recipients" -> c.recipients.map {
+          _.name
+        })
   }
 
   def find(conversationId: String): Future[Option[Conversation]] = {

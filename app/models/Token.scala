@@ -18,7 +18,10 @@ case class Token(
                   purl: Option[String],
                   userClass: Option[String],
                   created: Date
-                  )
+                  ) {
+  def toJson:JsValue = Json.toJson(this)(Token.outputWrites)
+
+}
 
 object Token extends MongoHelper with Model[Token] {
 

@@ -21,7 +21,10 @@ case class Recipient(
                       sendTo: String,
                       sendStatus: Option[String],
                       testRun: Option[Boolean]
-                      )
+                      )  {
+  def toJson:JsValue = Json.toJson(this)(Recipient.outputWrites)
+
+}
 
 object Recipient extends Model[Recipient] {
 

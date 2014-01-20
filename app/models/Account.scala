@@ -6,7 +6,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import reactivemongo.api.indexes.{IndexType, Index}
 import java.util.Date
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 /**
  * User: Björn Reimer
@@ -42,7 +42,7 @@ object Account extends Model[Account] {
     Reads.pure[MongoId](MongoId.create()) and
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
-      Reads.pure[Seq[MongoId]](Seq()) and
+      Reads.pure[Seq[MongoId]](Seq(Identity.create())) and
       (__ \ 'phoneNumber).readNullable[String] and
       (__ \ 'email).readNullable[String] and
       Reads.pure[Date](new Date()) and
@@ -53,9 +53,22 @@ object Account extends Model[Account] {
     a =>
       Json.obj("loginName" -> a.loginName) ++
         Json.obj("identities" -> a.identities.map(id => id.toJson)) ++
+        Json.obj("id" -> a.id.toJson) ++
         toJsonOrEmpty("phoneNumber", a.phoneNumber) ++
         toJsonOrEmpty("email", a.email) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
+  }
+
+  def find(id: String): Future[Option[Account]] = find(new MongoId(id))
+
+  def find(id: MongoId): Future[Option[Account]] = {
+      val query = Json.obj("_id" -> id)
+      col.find(query).one[Account]
+  }
+
+  def findByLoginName(loginName: String): Future[Option[Account]] = {
+    val query = Json.obj("loginName" -> loginName)
+    col.find(query).one[Account]
   }
 }

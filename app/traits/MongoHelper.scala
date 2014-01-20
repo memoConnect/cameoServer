@@ -38,15 +38,16 @@ trait MongoHelper {
       __.json.update((__ \ 'lastUpdated).json.copyFrom((__ \ 'lastUpdated \ '$date).json.pick[JsNumber]) or emptyObj)
   }
 
-  // converst id to _id
+  // converts id to _id
   val toMongoId: Reads[JsObject] = {
-    __.json.update((__ \ '_id).json.copyFrom((__ \ 'id).json.pick[JsString]) or emptyObj)
+    __.json.update((__ \ '_id).json.copyFrom((__ \ 'id).json.pick[JsString]) or emptyObj) andThen
+      (__ \ 'id).json.prune
   }
 
   val fromMongoId: Reads[JsObject] = {
-    __.json.update((__ \ 'id).json.copyFrom((__ \ '_id).json.pick[JsString]) or emptyObj)
+    __.json.update((__ \ 'id).json.copyFrom((__ \ '_id).json.pick[JsValue]) or emptyObj) andThen
+      (__ \ '_id).json.prune
   }
-
 
   def createMongoReads[T](reads: Reads[T]): Reads[T] = Reads {
     js => js.transform(fromMongoDates andThen fromMongoId).map {

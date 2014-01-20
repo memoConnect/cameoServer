@@ -23,7 +23,10 @@ case class Purl(
                  username: Option[String],
                  name: Option[String],
                  token: Option[String]
-                 )
+                 ) {
+  def toJson:JsValue = Json.toJson(this)(Purl.outputWrites)
+
+}
 
 object Purl extends Model[Purl] {
 

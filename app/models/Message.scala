@@ -23,7 +23,10 @@ case class Message(
                     created: Date,
                     recipients: Option[Seq[Recipient]],
                     assets: Option[Seq[Asset]]
-                    )
+                    )      {
+  def toJson:JsValue = Json.toJson(this)(Message.outputWrites)
+
+}
 
 
 object Message extends MongoHelper with Model[Message] {

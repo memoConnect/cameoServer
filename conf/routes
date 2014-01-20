@@ -6,17 +6,14 @@
 ##
 ##   API
 ##
-
 GET            /api/v1                                             controllers.Application.index
 
 # ACCOUNT
 POST           /api/v1/account                                     controllers.AccountController.createAccount
+GET            /api/v1/account/:loginName                          controllers.AccountController.getAccount(loginName)
+DELETE         /api/v1/account/:loginName                          controllers.AccountController.deleteAccount(loginName)
 
-# USER
-POST           /api/v1/admin/user                                  controllers.UserController.createUser
-GET            /api/v1/admin/user/:username                        controllers.UserController.getUser(username: String)
-DELETE         /api/v1/admin/user/:username                        controllers.UserController.deleteUser(username: String)
-GET            /api/v1/user                                        controllers.UserController.getUserWithToken(token: String)
+# IDENTITIES
 
 # MESSAGES
 POST           /api/v1/message                                     controllers.MessageController.sendMessage

@@ -8,7 +8,6 @@ import java.util.Date
 import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import play.api.Logger
 import helper.IdHelper
 
 /**
@@ -28,7 +27,10 @@ case class User(
                  media: Option[List[Asset]], // List of assets that should be included in the media wall
                  created: Date,
                  lastUpdated: Date
-                 )
+                 ) {
+  def toJson: JsValue = Json.toJson(this)(User.outputWrites)
+
+}
 
 object User extends Model[User] {
 
