@@ -3,7 +3,7 @@ package helper
 import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
-import models.Token
+import models.{MongoId, Identity, Token}
 import traits.ResultHelper
 import services.Authentication.UserClass
 import services.Authentication
@@ -13,7 +13,7 @@ import services.Authentication
  * Date: 11/5/13
  * Time: 5:57 PM
  */
-class AuthRequest[A](val token: Token, request: Request[A], userClass: UserClass) extends WrappedRequest[A](request)
+class AuthRequest[A](request: Request[A], identity: Identity) extends WrappedRequest[A](request)
 
 object AuthAction extends ActionBuilder[AuthRequest] with ResultHelper {
 
@@ -26,10 +26,14 @@ object AuthAction extends ActionBuilder[AuthRequest] with ResultHelper {
     // check if a token is passed
     request.getQueryString(REQUEST_TOKEN) match {
       case None => Future.successful(Results.Unauthorized(REQUEST_TOKEN_MISSING))
-      case Some(token) => {
-        Token.find(token).flatMap {
+      case Some(tokenId) => {
+        Token.find(new MongoId(tokenId)).flatMap {
           case None => Future.successful(Results.Unauthorized(REQUEST_ACCESS_DENIED))
-          case Some(tokenObject) => block(new AuthRequest[A](tokenObject, request, Authentication.getUserClass(tokenObject.userClass.getOrElse(AuthAction.EMPTY_USER))))
+          case Some(token) => {
+            Identity.find(token.identityId).flatMap {
+              case Some(identity) => block(new AuthRequest[A](request,  identity))
+            }
+          }
         }
       }
     }

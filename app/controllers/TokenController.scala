@@ -6,10 +6,8 @@ import play.api.libs.json.{Json, JsValue}
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
-import models.Token
-import java.util.Date
+import models.{MongoId, Identity, Account, Token}
 import play.api.libs.concurrent.Execution.Implicits._
-import services.Authentication
 
 
 /**
@@ -22,30 +20,6 @@ object TokenController extends ExtendedController {
   /**
    * Helper
    */
-  def checkUserAndReturnToken(user: String, pass: String): Future[SimpleResult] = {
-    val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> user)).one[JsValue]
-
-    futureUser.map {
-      case None => {
-        Unauthorized(resKO("Wrong Username/Password"))
-      }
-      case Some(u: JsValue) => {
-        // check password
-        if (!BCrypt.checkpw(pass, (u \ "password").asOpt[String].getOrElse(""))) {
-          // wrong password
-          Unauthorized(resKO("Wrong Username/Password"))
-        } else {
-          val token = new Token(IdHelper.generateAccessToken(), Some(user), None, Some(Authentication.AUTH_USER), new Date)
-          tokenCollection.insert(token).map {
-            lastError => InternalServerError(resKO("MongoError: " + lastError))
-          }
-          Ok(resOK(Json.toJson(token)(Token.outputWrites))).withHeaders(
-            ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization")
-        }
-      }
-    }
-  }
-
   // decode username and password
   def decodeBasicAuth(auth: String) = {
     val baStr = auth.replaceFirst("Basic ", "")
@@ -53,24 +27,39 @@ object TokenController extends ExtendedController {
     (user, pass)
   }
 
-  // create new token
-  def createToken(user: String): JsValue = {
-    Json.obj("token" -> IdHelper.generateAccessToken(), "username" -> user)
-  }
-
   /**
    * Actions
    */
-  def getToken = Action.async {
+  def createToken(identityId: String) = Action.async {
     request => {
       request.headers.get("Authorization") match {
         case None => {
-          Future.successful(BadRequest(resKO("No Authorization field in header")).withHeaders(
-            WWW_AUTHENTICATE -> Authentication.AUTH_USER))
+          Future.successful(BadRequest(resKO("No Authorization field in header")))
         }
         case Some(basicAuth) => {
-          val (user, pass) = decodeBasicAuth(basicAuth)
-          checkUserAndReturnToken(user, pass)
+          val (loginName, password) = decodeBasicAuth(basicAuth)
+          val identityMongoId = new MongoId(identityId)
+
+          Identity.find(identityMongoId).flatMap {
+            case None => Future.successful(NotFound(resKO("Identity not found")))
+            case Some(identity) => if (identity.accountId.isDefined) {
+              Account.find(identity.accountId.get).map {
+                account => {
+                  // check loginNames and passwords match
+                  if (BCrypt.checkpw(password, account.get.password) && account.get.loginName.equals(loginName)) {
+                    // everything is ok
+                    val token = Token.create(identityMongoId)
+                    Token.col.insert(token)
+                    Ok(resOK(token.toJson))
+                  } else {
+                    Unauthorized(resKO("Invalid password/loginName"))
+                  }
+                }
+              }
+            } else {
+              Future.successful(Unauthorized(resKO("Invalid password/loginName")))
+            }
+          }
         }
       }
     }
@@ -83,7 +72,7 @@ object TokenController extends ExtendedController {
 
   def deleteToken(token: String) = Action.async {
     request =>
-      tokenCollection.remove[JsValue](Json.obj("token" -> token)).map {
+      Token.col.remove[JsValue](Json.obj("_id" -> new MongoId(token))).map {
         lastError =>
           if (lastError.updated > 0) {
             Ok(resOK(Json.obj("deletedToken" -> token)))

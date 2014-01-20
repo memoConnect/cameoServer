@@ -30,6 +30,30 @@ case class Identity(
                      ) {
   def toJson: JsValue = Json.toJson(this)(Identity.outputWrites)
 
+  def addContact(contact: Contact) = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$push" -> Json.obj("contacts" -> contact))
+    Identity.col.update(query,set)
+  }
+
+  def addConversation(conversationId: MongoId) = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
+    Identity.col.update(query,set)
+  }
+
+  def addAsset(assetId: MongoId) = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$addToSet" -> Json.obj("assets" -> assetId))
+    Identity.col.update(query,set)
+  }
+
+  def addToken(tokenId: MongoId) = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$push" -> Json.obj("tokens" -> tokenId))
+    Identity.col.update(query,set)
+  }
+
 }
 
 
@@ -54,6 +78,7 @@ object Identity extends Model[Identity] {
 
   def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Identity] = Writes {
     i =>
+      Json.obj("id" -> i.id.toJson)
         toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         addCreated(i.created) ++

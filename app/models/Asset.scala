@@ -12,7 +12,7 @@ import ExecutionContext.Implicits.global
  * Time: 3:04 PM
  */
 case class Asset(
-                  assetId: String,
+                  id: MongoId,
                   filesize: String,
                   filename: String,
                   fileType: String,
@@ -33,7 +33,7 @@ object Asset extends Model[Asset] {
 
   def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Asset] = Writes {
     asset =>
-      Json.obj("assetId" -> asset.assetId) ++
+      Json.obj("id" -> asset.id.toJson) ++
         Json.obj("name" -> asset.filename) ++
         Json.obj("type" -> asset.fileType) ++
         Json.obj("size" -> asset.filesize) ++

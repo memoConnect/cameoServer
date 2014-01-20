@@ -53,6 +53,7 @@ object Account extends Model[Account] {
 
   def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Account] = Writes {
     a =>
+      Json.obj("id" -> a.id.toJson)
       Json.obj("loginName" -> a.loginName) ++
         Json.obj("identities" -> a.identities.map(id => id.toJson)) ++
         toJsonOrEmpty("phoneNumber", a.phoneNumber) ++
@@ -64,10 +65,7 @@ object Account extends Model[Account] {
   def find(id: String): Future[Option[Account]] = find(new MongoId(id))
 
   def find(id: MongoId): Future[Option[Account]] = {
-    Logger.debug("########################################")
     val query = Json.obj("_id" -> id)
-    Logger.debug("########################################" + query.toString)
-
     col.find(query).one[Account]
   }
 

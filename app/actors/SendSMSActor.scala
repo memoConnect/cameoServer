@@ -8,7 +8,7 @@ import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WS
 import scala.concurrent.Future
-import models.{User, Message, Purl, Recipient}
+import models.{Message, Purl, Recipient}
 
 /**
  * User: Björn Reimer
@@ -63,48 +63,48 @@ class SendSMSActor extends Actor with MongoHelper {
     // send message to recipient
     case (recipient: Recipient, message: models.Message) => {
 
-      val from = message.from
-      val to = recipient.sendTo
-      val body = message.messageBody
-
-      // add footer to sms
-      val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" +
-        Purl.createPurl(message.conversationId.get, recipient)
-      // cut message, so it will fit in the sms with the footer.
-      val bodyWithFooter: String = {
-        if (footer.length + body.length > 160) {
-          body.substring(0, 160 - footer.length) + footer
-        } else {
-          body + footer
-        }
-      }
-
-      sendSMS(from, to, bodyWithFooter).map {
-        status => Recipient.updateStatus(message, recipient, status)
-
-      }
+//      val from = message.from
+//      val to = recipient.sendTo
+//      val body = message.messageBody
+//
+//      // add footer to sms
+//      val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" +
+//        Purl.createPurl(message.conversationId.get, recipient)
+//      // cut message, so it will fit in the sms with the footer.
+//      val bodyWithFooter: String = {
+//        if (footer.length + body.length > 160) {
+//          body.substring(0, 160 - footer.length) + footer
+//        } else {
+//          body + footer
+//        }
+//      }
+//
+//      sendSMS(from, to, bodyWithFooter).map {
+//        status => Recipient.updateStatus(message, recipient, status)
+//
+//      }
     }
     // notify user of new message
-    case (user: User, message: Message) => {
-
-      val from = message.from
-      val to = user.phonenumber.getOrElse("none")
-      val body = message.messageBody
-
-      // add footer to sms
-      val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" +
-        Purl.createPurl(message.conversationId.get, user)
-      // cut message, so it will fit in the sms with the footer.
-      val bodyWithFooter: String = {
-        if (footer.length + body.length > 160) {
-          body.substring(0, 160 - footer.length) + footer
-        } else {
-          body + footer
-        }
-      }
-
-      sendSMS(from, to, bodyWithFooter)
-    }
+//    case (user: User, message: Message) => {
+//
+//      val from = message.from
+//      val to = user.phonenumber.getOrElse("none")
+//      val body = message.messageBody
+//
+//      // add footer to sms
+//      val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" +
+//        Purl.createPurl(message.conversationId.get, user)
+//      // cut message, so it will fit in the sms with the footer.
+//      val bodyWithFooter: String = {
+//        if (footer.length + body.length > 160) {
+//          body.substring(0, 160 - footer.length) + footer
+//        } else {
+//          body + footer
+//        }
+//      }
+//
+//      sendSMS(from, to, bodyWithFooter)
+//    }
   }
 
 }

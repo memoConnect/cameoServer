@@ -55,30 +55,30 @@ object Purl extends Model[Purl] {
   /*
    * Helper
    */
-  def createPurl(conversationId: String, recipient: Recipient): String = {
-    // check if the recipient is another user or not
-    val purl: Purl = if (recipient.messageType.toLowerCase().equals("otherUser")) {
-      // we are sending to another user => only need username
-      new Purl(IdHelper.generatePurl(), conversationId, "registered", recipient.recipientId, Some(recipient.sendTo), None, None)
-    }
-    else {
-      // we are sending to anon user => create new (temporary) token, save Display name
-      val token = new Token(IdHelper.generateAccessToken(), None, Some(IdHelper.generatePurl()), Some("anon"), new Date)
-      tokenCollection.insert(token)
-      new Purl(token.purl.get, conversationId, "unregistered", recipient.recipientId, None, Some(recipient.name), Some(token.token))
-    }
-
-    // write to db and return purl
-    purlCollection.insert(purl)
-    purl.purl
-  }
-
-  def createPurl(conversationId: String, user: User): String = {
-    // TODO get recipientID
-    val purl = new Purl(IdHelper.generatePurl(), conversationId, "registered", "", Some(user.username), None, None)
-
-    // write to db and return purl
-    purlCollection.insert(purl)
-    purl.purl
-  }
+//  def createPurl(conversationId: String, recipient: Recipient): String = {
+//    // check if the recipient is another user or not
+//    val purl: Purl = if (recipient.messageType.toLowerCase().equals("otherUser")) {
+//      // we are sending to another user => only need username
+//      new Purl(IdHelper.generatePurl(), conversationId, "registered", recipient.recipientId, Some(recipient.sendTo), None, None)
+//    }
+//    else {
+//      // we are sending to anon user => create new (temporary) token, save Display name
+//      val token = new Token(IdHelper.generateAccessToken(), None, Some(IdHelper.generatePurl()), Some("anon"), new Date)
+//      tokenCollection.insert(token)
+//      new Purl(token.purl.get, conversationId, "unregistered", recipient.recipientId, None, Some(recipient.name), Some(token.token))
+//    }
+//
+//    // write to db and return purl
+//    purlCollection.insert(purl)
+//    purl.purl
+//  }
+//
+//  def createPurl(conversationId: String, user: User): String = {
+//    // TODO get recipientID
+//    val purl = new Purl(IdHelper.generatePurl(), conversationId, "registered", "", Some(user.username), None, None)
+//
+//    // write to db and return purl
+//    purlCollection.insert(purl)
+//    purl.purl
+//  }
 }

@@ -4,7 +4,7 @@ import play.api.mvc.{SimpleResult, Action}
 
 import play.api.libs.json._
 import traits.ExtendedController
-import models.{Identity, MongoId, Account, User}
+import models.{Identity, MongoId, Account}
 import reactivemongo.core.errors.DatabaseException
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.AuthAction

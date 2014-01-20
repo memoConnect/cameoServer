@@ -7,7 +7,7 @@ import play.api.libs.json._
 import reactivemongo.api.gridfs.GridFS
 import helper.{AuthAction, IdHelper}
 import play.api.Logger
-import models.{User, Asset, Message}
+import models.{MongoId, Asset, Message}
 import scala.Some
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 import java.util.Date
@@ -28,12 +28,7 @@ object AssetController extends ExtendedController {
   gridFS.ensureIndex()
 
   def uploadAsset(token: String, messageId: String) = AuthAction.async(gridFSBodyParser(gridFS)) {
-    implicit request =>
-      val userClass: UserClass = Authentication.getUserClass(request.token.userClass.getOrElse(AuthAction.EMPTY_USER))
-
-      if (!userClass.uploadAssets) {
-        Future.successful(Unauthorized)
-      } else {
+    request =>
         val futureFiles = request.body.files
         // check if the message exist
         Message.find(messageId).flatMap {
@@ -59,14 +54,14 @@ object AssetController extends ExtendedController {
                   messageResult <- {
                     // create asset object
                     val asset = new Asset(
-                      assetId,
+                      new MongoId(assetId),
                       String.valueOf(file.chunkSize),
                       file.filename,
                       file.contentType.getOrElse("unknown"),
                       new Date)
 
                     // add asset to user TODO: all users of the conversation
-                    User.addMedia(request.token.username.getOrElse(""), asset)
+                    //request.identity.addMedia(asset.id)
 
                     // add asset to message
                     val query = Json.obj("conversationId" -> message.conversationId,
@@ -98,8 +93,6 @@ object AssetController extends ExtendedController {
           }
         }
       }
-  }
-
 
   def getAsset(token: String, assetId: String) = Action.async {
     request =>
@@ -114,16 +107,16 @@ object AssetController extends ExtendedController {
 
   }
 
-  def getMedia(token: String) = AuthAction.async {
-    request =>
-      User.find(request.token.username.getOrElse("")).map {
-        case None => NotFound(resKO("invalid user"))
-        case Some(user) => {
-          val res =
-            Json.obj("numberOfAssets" -> user.media.getOrElse(Seq()).size) ++
-              Asset.toSortedJsonObjectOrEmpty("assets", user.media)
-          Ok(resOK(res))
-        }
-      }
-  }
+//  def getMedia(token: String) = AuthAction.async {
+//    request =>
+//      User.find(request.token.username.getOrElse("")).map {
+//        case None => NotFound(resKO("invalid user"))
+//        case Some(user) => {
+//          val res =
+//            Json.obj("numberOfAssets" -> user.media.getOrElse(Seq()).size) ++
+//              Asset.toSortedJsonObjectOrEmpty("assets", user.media)
+//          Ok(resOK(res))
+//        }
+//      }
+//  }
 }
