@@ -8,6 +8,7 @@ import play.api.libs.json.Reads._
 import scala.concurrent.{ExecutionContext, Future}
 import helper.IdHelper
 import ExecutionContext.Implicits.global
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -32,26 +33,27 @@ case class Identity(
 
   def addContact(contact: Contact) = {
     val query = Json.obj("_id" -> this.id)
-    val set = Json.obj("$push" -> Json.obj("contacts" -> contact))
-    Identity.col.update(query,set)
+    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
+    Logger.debug("#######" + set)
+    Identity.col.update(query, set)
   }
 
   def addConversation(conversationId: MongoId) = {
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
-    Identity.col.update(query,set)
+    Identity.col.update(query, set)
   }
 
   def addAsset(assetId: MongoId) = {
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$addToSet" -> Json.obj("assets" -> assetId))
-    Identity.col.update(query,set)
+    Identity.col.update(query, set)
   }
 
   def addToken(tokenId: MongoId) = {
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$push" -> Json.obj("tokens" -> tokenId))
-    Identity.col.update(query,set)
+    Identity.col.update(query, set)
   }
 
 }
@@ -78,9 +80,10 @@ object Identity extends Model[Identity] {
 
   def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Identity] = Writes {
     i =>
-      Json.obj("id" -> i.id.toJson)
-        toJsonOrEmpty("displayName", i.displayName) ++
+      Json.obj("id" -> i.id.toJson) ++
+      toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
+        Json.obj("contacts" -> i.contacts) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
   }
@@ -105,6 +108,13 @@ object Identity extends Model[Identity] {
     )
     col.insert(identity)
     identity.id
+  }
+
+  def getDisplayName(id: MongoId): Future[String] = {
+    Identity.find(id).map {
+      case None => "NoName"
+      case Some(i) => i.displayName.getOrElse("NoName")
+    }
   }
 }
 

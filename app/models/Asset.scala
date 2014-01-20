@@ -25,11 +25,9 @@ case class Asset(
 
 object Asset extends Model[Asset] {
 
-  implicit val col = conversationCollection
-  implicit val mongoFormat: Format[Asset] = createMongoFormat(Json.reads[Asset], Json.writes[Asset])
+  implicit val col = Conversation.col
 
-  // Input/output format for the API
-  def inputReads: Reads[Asset] = Json.reads[Asset]
+  implicit val mongoFormat: Format[Asset] = createMongoFormat(Json.reads[Asset], Json.writes[Asset])
 
   def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Asset] = Writes {
     asset =>
@@ -38,11 +36,6 @@ object Asset extends Model[Asset] {
         Json.obj("type" -> asset.fileType) ++
         Json.obj("size" -> asset.filesize) ++
         addCreated(asset.created)
-  }
-
-  def find(assetId: String): Future[Option[Asset]] = {
-    val query = Json.obj("assetId" -> assetId)
-    col.find(query).one[Asset]
   }
 
   override val sortWith = {

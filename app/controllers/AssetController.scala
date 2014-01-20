@@ -61,7 +61,7 @@ object AssetController extends ExtendedController {
                       new Date)
 
                     // add asset to user TODO: all users of the conversation
-                    //request.identity.addMedia(asset.id)
+                    request.identity.addAsset(asset.id)
 
                     // add asset to message
                     val query = Json.obj("conversationId" -> message.conversationId,

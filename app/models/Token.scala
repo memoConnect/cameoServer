@@ -24,14 +24,13 @@ case class Token(
 
 object Token extends MongoHelper with Model[Token] {
 
-  implicit lazy val col: JSONCollection = mongoDB.collection[JSONCollection]("token")
-  col.indexesManager.ensure(Index(List("token" -> IndexType.Ascending), unique = true, sparse = true))
+  implicit lazy val col: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
   def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)) = Writes[Token] {
     t =>
-      Json.obj("token" -> t.id) ++
+      Json.obj("token" -> t.id.toJson) ++
         addCreated(t.created)
   }
 

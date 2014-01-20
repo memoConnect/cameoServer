@@ -4,54 +4,53 @@ import java.util.Date
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
-import traits.{OutputLimits, MongoHelper, Model}
+import traits.{OutputLimits, Model}
 
 /**
  * User: Björn Reimer
  * Date: 6/25/13
  * Time: 5:53 PM
  */
-case class Contact (
-                    contactId: String,
+case class Contact(
+                    id: MongoId,
                     name: String,
                     email: Option[String],
                     phonenumber: Option[String],
                     groups: Seq[String],
-                    username: Option[String],
+                    identityId: Option[MongoId],
                     created: Date,
                     lastUpdated: Date
-                  )      {
-  def toJson:JsValue = Json.toJson(this)(Contact.outputWrites)
+                    ) {
+  def toJson: JsValue = Json.toJson(this)(Contact.outputWrites)
 
 }
 
-object Contact extends Model[Contact]
-{
+object Contact extends Model[Contact] {
 
   implicit val col = userCollection
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
-  // Input/output format for the API
   def inputReads: Reads[Contact] = (
-    Reads.pure[String](IdHelper.generateContactId()) and
-    ((__ \ 'name).read[String] or Reads.pure(IdHelper.generateContactId())) and
-    (__ \ 'email).readNullable[String] and
-    (__ \ 'phonenumber).readNullable[String] and
-    ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
-    (__ \ 'username).readNullable[String] and
-    Reads.pure[Date](new Date) and
-    Reads.pure[Date](new Date)
+    Reads.pure[MongoId](new MongoId(IdHelper.generateContactId())) and
+      ((__ \ 'name).read[String] or Reads.pure(IdHelper.generateContactId())) and
+      (__ \ 'email).readNullable[String] and
+      (__ \ 'phonenumber).readNullable[String] and
+      ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
+      // TODO: check if identity exists
+      (__ \ 'identity).readNullable[MongoId] and
+      Reads.pure[Date](new Date) and
+      Reads.pure[Date](new Date)
     )(Contact.apply _)
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)): Writes[Contact] = Writes {
-    contact =>
-      Json.obj("name" -> contact.name) ++
-        toJsonOrEmpty("email", contact.email) ++
-        toJsonOrEmpty("phonenumber", contact.phonenumber) ++
-        toJsonOrEmpty("username", contact.username) ++
-        Json.obj("groups" -> contact.groups) ++
-        Json.obj("contactId" -> contact.contactId) ++
-        addLastUpdated(contact.lastUpdated)
+  def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Contact] = Writes {
+    c =>
+      Json.obj("id" -> c.id.toJson) ++
+      Json.obj("name" -> c.name) ++
+        toJsonOrEmpty("email", c.email) ++
+        toJsonOrEmpty("phonenumber", c.phonenumber) ++
+        Json.obj("groups" -> c.groups) ++
+        addCreated(c.created) ++
+        addLastUpdated(c.lastUpdated)
   }
 
   override val sortWith = {

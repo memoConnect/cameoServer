@@ -13,7 +13,7 @@ import services.Authentication
  * Date: 11/5/13
  * Time: 5:57 PM
  */
-class AuthRequest[A](request: Request[A], identity: Identity) extends WrappedRequest[A](request)
+class AuthRequest[A](val identity: Identity, request: Request[A]) extends WrappedRequest[A](request)
 
 object AuthAction extends ActionBuilder[AuthRequest] with ResultHelper {
 
@@ -31,7 +31,7 @@ object AuthAction extends ActionBuilder[AuthRequest] with ResultHelper {
           case None => Future.successful(Results.Unauthorized(REQUEST_ACCESS_DENIED))
           case Some(token) => {
             Identity.find(token.identityId).flatMap {
-              case Some(identity) => block(new AuthRequest[A](request,  identity))
+              case Some(identity) => block(new AuthRequest[A](identity, request))
             }
           }
         }

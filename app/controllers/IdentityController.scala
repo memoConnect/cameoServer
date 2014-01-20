@@ -14,6 +14,7 @@ import ExecutionContext.Implicits.global
 object IdentityController extends ExtendedController {
 
   def getIdentity(id: String) = Action.async {
+
     val mongoId = new MongoId(id)
 
     Identity.find(mongoId).map {

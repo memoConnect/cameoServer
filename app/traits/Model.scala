@@ -18,7 +18,7 @@ case class OutputLimits(offset: Int, limit: Int)
 
 trait Model[A] extends MongoHelper {
 
-  implicit def col: JSONCollection
+  val col: JSONCollection
   implicit val mongoFormat: Format[A]
 
   //def inputReads: Reads[A]
@@ -30,7 +30,6 @@ trait Model[A] extends MongoHelper {
   /**
    * Helper
    */
-
   def toJson(model: A)(implicit ol: OutputLimits = OutputLimits(0, 0)): JsValue = {
     Json.toJson[A](model)(outputWrites)
   }
@@ -114,4 +113,5 @@ trait Model[A] extends MongoHelper {
       case Some(pass) => JsSuccess(BCrypt.hashpw(pass, BCrypt.gensalt()))
     }
   }
+
 }

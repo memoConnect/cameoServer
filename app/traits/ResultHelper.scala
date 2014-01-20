@@ -15,6 +15,8 @@ trait ResultHelper {
 
   def resOK(data: JsValue) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
 
+  def resOK(data: Seq[JsValue]) = Json.obj("res" -> "OK") ++ Json.obj("data" -> data)
+
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   def resKO(data: JsValue,

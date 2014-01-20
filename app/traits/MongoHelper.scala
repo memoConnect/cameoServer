@@ -17,7 +17,6 @@ trait MongoHelper {
 
   val mongoDB = ReactiveMongoPlugin.db
 
-  lazy val conversationCollection: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
   lazy val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
   lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
   lazy val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")

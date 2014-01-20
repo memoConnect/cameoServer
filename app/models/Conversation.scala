@@ -7,6 +7,8 @@ import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 import play.api.Logger
+import play.modules.reactivemongo.json.collection.JSONCollection
+import helper.IdHelper
 
 /**
  * User: Björn Reimer
@@ -15,64 +17,60 @@ import play.api.Logger
  */
 
 case class Conversation(
-                         conversationId: String,
+                         id: MongoId,
                          created: Date,
                          lastUpdated: Date,
-                         recipients: Seq[Recipient],
+                         recipients: Seq[MongoId],
                          messages: Seq[Message],
                          lastMessage: Option[Message]
                          ) {
 
-  def toJson(implicit ol: OutputLimits): JsValue = Json.toJson(this)(Conversation.outputWrites)
+  def toJson(offset: Int): JsValue = Json.toJson(this)(Conversation.outputWrites)
 
 }
 
 object Conversation extends Model[Conversation] {
+  
+  val col = mongoDB.collection[JSONCollection]("conversations")
 
-  conversationCollection.indexesManager.ensure(Index(List("conversationId" -> IndexType.Ascending), unique = true,
-    sparse = true))
-
-  implicit val col = conversationCollection
-  implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation],
-    Json.writes[Conversation])
-
-  def inputReads = Json.reads[Conversation]
+  implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
 
   def outputWrites(implicit ol: OutputLimits) = Writes[Conversation] {
-    conversation =>
-      Json.obj("conversationId" -> conversation.conversationId) ++
-        Recipient.toSortedJsonObject("recipients", conversation.recipients) ++
-        Message.toSortedJsonObject("messages", conversation.messages) ++
-        Json.obj("numberOfMessages" -> conversation.messages.length) ++
-        Json.obj("created" -> defaultDateFormat.format(conversation.created)) ++
-        addCreated(conversation.created) ++
-        addLastUpdated(conversation.lastUpdated)
-  }
-
-  val summaryWrites = Writes[Conversation] {
     c =>
-      Json.obj("conversationId" -> c.conversationId) ++
-        Conversation.addLastUpdated(c.lastUpdated) ++
+      Json.obj("id" -> c.id.toJson) ++
+        Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
+        Json.obj("messages" -> c.messages.map(_.toJson)) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
-        Json.obj("lastMessage" -> {
-          c.lastMessage match {
-            case Some(m: Message) => JsString(m.from + ": " + m.messageBody)
-            case _ => Json.obj()
-          }
-        }) ++
-        Json.obj("recipients" -> c.recipients.map {
-          _.name
-        })
+        addCreated(c.created) ++
+        addLastUpdated(c.lastUpdated)
   }
 
-  def find(conversationId: String): Future[Option[Conversation]] = {
-    val query = Json.obj("conversationId" -> conversationId)
+//  val summaryWrites = Writes[Conversation] {
+//    c =>
+//      Json.obj("conversationId" -> c.id.toJson) ++
+//        Conversation.addLastUpdated(c.lastUpdated) ++
+//        Json.obj("numberOfMessages" -> c.messages.length) ++
+//        Json.obj("lastMessage" -> {
+//          c.lastMessage match {
+//            case Some(m: Message) => JsString(m.from + ": " + m.messageBody)
+//            case _ => Json.obj()
+//          }
+//        }) ++
+//        Json.obj("recipients" -> c.recipients.map {
+//          Identity.getDisplayName
+//        })}
+
+  def find(id: MongoId): Future[Option[Conversation]] = {
+    val query = Json.obj("_id" -> id)
     col.find(query).one[Conversation]
   }
 
-  override val sortWith = {
-    (c1: Conversation, c2: Conversation) => c1.lastUpdated.after(c2.lastUpdated)
+  def create: MongoId = {
+    val id = new MongoId(IdHelper.generateConversationId())
+    new Conversation(id, new Date, new Date, Seq(), Seq(), None)
+    id
   }
+
 
   def addMessage(message: Message) = {
     val query = Json.obj("conversationId" -> message.conversationId.get)
@@ -86,19 +84,19 @@ object Conversation extends Model[Conversation] {
     }
   }
 
-  def getFromList(ids: Seq[String]): Future[List[Conversation]] = {
-    val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
-    conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].collect[List]()
-  }
+//  def getFromList(ids: Seq[String]): Future[List[Conversation]] = {
+//    val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
+//    conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].collect[List]()
+//  }
 
-  def hasMember(conversation: Conversation, user: String): Boolean = {
-    conversation.recipients.exists(r => {
-      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
-      if (r.messageType.equals("otherUser")) {
-        r.sendTo.equals(user)
-      } else {
-        r.name.equals(user)
-      }
-    })
-  }
+//  def hasMember(conversation: Conversation, user: String): Boolean = {
+//    conversation.recipients.exists(r => {
+//      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
+//      if (r.messageType.equals("otherUser")) {
+//        r.sendTo.equals(user)
+//      } else {
+//        r.name.equals(user)
+//      }
+//    })
+//  }
 }
