@@ -3,7 +3,7 @@ package controllers
 import traits.ExtendedController
 
 import play.api.libs.json._
-import models.Contact
+import models.{Identity, Contact}
 import helper.{OutputLimits, AuthAction}
 
 /**
@@ -16,11 +16,18 @@ object ContactController extends ExtendedController {
   def addContact() = AuthAction(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
-      jsBody.validate[Contact](Contact.createReads).map {
-        contact =>
-          request.identity.addContact(contact)
-          Ok(resOK(contact.toJson))
+
+      (jsBody \ "identity").validate[Identity].map {
+        identity =>
+          jsBody.validate[Contact](Contact.createReads(identity.id)).map {
+            contact =>
+              request.identity.addContact(contact)
+              Ok(resOK(contact.toJson))
+          }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
+
       }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
+
+
   }
 
 

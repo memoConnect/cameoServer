@@ -23,7 +23,7 @@ case class Purl(
                  name: Option[String],
                  token: Option[String]
                  ) {
-  def toJson:JsValue = Json.toJson(this)(Purl.outputWrites)
+  def toJson:JsObject = Json.toJson(this)(Purl.outputWrites).as[JsObject]
 
 }
 

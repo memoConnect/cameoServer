@@ -9,6 +9,7 @@ import java.util.Date
 import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 import play.api.Logger
+import helper.IdHelper
 
 /**
  * User: Björn Reimer
@@ -27,7 +28,7 @@ case class Account(
                     created: Date,
                     lastUpdated: Date
                     ) {
-  def toJson: JsValue = Json.toJson(this)(Account.outputWrites)
+  def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
 
 }
 
@@ -39,7 +40,7 @@ object Account extends Model[Account] {
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
 
   def createReads: Reads[Account] = {
-    val id = MongoId.create()
+    val id = IdHelper.generateAccountId()
     (Reads.pure[MongoId](id) and
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and

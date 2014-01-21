@@ -28,6 +28,10 @@ object IdHelper {
     new MongoId(randomString(40))
   }
 
+  def generateUserKey(): String = {
+    randomString(40)
+  }
+
   def generateMongoId(): MongoId = {
     new MongoId(randomString(defaultLength))
   }
@@ -59,7 +63,9 @@ object IdHelper {
     new MongoId(randomString(defaultLength))
   }
 
-  def generateUserKey(): String = {
-    randomString(40)
+  def generateAccountId(): MongoId = {
+    new MongoId(randomString(defaultLength))
   }
+
+
 }

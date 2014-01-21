@@ -22,7 +22,7 @@ case class Recipient(
                       sendStatus: Option[String],
                       testRun: Option[Boolean]
                       )  {
-  def toJson:JsValue = Json.toJson(this)(Recipient.outputWrites)
+  def toJson:JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 
 }
 

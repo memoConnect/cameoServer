@@ -24,7 +24,7 @@ case class Message(
                     recipients: Option[Seq[Recipient]],
                     assets: Option[Seq[Asset]]
                     )      {
-  def toJson:JsValue = Json.toJson(this)(Message.outputWrites)
+  def toJson:JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
 
 }
 

@@ -19,7 +19,7 @@ case class Asset(
                   created: Date
                   ) {
 
-  def toJson: JsValue = Json.toJson(this)(Asset.outputWrites)
+  def toJson: JsObject = Json.toJson(this)(Asset.outputWrites).as[JsObject]
 
 }
 

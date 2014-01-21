@@ -31,5 +31,4 @@ object MongoId {
   implicit def mongoWrites: Writes[MongoId] = Writes {
     id => Json.obj("mongoId" -> id.id)
   }
-
 }

@@ -25,9 +25,9 @@ case class Conversation(
                          lastUpdated: Date
                          ) {
 
-  def toJson(offset: Int = 0, limit: Int = 0): JsValue = Json.toJson(this)(Conversation.outputWrites(offset, limit))
+  def toJson(offset: Int = 0, limit: Int = 0): JsObject = Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject]
 
-  def toJson: JsValue = toJson(0, 0)
+  def toJson: JsObject = toJson(0, 0)
 
 }
 
@@ -40,7 +40,7 @@ object Conversation extends Model[Conversation] {
   def createReads = (
     Reads.pure[MongoId](IdHelper.generateConversationId()) and
       (__ \ 'subject).readNullable[String] and
-      Reads.pure[Seq[MongoId]](Seq()) and
+      ((__ \ 'recipients).read[Seq[MongoId]] or Reads.pure[Seq[MongoId]](Seq())) and
       Reads.pure[Seq[Message]](Seq()) and
       Reads.pure[Date](new Date) and
       Reads.pure[Date](new Date)

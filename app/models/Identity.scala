@@ -29,7 +29,7 @@ case class Identity(
                      created: Date,
                      lastUpdated: Date
                      ) {
-  def toJson: JsValue = Json.toJson(this)(Identity.outputWrites)
+  def toJson: JsObject = Json.toJson(this)(Identity.outputWrites).as[JsObject]
 
   def addContact(contact: Contact) = {
     val query = Json.obj("_id" -> this.id)
@@ -95,7 +95,7 @@ object Identity extends Model[Identity] {
 
   def create(accountId: Option[MongoId]): MongoId = {
     val identity = new Identity(
-      MongoId.create(),
+      IdHelper.generateIdentityId(),
       accountId,
       None,
       IdHelper.generateUserKey(),
