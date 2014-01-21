@@ -33,8 +33,8 @@ case class Identity(
 
   def addContact(contact: Contact) = {
     val query = Json.obj("_id" -> this.id)
-    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
-    Logger.debug("#######" + set)
+    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
+//    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
     Identity.col.update(query, set)
   }
 
@@ -83,7 +83,7 @@ object Identity extends Model[Identity] {
       Json.obj("id" -> i.id.toJson) ++
       toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
-        Json.obj("contacts" -> i.contacts) ++
+        Json.obj("contacts" -> i.contacts.map(_.toJson)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
   }

@@ -9,6 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import helper.ResultHelper._
 import scala.Some
 import ExecutionContext.Implicits.global
+import play.api.Logger
 
 
 /**
@@ -22,12 +23,13 @@ object ContactController extends ExtendedController {
     request =>
       val jsBody: JsValue = request.body
 
-      (jsBody \ "identity").validate[Identity].map {
+      (jsBody \ "identity").validate[Identity](Identity.createReads).map {
         identity =>
+          Identity.col.insert(identity)
           jsBody.validate[Contact](Contact.createReads(identity.id)).map {
             contact => {
               request.identity.addContact(contact)
-              contact.toJson.map(js => resOK(js))
+              contact.toJsonWithIdentity.map(js => resOK(js))
             }
           }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
       }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
@@ -49,7 +51,7 @@ object ContactController extends ExtendedController {
     request =>
       val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
 
-     Future.sequence(contacts.map(_.toJson)).map {
+     Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
        c => resOK(c)
      }
 
@@ -60,7 +62,7 @@ object ContactController extends ExtendedController {
       val filtered = request.identity.contacts.filter(_.groups.contains(group))
       val contacts = OutputLimits.applyLimits(filtered, offset, limit)
 
-      Future.sequence(contacts.map(_.toJson)).map {
+      Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
         c => resOK(c)
       }
   }
