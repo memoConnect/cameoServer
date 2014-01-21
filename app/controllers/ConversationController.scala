@@ -8,7 +8,7 @@ import play.api.mvc.SimpleResult
 import helper.{AuthAction, AuthRequest}
 import services.Authentication.UserClass
 import services.Authentication
-import play.api.libs.json.Json
+import play.api.libs.json.{JsError, Json}
 
 
 /**
@@ -59,8 +59,15 @@ object ConversationController extends ExtendedController {
 //
 
   def createConversation = AuthAction(parse.tolerantJson) {
-    request =>
-
+    request => {
+      request.body.validate[Conversation](Conversation.createReads).map {
+        conversation => {
+          Conversation.col.insert(conversation)
+          request.identity.addConversation(conversation.id)
+          Ok(resOK(conversation.toJson))
+        }
+      }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
+    }
   }
 
   def getConversation(id: String, offset: Int, limit: Int) =

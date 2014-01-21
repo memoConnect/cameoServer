@@ -66,7 +66,7 @@ object Identity extends Model[Identity] {
   implicit val mongoFormat: Format[Identity] = createMongoFormat(Json.reads[Identity], Json.writes[Identity])
 
   def createReads: Reads[Identity] = (
-    Reads.pure[MongoId](MongoId.create()) and
+    Reads.pure[MongoId](IdHelper.generateIdentityId()) and
       Reads.pure[Option[MongoId]](None) and
       (__ \ 'displayName).readNullable[String] and
       Reads.pure[String](IdHelper.generateUserKey()) and

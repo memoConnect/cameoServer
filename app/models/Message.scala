@@ -35,7 +35,7 @@ object Message extends MongoHelper with Model[Message] {
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
   def createReads = (
-    Reads.pure[String](IdHelper.generateMessageId()) and
+    Reads.pure[String](IdHelper.generateMessageId().toString) and
       (__ \ 'conversationId).readNullable[String] and
       (__ \ 'messageBody).read[String] and
       Reads.pure[String]("") and

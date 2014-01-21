@@ -41,7 +41,7 @@ object Token extends MongoHelper with Model[Token] {
 
   def create(id: MongoId): Token = {
     new Token(
-      new MongoId(IdHelper.generateAccessToken()),
+      IdHelper.generateAccessToken(),
       id,
       new Date)
   }

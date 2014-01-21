@@ -32,7 +32,7 @@ object Recipient extends Model[Recipient] {
   implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
   def createReads = (
-    Reads.pure[String](IdHelper.generateRecipientId()) and
+    Reads.pure[String](IdHelper.generateRecipientId().toString) and
       (__ \ 'name).read[String] and
       (__ \ 'messageType).read[String] and
       (__ \ 'sendTo).read[String] and

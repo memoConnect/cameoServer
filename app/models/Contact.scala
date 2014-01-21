@@ -31,8 +31,8 @@ object Contact extends Model[Contact] {
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
   def createReads: Reads[Contact] = (
-    Reads.pure[MongoId](new MongoId(IdHelper.generateContactId())) and
-      ((__ \ 'name).read[String] or Reads.pure(IdHelper.generateContactId())) and
+    Reads.pure[MongoId](IdHelper.generateContactId()) and
+      (__ \ 'name).read[String]  and
       (__ \ 'email).readNullable[String] and
       (__ \ 'phonenumber).readNullable[String] and
       ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and

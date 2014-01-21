@@ -2,12 +2,13 @@ package models
 
 import java.util.Date
 import traits.Model
-import play.api.libs.json._
-import scala.concurrent.{Future, ExecutionContext}
-import ExecutionContext.Implicits.global
-import play.api.Logger
-import play.modules.reactivemongo.json.collection.JSONCollection
+import scala.concurrent.{ExecutionContext, Future}
 import helper.{OutputLimits, IdHelper}
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.modules.reactivemongo.json.collection.JSONCollection
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -17,25 +18,33 @@ import helper.{OutputLimits, IdHelper}
 
 case class Conversation(
                          id: MongoId,
-                         subject: String,
+                         subject: Option[String],
                          recipients: Seq[MongoId],
                          messages: Seq[Message],
-                         lastMessage: Option[Message],
                          created: Date,
                          lastUpdated: Date
                          ) {
 
   def toJson(offset: Int = 0, limit: Int = 0): JsValue = Json.toJson(this)(Conversation.outputWrites(offset, limit))
 
+  def toJson: JsValue = toJson(0, 0)
+
 }
 
 object Conversation extends Model[Conversation] {
 
-  val col = mongoDB.collection[JSONCollection]("conversations")
+  lazy val col: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
 
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
 
-//  def createReads
+  def createReads = (
+    Reads.pure[MongoId](IdHelper.generateConversationId()) and
+      (__ \ 'subject).readNullable[String] and
+      Reads.pure[Seq[MongoId]](Seq()) and
+      Reads.pure[Seq[Message]](Seq()) and
+      Reads.pure[Date](new Date) and
+      Reads.pure[Date](new Date)
+    )(Conversation.apply _)
 
   def outputWrites(offset: Int, limit: Int) = Writes[Conversation] {
     c =>
@@ -67,24 +76,23 @@ object Conversation extends Model[Conversation] {
     col.find(query).one[Conversation]
   }
 
-  def create: MongoId = {
-    val id = new MongoId(IdHelper.generateConversationId())
-    new Conversation(id, new Date, new Date, Seq(), Seq(), None)
-    id
+  def create: Conversation = {
+    val id = IdHelper.generateConversationId()
+    new Conversation(id, None, Seq(), Seq(), new Date, new Date)
   }
 
 
-  def addMessage(message: Message) = {
-    val query = Json.obj("conversationId" -> message.conversationId.get)
-    val set = Json.obj("$push" -> Json.obj("messages" -> message))
-    col.update(query, set).map {
-      lastError => {
-        if (lastError.inError) {
-          Logger.error("Error adding message to conversation: " + lastError.stringify)
-        }
-      }
-    }
-  }
+  //  def addMessage(message: Message) = {
+  //    val query = Json.obj("conversationId" -> message.conversationId.get)
+  //    val set = Json.obj("$push" -> Json.obj("messages" -> message))
+  //    col.update(query, set).map {
+  //      lastError => {
+  //        if (lastError.inError) {
+  //          Logger.error("Error adding message to conversation: " + lastError.stringify)
+  //        }
+  //      }
+  //    }
+  //  }
 
   //  def getFromList(ids: Seq[String]): Future[List[Conversation]] = {
   //    val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))

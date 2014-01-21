@@ -23,10 +23,6 @@ case class MongoId(id: String) {
 
 object MongoId {
 
-  def create(): MongoId = {
-    new MongoId(IdHelper.generateMongoId())
-  }
-
   implicit def mongoReads: Reads[MongoId] =
     (__ \ 'mongoId).read[String].map {
       l => MongoId(l)

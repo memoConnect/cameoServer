@@ -37,7 +37,7 @@ object AssetController extends ExtendedController {
             val futureAssetIds: Seq[Future[(String, LastError)]] = futureFiles.map {
               futureFile => {
                 for {
-                  assetId <- Future(IdHelper.generateAssetId())
+                  assetId <- Future(IdHelper.generateAssetId().toString)
                   file <- futureFile.ref
                   // add messageId and assetId to file in gridfs
                   assetResult <- {
