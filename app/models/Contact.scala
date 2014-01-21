@@ -22,6 +22,8 @@ case class Contact(
                     identityId: MongoId
                     ) {
 
+  def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
+
   def toJsonWithIdentity: Future[JsObject] =
     Identity.find(this.identityId).map {
       case None => Json.obj()
@@ -29,10 +31,8 @@ case class Contact(
         Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
           Json.obj("identity" -> identity.toJson )
     }
-  
-  def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
-  def toJsonResult: Future[SimpleResult] = {
+  def toJsonWithIdentityResult: Future[SimpleResult] = {
     this.toJsonWithIdentity.map(
       js => resOK(js))
   }

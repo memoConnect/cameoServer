@@ -43,7 +43,7 @@ object ContactController extends ExtendedController {
       )
       res match {
         case None => Future(NotFound(resKO("contact not found")))
-        case Some(contact) => contact.toJsonResult
+        case Some(contact) => contact.toJsonWithIdentityResult
       }
   }
 

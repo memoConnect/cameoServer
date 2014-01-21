@@ -29,7 +29,10 @@ case class Identity(
                      created: Date,
                      lastUpdated: Date
                      ) {
+
   def toJson: JsObject = Json.toJson(this)(Identity.outputWrites).as[JsObject]
+
+  def toSummaryJson: JsObject = Json.toJson(this)(Identity.summaryWrites).as[JsObject]
 
   def addContact(contact: Contact) = {
     val query = Json.obj("_id" -> this.id)
@@ -86,6 +89,12 @@ object Identity extends Model[Identity] {
         Json.obj("contacts" -> i.contacts.map(_.toJson)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
+  }
+
+  def summaryWrites: Writes[Identity] = Writes {
+    i =>
+      Json.obj("id" -> i.id.toJson) ++
+        toJsonOrEmpty("displayName", i.displayName)
   }
 
   def find(id: MongoId): Future[Option[Identity]] = {

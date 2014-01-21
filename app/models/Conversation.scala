@@ -10,6 +10,9 @@ import play.api.libs.json.Reads._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
+import play.api.mvc.SimpleResult
+import helper.ResultHelper._
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -29,6 +32,30 @@ case class Conversation(
   def toJson(offset: Int = 0, limit: Int = 0): JsObject = Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject]
 
   def toJson: JsObject = toJson(0, 0)
+
+  def toJsonWithDisplayNames(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
+
+    // get identities of each recipient
+    val recipients: Seq[Future[JsObject]] = this.recipients.map {
+      id => Identity.find(id).map {
+        case None => Json.obj()
+        case Some(i) => i.toSummaryJson
+      }
+    }
+
+    Future.sequence(recipients).map {
+      r => {
+        Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject] ++
+          Json.obj("recipients" -> r)
+      }
+    }
+  }
+
+  def toJsonWithDisplayNamesResult(offset: Int = 0, limit: Int = 0): Future[SimpleResult] = {
+    this.toJsonWithDisplayNames(offset, limit).map {
+      js => resOK(js)
+    }
+  }
 
   def addRecipients(recipients: Seq[MongoId]): Future[LastError] = {
     val query = Json.obj("_id" -> this.id)

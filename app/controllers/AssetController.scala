@@ -46,7 +46,7 @@ object AssetController extends ExtendedController {
                     val set = BSONDocument("$set" -> BSONDocument(
                       "messageId" -> messageId,
                       "assetId" -> assetId,
-                      "user" -> message.from,
+                      "user" -> message.fromIdentityId.toString,
                       "created" -> BSONDateTime((new java.util.Date).getTime)))
 
                     implicit val fileReader = DefaultReadFileReader

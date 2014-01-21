@@ -17,47 +17,7 @@ import scala.Some
  */
 object ConversationController extends ExtendedController {
 
-  ////  def checkIfAllowed[A](conversationId: String)(action: (Conversation) => SimpleResult)(implicit request: AuthRequest[A]): Future[SimpleResult] = {
-  ////
-  ////    // Check if the user has the proper rights
-  ////    val userClass: UserClass = Authentication.getUserClass(request.token.userClass.getOrElse(AuthAction.EMPTY_USER))
-  ////
-  ////    if (!userClass.accessIfMember) {
-  ////      Future.successful(Unauthorized)
-  ////    } else {
-  ////      // check if the user is a member of this conversation
-  ////      Conversation.find(conversationId).flatMap {
-  ////        case None => Future.successful(NotFound(resKO("The conversation does not exist")))
-  ////        case Some(conversation) => {
-  ////          for {
-  ////          // get user
-  ////            user <- {
-  ////              request.token.username match {
-  ////                case Some(username) => Future.successful(username)
-  ////                case None => {
-  ////                  // get id from purl
-  ////                  Purl.find(request.token.purl.get).map {
-  ////                    case None => ""
-  ////                    case Some(purl) => purl.name.get
-  ////                  }
-  ////                }
-  ////              }
-  ////            }
-  ////            result <- {
-  ////              if (Conversation.hasMember(conversation, user)) {
-  ////                Future.successful(action(conversation))
-  ////              } else {
-  ////                Future.successful(Unauthorized)
-  ////              }
-  ////            }
-  ////          } yield result
-  ////        }
-  ////      }
-  ////    }
-  ////  }
-  //
-
-  def createConversation = AuthAction(parse.tolerantJson) {
+   def createConversation = AuthAction(parse.tolerantJson) {
     request => {
       request.body.validate[Conversation](Conversation.createReads).map {
         conversation => {
@@ -72,9 +32,9 @@ object ConversationController extends ExtendedController {
   def getConversation(id: String, offset: Int, limit: Int) =
     AuthAction.async {
       request =>
-        Conversation.find(new MongoId(id)).map {
-          case None => NotFound(resKO("conversation not found"))
-          case Some(c) => resOK(c.toJson(offset, limit))
+        Conversation.find(new MongoId(id)).flatMap {
+          case None => Future.successful(NotFound(resKO("conversation not found")))
+          case Some(c) => c.toJsonWithDisplayNamesResult(offset,limit)
         }
     }
 

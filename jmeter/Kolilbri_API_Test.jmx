@@ -683,12 +683,15 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-    &quot;name&quot;: &quot;Ulrich&quot;,&#xd;
+  &quot;identity&quot;: {&#xd;
+    &quot;displayName&quot;: &quot;Ulrich&quot;,&#xd;
     &quot;email&quot;: &quot;c@mail.de&quot;,&#xd;
-    &quot;phonenumber&quot;: &quot;+491234567892&quot;,&#xd;
-    &quot;identityId&quot;: &quot;${identityId2}&quot;,&#xd;
-    &quot;groups&quot;:[&quot;friends&quot;, &quot;job&quot;],&#xd;
-    &quot;token&quot;:&quot;${token}&quot;&#xd;
+    &quot;phonenumber&quot;: &quot;+491234567892&quot;&#xd;
+  },&#xd;
+  &quot;groups&quot;: [&#xd;
+    &quot;friends&quot;,&#xd;
+    &quot;job&quot;&#xd;
+  ]&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -717,6 +720,11 @@
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get contactId" enabled="true">
+              <stringProp name="VAR">conId</stringProp>
+              <stringProp name="JSONPATH">data.identityId</stringProp>
+            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor>
+            <hashTree/>
+            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get contactId" enabled="true">
               <stringProp name="VAR">contactId</stringProp>
               <stringProp name="JSONPATH">data.id</stringProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor>
@@ -729,11 +737,14 @@
                 <elementProp name="" elementType="HTTPArgument">
                   <boolProp name="HTTPArgument.always_encode">false</boolProp>
                   <stringProp name="Argument.value">{&#xd;
-    &quot;name&quot;: &quot;Aaron&quot;,&#xd;
+  &quot;identity&quot;: {&#xd;
+    &quot;displayName&quot;: &quot;Aaron&quot;,&#xd;
     &quot;email&quot;: &quot;contact2@mail.de&quot;,&#xd;
-    &quot;phonenumber&quot;: &quot;+491234567892&quot;,&#xd;
-    &quot;groups&quot;:[&quot;friends&quot;],&#xd;
-    &quot;token&quot;:&quot;${token}&quot;&#xd;
+    &quot;phonenumber&quot;: &quot;+491234567892&quot;&#xd;
+  },&#xd;
+  &quot;groups&quot;: [&#xd;
+    &quot;friends&quot;&#xd;
+  ]&#xd;
 }</stringProp>
                   <stringProp name="Argument.metadata">=</stringProp>
                 </elementProp>
@@ -760,6 +771,11 @@
               <stringProp name="EXPECTED_VALUE">OK</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
+            <hashTree/>
+            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get contactId" enabled="true">
+              <stringProp name="VAR">conid2</stringProp>
+              <stringProp name="JSONPATH">data.identityId</stringProp>
+            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor>
             <hashTree/>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get contactId" enabled="true">
               <stringProp name="VAR">contactId2</stringProp>
@@ -795,7 +811,7 @@
           </HTTPSamplerProxy>
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check name" enabled="true">
-              <stringProp name="JSON_PATH">data.name</stringProp>
+              <stringProp name="JSON_PATH">data.identity.displayName</stringProp>
               <stringProp name="EXPECTED_VALUE">Ulrich</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
@@ -829,7 +845,7 @@
           </HTTPSamplerProxy>
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check name" enabled="true">
-              <stringProp name="JSON_PATH">data.name</stringProp>
+              <stringProp name="JSON_PATH">data.identity.displayName</stringProp>
               <stringProp name="EXPECTED_VALUE">Aaron</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
@@ -863,13 +879,13 @@
           </HTTPSamplerProxy>
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
-              <stringProp name="JSON_PATH">data[1].id</stringProp>
+              <stringProp name="JSON_PATH">data[0].id</stringProp>
               <stringProp name="EXPECTED_VALUE">${contactId}</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
-              <stringProp name="JSON_PATH">data[0].id</stringProp>
+              <stringProp name="JSON_PATH">data[1].id</stringProp>
               <stringProp name="EXPECTED_VALUE">${contactId2}</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
@@ -903,13 +919,13 @@
           </HTTPSamplerProxy>
           <hashTree>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
-              <stringProp name="JSON_PATH">data[1].id</stringProp>
+              <stringProp name="JSON_PATH">data[0].id</stringProp>
               <stringProp name="EXPECTED_VALUE">${contactId}</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
             <hashTree/>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="jp@gc - JSON Path Assertion" enabled="true">
-              <stringProp name="JSON_PATH">data[0].id</stringProp>
+              <stringProp name="JSON_PATH">data[1].id</stringProp>
               <stringProp name="EXPECTED_VALUE">${contactId2}</stringProp>
               <boolProp name="JSONVALIDATION">true</boolProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
@@ -1011,7 +1027,7 @@
             <stringProp name="HTTPSampler.response_timeout"></stringProp>
             <stringProp name="HTTPSampler.protocol"></stringProp>
             <stringProp name="HTTPSampler.contentEncoding"></stringProp>
-            <stringProp name="HTTPSampler.path">/api/v1/message</stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/conversation?token=${token}</stringProp>
             <stringProp name="HTTPSampler.method">POST</stringProp>
             <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
             <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
@@ -1021,18 +1037,121 @@
             <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
           </HTTPSamplerProxy>
           <hashTree>
-            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get message id" enabled="true">
-              <stringProp name="VAR">mid1</stringProp>
-              <stringProp name="JSONPATH">data.messageId</stringProp>
-            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor>
-            <hashTree/>
             <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get conversation id" enabled="true">
               <stringProp name="VAR">cid</stringProp>
-              <stringProp name="JSONPATH">data.conversationId</stringProp>
+              <stringProp name="JSONPATH">data.id</stringProp>
             </com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor>
             <hashTree/>
           </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Get conversation" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value"></stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain"></stringProp>
+            <stringProp name="HTTPSampler.port"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/conversation/${cid}?token=${token}</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <boolProp name="HTTPSampler.monitor">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check id" enabled="true">
+              <stringProp name="JSON_PATH">data.id</stringProp>
+              <stringProp name="EXPECTED_VALUE">${cid}</stringProp>
+              <boolProp name="JSONVALIDATION">true</boolProp>
+            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Add Recipients" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value">{&#xd;
+  &quot;recipients&quot;: [&#xd;
+    &quot;${identityId2}&quot;,&#xd;
+    &quot;${conid}&quot;,&#xd;
+    &quot;${conid2}&quot;&#xd;
+  ]&#xd;
+}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain"></stringProp>
+            <stringProp name="HTTPSampler.port"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/conversation/${cid}/recipient?token=${token}</stringProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <boolProp name="HTTPSampler.monitor">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.gui.JSONPathExtractorGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor" testname="get conversation id" enabled="true">
+              <stringProp name="VAR">cid</stringProp>
+              <stringProp name="JSONPATH">data.id</stringProp>
+            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathextractor.JSONPathExtractor>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Get conversation" enabled="true">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                  <stringProp name="Argument.value"></stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+            <stringProp name="HTTPSampler.domain"></stringProp>
+            <stringProp name="HTTPSampler.port"></stringProp>
+            <stringProp name="HTTPSampler.connect_timeout"></stringProp>
+            <stringProp name="HTTPSampler.response_timeout"></stringProp>
+            <stringProp name="HTTPSampler.protocol"></stringProp>
+            <stringProp name="HTTPSampler.contentEncoding"></stringProp>
+            <stringProp name="HTTPSampler.path">/api/v1/conversation/${cid}?token=${token}</stringProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.DO_MULTIPART_POST">false</boolProp>
+            <boolProp name="HTTPSampler.monitor">false</boolProp>
+            <stringProp name="HTTPSampler.embedded_url_re"></stringProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion guiclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.gui.JSONPathAssertionGui" testclass="com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion" testname="check recipients" enabled="true">
+              <stringProp name="JSON_PATH">data.recipients[0]</stringProp>
+              <stringProp name="EXPECTED_VALUE">${identityId2}</stringProp>
+              <boolProp name="JSONVALIDATION">true</boolProp>
+            </com.atlantbh.jmeter.plugins.jsonutils.jsonpathassertion.JSONPathAssertion>
+            <hashTree/>
+          </hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="Send Message" enabled="false">
+            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
             <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
               <collectionProp name="Arguments.arguments">
                 <elementProp name="" elementType="HTTPArgument">
@@ -1063,7 +1182,6 @@
                 </elementProp>
               </collectionProp>
             </elementProp>
-            <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
             <stringProp name="HTTPSampler.domain"></stringProp>
             <stringProp name="HTTPSampler.port"></stringProp>
             <stringProp name="HTTPSampler.connect_timeout"></stringProp>
