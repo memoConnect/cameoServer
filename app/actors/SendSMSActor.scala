@@ -8,7 +8,7 @@ import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WS
 import scala.concurrent.Future
-import models.{Message, Purl, Recipient}
+import models.{Message, Purl}
 
 /**
  * User: Björn Reimer
@@ -61,7 +61,7 @@ class SendSMSActor extends Actor with MongoHelper {
 
   def receive = {
     // send message to recipient
-    case (recipient: Recipient, message: models.Message) => {
+    case (message: models.Message) => {
 
 //      val from = message.from
 //      val to = recipient.sendTo

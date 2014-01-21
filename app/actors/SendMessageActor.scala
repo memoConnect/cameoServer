@@ -7,7 +7,7 @@ import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
-import models.{Recipient, Message}
+import models.{Message}
 import java.util.Date
 
 /**
@@ -19,43 +19,43 @@ class SendMessageActor extends Actor with MongoHelper {
 
   def receive = {
     case message: Message => {
-      Logger.info("SendMessageActor: Sending message with id " + message.messageId)
-
-      val recipients = message.recipients.getOrElse(Seq())
-
-      val recipientsWithStatus = recipients.map {
-        recipient: Recipient =>
-
-          def recipientAddStatus(status: String) = {
-            recipient.copy(sendStatus = Some(status))
-          }
-
-          // check if we have a test run
-          if (recipient.testRun.getOrElse(false)) {
-            recipientAddStatus("testrun: message not send")
-            // do not send the message to the sender
-          } else if (message.fromRecipientId.getOrElse("none").equals(recipient.recipientId) || ( recipient.messageType.equals("otherUser") && message.from.equals(recipient.sendTo) )) {
-            recipientAddStatus("Sender of message")
-          }
-          else {
-            // check for message type
-            recipient.messageType match {
-              case "none" => recipientAddStatus("No MessageType given")
-              case "email" => {
-                sendMailActor ! (recipient, message)
-                recipientAddStatus("Email queued")
-              }
-              case "sms" => {
-                sendSMSActor ! (recipient, message)
-                recipientAddStatus("SMS queued")
-              }
-              case "otherUser" => {
-                sendKolibriActor ! (recipient, message)
-                recipientAddStatus("KolibriMessage queued")
-              }
-              case m => recipientAddStatus("Unkown message type \'" + m + "\'")
-            }
-          }
+//      Logger.info("SendMessageActor: Sending message with id " + message.messageId)
+//
+//      val recipients = message.recipients.getOrElse(Seq())
+//
+//      val recipientsWithStatus = recipients.map {
+//        recipient: Recipient =>
+//
+//          def recipientAddStatus(status: String) = {
+//            recipient.copy(sendStatus = Some(status))
+//          }
+//
+//          // check if we have a test run
+//          if (recipient.testRun.getOrElse(false)) {
+//            recipientAddStatus("testrun: message not send")
+//            // do not send the message to the sender
+//          } else if (message.fromRecipientId.getOrElse("none").equals(recipient.recipientId) || ( recipient.messageType.equals("otherUser") && message.from.equals(recipient.sendTo) )) {
+//            recipientAddStatus("Sender of message")
+//          }
+//          else {
+//            // check for message type
+//            recipient.messageType match {
+//              case "none" => recipientAddStatus("No MessageType given")
+//              case "email" => {
+//                sendMailActor ! (recipient, message)
+//                recipientAddStatus("Email queued")
+//              }
+//              case "sms" => {
+//                sendSMSActor ! (recipient, message)
+//                recipientAddStatus("SMS queued")
+//              }
+//              case "otherUser" => {
+//                sendKolibriActor ! (recipient, message)
+//                recipientAddStatus("KolibriMessage queued")
+//              }
+//              case m => recipientAddStatus("Unkown message type \'" + m + "\'")
+//            }
+//          }
       }
 
       // add recipients with Status to message and save to db
@@ -71,6 +71,6 @@ class SendMessageActor extends Actor with MongoHelper {
 //          Logger.error("Error updating message: " + lastError.stringify)
 //        }
 //      }
-    }
+ //   }
   }
 }

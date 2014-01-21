@@ -1,15 +1,13 @@
 package controllers
 
-import traits.{ExtendedController}
-import models.{MongoId, Purl, Conversation}
+import traits.ExtendedController
+import models.{MongoId, Conversation}
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.SimpleResult
-import helper.{AuthAction, AuthRequest}
-import services.Authentication.UserClass
-import services.Authentication
-import play.api.libs.json.{JsError, Json}
+import helper.AuthAction
+import play.api.libs.json.JsError
 import helper.ResultHelper._
+import scala.Some
 
 
 /**
@@ -19,45 +17,45 @@ import helper.ResultHelper._
  */
 object ConversationController extends ExtendedController {
 
-////  def checkIfAllowed[A](conversationId: String)(action: (Conversation) => SimpleResult)(implicit request: AuthRequest[A]): Future[SimpleResult] = {
-////
-////    // Check if the user has the proper rights
-////    val userClass: UserClass = Authentication.getUserClass(request.token.userClass.getOrElse(AuthAction.EMPTY_USER))
-////
-////    if (!userClass.accessIfMember) {
-////      Future.successful(Unauthorized)
-////    } else {
-////      // check if the user is a member of this conversation
-////      Conversation.find(conversationId).flatMap {
-////        case None => Future.successful(NotFound(resKO("The conversation does not exist")))
-////        case Some(conversation) => {
-////          for {
-////          // get user
-////            user <- {
-////              request.token.username match {
-////                case Some(username) => Future.successful(username)
-////                case None => {
-////                  // get id from purl
-////                  Purl.find(request.token.purl.get).map {
-////                    case None => ""
-////                    case Some(purl) => purl.name.get
-////                  }
-////                }
-////              }
-////            }
-////            result <- {
-////              if (Conversation.hasMember(conversation, user)) {
-////                Future.successful(action(conversation))
-////              } else {
-////                Future.successful(Unauthorized)
-////              }
-////            }
-////          } yield result
-////        }
-////      }
-////    }
-////  }
-//
+  ////  def checkIfAllowed[A](conversationId: String)(action: (Conversation) => SimpleResult)(implicit request: AuthRequest[A]): Future[SimpleResult] = {
+  ////
+  ////    // Check if the user has the proper rights
+  ////    val userClass: UserClass = Authentication.getUserClass(request.token.userClass.getOrElse(AuthAction.EMPTY_USER))
+  ////
+  ////    if (!userClass.accessIfMember) {
+  ////      Future.successful(Unauthorized)
+  ////    } else {
+  ////      // check if the user is a member of this conversation
+  ////      Conversation.find(conversationId).flatMap {
+  ////        case None => Future.successful(NotFound(resKO("The conversation does not exist")))
+  ////        case Some(conversation) => {
+  ////          for {
+  ////          // get user
+  ////            user <- {
+  ////              request.token.username match {
+  ////                case Some(username) => Future.successful(username)
+  ////                case None => {
+  ////                  // get id from purl
+  ////                  Purl.find(request.token.purl.get).map {
+  ////                    case None => ""
+  ////                    case Some(purl) => purl.name.get
+  ////                  }
+  ////                }
+  ////              }
+  ////            }
+  ////            result <- {
+  ////              if (Conversation.hasMember(conversation, user)) {
+  ////                Future.successful(action(conversation))
+  ////              } else {
+  ////                Future.successful(Unauthorized)
+  ////              }
+  ////            }
+  ////          } yield result
+  ////        }
+  ////      }
+  ////    }
+  ////  }
+  //
 
   def createConversation = AuthAction(parse.tolerantJson) {
     request => {
@@ -79,39 +77,60 @@ object ConversationController extends ExtendedController {
           case Some(c) => resOK(c.toJson(offset, limit))
         }
     }
-//
-//
-//  def getConversationSummary(conversationId: String,
-//                             token: String) =
-//
-//    AuthAction.async(parse.tolerantJson) {
-//      implicit request => checkIfAllowed(conversationId) {
-//        conversation =>
-//          Ok(resOK(Conversation.toJsonCustomWrites(conversation, Conversation.summaryWrites)))
-//      }
-//    }
-//
-//
-//  def getConversations(token: String, offset: Int, limit: Int) = AuthAction.async(parse.tolerantJson) {
-//    implicit request =>
-//      implicit val outputLimits = OutputLimits(offset, limit)
-//      // for registered users only
-//      if (!request.token.username.isDefined) {
-//        Future.successful(Unauthorized(resKO("No user account")))
-//      } else {
-//        User.find(request.token.username.get).flatMap {
-//          case None => Future.successful(Unauthorized(resKO("user not found")))
-//          case Some(user) =>
-//            Conversation.getFromList(user.conversations).map {
-//              conversations =>
-//                val jsArray = Conversation.toSortedJsonArray(conversations, Conversation.summaryWrites)
-//                val res = Json.obj(
-//                  "numberOfConversations" -> conversations.size,
-//                  "conversations" -> jsArray
-//                )
-//                Ok(resOK(res))
-//            }
-//        }
-//      }
-//  }
+
+  def addRecipients(id: String) =
+  // TODO: confirm that all recipients exist
+    AuthAction.async(parse.tolerantJson) {
+      request =>
+        (request.body \ "recipients").validate[Seq[String]].map {
+          recipients =>
+            Conversation.find(new MongoId(id)).flatMap {
+              case None => Future.successful(NotFound(resKO("invalid id")))
+              case Some(c) => c.addRecipients(recipients.map(new MongoId(_))).map {
+                lastError =>
+                  if (lastError.ok) {
+                    resOK("updated")
+                  } else {
+                    BadRequest(resKO("updated failed"))
+                  }
+              }
+            }
+        }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
+    }
+
+  //
+  //
+  //  def getConversationSummary(conversationId: String,
+  //                             token: String) =
+  //
+  //    AuthAction.async(parse.tolerantJson) {
+  //      implicit request => checkIfAllowed(conversationId) {
+  //        conversation =>
+  //          Ok(resOK(Conversation.toJsonCustomWrites(conversation, Conversation.summaryWrites)))
+  //      }
+  //    }
+  //
+  //
+  //  def getConversations(token: String, offset: Int, limit: Int) = AuthAction.async(parse.tolerantJson) {
+  //    implicit request =>
+  //      implicit val outputLimits = OutputLimits(offset, limit)
+  //      // for registered users only
+  //      if (!request.token.username.isDefined) {
+  //        Future.successful(Unauthorized(resKO("No user account")))
+  //      } else {
+  //        User.find(request.token.username.get).flatMap {
+  //          case None => Future.successful(Unauthorized(resKO("user not found")))
+  //          case Some(user) =>
+  //            Conversation.getFromList(user.conversations).map {
+  //              conversations =>
+  //                val jsArray = Conversation.toSortedJsonArray(conversations, Conversation.summaryWrites)
+  //                val res = Json.obj(
+  //                  "numberOfConversations" -> conversations.size,
+  //                  "conversations" -> jsArray
+  //                )
+  //                Ok(resOK(res))
+  //            }
+  //        }
+  //      }
+  //  }
 }

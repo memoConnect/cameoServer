@@ -2,7 +2,6 @@ package actors
 
 import akka.actor.{Props, Actor}
 import traits.MongoHelper
-import models.{Recipient}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Logger
 import play.api.libs.concurrent.Akka
@@ -19,7 +18,7 @@ class SendKolibriActor extends Actor with MongoHelper {
 
 
   def receive = {
-    case (recipient: Recipient, message: models.Message) => {
+    case (message: models.Message) => {
 
 //      // we only need to add the conversation to the user, no real "sending" is involved
 //      val status = User.addConversation(message.conversationId.get, recipient.sendTo).map {

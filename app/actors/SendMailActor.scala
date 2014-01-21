@@ -10,7 +10,7 @@ import play.api.libs.json.Json
 import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
 import com.amazonaws.{AmazonServiceException, AmazonClientException}
-import models.{Purl, Recipient}
+import models.{Purl}
 import reactivemongo.core.commands.LastError
 
 /**
@@ -22,7 +22,7 @@ import reactivemongo.core.commands.LastError
 class SendMailActor extends Actor with MongoHelper {
 
   def receive = {
-    case (recipient: Recipient, message: models.Message) => {
+    case ( message: models.Message) => {
       // get user
 //      User.find(message.from).map {
 //        case None => Logger.error("SendMailActor: Error finding sender in DB")

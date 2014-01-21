@@ -21,7 +21,7 @@ case class Message(
                     from: String,                           // Name to be displayed next to Message
                     fromRecipientId: Option[String],                // Recipient Id of the sender
                     created: Date,
-                    recipients: Option[Seq[Recipient]],
+                    //recipients: Option[Seq[Recipient]],
                     assets: Option[Seq[Asset]]
                     )      {
   def toJson:JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
@@ -41,7 +41,7 @@ object Message extends MongoHelper with Model[Message] {
       Reads.pure[String]("") and
       Reads.pure(None) and
       Reads.pure[Date](new Date) and
-      (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.createReads)) and
+      //(__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.createReads)) and
       Reads.pure(None)
     )(Message.apply _)
 

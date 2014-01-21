@@ -1,10 +1,8 @@
 package models
 
-import reactivemongo.bson.BSONObjectID
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
-import helper.IdHelper
 
 /**
  * User: Björn Reimer

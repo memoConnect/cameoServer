@@ -9,6 +9,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import ExecutionContext.Implicits.global
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -28,6 +29,14 @@ case class Conversation(
   def toJson(offset: Int = 0, limit: Int = 0): JsObject = Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject]
 
   def toJson: JsObject = toJson(0, 0)
+
+  def addRecipients(recipients: Seq[MongoId]): Future[LastError] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$push" ->
+      Json.obj("recipients" ->
+        Json.obj("$each" -> recipients)))
+    Conversation.col.update(query, set)
+  }
 
 }
 
