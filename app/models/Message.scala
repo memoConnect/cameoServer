@@ -41,9 +41,10 @@ object Message extends MongoHelper with Model[Message] {
 
   def outputWrites = Writes[Message] {
     m =>
-      Json.obj("messageId" -> m.messageId) ++
+      Json.obj("id" -> m.messageId.toJson) ++
         Json.obj("messageBody" -> m.messageBody) ++
         Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
+        Json.obj("messageStatus" -> m.messageStatus) ++
         addCreated(m.created)
   }
 
@@ -52,8 +53,8 @@ object Message extends MongoHelper with Model[Message] {
   //    find(Json.obj("conversationId" -> conversationId, "messages.messageId" -> messageId))
   //  }
 
-  def find(messageId: String): Future[Option[Message]] = {
-    Conversation.col.find(Json.obj("messages.messageId" -> messageId)).one[Message]
+  def find(id: MongoId): Future[Option[Message]] = {
+    Conversation.col.find(Json.obj("messages.*._id" -> id)).one[Message]
   }
 
   //

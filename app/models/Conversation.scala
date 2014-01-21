@@ -65,6 +65,18 @@ case class Conversation(
     Conversation.col.update(query, set)
   }
 
+  def addMessage(message: Message): Future[LastError] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$push" ->
+    Json.obj("messages" -> Json.obj(
+      "$each" -> Seq(message),
+      "$sort" -> Json.obj("created" -> 1),
+      "$slice" -> (-1)*(this.messages.length + 2))))
+
+    Conversation.col.update(query, set)
+
+  }
+
 }
 
 object Conversation extends Model[Conversation] {

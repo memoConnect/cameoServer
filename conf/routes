@@ -16,14 +16,15 @@ DELETE         /api/v1/account/:loginName                controllers.AccountCont
 # IDENTITIES
 GET            /api/v1/identity/:id                      controllers.IdentityController.getIdentity(id)
 
-# MESSAGES
-#POST           /api/v1/message                                     controllers.MessageController.sendMessage
-#GET            /api/v1/message/:messageId                          controllers.MessageController.getMessage(messageId: String, token: String)
 
 # CONVERSATIONS
 POST           /api/v1/conversation                      controllers.ConversationController.createConversation()
 GET            /api/v1/conversation/:id                  controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0)
 POST           /api/v1/conversation/:id/recipient        controllers.ConversationController.addRecipients(id)
+
+# MESSAGES
+POST           /api/v1/conversation/:id/message          controllers.MessageController.createMessage(id)
+GET            /api/v1/message/:id                       controllers.MessageController.getMessage(id)
 
 
 #GET            /api/v1/conversation/:conversationId/summary        controllers.ConversationController.getConversationSummary(conversationId: String, token: String)
