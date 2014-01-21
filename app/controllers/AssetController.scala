@@ -16,6 +16,7 @@ import services.Authentication.UserClass
 import services.Authentication
 import play.api.mvc.Action
 import play.api.libs.concurrent.Execution.Implicits._
+import helper.ResultHelper._
 
 /**
  * User: Björn Reimer
@@ -84,9 +85,9 @@ object AssetController extends ExtendedController {
                     error) => Json.obj(id -> error.stringify)
                   })))
                 } else {
-                  Ok(resOK(Json.obj("assetIds" -> results.map {
+                  resOK(Json.obj("assetIds" -> results.map {
                     case (id, error) => id
-                  })))
+                  }))
                 }
             }
 

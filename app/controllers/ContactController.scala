@@ -5,6 +5,11 @@ import traits.ExtendedController
 import play.api.libs.json._
 import models.{Identity, Contact}
 import helper.{OutputLimits, AuthAction}
+import scala.concurrent.{ExecutionContext, Future}
+import helper.ResultHelper._
+import scala.Some
+import ExecutionContext.Implicits.global
+
 
 /**
  * User: Björn Reimer
@@ -13,55 +18,57 @@ import helper.{OutputLimits, AuthAction}
  */
 object ContactController extends ExtendedController {
 
-  def addContact() = AuthAction(parse.tolerantJson) {
+  def addContact() = AuthAction.async(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
 
       (jsBody \ "identity").validate[Identity].map {
         identity =>
           jsBody.validate[Contact](Contact.createReads(identity.id)).map {
-            contact =>
+            contact => {
               request.identity.addContact(contact)
-              Ok(resOK(contact.toJson))
-          }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
-
-      }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
-
-
+              contact.toJson.map(js => resOK(js))
+            }
+          }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
+      }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
   }
 
-
-  def getContact(contactId: String) = AuthAction {
+  def getContact(contactId: String) = AuthAction.async {
     request =>
 
       val res = request.identity.contacts.find(
         contact => contact.id.toString.equals(contactId)
       )
-
       res match {
-        case None => NotFound(resKO("contact not found"))
-        case Some(contact) => Ok(resOK(contact.toJson))
-
+        case None => Future(NotFound(resKO("contact not found")))
+        case Some(contact) => contact.toJsonResult
       }
   }
 
-  def getContacts(offset: Int, limit: Int) = AuthAction {
+  def getContacts(offset: Int, limit: Int) = AuthAction.async {
     request =>
       val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
-      Ok(resOK(contacts.map(_.toJson)))
+
+     Future.sequence(contacts.map(_.toJson)).map {
+       c => resOK(c)
+     }
+
   }
 
-  def getGroup(group: String, offset: Int, limit: Int) = AuthAction {
+  def getGroup(group: String, offset: Int, limit: Int) = AuthAction.async {
     request =>
       val filtered = request.identity.contacts.filter(_.groups.contains(group))
-      val out = OutputLimits.applyLimits(filtered, offset, limit)
-      Ok(resOK(out.map(_.toJson)))
+      val contacts = OutputLimits.applyLimits(filtered, offset, limit)
+
+      Future.sequence(contacts.map(_.toJson)).map {
+        c => resOK(c)
+      }
   }
 
   def getGroups = AuthAction {
     request =>
       val groups = request.identity.contacts.flatMap(_.groups).distinct
-      Ok(resOK(Json.toJson(groups)))
+      resOK(Json.toJson(groups))
   }
 
 

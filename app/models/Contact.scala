@@ -6,6 +6,9 @@ import helper.IdHelper
 import traits.Model
 import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
+import play.api.mvc.{Results, SimpleResult}
+import play.mvc.Result
+import helper.ResultHelper._
 
 /**
  * User: Björn Reimer
@@ -17,6 +20,7 @@ case class Contact(
                     groups: Seq[String],
                     identityId: MongoId
                     ) {
+
   def toJson: Future[JsObject] =
     Identity.find(this.identityId).map {
       case None => Json.obj()
@@ -24,6 +28,11 @@ case class Contact(
         Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
           identity.toJson
     }
+
+  def toJsonResult: Future[SimpleResult] = {
+    this.toJson.map(
+      js => resOK(js))
+  }
 }
 
 object Contact extends Model[Contact] {
@@ -58,7 +67,7 @@ object Contact extends Model[Contact] {
   //      }
   //    })
 
-  implicit val mongoFormat = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
+  implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
   def createReads(identityId: MongoId): Reads[Contact] = (
     Reads.pure[MongoId](IdHelper.generateContactId()) and

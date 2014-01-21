@@ -10,6 +10,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import helper.AuthAction
 import scala.concurrent.Future
 import play.api.Logger
+import helper.ResultHelper._
 
 
 /**
@@ -29,7 +30,7 @@ object AccountController extends ExtendedController {
           accountCollection.insert(account).map {
             lastError => {
               if (lastError.ok) {
-                Ok(resOK(account.toJson))
+                resOK(account.toJson)
               } else {
                 InternalServerError(resKO("MongoError: " + lastError))
               }
@@ -50,7 +51,7 @@ object AccountController extends ExtendedController {
   def getAccount(loginName: String) = Action.async {
     request => Account.findByLoginName(loginName).map {
       case None => NotFound(resKO("Account not found: " + loginName))
-      case Some(account) => Ok(resOK(account.toJson))
+      case Some(account) => resOK(account.toJson)
     }
   }
 
@@ -59,7 +60,7 @@ object AccountController extends ExtendedController {
       Account.col.remove[JsValue](Json.obj("loginName" -> loginName)).map {
         lastError =>
           if (lastError.updated > 0)
-            Ok(resOK(Json.obj("deleted Account" -> loginName)))
+            resOK(Json.obj("deleted Account" -> loginName))
           else if (lastError.ok) {
             NotFound(resKO("Account not found"))
           } else

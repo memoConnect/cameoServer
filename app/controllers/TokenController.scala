@@ -8,6 +8,7 @@ import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
 import models.{MongoId, Identity, Account, Token}
 import play.api.libs.concurrent.Execution.Implicits._
+import helper.ResultHelper._
 
 
 /**
@@ -50,7 +51,7 @@ object TokenController extends ExtendedController {
                     // everything is ok
                     val token = Token.create(identityMongoId)
                     Token.col.insert(token)
-                    Ok(resOK(token.toJson))
+                    resOK(token.toJson)
                   } else {
                     Unauthorized(resKO("Invalid password/loginName"))
                   }
@@ -75,7 +76,7 @@ object TokenController extends ExtendedController {
       Token.col.remove[JsValue](Json.obj("_id" -> new MongoId(token))).map {
         lastError =>
           if (lastError.updated > 0) {
-            Ok(resOK(Json.obj("deletedToken" -> token)))
+            resOK(Json.obj("deletedToken" -> token))
           }
           else if (lastError.ok) {
             NotFound(resKO("Token not found"))
@@ -90,7 +91,7 @@ object TokenController extends ExtendedController {
     request =>
       Token.find(new MongoId(token)).map {
         case None => NotFound(resKO("token not found"))
-        case Some(t) => Ok(resOK(t.toJson))
+        case Some(t) => resOK(t.toJson)
       }
   }
 }

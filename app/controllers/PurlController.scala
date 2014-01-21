@@ -7,6 +7,7 @@ import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.AuthAction
 import scala.concurrent.Future
+import helper.ResultHelper._
 
 
 /**

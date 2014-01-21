@@ -4,9 +4,8 @@ import play.api.mvc._
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
 import models.{MongoId, Identity, Token}
-import traits.ResultHelper
-import services.Authentication.UserClass
-import services.Authentication
+import helper.ResultHelper._
+
 
 /**
  * User: Björn Reimer
@@ -15,7 +14,7 @@ import services.Authentication
  */
 class AuthRequest[A](val identity: Identity, request: Request[A]) extends WrappedRequest[A](request)
 
-object AuthAction extends ActionBuilder[AuthRequest] with ResultHelper {
+object AuthAction extends ActionBuilder[AuthRequest] {
 
   val REQUEST_TOKEN = "token"
   val REQUEST_TOKEN_MISSING = "no token"

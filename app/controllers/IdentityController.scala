@@ -5,6 +5,7 @@ import models.{Identity, MongoId}
 import play.api.mvc.Action
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
+import helper.ResultHelper._
 
 /**
  * User: Björn Reimer
@@ -19,7 +20,7 @@ object IdentityController extends ExtendedController {
 
     Identity.find(mongoId).map {
       case None => NotFound(resKO("Identity not found"))
-      case Some(identity) => Ok(resOK(identity.toJson))
+      case Some(identity) => resOK(identity.toJson)
     }
   }
 

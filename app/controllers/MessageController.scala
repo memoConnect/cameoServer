@@ -11,6 +11,7 @@ import java.util.Date
 import scala.concurrent.Future
 import scala.Some
 import play.api.libs.concurrent.Execution.Implicits._
+import helper.ResultHelper._
 
 
 /**

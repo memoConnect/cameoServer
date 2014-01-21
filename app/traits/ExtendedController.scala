@@ -14,7 +14,7 @@ import models.{Purl, Token}
 /**
  * Several Helper functions for interaction with MongoDB *
  */
-trait ExtendedController extends Controller with MongoController with MongoHelper with ResultHelper {
+trait ExtendedController extends Controller with MongoController with MongoHelper {
 
 
 

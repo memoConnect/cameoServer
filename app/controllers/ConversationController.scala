@@ -9,6 +9,7 @@ import helper.{AuthAction, AuthRequest}
 import services.Authentication.UserClass
 import services.Authentication
 import play.api.libs.json.{JsError, Json}
+import helper.ResultHelper._
 
 
 /**
@@ -64,7 +65,7 @@ object ConversationController extends ExtendedController {
         conversation => {
           Conversation.col.insert(conversation)
           request.identity.addConversation(conversation.id)
-          Ok(resOK(conversation.toJson))
+          resOK(conversation.toJson)
         }
       }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
     }
@@ -75,7 +76,7 @@ object ConversationController extends ExtendedController {
       request =>
         Conversation.find(new MongoId(id)).map {
           case None => NotFound(resKO("conversation not found"))
-          case Some(c) => Ok(resOK(c.toJson(offset, limit)))
+          case Some(c) => resOK(c.toJson(offset, limit))
         }
     }
 //
