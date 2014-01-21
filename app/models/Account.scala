@@ -1,6 +1,6 @@
 package models
 
-import traits.{OutputLimits, Model}
+import traits.{Model}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -51,7 +51,7 @@ object Account extends Model[Account] {
       )(Account.apply _)
   }
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Account] = Writes {
+  def outputWrites: Writes[Account] = Writes {
     a =>
       Json.obj("id" -> a.id.toJson)
       Json.obj("loginName" -> a.loginName) ++

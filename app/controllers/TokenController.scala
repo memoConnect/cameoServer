@@ -85,4 +85,12 @@ object TokenController extends ExtendedController {
       }
 
   }
+
+  def getToken(token: String) = Action.async {
+    request =>
+      Token.find(new MongoId(token)).map {
+        case None => NotFound(resKO("token not found"))
+        case Some(t) => Ok(resOK(t.toJson))
+      }
+  }
 }

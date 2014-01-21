@@ -64,10 +64,10 @@ object AssetController extends ExtendedController {
                     request.identity.addAsset(asset.id)
 
                     // add asset to message
-                    val query = Json.obj("conversationId" -> message.conversationId,
-                      "messages.messageId" -> message.messageId)
-                    val set = Json.obj("$push" -> Json.obj("messages.$.assets" -> asset))
-                    conversationCollection.update(query, set)
+//                    val query = Json.obj("conversationId" -> message.conversationId,
+//                      "messages.messageId" -> message.messageId)
+//                    val set = Json.obj("$push" -> Json.obj("messages.$.assets" -> asset))
+//                    conversationCollection.update(query, set)
                   }
                 } yield (assetId, messageResult)
               }

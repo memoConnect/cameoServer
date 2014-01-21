@@ -28,6 +28,7 @@ GET            /api/v1/identity/:id                    controllers.IdentityContr
 # TOKENS
 GET            /api/v1/identity/:id/token              controllers.TokenController.createToken(id)
 OPTIONS        /api/v1/identity/?/token                controllers.TokenController.getTokenOptions
+GET             /api/vi/:token          controllers.TokenController.getToken(token)
 DELETE         /api/v1/token/:token                    controllers.TokenController.deleteToken(token: String)
 
 # CONTACTS

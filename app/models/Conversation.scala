@@ -1,14 +1,13 @@
 package models
 
 import java.util.Date
-import traits.{OutputLimits, Model}
+import traits.Model
 import play.api.libs.json._
-import reactivemongo.api.indexes.{IndexType, Index}
 import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 import play.api.Logger
 import play.modules.reactivemongo.json.collection.JSONCollection
-import helper.IdHelper
+import helper.{OutputLimits, IdHelper}
 
 /**
  * User: Björn Reimer
@@ -18,47 +17,50 @@ import helper.IdHelper
 
 case class Conversation(
                          id: MongoId,
-                         created: Date,
-                         lastUpdated: Date,
+                         subject: String,
                          recipients: Seq[MongoId],
                          messages: Seq[Message],
-                         lastMessage: Option[Message]
+                         lastMessage: Option[Message],
+                         created: Date,
+                         lastUpdated: Date
                          ) {
 
-  def toJson(offset: Int): JsValue = Json.toJson(this)(Conversation.outputWrites)
+  def toJson(offset: Int = 0, limit: Int = 0): JsValue = Json.toJson(this)(Conversation.outputWrites(offset, limit))
 
 }
 
 object Conversation extends Model[Conversation] {
-  
+
   val col = mongoDB.collection[JSONCollection]("conversations")
 
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
 
-  def outputWrites(implicit ol: OutputLimits) = Writes[Conversation] {
+//  def createReads
+
+  def outputWrites(offset: Int, limit: Int) = Writes[Conversation] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
-        Json.obj("messages" -> c.messages.map(_.toJson)) ++
+        Json.obj("messages" -> OutputLimits.applyLimits(c.messages.map(_.toJson), offset, limit)) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
 
-//  val summaryWrites = Writes[Conversation] {
-//    c =>
-//      Json.obj("conversationId" -> c.id.toJson) ++
-//        Conversation.addLastUpdated(c.lastUpdated) ++
-//        Json.obj("numberOfMessages" -> c.messages.length) ++
-//        Json.obj("lastMessage" -> {
-//          c.lastMessage match {
-//            case Some(m: Message) => JsString(m.from + ": " + m.messageBody)
-//            case _ => Json.obj()
-//          }
-//        }) ++
-//        Json.obj("recipients" -> c.recipients.map {
-//          Identity.getDisplayName
-//        })}
+  //  val summaryWrites = Writes[Conversation] {
+  //    c =>
+  //      Json.obj("conversationId" -> c.id.toJson) ++
+  //        Conversation.addLastUpdated(c.lastUpdated) ++
+  //        Json.obj("numberOfMessages" -> c.messages.length) ++
+  //        Json.obj("lastMessage" -> {
+  //          c.lastMessage match {
+  //            case Some(m: Message) => JsString(m.from + ": " + m.messageBody)
+  //            case _ => Json.obj()
+  //          }
+  //        }) ++
+  //        Json.obj("recipients" -> c.recipients.map {
+  //          Identity.getDisplayName
+  //        })}
 
   def find(id: MongoId): Future[Option[Conversation]] = {
     val query = Json.obj("_id" -> id)
@@ -84,19 +86,19 @@ object Conversation extends Model[Conversation] {
     }
   }
 
-//  def getFromList(ids: Seq[String]): Future[List[Conversation]] = {
-//    val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
-//    conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].collect[List]()
-//  }
+  //  def getFromList(ids: Seq[String]): Future[List[Conversation]] = {
+  //    val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
+  //    conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].collect[List]()
+  //  }
 
-//  def hasMember(conversation: Conversation, user: String): Boolean = {
-//    conversation.recipients.exists(r => {
-//      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
-//      if (r.messageType.equals("otherUser")) {
-//        r.sendTo.equals(user)
-//      } else {
-//        r.name.equals(user)
-//      }
-//    })
-//  }
+  //  def hasMember(conversation: Conversation, user: String): Boolean = {
+  //    conversation.recipients.exists(r => {
+  //      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
+  //      if (r.messageType.equals("otherUser")) {
+  //        r.sendTo.equals(user)
+  //      } else {
+  //        r.name.equals(user)
+  //      }
+  //    })
+  //  }
 }

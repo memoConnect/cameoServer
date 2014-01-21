@@ -16,7 +16,7 @@ object ContactController extends ExtendedController {
   def addContact() = AuthAction(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
-      jsBody.validate[Contact](Contact.inputReads).map {
+      jsBody.validate[Contact](Contact.createReads).map {
         contact =>
           request.identity.addContact(contact)
           Ok(resOK(contact.toJson))
@@ -40,14 +40,14 @@ object ContactController extends ExtendedController {
 
   def getContacts(offset: Int, limit: Int) = AuthAction {
     request =>
-      val contacts = OutputLimits.apply(request.identity.contacts, offset, limit)
+      val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
       Ok(resOK(contacts.map(_.toJson)))
   }
 
   def getGroup(group: String, offset: Int, limit: Int) = AuthAction {
     request =>
       val filtered = request.identity.contacts.filter(_.groups.contains(group))
-      val out = OutputLimits.apply(filtered, offset, limit)
+      val out = OutputLimits.applyLimits(filtered, offset, limit)
       Ok(resOK(out.map(_.toJson)))
   }
 

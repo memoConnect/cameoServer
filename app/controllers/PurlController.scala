@@ -1,7 +1,7 @@
 package controllers
 
 import play.api.libs.json.Json
-import traits.{OutputLimits, ExtendedController}
+import traits.{ExtendedController}
 import models.{Conversation, Purl}
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._

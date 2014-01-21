@@ -114,7 +114,7 @@ object MessageController extends ExtendedController {
 //      val jsBody: JsValue = request.body
 //      val tokenObject = request.token
 //
-//      jsBody.validate[Message](Message.inputReads).map {
+//      jsBody.validate[Message](Message.createReads).map {
 //        implicit message => {
 //
 //          // execute steps asynchronously

@@ -59,18 +59,18 @@ class SendMessageActor extends Actor with MongoHelper {
       }
 
       // add recipients with Status to message and save to db
-      val query = Json.obj("conversationId" -> message.conversationId, "messages.messageId" -> message.messageId)
-      val set = Json.obj("$set" -> (
-        Json.obj("messages.$.recipients" -> recipientsWithStatus.map(Recipient.toJson)) ++
-          Json.obj("lastUpdated" -> Json.obj("$date" -> new Date)) ++
-          Json.obj("lastMessage" -> Json.toJson(message))
-        ))
-
-      conversationCollection.update(query, set).map {
-        lastError => if (lastError.inError) {
-          Logger.error("Error updating message: " + lastError.stringify)
-        }
-      }
+//      val query = Json.obj("conversationId" -> message.conversationId, "messages.messageId" -> message.messageId)
+//      val set = Json.obj("$set" -> (
+//        Json.obj("messages.$.recipients" -> recipientsWithStatus.map(Recipient.toJson)) ++
+//          Json.obj("lastUpdated" -> Json.obj("$date" -> new Date)) ++
+//          Json.obj("lastMessage" -> Json.toJson(message))
+//        ))
+//
+//      conversationCollection.update(query, set).map {
+//        lastError => if (lastError.inError) {
+//          Logger.error("Error updating message: " + lastError.stringify)
+//        }
+//      }
     }
   }
 }

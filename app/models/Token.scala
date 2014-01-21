@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.{OutputLimits, Model, MongoHelper}
+import traits.{Model, MongoHelper}
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
@@ -28,7 +28,7 @@ object Token extends MongoHelper with Model[Token] {
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)) = Writes[Token] {
+  def outputWrites = Writes[Token] {
     t =>
       Json.obj("token" -> t.id.toJson) ++
         addCreated(t.created)

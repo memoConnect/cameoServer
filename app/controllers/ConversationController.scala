@@ -1,6 +1,6 @@
 package controllers
 
-import traits.{OutputLimits, ExtendedController}
+import traits.{ExtendedController}
 import models.{MongoId, Purl, Conversation}
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
@@ -57,12 +57,18 @@ object ConversationController extends ExtendedController {
 ////    }
 ////  }
 //
+
+  def createConversation = AuthAction(parse.tolerantJson) {
+    request =>
+
+  }
+
   def getConversation(id: String, offset: Int, limit: Int) =
     AuthAction.async {
       request =>
         Conversation.find(new MongoId(id)).map {
           case None => NotFound(resKO("conversation not found"))
-          case Some(c) => Ok(resOK(c.toJson))
+          case Some(c) => Ok(resOK(c.toJson(offset, limit)))
         }
     }
 //

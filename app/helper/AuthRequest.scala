@@ -25,10 +25,10 @@ object AuthAction extends ActionBuilder[AuthRequest] with ResultHelper {
   def invokeBlock[A](request: Request[A], block: (AuthRequest[A]) => Future[SimpleResult]) = {
     // check if a token is passed
     request.getQueryString(REQUEST_TOKEN) match {
-      case None => Future.successful(Results.Unauthorized(REQUEST_TOKEN_MISSING))
+      case None => Future.successful(Results.Unauthorized(resKO(REQUEST_TOKEN_MISSING)))
       case Some(tokenId) => {
         Token.find(new MongoId(tokenId)).flatMap {
-          case None => Future.successful(Results.Unauthorized(REQUEST_ACCESS_DENIED))
+          case None => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))
           case Some(token) => {
             Identity.find(token.identityId).flatMap {
               case Some(identity) => block(new AuthRequest[A](identity, request))

@@ -2,7 +2,6 @@ package models
 
 import traits.Model
 import play.api.libs.json._
-import traits.OutputLimits
 import reactivemongo.api.indexes.{IndexType, Index}
 import helper.IdHelper
 import java.util.Date
@@ -36,9 +35,9 @@ object Purl extends Model[Purl] {
   implicit val mongoFormat: Format[Purl] = createMongoFormat(Json.reads[Purl], Json.writes[Purl])
 
   // Input/output format for the API
-  def inputReads = Json.reads[Purl]
+  def createReads = Json.reads[Purl]
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Purl] = Writes {
+  def outputWrites: Writes[Purl] = Writes {
     purl =>
       Json.obj("conversationId" -> purl.conversationId) ++
         Json.obj("userType" -> purl.userType) ++

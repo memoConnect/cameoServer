@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.{OutputLimits, Model}
+import traits.{Model}
 import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
@@ -29,7 +29,7 @@ object Asset extends Model[Asset] {
 
   implicit val mongoFormat: Format[Asset] = createMongoFormat(Json.reads[Asset], Json.writes[Asset])
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Asset] = Writes {
+  def outputWrites: Writes[Asset] = Writes {
     asset =>
       Json.obj("id" -> asset.id.toJson) ++
         Json.obj("name" -> asset.filename) ++

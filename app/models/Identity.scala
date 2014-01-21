@@ -3,7 +3,7 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.{OutputLimits, Model}
+import traits.{Model}
 import play.api.libs.json.Reads._
 import scala.concurrent.{ExecutionContext, Future}
 import helper.IdHelper
@@ -65,7 +65,7 @@ object Identity extends Model[Identity] {
 
   implicit val mongoFormat: Format[Identity] = createMongoFormat(Json.reads[Identity], Json.writes[Identity])
 
-  def inputReads: Reads[Identity] = (
+  def createReads: Reads[Identity] = (
     Reads.pure[MongoId](MongoId.create()) and
       Reads.pure[Option[MongoId]](None) and
       (__ \ 'displayName).readNullable[String] and
@@ -78,7 +78,7 @@ object Identity extends Model[Identity] {
       Reads.pure[Date](new Date())
     )(Identity.apply _)
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0, 0)): Writes[Identity] = Writes {
+  def outputWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
       toJsonOrEmpty("displayName", i.displayName) ++
