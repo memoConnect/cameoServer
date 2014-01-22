@@ -3,12 +3,12 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.{Model}
+import traits.Model
 import play.api.libs.json.Reads._
 import scala.concurrent.{ExecutionContext, Future}
 import helper.IdHelper
 import ExecutionContext.Implicits.global
-import play.api.Logger
+import constants.Messaging._
 
 /**
  * User: Björn Reimer
@@ -21,6 +21,9 @@ case class Identity(
                      id: MongoId,
                      accountId: Option[MongoId],
                      displayName: Option[String],
+                     email: Option[String],
+                     phoneNumber: Option[String],
+                     preferredMessageType: String, // "mail" or "sms"
                      userKey: String,
                      contacts: Seq[Contact],
                      conversations: Seq[MongoId],
@@ -37,7 +40,7 @@ case class Identity(
   def addContact(contact: Contact) = {
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
-//    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
+    //    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
     Identity.col.update(query, set)
   }
 
@@ -72,6 +75,9 @@ object Identity extends Model[Identity] {
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
       Reads.pure[Option[MongoId]](None) and
       (__ \ 'displayName).readNullable[String] and
+      (__ \ 'email).readNullable[String] and
+      (__ \ 'phoneNumber).readNullable[String] and
+      ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
       Reads.pure[String](IdHelper.generateUserKey()) and
       Reads.pure[Seq[Contact]](Seq()) and
       Reads.pure[Seq[MongoId]](Seq()) and
@@ -84,7 +90,7 @@ object Identity extends Model[Identity] {
   def outputWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
-      toJsonOrEmpty("displayName", i.displayName) ++
+        toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         Json.obj("contacts" -> i.contacts.map(_.toJson)) ++
         addCreated(i.created) ++
@@ -94,7 +100,7 @@ object Identity extends Model[Identity] {
   def summaryWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
-        toJsonOrEmpty("displayName", i.displayName)
+        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
   }
 
   def find(id: MongoId): Future[Option[Identity]] = {
@@ -102,11 +108,14 @@ object Identity extends Model[Identity] {
     col.find(query).one[Identity]
   }
 
-  def create(accountId: Option[MongoId]): MongoId = {
+  def create(accountId: Option[MongoId], email: Option[String], phoneNumber: Option[String]): MongoId = {
     val identity = new Identity(
       IdHelper.generateIdentityId(),
       accountId,
       None,
+      email,
+      phoneNumber,
+      MESSAGE_TYPE_DEFAULT,
       IdHelper.generateUserKey(),
       Seq(),
       Seq(),
@@ -117,13 +126,6 @@ object Identity extends Model[Identity] {
     )
     col.insert(identity)
     identity.id
-  }
-
-  def getDisplayName(id: MongoId): Future[String] = {
-    Identity.find(id).map {
-      case None => "NoName"
-      case Some(i) => i.displayName.getOrElse("NoName")
-    }
   }
 }
 

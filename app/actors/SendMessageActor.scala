@@ -1,14 +1,12 @@
 package actors
 
-import akka.actor.{Props, Actor}
+import akka.actor.Actor
 import play.api.Logger
-import play.api.libs.json._
 import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.concurrent.Akka
-import play.api.Play.current
-import models.{Message}
-import java.util.Date
+import models.{MessageStatus, Identity, MongoId, Message}
+import constants.Messaging._
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -18,59 +16,35 @@ import java.util.Date
 class SendMessageActor extends Actor with MongoHelper {
 
   def receive = {
-    case message: Message => {
-//      Logger.info("SendMessageActor: Sending message with id " + message.messageId)
-//
-//      val recipients = message.recipients.getOrElse(Seq())
-//
-//      val recipientsWithStatus = recipients.map {
-//        recipient: Recipient =>
-//
-//          def recipientAddStatus(status: String) = {
-//            recipient.copy(sendStatus = Some(status))
-//          }
-//
-//          // check if we have a test run
-//          if (recipient.testRun.getOrElse(false)) {
-//            recipientAddStatus("testrun: message not send")
-//            // do not send the message to the sender
-//          } else if (message.fromRecipientId.getOrElse("none").equals(recipient.recipientId) || ( recipient.messageType.equals("otherUser") && message.from.equals(recipient.sendTo) )) {
-//            recipientAddStatus("Sender of message")
-//          }
-//          else {
-//            // check for message type
-//            recipient.messageType match {
-//              case "none" => recipientAddStatus("No MessageType given")
-//              case "email" => {
-//                sendMailActor ! (recipient, message)
-//                recipientAddStatus("Email queued")
-//              }
-//              case "sms" => {
-//                sendSMSActor ! (recipient, message)
-//                recipientAddStatus("SMS queued")
-//              }
-//              case "otherUser" => {
-//                sendKolibriActor ! (recipient, message)
-//                recipientAddStatus("KolibriMessage queued")
-//              }
-//              case m => recipientAddStatus("Unkown message type \'" + m + "\'")
-//            }
-//          }
+    case (message: Message, recipients: Seq[MongoId]) => {
+
+      Logger.info("SendMessageActor: Processing message with id " + message.id)
+
+      val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
+        id => Identity.find(id).map {
+          case None => {
+            val error ="Could not find identityID " + id
+            Logger.error(error)
+            new MessageStatus(id, MESSAGE_STATUS_ERROR, error)
+          }
+          case Some(identity) => {
+            identity.preferredMessageType match {
+              case MESSAGE_TYPE_SMS => sendSMSActor !(message, identity, 0)
+              case MESSAGE_TYPE_EMAIL => sendMailActor !(message, identity, 0)
+              case MESSAGE_TYPE_DEFAULT => sendSMSActor !(message, identity, 0)
+              // TODO case _ => sendFailActor ! (message, identity)
+            }
+            new MessageStatus(id, MESSAGE_STATUS_QUEUED, identity.preferredMessageType)
+          }
+        }
       }
 
-      // add recipients with Status to message and save to db
-//      val query = Json.obj("conversationId" -> message.conversationId, "messages.messageId" -> message.messageId)
-//      val set = Json.obj("$set" -> (
-//        Json.obj("messages.$.recipients" -> recipientsWithStatus.map(Recipient.toJson)) ++
-//          Json.obj("lastUpdated" -> Json.obj("$date" -> new Date)) ++
-//          Json.obj("lastMessage" -> Json.toJson(message))
-//        ))
-//
-//      conversationCollection.update(query, set).map {
-//        lastError => if (lastError.inError) {
-//          Logger.error("Error updating message: " + lastError.stringify)
-//        }
-//      }
- //   }
+      // convert to a singe future and write status to message
+      Future.sequence(futureMessageStatus).map {
+        s =>
+        message.updateStatus(s)
+    }
+  }
+
   }
 }

@@ -37,8 +37,4 @@ object Asset extends Model[Asset] {
         Json.obj("size" -> asset.filesize) ++
         addCreated(asset.created)
   }
-
-  override val sortWith = {
-    (a1: Asset, a2: Asset) => a1.created.before(a2.created)
-  }
 }

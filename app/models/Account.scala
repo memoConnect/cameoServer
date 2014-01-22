@@ -44,7 +44,7 @@ object Account extends Model[Account] {
     (Reads.pure[MongoId](id) and
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
-      Reads.pure[Seq[MongoId]](Seq(Identity.create(Some(id)))) and
+      Reads.pure[Seq[MongoId]](Seq()) and
       (__ \ 'phoneNumber).readNullable[String] and
       (__ \ 'email).readNullable[String] and
       Reads.pure[Date](new Date()) and

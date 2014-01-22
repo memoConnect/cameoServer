@@ -17,12 +17,18 @@ case class Message(
                     id: MongoId,
                     messageBody: String,
                     fromIdentityId: MongoId,
-                    messageStatus: Seq[JsObject],
+                    messageStatus: Seq[MessageStatus],
                     assets: Seq[Asset],
                     created: Date
                     ) {
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
+
+  def updateStatus(messageStatus: Seq[MessageStatus]) = {
+
+    val update = Json.obj("$set" -> Json.obj("messages.$.messageStatus" -> messageStatus))
+    Conversation.col.update(Message.messageQuery(this.id), update)
+  }
 
 }
 
@@ -34,7 +40,7 @@ object Message extends MongoHelper with Model[Message] {
     Reads.pure[MongoId](IdHelper.generateMessageId()) and
       (__ \ 'messageBody).read[String] and
       Reads.pure[MongoId](fromIdentityId) and
-      Reads.pure[Seq[JsObject]](Seq()) and
+      Reads.pure[Seq[MessageStatus]](Seq()) and
       Reads.pure[Seq[Asset]](Seq()) and
       Reads.pure[Date](new Date)
     )(Message.apply _)
@@ -44,16 +50,16 @@ object Message extends MongoHelper with Model[Message] {
       Json.obj("id" -> m.id.toJson) ++
         Json.obj("messageBody" -> m.messageBody) ++
         Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
-        Json.obj("messageStatus" -> m.messageStatus) ++
+        Json.obj("messageStatus" -> m.messageStatus.map(_.toJson)) ++
         addCreated(m.created)
   }
 
-  def find(id: MongoId): Future[Option[Message]] = {
+  def messageQuery(id: MongoId): JsObject = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
-    val query = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
+  def find(id: MongoId): Future[Option[Message]] = {
     val projection = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
-    Conversation.col.find(query, projection).one[JsValue].map {
+    Conversation.col.find(messageQuery(id), projection).one[JsValue].map {
       case None => None
       case Some(js) => Some((js \ "messages")(0).as[Message])
     }

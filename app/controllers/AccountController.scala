@@ -27,10 +27,15 @@ object AccountController extends ExtendedController {
 
       jsBody.validate[Account](Account.createReads).map {
         account =>
-          accountCollection.insert(account).map {
+
+          // create identity and add it to account
+          val identityId = Identity.create(Some(account.id), account.email, account.phoneNumber)
+          val account2 = account.copy(identities = Seq(identityId))
+
+          accountCollection.insert(account2).map {
             lastError => {
               if (lastError.ok) {
-                resOK(account.toJson)
+                resOK(account2.toJson)
               } else {
                 InternalServerError(resKO("MongoError: " + lastError))
               }
