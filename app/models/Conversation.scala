@@ -12,7 +12,6 @@ import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
-import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -33,9 +32,10 @@ case class Conversation(
 
   def toJson: JsObject = toJson(0, 0)
 
-  def toJsonWithDisplayNames(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
+  def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
 
-    // get identities of each recipient
+  def toJsonWithDisplayNames(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
+    // get identity of each recipient
     val recipients: Seq[Future[JsObject]] = this.recipients.map {
       id => Identity.find(id).map {
         case None => Json.obj()
@@ -45,8 +45,7 @@ case class Conversation(
 
     Future.sequence(recipients).map {
       r => {
-        Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject] ++
-          Json.obj("recipients" -> r)
+        this.toJson(offset, limit) ++ Json.obj("recipients" -> r)
       }
     }
   }
@@ -68,15 +67,14 @@ case class Conversation(
   def addMessage(message: Message): Future[LastError] = {
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$push" ->
-    Json.obj("messages" -> Json.obj(
-      "$each" -> Seq(message),
-      "$sort" -> Json.obj("created" -> 1),
-      "$slice" -> (-1)*(this.messages.length + 2))))
+      Json.obj("messages" -> Json.obj(
+        "$each" -> Seq(message),
+        "$sort" -> Json.obj("created" -> 1),
+        "$slice" -> (-1) * (this.messages.length + 2))))
 
     Conversation.col.update(query, set)
-
+    //TODO: update lastUpdated
   }
-
 }
 
 object Conversation extends Model[Conversation] {
@@ -104,20 +102,18 @@ object Conversation extends Model[Conversation] {
         addLastUpdated(c.lastUpdated)
   }
 
-  //  val summaryWrites = Writes[Conversation] {
-  //    c =>
-  //      Json.obj("conversationId" -> c.id.toJson) ++
-  //        Conversation.addLastUpdated(c.lastUpdated) ++
-  //        Json.obj("numberOfMessages" -> c.messages.length) ++
-  //        Json.obj("lastMessage" -> {
-  //          c.lastMessage match {
-  //            case Some(m: Message) => JsString(m.from + ": " + m.messageBody)
-  //            case _ => Json.obj()
-  //          }
-  //        }) ++
-  //        Json.obj("recipients" -> c.recipients.map {
-  //          Identity.getDisplayName
-  //        })}
+  val summaryWrites = Writes[Conversation] {
+    c =>
+      Json.obj("id" -> c.id.toJson) ++
+        Conversation.addLastUpdated(c.lastUpdated) ++
+        Json.obj("numberOfMessages" -> c.messages.length) ++
+        Json.obj("lastMessage" -> {
+          c.messages.lastOption match {
+            case Some(m) => m.messageBody
+            case None => Json.obj()
+          }
+        })
+  }
 
   def find(id: MongoId): Future[Option[Conversation]] = {
     val query = Json.obj("_id" -> id)
@@ -129,23 +125,6 @@ object Conversation extends Model[Conversation] {
     new Conversation(id, None, Seq(), Seq(), new Date, new Date)
   }
 
-
-  //  def addMessage(message: Message) = {
-  //    val query = Json.obj("conversationId" -> message.conversationId.get)
-  //    val set = Json.obj("$push" -> Json.obj("messages" -> message))
-  //    col.update(query, set).map {
-  //      lastError => {
-  //        if (lastError.inError) {
-  //          Logger.error("Error adding message to conversation: " + lastError.stringify)
-  //        }
-  //      }
-  //    }
-  //  }
-
-  //  def getFromList(ids: Seq[String]): Future[List[Conversation]] = {
-  //    val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
-  //    conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].collect[List]()
-  //  }
 
   //  def hasMember(conversation: Conversation, user: String): Boolean = {
   //    conversation.recipients.exists(r => {

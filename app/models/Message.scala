@@ -14,7 +14,7 @@ import ExecutionContext.Implicits.global
  * Time: 2:36 PM
  */
 case class Message(
-                    messageId: MongoId,
+                    id: MongoId,
                     messageBody: String,
                     fromIdentityId: MongoId,
                     messageStatus: Seq[JsObject],
@@ -41,52 +41,23 @@ object Message extends MongoHelper with Model[Message] {
 
   def outputWrites = Writes[Message] {
     m =>
-      Json.obj("id" -> m.messageId.toJson) ++
+      Json.obj("id" -> m.id.toJson) ++
         Json.obj("messageBody" -> m.messageBody) ++
         Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
         Json.obj("messageStatus" -> m.messageStatus) ++
         addCreated(m.created)
   }
 
-
-  //  def find(messageId: String, conversationId: String): Future[Option[Message]] = {
-  //    find(Json.obj("conversationId" -> conversationId, "messages.messageId" -> messageId))
-  //  }
-
   def find(id: MongoId): Future[Option[Message]] = {
-    Conversation.col.find(Json.obj("messages.*._id" -> id)).one[Message]
-  }
 
-  //
-  //  def find(query: JsObject): Future[Option[Message]] = {
-  //    val filter = Json.obj("messages.$" -> 1)
-  //    col.find(query, filter).cursor[JsObject].collect[List](1000, stopOnError = false).map {
-  //      list =>
-  //        list.size match {
-  //          case 0 => None
-  //          case 1 => {
-  //            (list(0) \ "messages")(0).validate[Message].map {
-  //              message =>
-  //                if (message.messageId.equals((query \ "messageId").asOpt[String].getOrElse(message.messageId))) {
-  //                  Some(message)
-  //                } else {
-  //                  Logger.error("Received message with wrong Id: " + message.messageId + " Query: " + query.toString)
-  //                  None
-  //                }
-  //            }.recoverTotal{
-  //              e => None
-  //            }
-  //          }
-  //          case _ => {
-  //            Logger.error("CRITICAL: MessageId is not unique! query: " + query.toString)
-  //            None
-  //          }
-  //        }
-  //    }
-  //  }
+    val query = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
+    val projection = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
-  override val sortWith = {
-    (m1: Message, m2: Message) => m1.created.before(m2.created)
+    Conversation.col.find(query, projection).one[JsValue].map {
+      case None => None
+      case Some(js) => Some((js \ "messages")(0).as[Message])
+    }
+
   }
 
   // gets the position of a message in a conversation

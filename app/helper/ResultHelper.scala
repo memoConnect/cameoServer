@@ -9,6 +9,8 @@ import play.api.mvc.Results._
  * Date: 11/11/13
  * Time: 8:51 PM
  */
+
+// TODO: Implement standard methods for notfound, badrequest, etc
 object ResultHelper {
   /**
    * Generate Result

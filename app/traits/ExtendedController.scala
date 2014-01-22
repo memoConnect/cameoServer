@@ -11,9 +11,9 @@ import models.{Purl, Token}
  * Date: 5/21/13
  * Time: 6:53 PM
  */
-/**
- * Several Helper functions for interaction with MongoDB *
- */
+
+
+//TODO: clean this up
 trait ExtendedController extends Controller with MongoController with MongoHelper {
 
 
