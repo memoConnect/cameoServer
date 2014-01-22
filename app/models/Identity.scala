@@ -93,6 +93,9 @@ object Identity extends Model[Identity] {
         toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         Json.obj("contacts" -> i.contacts.map(_.toJson)) ++
+        toJsonOrEmpty("email", i.email) ++
+        toJsonOrEmpty("phoneNumber", i.phoneNumber) ++
+        Json.obj("preferredMessageType" -> i.preferredMessageType) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
   }
