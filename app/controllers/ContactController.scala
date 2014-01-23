@@ -48,7 +48,7 @@ object ContactController extends ExtendedController {
     }
   }
 
-  def getContact(contactId: String, token: String) = AuthAction.async(parse.tolerantJson) {
+  def getContact(contactId: String, token: String) = AuthAction.async {
     implicit request => checkIfAllowed {
         val query = Json.obj("username" -> request.token.username.get) ++ Json.obj("contacts.contactId" -> contactId)
         val filter = Json.obj("contacts.$" -> 1)

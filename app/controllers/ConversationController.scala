@@ -61,7 +61,7 @@ object ConversationController extends ExtendedController {
                       token: String,
                       offset: Int,
                       limit: Int) =
-    AuthAction.async(parse.tolerantJson) {
+    AuthAction.async {
       implicit request => checkIfAllowed(conversationId) {
         conversation =>
           Ok(resOK(Conversation.toJson(conversation)))
@@ -72,7 +72,7 @@ object ConversationController extends ExtendedController {
   def getConversationSummary(conversationId: String,
                              token: String) =
 
-    AuthAction.async(parse.tolerantJson) {
+    AuthAction.async {
       implicit request => checkIfAllowed(conversationId) {
         conversation =>
           Ok(resOK(Conversation.toJsonCustomWrites(conversation, Conversation.summaryWrites)))
@@ -80,7 +80,7 @@ object ConversationController extends ExtendedController {
     }
 
 
-  def getConversations(token: String, offset: Int, limit: Int) = AuthAction.async(parse.tolerantJson) {
+  def getConversations(token: String, offset: Int, limit: Int) = AuthAction.async {
     implicit request =>
       implicit val outputLimits = OutputLimits(offset, limit)
       // for registered users only
