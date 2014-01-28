@@ -1,0 +1,3 @@
+[submodule "public/cameoJSClient"]
+	path = public/cameoJSClient
+	url = https://github.com/memoConnect/cameoJSClient.git
