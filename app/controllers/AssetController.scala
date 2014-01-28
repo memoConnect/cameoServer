@@ -7,7 +7,7 @@ import play.api.libs.json._
 import reactivemongo.api.gridfs.GridFS
 import helper.{AuthAction, IdHelper}
 import play.api.Logger
-import models.{User, Asset, Message}
+import models.{MongoId, Asset, Message}
 import scala.Some
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 import java.util.Date
@@ -16,6 +16,7 @@ import services.Authentication.UserClass
 import services.Authentication
 import play.api.mvc.Action
 import play.api.libs.concurrent.Execution.Implicits._
+import helper.ResultHelper._
 
 /**
  * User: Björn Reimer
@@ -28,21 +29,16 @@ object AssetController extends ExtendedController {
   gridFS.ensureIndex()
 
   def uploadAsset(token: String, messageId: String) = AuthAction.async(gridFSBodyParser(gridFS)) {
-    implicit request =>
-      val userClass: UserClass = Authentication.getUserClass(request.token.userClass.getOrElse(AuthAction.EMPTY_USER))
-
-      if (!userClass.uploadAssets) {
-        Future.successful(Unauthorized)
-      } else {
+    request =>
         val futureFiles = request.body.files
         // check if the message exist
-        Message.find(messageId).flatMap {
+        Message.find(new MongoId(messageId)).flatMap {
           case None => Future.successful(BadRequest(resKO("Message not found")))
           case Some(message) => {
             val futureAssetIds: Seq[Future[(String, LastError)]] = futureFiles.map {
               futureFile => {
                 for {
-                  assetId <- Future(IdHelper.generateAssetId())
+                  assetId <- Future(IdHelper.generateAssetId().toString)
                   file <- futureFile.ref
                   // add messageId and assetId to file in gridfs
                   assetResult <- {
@@ -50,7 +46,7 @@ object AssetController extends ExtendedController {
                     val set = BSONDocument("$set" -> BSONDocument(
                       "messageId" -> messageId,
                       "assetId" -> assetId,
-                      "user" -> message.from,
+                      "user" -> message.fromIdentityId.toString,
                       "created" -> BSONDateTime((new java.util.Date).getTime)))
 
                     implicit val fileReader = DefaultReadFileReader
@@ -59,20 +55,20 @@ object AssetController extends ExtendedController {
                   messageResult <- {
                     // create asset object
                     val asset = new Asset(
-                      assetId,
+                      new MongoId(assetId),
                       String.valueOf(file.chunkSize),
                       file.filename,
                       file.contentType.getOrElse("unknown"),
                       new Date)
 
                     // add asset to user TODO: all users of the conversation
-                    User.addMedia(request.token.username.getOrElse(""), asset)
+                    request.identity.addAsset(asset.id)
 
                     // add asset to message
-                    val query = Json.obj("conversationId" -> message.conversationId,
-                      "messages.messageId" -> message.messageId)
-                    val set = Json.obj("$push" -> Json.obj("messages.$.assets" -> asset))
-                    conversationCollection.update(query, set)
+//                    val query = Json.obj("conversationId" -> message.conversationId,
+//                      "messages.messageId" -> message.messageId)
+//                    val set = Json.obj("$push" -> Json.obj("messages.$.assets" -> asset))
+//                    conversationCollection.update(query, set)
                   }
                 } yield (assetId, messageResult)
               }
@@ -89,17 +85,15 @@ object AssetController extends ExtendedController {
                     error) => Json.obj(id -> error.stringify)
                   })))
                 } else {
-                  Ok(resOK(Json.obj("assetIds" -> results.map {
+                  resOK(Json.obj("assetIds" -> results.map {
                     case (id, error) => id
-                  })))
+                  }))
                 }
             }
 
           }
         }
       }
-  }
-
 
   def getAsset(token: String, assetId: String) = Action.async {
     request =>
@@ -114,16 +108,16 @@ object AssetController extends ExtendedController {
 
   }
 
-  def getMedia(token: String) = AuthAction.async {
-    request =>
-      User.find(request.token.username.getOrElse("")).map {
-        case None => NotFound(resKO("invalid user"))
-        case Some(user) => {
-          val res =
-            Json.obj("numberOfAssets" -> user.media.getOrElse(Seq()).size) ++
-              Asset.toSortedJsonObjectOrEmpty("assets", user.media)
-          Ok(resOK(res))
-        }
-      }
-  }
+//  def getMedia(token: String) = AuthAction.async {
+//    request =>
+//      User.find(request.token.username.getOrElse("")).map {
+//        case None => NotFound(resKO("invalid user"))
+//        case Some(user) => {
+//          val res =
+//            Json.obj("numberOfAssets" -> user.media.getOrElse(Seq()).size) ++
+//              Asset.toSortedJsonObjectOrEmpty("assets", user.media)
+//          Ok(resOK(res))
+//        }
+//      }
+//  }
 }

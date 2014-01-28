@@ -1,0 +1,144 @@
+Play server process ID is 28608
+This application is already running (Or delete /home/reimerei/dev/cameo/target/universal/stage/RUNNING_PID file).
+Play server process ID is 30888
+Oops, cannot start the server.
+Configuration error: Configuration error[/opt/cameoSecrets/secret_dev.conf: /opt/cameoSecrets/secret_dev.conf (No such file or directory)]
+	at play.api.Configuration$.play$api$Configuration$$configError(Configuration.scala:92)
+	at play.api.Configuration$.load(Configuration.scala:58)
+	at play.api.WithDefaultConfiguration$$anonfun$initialConfiguration$1.apply(Application.scala:72)
+	at play.api.WithDefaultConfiguration$$anonfun$initialConfiguration$1.apply(Application.scala:72)
+	at play.utils.Threads$.withContextClassLoader(Threads.scala:18)
+	at play.api.WithDefaultConfiguration$class.initialConfiguration(Application.scala:71)
+	at play.api.DefaultApplication.initialConfiguration$lzycompute(Application.scala:399)
+	at play.api.DefaultApplication.initialConfiguration(Application.scala:399)
+	at play.api.WithDefaultGlobal$class.play$api$WithDefaultGlobal$$globalClass(Application.scala:22)
+	at play.api.DefaultApplication.play$api$WithDefaultGlobal$$globalClass$lzycompute(Application.scala:399)
+	at play.api.DefaultApplication.play$api$WithDefaultGlobal$$globalClass(Application.scala:399)
+	at play.api.WithDefaultGlobal$class.play$api$WithDefaultGlobal$$javaGlobal(Application.scala:28)
+	at play.api.DefaultApplication.play$api$WithDefaultGlobal$$javaGlobal$lzycompute(Application.scala:399)
+	at play.api.DefaultApplication.play$api$WithDefaultGlobal$$javaGlobal(Application.scala:399)
+	at play.api.WithDefaultGlobal$$anonfun$play$api$WithDefaultGlobal$$globalInstance$1.apply(Application.scala:50)
+	at play.api.WithDefaultGlobal$$anonfun$play$api$WithDefaultGlobal$$globalInstance$1.apply(Application.scala:49)
+	at play.utils.Threads$.withContextClassLoader(Threads.scala:18)
+	at play.api.WithDefaultGlobal$class.play$api$WithDefaultGlobal$$globalInstance(Application.scala:48)
+	at play.api.DefaultApplication.play$api$WithDefaultGlobal$$globalInstance$lzycompute(Application.scala:399)
+	at play.api.DefaultApplication.play$api$WithDefaultGlobal$$globalInstance(Application.scala:399)
+	at play.api.WithDefaultGlobal$class.global(Application.scala:64)
+	at play.api.DefaultApplication.global(Application.scala:399)
+	at play.api.WithDefaultConfiguration$class.play$api$WithDefaultConfiguration$$fullConfiguration(Application.scala:78)
+	at play.api.DefaultApplication.play$api$WithDefaultConfiguration$$fullConfiguration$lzycompute(Application.scala:399)
+	at play.api.DefaultApplication.play$api$WithDefaultConfiguration$$fullConfiguration(Application.scala:399)
+	at play.api.WithDefaultConfiguration$class.configuration(Application.scala:80)
+	at play.api.DefaultApplication.configuration(Application.scala:399)
+	at play.api.Application$class.$init$(Application.scala:272)
+	at play.api.DefaultApplication.<init>(Application.scala:399)
+	at play.core.StaticApplication.<init>(ApplicationProvider.scala:50)
+	at play.core.server.NettyServer$.createServer(NettyServer.scala:243)
+	at play.core.server.NettyServer$$anonfun$main$3.apply(NettyServer.scala:279)
+	at play.core.server.NettyServer$$anonfun$main$3.apply(NettyServer.scala:274)
+	at scala.Option.map(Option.scala:145)
+	at play.core.server.NettyServer$.main(NettyServer.scala:274)
+	at play.core.server.NettyServer.main(NettyServer.scala)
+Caused by: com.typesafe.config.ConfigException$IO: /opt/cameoSecrets/secret_dev.conf: /opt/cameoSecrets/secret_dev.conf (No such file or directory)
+	at com.typesafe.config.impl.Parseable.parseValue(Parseable.java:176)
+	at com.typesafe.config.impl.Parseable.parseValue(Parseable.java:165)
+	at com.typesafe.config.impl.Parseable.parse(Parseable.java:204)
+	at com.typesafe.config.ConfigFactory.parseFile(ConfigFactory.java:563)
+	at com.typesafe.config.ConfigFactory.loadDefaultConfig(ConfigFactory.java:229)
+	at com.typesafe.config.ConfigFactory.loadDefaultConfig(ConfigFactory.java:193)
+	at com.typesafe.config.ConfigFactory.load(ConfigFactory.java:317)
+	at com.typesafe.config.ConfigFactory.load(ConfigFactory.java:286)
+	at play.api.Configuration$.dontAllowMissingConfig$lzycompute(Configuration.scala:25)
+	at play.api.Configuration$.dontAllowMissingConfig(Configuration.scala:25)
+	at play.api.Configuration$.load(Configuration.scala:60)
+	... 34 more
+Caused by: java.io.FileNotFoundException: /opt/cameoSecrets/secret_dev.conf (No such file or directory)
+	at java.io.FileInputStream.open(Native Method)
+	at java.io.FileInputStream.<init>(FileInputStream.java:146)
+	at com.typesafe.config.impl.Parseable$ParseableFile.reader(Parseable.java:450)
+	at com.typesafe.config.impl.Parseable.rawParseValue(Parseable.java:185)
+	at com.typesafe.config.impl.Parseable.parseValue(Parseable.java:171)
+	... 44 more
+Play server process ID is 31085
+2014-01-28 15:42:51,019 - [INFO] - from application in main 
+ReactiveMongoPlugin starting...
+
+2014-01-28 15:42:51,036 - [INFO] - from application in main 
+ReactiveMongoPlugin successfully started with db 'cameo'! Servers:
+		[localhost:27017]
+
+2014-01-28 15:42:51,042 - [INFO] - from play in main 
+Application started (Prod)
+
+Oops, cannot start the server.
+org.jboss.netty.channel.ChannelException: Failed to bind to: /0.0.0.0:9000
+	at org.jboss.netty.bootstrap.ServerBootstrap.bind(ServerBootstrap.java:272)
+	at play.core.server.NettyServer$$anonfun$10.apply(NettyServer.scala:134)
+	at play.core.server.NettyServer$$anonfun$10.apply(NettyServer.scala:131)
+	at scala.Option.map(Option.scala:145)
+	at play.core.server.NettyServer.<init>(NettyServer.scala:131)
+	at play.core.server.NettyServer$.createServer(NettyServer.scala:242)
+	at play.core.server.NettyServer$$anonfun$main$3.apply(NettyServer.scala:279)
+	at play.core.server.NettyServer$$anonfun$main$3.apply(NettyServer.scala:274)
+	at scala.Option.map(Option.scala:145)
+	at play.core.server.NettyServer$.main(NettyServer.scala:274)
+	at play.core.server.NettyServer.main(NettyServer.scala)
+Caused by: java.net.BindException: Address already in use
+	at sun.nio.ch.Net.bind0(Native Method)
+	at sun.nio.ch.Net.bind(Net.java:444)
+	at sun.nio.ch.Net.bind(Net.java:436)
+	at sun.nio.ch.ServerSocketChannelImpl.bind(ServerSocketChannelImpl.java:214)
+	at sun.nio.ch.ServerSocketAdaptor.bind(ServerSocketAdaptor.java:74)
+	at org.jboss.netty.channel.socket.nio.NioServerBoss$RegisterTask.run(NioServerBoss.java:193)
+	at org.jboss.netty.channel.socket.nio.AbstractNioSelector.processTaskQueue(AbstractNioSelector.java:366)
+	at org.jboss.netty.channel.socket.nio.AbstractNioSelector.run(AbstractNioSelector.java:290)
+	at org.jboss.netty.channel.socket.nio.NioServerBoss.run(NioServerBoss.java:42)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1145)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:615)
+	at java.lang.Thread.run(Thread.java:744)
+Play server process ID is 31675
+2014-01-28 15:44:20,021 - [INFO] - from application in main 
+ReactiveMongoPlugin starting...
+
+2014-01-28 15:44:20,038 - [INFO] - from application in main 
+ReactiveMongoPlugin successfully started with db 'cameo'! Servers:
+		[localhost:27017]
+
+2014-01-28 15:44:20,042 - [INFO] - from play in main 
+Application started (Prod)
+
+2014-01-28 15:44:20,102 - [INFO] - from play in main 
+Listening for HTTP on /0:0:0:0:0:0:0:0:9000
+
+2014-01-28 15:46:09,452 - [INFO] - from application in Thread-2 
+ReactiveMongoPlugin stops, closing connections...
+
+2014-01-28 15:46:09,812 - [ERROR] - from reactivemongo.core.actors.MongoDBSystem in reactivemongo-akka.actor.default-dispatcher-5 
+(State: Closing) UNHANDLED MESSAGE: ChannelConnected(664840154)
+
+2014-01-28 15:46:09,820 - [INFO] - from application in ForkJoinPool-1-worker-7 
+ReactiveMongo Connections stopped. [Success(Closed)]
+
+Play server process ID is 32475
+2014-01-28 15:46:29,507 - [INFO] - from application in main 
+ReactiveMongoPlugin starting...
+
+2014-01-28 15:46:29,523 - [INFO] - from application in main 
+ReactiveMongoPlugin successfully started with db 'cameo'! Servers:
+		[localhost:27017]
+
+2014-01-28 15:46:29,528 - [INFO] - from play in main 
+Application started (Prod)
+
+2014-01-28 15:46:29,594 - [INFO] - from play in main 
+Listening for HTTP on /0:0:0:0:0:0:0:0:9000
+
+2014-01-28 15:46:31,297 - [INFO] - from application in Thread-2 
+ReactiveMongoPlugin stops, closing connections...
+
+2014-01-28 15:46:31,618 - [ERROR] - from reactivemongo.core.actors.MongoDBSystem in reactivemongo-akka.actor.default-dispatcher-2 
+(State: Closing) UNHANDLED MESSAGE: ChannelConnected(-1475230377)
+
+2014-01-28 15:46:31,624 - [INFO] - from application in ForkJoinPool-1-worker-5 
+ReactiveMongo Connections stopped. [Success(Closed)]
+

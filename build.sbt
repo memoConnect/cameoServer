@@ -1,4 +1,4 @@
-name := "kolibrinet"
+name := "cameoServer"
 
 version := "0.5"
 

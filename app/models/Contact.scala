@@ -1,58 +1,58 @@
 package models
 
-import java.util.Date
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.IdHelper
-import traits.{OutputLimits, MongoHelper, Model}
+import traits.Model
+import scala.concurrent.{Future, ExecutionContext}
+import ExecutionContext.Implicits.global
+import play.api.mvc.{Results, SimpleResult}
+import play.mvc.Result
+import helper.ResultHelper._
+import play.api.Logger
 
 /**
  * User: Björn Reimer
  * Date: 6/25/13
  * Time: 5:53 PM
  */
-case class Contact (
-                    contactId: String,
-                    name: String,
-                    email: Option[String],
-                    phonenumber: Option[String],
+case class Contact(
+                    id: MongoId,
                     groups: Seq[String],
-                    username: Option[String],
-                    created: Date,
-                    lastUpdated: Date
-                  )
+                    identityId: MongoId
+                    ) {
 
-object Contact extends Model[Contact]
-{
+  def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
-  implicit val collection = userCollection
+  def toJsonWithIdentity: Future[JsObject] =
+    Identity.find(this.identityId).map {
+      case None => Json.obj()
+      case Some(identity) =>
+        Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
+          Json.obj("identity" -> identity.toJson )
+    }
+
+  def toJsonWithIdentityResult: Future[SimpleResult] = {
+    this.toJsonWithIdentity.map(
+      js => resOK(js))
+  }
+}
+
+object Contact extends Model[Contact] {
+
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
-  // Input/output format for the API
-  def inputReads: Reads[Contact] = (
-    Reads.pure[String](IdHelper.generateContactId()) and
-    ((__ \ 'name).read[String] or Reads.pure(IdHelper.generateContactId())) and
-    (__ \ 'email).readNullable[String] and
-    (__ \ 'phonenumber).readNullable[String] and
-    ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
-    (__ \ 'username).readNullable[String] and
-    Reads.pure[Date](new Date) and
-    Reads.pure[Date](new Date)
+  def createReads(identityId: MongoId): Reads[Contact] = (
+    Reads.pure[MongoId](IdHelper.generateContactId()) and
+      ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
+      Reads.pure[MongoId](identityId)
     )(Contact.apply _)
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)): Writes[Contact] = Writes {
-    contact =>
-      Json.obj("name" -> contact.name) ++
-        toJsonOrEmpty("email", contact.email) ++
-        toJsonOrEmpty("phonenumber", contact.phonenumber) ++
-        toJsonOrEmpty("username", contact.username) ++
-        Json.obj("groups" -> contact.groups) ++
-        Json.obj("contactId" -> contact.contactId) ++
-        addLastUpdated(contact.lastUpdated)
-  }
-
-  override val sortWith = {
-    (c1: Contact, c2: Contact) => c1.name < c2.name
+  def outputWrites: Writes[Contact] = Writes {
+    c =>
+      Json.obj("id" -> c.id.toJson) ++
+        Json.obj("groups" -> c.groups) ++
+      Json.obj("identityId" -> c.identityId.toJson)
   }
 }
 

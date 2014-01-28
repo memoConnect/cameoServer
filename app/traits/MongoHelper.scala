@@ -17,15 +17,15 @@ trait MongoHelper {
 
   val mongoDB = ReactiveMongoPlugin.db
 
-  val conversationCollection: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
-  val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
-  val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("token")
-  val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
-  val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
+  lazy val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
+  lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
+  lazy val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")
+  lazy val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
+  lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
 
   val emptyObj = __.json.put(Json.obj())
 
-  // converts dates and ids to mongo format ($date and $oid)
+  // converts dates to mongo format ($date)
   val toMongoDates: Reads[JsObject] = {
     __.json.update((__ \ 'created \ '$date).json.copyFrom((__ \ 'created).json.pick[JsNumber]) or emptyObj) andThen
       __.json.update((__ \ 'lastUpdated \ '$date).json.copyFrom((__ \ 'lastUpdated).json.pick[JsNumber]) or emptyObj)
@@ -36,14 +36,25 @@ trait MongoHelper {
       __.json.update((__ \ 'lastUpdated).json.copyFrom((__ \ 'lastUpdated \ '$date).json.pick[JsNumber]) or emptyObj)
   }
 
+  // converts id to _id
+  val toMongoId: Reads[JsObject] = {
+    __.json.update((__ \ '_id).json.copyFrom((__ \ 'id).json.pick[JsValue]) or emptyObj) andThen
+      (__ \ 'id).json.prune
+  }
+
+  val fromMongoId: Reads[JsObject] = {
+    __.json.update((__ \ 'id).json.copyFrom((__ \ '_id).json.pick[JsValue]) or emptyObj) andThen
+      (__ \ '_id).json.prune
+  }
+
   def createMongoReads[T](reads: Reads[T]): Reads[T] = Reads {
-    js => js.transform(fromMongoDates).map {
+    js => js.transform(fromMongoDates andThen fromMongoId).map {
       obj: JsValue => obj.as[T](reads)
     }
   }
 
   def createMongoWrites[T](writes: Writes[T]): Writes[T] = Writes {
-    obj: T => Json.toJson[T](obj)(writes).transform(toMongoDates).getOrElse(Json.obj())
+    obj: T => Json.toJson[T](obj)(writes).transform(toMongoDates andThen toMongoId).getOrElse(Json.obj())
   }
 
   def createMongoFormat[T](

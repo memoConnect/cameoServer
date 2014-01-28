@@ -1,5 +1,7 @@
 package helper
 
+import models.MongoId
+
 /**
  * User: Björn Reimer
  * Date: 5/22/13
@@ -9,41 +11,61 @@ object IdHelper {
 
   // Random generator
   val random = new scala.util.Random
+
   def randomString(n: Int): String = {
     def alphabet: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
     //TODO check whether random.setSeed is needed
     Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
   }
 
-  def generateMessageId(): String = {
-    randomString(8)
+  val defaultLength = 20
+
+  def generatePurl(): MongoId = {
+    new MongoId(randomString(10))
   }
 
-  def generateConversationId(): String = {
-    randomString(8)
-  }
-
-  def generateAccessToken(): String = {
-    randomString(30)
-  }
-
-  def generateRecipientId(): String = {
-    randomString(8)
-  }
-
-  def generateContactId(): String = {
-    randomString(8)
-  }
-
-  def generateAssetId(): String = {
-    randomString(8)
-  }
-
-  def generatePurl(): String = {
-    randomString(10)
+  def generateAccessToken(): MongoId = {
+    new MongoId(randomString(40))
   }
 
   def generateUserKey(): String = {
-    randomString(96)
+    randomString(40)
   }
+
+  def generateMongoId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+
+  def generateMessageId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+  def generateConversationId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+
+  def generateRecipientId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+  def generateContactId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+  def generateAssetId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+
+  def generateIdentityId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+  def generateAccountId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+
 }
