@@ -1,0 +1,8 @@
+<span class="label">Nums: {{ assets.length }} / {{numberOfAssets}}</span>
+<ul>
+    <li ng-repeat="asset in assets">
+        {{ asset.uploaded }}
+        {{ asset.assetId }}
+        {{ asset.type }}
+    </li>
+</ul>
