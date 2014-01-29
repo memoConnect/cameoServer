@@ -6,7 +6,9 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 object Application extends Controller {
 
-
+  def redirect(url: String ) = Action {
+    Redirect(url)
+  }
 
   def index = Action {
     request =>
