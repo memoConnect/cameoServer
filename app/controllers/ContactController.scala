@@ -3,7 +3,7 @@ package controllers
 import traits.ExtendedController
 
 import play.api.libs.json._
-import models.{Identity, Contact}
+import models.{MongoId, Identity, Contact}
 import helper.{OutputLimits, AuthAction}
 import scala.concurrent.{ExecutionContext, Future}
 import helper.ResultHelper._
@@ -23,17 +23,36 @@ object ContactController extends ExtendedController {
     request =>
       val jsBody: JsValue = request.body
 
-      (jsBody \ "identity").validate[Identity](Identity.createReads).map {
-        identity =>
-          Identity.col.insert(identity)
-          jsBody.validate[Contact](Contact.createReads(identity.id)).map {
+      // check if an identity id is given
+      val identityId: Option[MongoId] = (jsBody \ "identityId").asOpt[String] match {
+        case Some(id) => Some(new MongoId(id))
+        case None => {
+          // if not check if there is a valid identity object
+          (jsBody \ "identity").validate[Identity](Identity.createReads).map {
+            identity => {
+              Identity.col.insert(identity)
+              Some(identity.id)
+            }
+          }.recoverTotal(e => None)
+        }
+      }
+
+      // read contact and add identity id
+      identityId match {
+        case None => Future(BadRequest(resKO("invalid identity")))
+        case Some(id) => {
+          jsBody.validate[Contact](Contact.createReads(id)).map {
             contact => {
               request.identity.addContact(contact)
+              Logger.debug("ID" + id.toString)
+
               contact.toJsonWithIdentity.map(js => resOK(js))
             }
           }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
-      }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
+        }
+      }
   }
+
 
   def getContact(contactId: String) = AuthAction.async {
     request =>
@@ -51,9 +70,9 @@ object ContactController extends ExtendedController {
     request =>
       val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
 
-     Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
-       c => resOK(c)
-     }
+      Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
+        c => resOK(c)
+      }
 
   }
 

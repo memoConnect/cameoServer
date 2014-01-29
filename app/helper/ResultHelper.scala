@@ -1,8 +1,8 @@
 package helper
 
-import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{SimpleResult, Results}
 import play.api.mvc.Results._
+import play.api.libs.json.{JsValue, Json}
 
 /**
  * User: Björn Reimer
