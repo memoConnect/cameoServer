@@ -6,6 +6,7 @@ import play.api.mvc.Action
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import helper.ResultHelper._
+import helper.AuthAction
 
 /**
  * User: Björn Reimer
@@ -14,7 +15,7 @@ import helper.ResultHelper._
  */
 object IdentityController extends ExtendedController {
 
-  def getIdentity(id: String) = Action.async {
+  def getIdentity(id: String) = AuthAction.async {
 
     val mongoId = new MongoId(id)
 

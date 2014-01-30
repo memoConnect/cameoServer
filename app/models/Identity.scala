@@ -92,7 +92,7 @@ object Identity extends Model[Identity] {
       Json.obj("id" -> i.id.toJson) ++
         toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
-        Json.obj("contacts" -> i.contacts.map(_.toJson)) ++
+//        Json.obj("contacts" -> i.contacts.map(_.toJson)) ++
         toJsonOrEmpty("email", i.email) ++
         toJsonOrEmpty("phoneNumber", i.phoneNumber) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
@@ -111,8 +111,8 @@ object Identity extends Model[Identity] {
     col.find(query).one[Identity]
   }
 
-  def create(accountId: Option[MongoId], email: Option[String], phoneNumber: Option[String]): MongoId = {
-    val identity = new Identity(
+  def create(accountId: Option[MongoId], email: Option[String], phoneNumber: Option[String]): Identity = {
+    new Identity(
       IdHelper.generateIdentityId(),
       accountId,
       None,
@@ -127,8 +127,6 @@ object Identity extends Model[Identity] {
       new Date,
       new Date
     )
-    col.insert(identity)
-    identity.id
   }
 }
 

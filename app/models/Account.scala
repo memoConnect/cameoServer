@@ -54,7 +54,7 @@ object Account extends Model[Account] {
 
   def outputWrites: Writes[Account] = Writes {
     a =>
-      Json.obj("id" -> a.id.toJson)
+      Json.obj("id" -> a.id.toJson) ++
       Json.obj("loginName" -> a.loginName) ++
         Json.obj("identities" -> a.identities.map(id => id.toJson)) ++
         toJsonOrEmpty("phoneNumber", a.phoneNumber) ++

@@ -27,10 +27,10 @@ object AccountController extends ExtendedController {
 
       jsBody.validate[Account](Account.createReads).map {
         account =>
-
           // create identity and add it to account
-          val identityId = Identity.create(Some(account.id), account.email, account.phoneNumber)
-          val account2 = account.copy(identities = Seq(identityId))
+          val identity = Identity.create(Some(account.id), account.email, account.phoneNumber)
+          Identity.col.insert(identity)
+          val account2 = account.copy(identities = Seq(identity.id))
 
           accountCollection.insert(account2).map {
             lastError => {
