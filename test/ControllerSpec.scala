@@ -2,7 +2,7 @@ package test
 
 
 import play.api.test._
-import play.api.libs.json.JsObject
+import play.api.libs.json.{Json, JsObject}
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
 import testHelper.MockupFactory._
@@ -10,6 +10,7 @@ import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration.Duration
+import scala.util.parsing.json.JSONObject
 
 /**
  * Add your spec here.
@@ -107,6 +108,39 @@ class ControllerSpec extends Specification {
       1 === 1
     }
 
+    "Check valid phoneNumber" in {
+      val path = basePath + "/services/checkPhoneNumber"
+      val json = Json.obj("phoneNumber" -> "0173-12  34dd5678")
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val resStatus = (contentAsJson(res) \ "res").as[String]
+      resStatus must beEqualTo("OK")
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val cleanedPhoneNumber = (data \ "phoneNumber").as[String]
+      cleanedPhoneNumber must beEqualTo("+4917312345678")
+    }
+
+    "Check invalid phoneNumber" in {
+      val path = basePath + "/services/checkPhoneNumber"
+      val json = Json.obj("phoneNumber" -> "abcd")
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+
+      val resStatus = (contentAsJson(res) \ "res").as[String]
+      resStatus must beEqualTo("KO")
+
+      val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
+      errorMsg must beSome
+    }
 
     step(play.api.Play.stop())
   }
