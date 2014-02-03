@@ -32,7 +32,6 @@ GET            /api/v1/message/:id                       controllers.MessageCont
 
 # TOKENS
 GET            /api/v1/token                             controllers.TokenController.createToken
-OPTIONS        /api/v1/token                             controllers.TokenController.getTokenOptions
 GET            /api/vi/:token                            controllers.TokenController.getToken(token)
 DELETE         /api/v1/token/:token                      controllers.TokenController.deleteToken(token: String)
 
@@ -52,7 +51,10 @@ GET            /api/v1/asset/:assetId                    controllers.AssetContro
 #GET            /api/v1/purl/:purl                       controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0, token: String ?= "")
 
 # Services
-POST            /api/v1/services/checkPhoneNumber      controllers.ServicesController.checkPhoneNumber
+POST           /api/v1/services/checkPhoneNumber         controllers.ServicesController.checkPhoneNumber
+
+# Deal with options
+OPTIONS        /api/v1/*foo                              controllers.TokenController.getTokenOptions(foo)
 
 ##
 ##   WebClient

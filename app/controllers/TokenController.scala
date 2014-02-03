@@ -68,7 +68,7 @@ object TokenController extends ExtendedController {
     }
   }
 
-  def getTokenOptions = Action {
+  def getTokenOptions(foo: String) = Action {
     request =>
       Ok("")
   }
