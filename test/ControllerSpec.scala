@@ -71,7 +71,7 @@ class ControllerSpec extends Specification {
     }
 
     "Return a token" in {
-      val path = basePath + "/identity/" + identityId + "/token"
+      val path = basePath + "/token"
 
       val auth = new sun.misc.BASE64Encoder().encode((login + ":" + pass).getBytes)
 

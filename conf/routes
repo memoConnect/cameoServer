@@ -31,8 +31,8 @@ GET            /api/v1/message/:id                       controllers.MessageCont
 #GET            /api/v1/conversations                               controllers.ConversationController.getConversations(token: String, offset: Int ?= 0, limit: Int ?= 0)
 
 # TOKENS
-GET            /api/v1/identity/:id/token                controllers.TokenController.createToken(id)
-OPTIONS        /api/v1/identity/?/token                  controllers.TokenController.getTokenOptions
+GET            /api/v1/token                             controllers.TokenController.createToken
+OPTIONS        /api/v1/token                             controllers.TokenController.getTokenOptions
 GET            /api/vi/:token                            controllers.TokenController.getToken(token)
 DELETE         /api/v1/token/:token                      controllers.TokenController.deleteToken(token: String)
 
