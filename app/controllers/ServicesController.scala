@@ -25,7 +25,7 @@ object ServicesController extends ExtendedController {
   /**
    * Actions
    */
-  def checkPhoneNumber() = Action(parse.tolerantJson) {
+  def checkPhoneNumber = Action(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
       (jsBody \ "phoneNumber").asOpt[String] match {
@@ -46,6 +46,22 @@ object ServicesController extends ExtendedController {
             }
           }
         case None => BadRequest(resKO("missing phoneNumber"))
+      }
+  }
+
+  /**
+   * Actions
+   */
+  def checkEmailAddress = Action(parse.tolerantJson) {
+    request =>
+      val jsBody: JsValue = request.body
+      (jsBody \ "emailAddress").asOpt[String] match {
+        case Some(emailAddress) =>
+          """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$""".r.unapplySeq(emailAddress).isDefined match {
+            case true => resOK()
+            case false => BadRequest(resKO("emailAddress invalid: " + emailAddress))
+          }
+        case None => BadRequest(resKO("missing emailAddress"))
       }
   }
 }

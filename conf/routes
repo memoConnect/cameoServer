@@ -52,6 +52,7 @@ GET            /api/v1/asset/:assetId                    controllers.AssetContro
 
 # Services
 POST           /api/v1/services/checkPhoneNumber         controllers.ServicesController.checkPhoneNumber
+POST            /api/v1/services/checkEmailAddress      controllers.ServicesController.checkEmailAddress
 
 # Deal with options
 OPTIONS        /api/v1/*foo                              controllers.TokenController.getTokenOptions(foo)
