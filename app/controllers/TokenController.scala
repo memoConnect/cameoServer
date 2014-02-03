@@ -1,7 +1,6 @@
 package controllers
 
 import play.api.mvc._
-import helper.IdHelper
 import play.api.libs.json.{Json, JsValue}
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
@@ -31,7 +30,7 @@ object TokenController extends ExtendedController {
   /**
    * Actions
    */
-  def createToken(identityId: String) = Action.async {
+  def createToken() = Action.async {
     request => {
       request.headers.get("Authorization") match {
         case None => {
@@ -39,17 +38,20 @@ object TokenController extends ExtendedController {
         }
         case Some(basicAuth) => {
           val (loginName, password) = decodeBasicAuth(basicAuth)
-          val identityMongoId = new MongoId(identityId)
 
-          Identity.find(identityMongoId).flatMap {
-            case None => Future.successful(NotFound(resKO("Identity not found")))
-            case Some(identity) => if (identity.accountId.isDefined) {
-              Account.find(identity.accountId.get).map {
-                account => {
+          //find account and get first identity
+          Account.findByLoginName(loginName).flatMap {
+            case None => Future(Unauthorized(resKO("Invalid password/loginName")))
+            case Some(account) => if (account.identities.nonEmpty) {
+              val identityId = account.identities(0)
+
+              Identity.find(identityId).map {
+                case None => NotFound(resKO("Identity not found"))
+                case Some(identity) => {
                   // check loginNames and passwords match
-                  if (BCrypt.checkpw(password, account.get.password) && account.get.loginName.equals(loginName)) {
+                  if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginName)) {
                     // everything is ok
-                    val token = Token.create(identityMongoId)
+                    val token = Token.create(identityId)
                     Token.col.insert(token)
                     resOK(token.toJson)
                   } else {
@@ -66,7 +68,7 @@ object TokenController extends ExtendedController {
     }
   }
 
-  def getTokenOptions = Action {
+  def getTokenOptions(foo: String) = Action {
     request =>
       Ok("")
   }
