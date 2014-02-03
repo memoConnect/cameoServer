@@ -80,7 +80,7 @@ class SendSMSActor extends Actor with MongoHelper {
 
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
-        val to: String = identity.phoneNumber.get
+        val to: String = identity.phoneNumber.get.toString
         val body: String = message.messageBody
 
         // add footer to sms

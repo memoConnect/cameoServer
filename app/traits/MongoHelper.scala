@@ -7,6 +7,8 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+import java.text.SimpleDateFormat
+import java.util.{Date, TimeZone}
 
 /**
  * User: Björn Reimer
@@ -61,4 +63,15 @@ trait MongoHelper {
                             reads: Reads[T],
                             writes: Writes[T]
                             ) = Format(createMongoReads(reads), createMongoWrites(writes))
+
+  val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
+  defaultDateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"))
+
+  def addCreated(date: Date): JsObject = {
+    Json.obj("created" -> defaultDateFormat.format(date))
+  }
+
+  def addLastUpdated(date: Date): JsObject = {
+    Json.obj("lastUpdated" -> defaultDateFormat.format(date))
+  }
 }

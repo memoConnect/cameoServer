@@ -15,10 +15,12 @@ import play.api.libs.functional.syntax._
 
 case class VerifiedString(
                            isVerified: Boolean,
-                           string: String,
+                           value: String,
                            lastUpdated: Date
                            )  {
-  override def toString: String = string
+  override def toString: String = value
+
+  def toJson: JsObject = Json.toJson(this)(VerifiedString.outputWrites).as[JsObject]
 }
 
 object VerifiedString extends MongoHelper {
@@ -29,6 +31,12 @@ object VerifiedString extends MongoHelper {
       __.read[String] and
       Reads.pure[Date](new Date)
     )(VerifiedString.apply _)
+  
+  val outputWrites: Writes[VerifiedString] = Writes {
+    vs => Json.obj(
+    "value" -> vs.value,
+    "isVerified" -> vs.isVerified)
+  }
 
   def create(string: String): VerifiedString = {
     new VerifiedString(false, string, new Date)

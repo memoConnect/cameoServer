@@ -22,7 +22,7 @@ case class Identity(
                      accountId: Option[MongoId],
                      displayName: Option[String],
                      email: Option[VerifiedString],
-                     phoneNumber: Option[String],
+                     phoneNumber: Option[VerifiedString],
                      preferredMessageType: String, // "mail" or "sms"
                      userKey: String,
                      contacts: Seq[Contact],
@@ -69,14 +69,38 @@ object Identity extends Model[Identity] {
 
   implicit def col = identityCollection
 
-  implicit val mongoFormat: Format[Identity] = createMongoFormat(Json.reads[Identity], Json.writes[Identity])
+  val mongoReads = createMongoReads(Json.reads[Identity])
+  val mongoWrites = createMongoWrites(Json.writes[Identity])
+
+  //TODO: create functionality for multiple evolutions
+  val evolution: Reads[JsObject] = Reads {
+    // convert mail and phoneNumber to verified string
+    js => {
+      val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
+        case None => __.json.pickBranch
+        case Some(email) => {
+          __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
+        }
+      }
+      val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
+        case None => __.json.pickBranch
+        case Some(tel) => {
+          __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
+        }
+      }
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+      js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
+    }
+  }
+
+  implicit val mongoFormat: Format[Identity] = Format(mongoReads, mongoWrites)
 
   def createReads: Reads[Identity] = (
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
       Reads.pure[Option[MongoId]](None) and
       (__ \ 'displayName).readNullable[String] and
       (__ \ 'email).readNullable[VerifiedString](VerifiedString.createReads) and
-      (__ \ 'phoneNumber).readNullable[String] and
+      (__ \ 'phoneNumber).readNullable[VerifiedString](VerifiedString.createReads) and
       ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
       Reads.pure[String](IdHelper.generateUserKey()) and
       Reads.pure[Seq[Contact]](Seq()) and
@@ -92,9 +116,10 @@ object Identity extends Model[Identity] {
       Json.obj("id" -> i.id.toJson) ++
         toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
-//        Json.obj("contacts" -> i.contacts.map(_.toJson)) ++
-        toJsonOrEmpty("email", i.email.map{_.toString}) ++
-        toJsonOrEmpty("phoneNumber", i.phoneNumber) ++
+        maybeEmpty("email", i.email.map {
+          _.toJson
+        }) ++
+        maybeEmpty("phoneNumber", i.phoneNumber.map{_.toJson}) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
@@ -108,7 +133,22 @@ object Identity extends Model[Identity] {
 
   def find(id: MongoId): Future[Option[Identity]] = {
     val query = Json.obj("_id" -> id)
-    col.find(query).one[Identity]
+    col.find(query).one[JsObject].map {
+      case None => None
+      case Some(js) => Some(read(js))
+    }
+  }
+
+  def read(js: JsObject): Identity = {
+    // catch exceptions and apply evolutions
+    try {
+      js.as[Identity]
+    }
+    catch {
+      case JsResultException(e) =>
+        val readsWithEvolution = evolution andThen mongoReads
+        js.as[Identity](readsWithEvolution)
+    }
   }
 
   def create(accountId: Option[MongoId], email: Option[String], phoneNumber: Option[String]): Identity = {
@@ -117,7 +157,7 @@ object Identity extends Model[Identity] {
       accountId,
       None,
       VerifiedString.createOpt(email),
-      phoneNumber,
+      VerifiedString.createOpt(phoneNumber),
       MESSAGE_TYPE_DEFAULT,
       IdHelper.generateUserKey(),
       Seq(),

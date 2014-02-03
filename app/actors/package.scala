@@ -13,4 +13,5 @@ package object actors {
   lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor], name = "sendMail")
   lazy val sendSMSActor = Akka.system.actorOf(Props[SendSMSActor], name = "sendSMS")
   lazy val sendKolibriActor = Akka.system.actorOf(Props[SendKolibriActor], name = "sendKolibri")
+  lazy val verifyActor = Akka.system.actorOf(Props[VerifyActor], name = "verify")
 }

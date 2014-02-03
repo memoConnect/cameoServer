@@ -49,7 +49,7 @@ GET            /api/v1/asset/:assetId                    controllers.AssetContro
 #GET            /api/v1/media                                       controllers.AssetController.getMedia(token: String)
 
 # VERIFICATION
-POST            /api/v1/identity/:id/verify                    controllers.Verification.sendMessage()
+POST           /api/v1/verify                            controllers.VerificationController.sendVerifyMessage()
 
 # PURLS
 #GET            /api/v1/purl/:purl                                  controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0, token: String ?= "")

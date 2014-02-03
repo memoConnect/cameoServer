@@ -23,3 +23,8 @@ object Messaging {
 
 
 }
+
+object Verification {
+
+  val VERIFY
+}

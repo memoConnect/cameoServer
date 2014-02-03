@@ -41,6 +41,13 @@ trait Model[A] extends MongoHelper {
     }
   }
 
+  def maybeEmpty(key: String, value: Option[JsObject]): JsObject = {
+    value match {
+      case Some(s) => Json.obj(key -> s)
+      case None => Json.obj()
+    }
+  }
+
   def toJsonArrayOrEmpty(key: String, value: Option[Seq[String]]): JsObject = {
     value match {
       case Some(s) => Json.obj(key -> JsArray(s.map(JsString)))
@@ -48,18 +55,7 @@ trait Model[A] extends MongoHelper {
     }
   }
 
-  val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
-  defaultDateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"))
-
-  def addCreated(date: Date): JsObject = {
-    Json.obj("created" -> defaultDateFormat.format(date))
-  }
-
-  def addLastUpdated(date: Date): JsObject = {
-    Json.obj("lastUpdated" -> defaultDateFormat.format(date))
-  }
-
-  // TODO: put this somewhere more sensible
+    // TODO: put this somewhere more sensible
   val hashPassword: Reads[String] = Reads[String] {
     js => js.asOpt[String] match {
       case None => JsError("No password")
