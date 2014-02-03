@@ -11,6 +11,7 @@ import play.api.Play.current
 import scala.concurrent.{Await, ExecutionContext}
 import scala.concurrent.duration.Duration
 import scala.util.parsing.json.JSONObject
+import org.specs2.matcher.MatchResult
 
 /**
  * Add your spec here.
@@ -140,6 +141,33 @@ class ControllerSpec extends Specification {
 
       val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
       errorMsg must beSome
+    }
+
+    "Check valid emailAddresses" in {
+      val path = basePath + "/services/checkEmailAddress"
+      val json = Json.obj("emailAddress" -> "a-b.c_d@a-b.c_d.co")
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val resStatus = (contentAsJson(res) \ "res").as[String]
+      resStatus must beEqualTo("OK")
+    }
+
+    "Check invalid emailAddresses" in {
+      Seq("a@a.d", "a@a", "a@ aaa.de", "a.de").map {
+        emailAddress =>
+          val path = basePath + "/services/checkEmailAddress"
+          val json = Json.obj("emailAddress" -> emailAddress)
+          val req = FakeRequest(POST, path).withJsonBody(json)
+          val res = route(req).get
+          status(res) must equalTo(BAD_REQUEST)
+          val resStatus = (contentAsJson(res) \ "res").as[String]
+          resStatus must beEqualTo("KO")
+      }
+
     }
 
     step(play.api.Play.stop())
