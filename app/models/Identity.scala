@@ -21,7 +21,7 @@ case class Identity(
                      id: MongoId,
                      accountId: Option[MongoId],
                      displayName: Option[String],
-                     email: Option[String],
+                     email: Option[VerifiedString],
                      phoneNumber: Option[String],
                      preferredMessageType: String, // "mail" or "sms"
                      userKey: String,
@@ -75,7 +75,7 @@ object Identity extends Model[Identity] {
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
       Reads.pure[Option[MongoId]](None) and
       (__ \ 'displayName).readNullable[String] and
-      (__ \ 'email).readNullable[String] and
+      (__ \ 'email).readNullable[VerifiedString](VerifiedString.createReads) and
       (__ \ 'phoneNumber).readNullable[String] and
       ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
       Reads.pure[String](IdHelper.generateUserKey()) and
@@ -93,7 +93,7 @@ object Identity extends Model[Identity] {
         toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
 //        Json.obj("contacts" -> i.contacts.map(_.toJson)) ++
-        toJsonOrEmpty("email", i.email) ++
+        toJsonOrEmpty("email", i.email.map{_.toString}) ++
         toJsonOrEmpty("phoneNumber", i.phoneNumber) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
         addCreated(i.created) ++
@@ -116,7 +116,7 @@ object Identity extends Model[Identity] {
       IdHelper.generateIdentityId(),
       accountId,
       None,
-      email,
+      VerifiedString.createOpt(email),
       phoneNumber,
       MESSAGE_TYPE_DEFAULT,
       IdHelper.generateUserKey(),

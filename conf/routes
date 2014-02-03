@@ -48,6 +48,9 @@ POST           /api/v1/asset                             controllers.AssetContro
 GET            /api/v1/asset/:assetId                    controllers.AssetController.getAsset(token: String, assetId: String)
 #GET            /api/v1/media                                       controllers.AssetController.getMedia(token: String)
 
+# VERIFICATION
+POST            /api/v1/identity/:id/verify                    controllers.Verification.sendMessage()
+
 # PURLS
 #GET            /api/v1/purl/:purl                                  controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0, token: String ?= "")
 
