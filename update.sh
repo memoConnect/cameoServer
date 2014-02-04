@@ -19,5 +19,6 @@ case "$1" in
 esac
 
 ./stop.sh
+git pull --recurse-submodules
 ./compile.sh
 ./start.sh $1

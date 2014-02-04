@@ -9,6 +9,7 @@ import models.MongoId
  */
 object IdHelper {
 
+
   // Random generator
   val random = new scala.util.Random
 
@@ -37,6 +38,10 @@ object IdHelper {
   }
 
   def generateMongoId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
+  def generateReservationSecret(): MongoId = {
     new MongoId(randomString(defaultLength))
   }
 
