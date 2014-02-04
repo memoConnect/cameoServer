@@ -19,6 +19,13 @@ import helper.ResultHelper._
 
 object AccountController extends ExtendedController {
 
+  def checkLogin(login: String): Boolean = {
+    login.length >= 6 &&
+    login.length < 20 &&
+    login.matches("^\\w+$")
+  }
+
+
   def createAccount = Action.async(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
@@ -87,9 +94,7 @@ object AccountController extends ExtendedController {
         l => VerifyRequest(l)
       }
 
-      def checkLogin(login: String): Boolean = {
-        login.length >= 8
-      }
+
 
       request.body.validate[VerifyRequest](reads).map {
         vr =>

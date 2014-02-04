@@ -7,11 +7,7 @@ import play.api.test.FakeApplication
 import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
-import scala.concurrent.{Await, ExecutionContext}
-import scala.concurrent.duration.Duration
-import scala.util.parsing.json.JSONObject
-import org.specs2.matcher.MatchResult
-import play.api.Logger
+import scala.concurrent.ExecutionContext
 
 /**
  * Add your spec here.
@@ -41,6 +37,25 @@ class ControllerSpec extends Specification {
     var token = ""
     var regSec = ""
 
+    "Refuse invalid Logins" in {
+
+      val path = basePath + "/account/check"
+
+      val logins = Seq("asdf", "asdfasdfasdfasdfasdfa", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\")
+
+      logins.map {
+        l => {
+          val json = Json.obj("loginName" -> l)
+
+          val req = FakeRequest(POST, path).withJsonBody(json)
+          val res = route(req).get
+
+          status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
+        }
+      }
+
+    }
+
     "Reserve Login" in {
       val path = basePath + "/account/check"
       val json = Json.obj("loginName" -> login)
@@ -53,7 +68,7 @@ class ControllerSpec extends Specification {
 
       val regSeqOpt = (data \ "reservationSecret").asOpt[String]
 
-      if(regSeqOpt.isDefined) {
+      if (regSeqOpt.isDefined) {
         regSec = regSeqOpt.get
       }
 
