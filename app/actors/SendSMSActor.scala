@@ -20,13 +20,13 @@ import play.api.libs.json.JsString
  */
 class SendSMSActor extends Actor with MongoHelper {
 
-  def sendSMS(from: String, to: String, body: String): Future[MessageStatus] = {
+  def sendSMS(sms: SmsMessage): Future[MessageStatus] = {
 
-    Logger.debug("SendSMSActor: To: " + to + " Content: " + body)
+    Logger.debug("SendSMSActor: To: " + sms.to + " Content: " + sms.body)
 
     val postBody = Json.obj("api_key" -> JsString(Play.configuration.getString("nexmo.key").getOrElse("")),
-      "api_secret" -> JsString(Play.configuration.getString("nexmo.secret").getOrElse("")), "from" -> from,
-      "to" -> to, "text" -> body)
+      "api_secret" -> JsString(Play.configuration.getString("nexmo.secret").getOrElse("")), "from" -> sms.from,
+      "to" -> sms.to, "text" -> sms.body)
 
     val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 
@@ -58,7 +58,7 @@ class SendSMSActor extends Actor with MongoHelper {
         }
 
         val message = messages.head
-        Logger.info("SendSMSActor: Sent SMS to " + to + " from " + from + " STATUS: " + message)
+        Logger.info("SendSMSActor: Sent SMS to " + sms.to + " from " + sms.from + " STATUS: " + message)
         message
       }
     }
@@ -71,7 +71,6 @@ class SendSMSActor extends Actor with MongoHelper {
       // check how offen we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(identity.id, MESSAGE_STATUS_ERROR, "max try count reached")
-        Logger.debug("####################################################")
         // TODO update status of single message
         //message.updateStatus(Seq(ms))
       } else if (identity.phoneNumber.isEmpty) {
@@ -95,22 +94,28 @@ class SendSMSActor extends Actor with MongoHelper {
           }
         }
 
-        sendSMS(from, to, bodyWithFooter).map {
+        val sms = new SmsMessage(from, to, body)
+
+        sendSMS(sms).map {
           statusMessage => {
             if (statusMessage.status.equals(MESSAGE_STATUS_SEND)) {
               // WOO
             } else {
               // try again
-              sendSMSActor !(message, fromIdentity, identity, tryCount + 1)
+              sendSmsActor !(message, fromIdentity, identity, tryCount + 1)
             }
           }
         }
-
-
       }
     }
 
-
+    case (sms: SmsMessage, tryCount: Int) => {
+      if (tryCount > MESSAGE_MAX_TRY_COUNT) {
+        Logger.error("Max try count of message reached: " + sms)
+      } else {
+          sendSMS(sms)
+      }
+    }
 
     // notify user of new message
     //    case (user: User, message: Message) => {

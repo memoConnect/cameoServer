@@ -26,5 +26,6 @@ object Messaging {
 
 object Verification {
 
-  val VERIFY
+  val VERIFY_TYPE_MAIL = "mail"
+  val VERIFY_TYPE_PHONENUMBER = "phoneNumber"
 }

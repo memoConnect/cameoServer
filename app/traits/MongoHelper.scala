@@ -22,8 +22,8 @@ trait MongoHelper {
   lazy val userCollection: JSONCollection = mongoDB.collection[JSONCollection]("users")
   lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
   lazy val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")
-  lazy val testCollection: JSONCollection = mongoDB.collection[JSONCollection]("test")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
+  lazy val verificationCollection: JSONCollection = mongoDB.collection[JSONCollection]("verifications")
 
   val emptyObj = __.json.put(Json.obj())
 
