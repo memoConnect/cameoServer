@@ -35,6 +35,7 @@ case class Account(
 object Account extends Model[Account] {
 
   implicit def col = accountCollection
+  implicit def reservedCol = reservedAccountCollection
 
   col.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
@@ -73,5 +74,13 @@ object Account extends Model[Account] {
   def findByLoginName(loginName: String): Future[Option[Account]] = {
     val query = Json.obj("loginName" -> loginName)
     col.find(query).one[Account]
+  }
+
+  def isReserved(loginName: String): Future[Boolean] = {
+    val query = Json.obj("loginName" -> loginName)
+    reservedCol.find(query).one[JsObject].map {
+      case None => false
+      case Some(js) => true
+    }
   }
 }

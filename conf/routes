@@ -10,6 +10,7 @@ GET            /api/v1                                   controllers.Application
 
 # ACCOUNT
 POST           /api/v1/account                           controllers.AccountController.createAccount
+POST           /api/v1/account/check                     controllers.AccountController.checkLoginName
 GET            /api/v1/account/:loginName                controllers.AccountController.getAccount(loginName)
 DELETE         /api/v1/account/:loginName                controllers.AccountController.deleteAccount(loginName)
 
