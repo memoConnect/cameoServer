@@ -9,6 +9,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import java.text.SimpleDateFormat
 import java.util.{Date, TimeZone}
+import reactivemongo.api.indexes.{IndexType, Index}
 
 /**
  * User: Björn Reimer
@@ -23,7 +24,11 @@ trait MongoHelper {
   lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
   lazy val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
-  lazy val verificationCollection: JSONCollection = mongoDB.collection[JSONCollection]("verifications")
+  lazy val verificationCollection: JSONCollection = {
+    // TODO: create ttl index to expire verification secrets
+    val col = mongoDB.collection[JSONCollection]("verifications")
+    col
+  }
 
   val emptyObj = __.json.put(Json.obj())
 

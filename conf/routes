@@ -49,6 +49,7 @@ GET            /api/v1/asset/:assetId                    controllers.AssetContro
 
 # VERIFICATION
 POST           /api/v1/verify                            controllers.VerificationController.sendVerifyMessage()
+GET            /api/v1/verify/:id                        controllers.VerificationController.verifyMessage(id)
 
 # PURLS
 #GET            /api/v1/purl/:purl                       controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0, token: String ?= "")
@@ -65,9 +66,8 @@ OPTIONS        /api/v1/*foo                              controllers.TokenContro
 ##
 
 # Redirect for Shorturls
-GET            /c/:id                                    controllers.ShortUrlController.redirect(urlType = "c", id: String)
 GET            /p/:id                                    controllers.ShortUrlController.redirect(urlType = "p", id: String)
-GET            /s/:id                                    controllers.ShortUrlController.redirect(urlType = "s", id: String)
+GET            /v/:id                                    controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
 # WEBCLENT
 GET            /app/                                     controllers.Assets.at(path="/public/app", file="index.html")

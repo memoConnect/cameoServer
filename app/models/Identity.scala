@@ -9,6 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import helper.IdHelper
 import ExecutionContext.Implicits.global
 import constants.Messaging._
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -37,31 +38,41 @@ case class Identity(
 
   def toSummaryJson: JsObject = Json.toJson(this)(Identity.summaryWrites).as[JsObject]
 
+  private val query = Json.obj("_id" -> this.id)
+
   def addContact(contact: Contact) = {
-    val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
     //    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
     Identity.col.update(query, set)
   }
 
   def addConversation(conversationId: MongoId) = {
-    val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
     Identity.col.update(query, set)
   }
 
   def addAsset(assetId: MongoId) = {
-    val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$addToSet" -> Json.obj("assets" -> assetId))
     Identity.col.update(query, set)
   }
 
   def addToken(tokenId: MongoId) = {
-    val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$push" -> Json.obj("tokens" -> tokenId))
     Identity.col.update(query, set)
   }
 
+  def update(email: Option[VerifiedString] = None, phoneNumber: Option[VerifiedString] = None): Future[LastError] = {
+
+    def maybeJson(key: String, obj: Option[JsValue]): JsObject = {
+      if (obj.isDefined) Json.obj(key -> Json.toJson(obj.get))
+      else Json.obj()
+    }
+
+    val setValues = maybeJson("email", email.map{Json.toJson(_)}) ++ maybeJson("phoneNumber", phoneNumber.map{Json.toJson(_)})
+    val set = Json.obj("$set" -> setValues)
+
+    Identity.col.update(query, set)
+  }
 }
 
 

@@ -24,6 +24,7 @@ case class VerifiedString(
 }
 
 object VerifiedString extends MongoHelper {
+
   implicit val mongoFormat: Format[VerifiedString] = createMongoFormat(Json.reads[VerifiedString], Json.writes[VerifiedString])
 
   val createReads: Reads[VerifiedString] = (
