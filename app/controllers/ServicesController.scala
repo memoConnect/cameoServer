@@ -31,9 +31,10 @@ object ServicesController extends ExtendedController {
       (jsBody \ "phoneNumber").asOpt[String] match {
         case Some(phoneNumber) =>
           try {
+            val trimmedPhoneNumber = phoneNumber.trim
             val phoneUtil = PhoneNumberUtil.getInstance()
             // default country code have to be a property
-            val number = phoneUtil.parseAndKeepRawInput(phoneNumber, "DE")
+            val number = phoneUtil.parseAndKeepRawInput(trimmedPhoneNumber, "DE")
             val resultJson = Json.obj(
               "status" -> "ok",
               "phoneNumber" -> phoneUtil.format(number, PhoneNumberFormat.E164))
