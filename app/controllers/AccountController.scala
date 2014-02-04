@@ -4,7 +4,7 @@ import play.api.mvc.Action
 
 import play.api.libs.json._
 import traits.ExtendedController
-import models.{Identity, Account}
+import models.{AccountReservation, Identity, Account}
 import reactivemongo.core.errors.DatabaseException
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
@@ -23,30 +23,50 @@ object AccountController extends ExtendedController {
     request =>
       val jsBody: JsValue = request.body
 
+      // there might be a reservation secret for reserved accounts
+      val reservationSecret: Option[String] = (jsBody \ "reservationSecret").asOpt[String]
+
       jsBody.validate[Account](Account.createReads).map {
         account =>
-        // create identity and add it to account
-          val identity = Identity.create(Some(account.id), account.email, account.phoneNumber)
-          Identity.col.insert(identity)
-          val account2 = account.copy(identities = Seq(identity.id))
 
-          accountCollection.insert(account2).map {
-            lastError => {
-              if (lastError.ok) {
-                resOK(account2.toJson)
-              } else {
-                InternalServerError(resKO("MongoError: " + lastError))
+        // check if this loginName has been reserved
+          val allowed: Future[Boolean] = AccountReservation.checkReserved(account.loginName).map {
+            case Some(secret) => if (secret.equals(reservationSecret.getOrElse("fail"))) {
+              AccountReservation.deleteReserved(account.loginName)
+              true
+            } else {
+              false
+            }
+            case None => true
+          }
+
+          allowed.flatMap {
+            case false => Future(Unauthorized(resKO("loginName is reserved, wait 10 min")))
+            case true => {
+              // create identity and add it to account
+              val identity = Identity.create(Some(account.id), account.email, account.phoneNumber)
+              Identity.col.insert(identity)
+              val account2 = account.copy(identities = Seq(identity.id))
+
+              accountCollection.insert(account2).map {
+                lastError => {
+                  if (lastError.ok) {
+                    resOK(account2.toJson)
+                  } else {
+                    InternalServerError(resKO("MongoError: " + lastError))
+                  }
+                }
+              }.recover {
+                // deal with exceptions from duplicate loginNames
+                case de: DatabaseException =>
+                  if (de.getMessage().contains("loginName")) {
+                    BadRequest(resKO("The username already exists"))
+                  } else {
+                    BadRequest(resKO("Error: " + de.getMessage()))
+                  }
+                case e => InternalServerError(resKO("Mongo Error: " + e.toString))
               }
             }
-          }.recover {
-            // deal with exceptions from duplicate loginNames
-            case de: DatabaseException =>
-              if (de.getMessage().contains("loginName")) {
-                BadRequest(resKO("The username already exists"))
-              } else {
-                BadRequest(resKO("Error: " + de.getMessage()))
-              }
-            case e => InternalServerError(resKO("Mongo Error: " + e.toString))
           }
       }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
   }
@@ -59,8 +79,8 @@ object AccountController extends ExtendedController {
   }
 
   def checkLoginName = Action.async(parse.tolerantJson) {
-    request =>
 
+    request =>
       case class VerifyRequest(loginName: String)
 
       val reads = (__ \ 'loginName).read[String].map {
@@ -68,18 +88,34 @@ object AccountController extends ExtendedController {
       }
 
       def checkLogin(login: String): Boolean = {
-        login.length > 8
+        login.length >= 8
       }
 
       request.body.validate[VerifyRequest](reads).map {
         vr =>
           if (checkLogin(vr.loginName)) {
-
             Account.findByLoginName(vr.loginName).flatMap {
-              case Some(a) => Future(NotFound(resKO("loginName exists")))
-              case None => Account.isReserved(vr.loginName).map {
-                case Some(ra) => NotFound(resKO("account is reserved"))
-                case None => Ok("")
+              case Some(a) => Account.findAlternative(vr.loginName).flatMap {
+                newLoginName => {
+                  AccountReservation.reserve(newLoginName).map {
+                    res => BadRequest(resKO(Json.obj("alternative" -> res.toJson)))
+                  }
+                }
+              }
+              case None => AccountReservation.checkReserved(vr.loginName).flatMap {
+                case Some(ra) => Account.findAlternative(vr.loginName).flatMap {
+                  newLoginName => {
+                    AccountReservation.reserve(newLoginName).map {
+                      res => BadRequest(resKO(Json.obj("alternative" -> res.toJson)))
+                    }
+                  }
+                }
+                case None => {
+                  AccountReservation.reserve(vr.loginName).map {
+                    res =>
+                      resOK(res.toJson)
+                  }
+                }
               }
             }
           } else {
