@@ -30,6 +30,7 @@ object AuthAction extends ActionBuilder[AuthRequest] {
           case None => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))
           case Some(token) => {
             Identity.find(token.identityId).flatMap {
+              case None => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))
               case Some(identity) => block(new AuthRequest[A](identity, request))
             }
           }
