@@ -23,23 +23,23 @@ https://github.com/memoConnect/cameoJSClient
 Technical issues
 ================
 
-* Playframework2
-* Scala 
-* Akka
-* mongodb
-* OpenStack
-* AngularJS
-** Phonegap
-** Bootstrap
+ * Playframework2
+ * Scala 
+ * Akka
+ * mongodb
+ * OpenStack
+ * AngularJS
+  * Phonegap
+  * Bootstrap
 
 
 
 Getting started
 ================
-1. get the source
-2. go into the project root folder
-3. call ./sbt
-4. after play started start the app with "run"
+ 1. get the source
+ 1. go into the project root folder
+ 1. call ./sbt
+ 1. after play started start the app with "run"
 
 LICENSE
 
