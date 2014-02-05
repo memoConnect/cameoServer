@@ -8,6 +8,7 @@ import models._
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
+import reactivemongo.core.commands.Aggregate
 
 /**
  * User: Björn Reimer
@@ -49,4 +50,17 @@ object MessageController extends ExtendedController {
       }
   }
 
+  def filter() = AuthAction.async {
+    request =>
+    // first get all conversations of this user
+    request.identity.conversations
+
+      PipelineOpertor
+
+      Aggregate("conversation" )
+
+
+
+
+  }
 }

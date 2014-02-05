@@ -26,7 +26,7 @@ POST           /api/v1/conversation/:id/recipient        controllers.Conversatio
 # MESSAGES
 POST           /api/v1/conversation/:id/message          controllers.MessageController.createMessage(id)
 GET            /api/v1/message/:id                       controllers.MessageController.getMessage(id)
-
+POST            /api/v1/message/filter                   controllers.MessageController.filter
 
 #GET            /api/v1/conversation/:conversationId/summary        controllers.ConversationController.getConversationSummary(conversationId: String, token: String)
 #GET            /api/v1/conversations                               controllers.ConversationController.getConversations(token: String, offset: Int ?= 0, limit: Int ?= 0)
