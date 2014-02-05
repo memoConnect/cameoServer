@@ -6,8 +6,6 @@ package models
  * Time: 10:07 AM
  */
 // assumes that all data is verified
-case class SmsMessage(
-                        from: String,
-                        to: String,
-                        body: String
-                        )
+case class SmsMessage(from: String,
+                      to: String,
+                      body: String)

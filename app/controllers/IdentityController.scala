@@ -1,7 +1,7 @@
 package controllers
 
 import traits.ExtendedController
-import models.{Identity, MongoId}
+import models.{ Identity, MongoId }
 import play.api.mvc.Action
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
@@ -20,10 +20,9 @@ object IdentityController extends ExtendedController {
     val mongoId = new MongoId(id)
 
     Identity.find(mongoId).map {
-      case None => NotFound(resKO("Identity not found"))
+      case None           => NotFound(resKO("Identity not found"))
       case Some(identity) => resOK(identity.toJson)
     }
   }
-
 
 }

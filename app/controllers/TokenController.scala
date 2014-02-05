@@ -1,14 +1,13 @@
 package controllers
 
 import play.api.mvc._
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{ Json, JsValue }
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
-import models.{MongoId, Identity, Account, Token}
+import models.{ MongoId, Identity, Account, Token }
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.ResultHelper._
-
 
 /**
  * User: Björn Reimer
@@ -31,41 +30,44 @@ object TokenController extends ExtendedController {
    * Actions
    */
   def createToken() = Action.async {
-    request => {
-      request.headers.get("Authorization") match {
-        case None => {
-          Future.successful(BadRequest(resKO("No Authorization field in header")))
-        }
-        case Some(basicAuth) => {
-          val (loginName, password) = decodeBasicAuth(basicAuth)
+    request =>
+      {
+        request.headers.get("Authorization") match {
+          case None => {
+            Future.successful(BadRequest(resKO("No Authorization field in header")))
+          }
+          case Some(basicAuth) => {
+            val (loginName, password) = decodeBasicAuth(basicAuth)
 
-          //find account and get first identity
-          Account.findByLoginName(loginName).flatMap {
-            case None => Future(Unauthorized(resKO("Invalid password/loginName")))
-            case Some(account) => if (account.identities.nonEmpty) {
-              val identityId = account.identities(0)
+            //find account and get first identity
+            Account.findByLoginName(loginName).flatMap {
+              case None => Future(Unauthorized(resKO("Invalid password/loginName")))
+              case Some(account) => if (account.identities.nonEmpty) {
+                val identityId = account.identities(0)
 
-              Identity.find(identityId).map {
-                case None => NotFound(resKO("Identity not found"))
-                case Some(identity) => {
-                  // check loginNames and passwords match
-                  if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginName)) {
-                    // everything is ok
-                    val token = Token.create(identityId)
-                    Token.col.insert(token)
-                    resOK(token.toJson)
-                  } else {
-                    Unauthorized(resKO("Invalid password/loginName"))
+                Identity.find(identityId).map {
+                  case None => NotFound(resKO("Identity not found"))
+                  case Some(identity) => {
+                    // check loginNames and passwords match
+                    if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginName)) {
+                      // everything is ok
+                      val token = Token.create(identityId)
+                      Token.col.insert(token)
+                      resOK(token.toJson)
+                    }
+                    else {
+                      Unauthorized(resKO("Invalid password/loginName"))
+                    }
                   }
                 }
               }
-            } else {
-              Future.successful(Unauthorized(resKO("Invalid password/loginName")))
+              else {
+                Future.successful(Unauthorized(resKO("Invalid password/loginName")))
+              }
             }
           }
         }
       }
-    }
   }
 
   def getTokenOptions(foo: String) = Action {
@@ -82,7 +84,8 @@ object TokenController extends ExtendedController {
           }
           else if (lastError.ok) {
             NotFound(resKO("Token not found"))
-          } else {
+          }
+          else {
             InternalServerError(resKO(lastError.stringify))
           }
       }
@@ -92,7 +95,7 @@ object TokenController extends ExtendedController {
   def getToken(token: String) = Action.async {
     request =>
       Token.find(new MongoId(token)).map {
-        case None => NotFound(resKO("token not found"))
+        case None    => NotFound(resKO("token not found"))
         case Some(t) => resOK(t.toJson)
       }
   }

@@ -1,8 +1,8 @@
 package helper
 
-import play.api.mvc.{SimpleResult, Results}
+import play.api.mvc.{ SimpleResult, Results }
 import play.api.mvc.Results._
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{ JsValue, Json }
 
 /**
  * User: Björn Reimer
@@ -23,13 +23,10 @@ object ResultHelper {
 
   def resOK(data: String): SimpleResult = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
-
-
   def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   def resKO(data: JsValue,
             error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error) ++ Json.obj("data" -> data)
-
 
   def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 

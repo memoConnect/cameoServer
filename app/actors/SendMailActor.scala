@@ -1,13 +1,13 @@
 package actors
 
 import akka.actor.Actor
-import play.api.{Play, Logger}
+import play.api.{ Play, Logger }
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail.model._
 import play.api.Play.current
 import traits.MongoHelper
-import com.amazonaws.{AmazonServiceException, AmazonClientException}
+import com.amazonaws.{ AmazonServiceException, AmazonClientException }
 import models.MailMessage
 import play.api.Play.current
 /**
@@ -41,7 +41,8 @@ class SendMailActor extends Actor with MongoHelper {
         try {
           val result = client.sendEmail(sendEmailRequest)
           "Mail send. Id: " + result.getMessageId
-        } catch {
+        }
+        catch {
           case ce: AmazonClientException => {
             Logger.error("Error sending mail", ce)
             "Error sending Mail, Could not connect to Amazon"

@@ -1,11 +1,10 @@
 package controllers
 
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.{ Action, Controller }
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.ResultHelper._
-
 
 /**
  * User: Björn Reimer
@@ -21,7 +20,7 @@ object ShortUrlController extends Controller {
       urlType match {
         case "p" => Redirect(redirect + "/purl/" + id)
         case "v" => Redirect(redirect + "/verification/" + id)
-        case _ => Redirect(redirect)
+        case _   => Redirect(redirect)
       }
   }
 }

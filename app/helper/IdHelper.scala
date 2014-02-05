@@ -9,7 +9,6 @@ import models.MongoId
  */
 object IdHelper {
 
-
   // Random generator
   val random = new scala.util.Random
 
@@ -45,7 +44,6 @@ object IdHelper {
     new MongoId(randomString(defaultLength))
   }
 
-
   def generateMessageId(): MongoId = {
     new MongoId(randomString(defaultLength))
   }
@@ -53,7 +51,6 @@ object IdHelper {
   def generateConversationId(): MongoId = {
     new MongoId(randomString(defaultLength))
   }
-
 
   def generateRecipientId(): MongoId = {
     new MongoId(randomString(defaultLength))
@@ -67,7 +64,6 @@ object IdHelper {
     new MongoId(randomString(defaultLength))
   }
 
-
   def generateIdentityId(): MongoId = {
     new MongoId(randomString(defaultLength))
   }
@@ -75,6 +71,5 @@ object IdHelper {
   def generateAccountId(): MongoId = {
     new MongoId(randomString(defaultLength))
   }
-
 
 }

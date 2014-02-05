@@ -1,14 +1,13 @@
 package controllers
 
 import traits.ExtendedController
-import models.{MongoId, Conversation}
+import models.{ MongoId, Conversation }
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.AuthAction
 import play.api.libs.json.JsError
 import helper.ResultHelper._
 import scala.Some
-
 
 /**
  * User: Björn Reimer
@@ -17,29 +16,31 @@ import scala.Some
  */
 object ConversationController extends ExtendedController {
 
-   def createConversation = AuthAction(parse.tolerantJson) {
-    request => {
-      request.body.validate[Conversation](Conversation.createReads).map {
-        conversation => {
-          Conversation.col.insert(conversation)
-          request.identity.addConversation(conversation.id)
-          resOK(conversation.toJson)
-        }
-      }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
-    }
+  def createConversation = AuthAction(parse.tolerantJson) {
+    request =>
+      {
+        request.body.validate[Conversation](Conversation.createReads).map {
+          conversation =>
+            {
+              Conversation.col.insert(conversation)
+              request.identity.addConversation(conversation.id)
+              resOK(conversation.toJson)
+            }
+        }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
+      }
   }
 
   def getConversation(id: String, offset: Int, limit: Int) =
     AuthAction.async {
       request =>
         Conversation.find(new MongoId(id)).flatMap {
-          case None => Future.successful(NotFound(resKO("conversation not found")))
-          case Some(c) => c.toJsonWithDisplayNamesResult(offset,limit)
+          case None    => Future.successful(NotFound(resKO("conversation not found")))
+          case Some(c) => c.toJsonWithDisplayNamesResult(offset, limit)
         }
     }
 
   def addRecipients(id: String) =
-  // TODO: confirm that all recipients exist
+    // TODO: confirm that all recipients exist
     AuthAction.async(parse.tolerantJson) {
       request =>
         (request.body \ "recipients").validate[Seq[String]].map {
@@ -50,7 +51,8 @@ object ConversationController extends ExtendedController {
                 lastError =>
                   if (lastError.ok) {
                     resOK("updated")
-                  } else {
+                  }
+                  else {
                     BadRequest(resKO("updated failed"))
                   }
               }

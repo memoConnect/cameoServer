@@ -5,9 +5,9 @@ import reactivemongo.bson._
 import scala.concurrent.Future
 import play.api.libs.json._
 import reactivemongo.api.gridfs.GridFS
-import helper.{AuthAction, IdHelper}
+import helper.{ AuthAction, IdHelper }
 import play.api.Logger
-import models.{MongoId, Asset, Message}
+import models.{ MongoId, Asset, Message }
 import scala.Some
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 import java.util.Date
@@ -30,13 +30,14 @@ object AssetController extends ExtendedController {
 
   def uploadAsset(token: String, messageId: String) = AuthAction.async(gridFSBodyParser(gridFS)) {
     request =>
-        val futureFiles = request.body.files
-        // check if the message exist
-        Message.find(new MongoId(messageId)).flatMap {
-          case None => Future.successful(BadRequest(resKO("Message not found")))
-          case Some(message) => {
-            val futureAssetIds: Seq[Future[(String, LastError)]] = futureFiles.map {
-              futureFile => {
+      val futureFiles = request.body.files
+      // check if the message exist
+      Message.find(new MongoId(messageId)).flatMap {
+        case None => Future.successful(BadRequest(resKO("Message not found")))
+        case Some(message) => {
+          val futureAssetIds: Seq[Future[(String, LastError)]] = futureFiles.map {
+            futureFile =>
+              {
                 for {
                   assetId <- Future(IdHelper.generateAssetId().toString)
                   file <- futureFile.ref
@@ -65,39 +66,40 @@ object AssetController extends ExtendedController {
                     request.identity.addAsset(asset.id)
 
                     // add asset to message
-//                    val query = Json.obj("conversationId" -> message.conversationId,
-//                      "messages.messageId" -> message.messageId)
-//                    val set = Json.obj("$push" -> Json.obj("messages.$.assets" -> asset))
-//                    conversationCollection.update(query, set)
+                    //                    val query = Json.obj("conversationId" -> message.conversationId,
+                    //                      "messages.messageId" -> message.messageId)
+                    //                    val set = Json.obj("$push" -> Json.obj("messages.$.assets" -> asset))
+                    //                    conversationCollection.update(query, set)
                   }
                 } yield (assetId, messageResult)
               }
-            }
-
-            Future.sequence(futureAssetIds).map {
-              results =>
-                val errors = results.filter(_._2.inError)
-
-                if (errors.length > 0) {
-                  Logger.error("Error updating message: " + errors)
-                  InternalServerError(resKO(JsArray(errors.map {
-                    case (id,
-                    error) => Json.obj(id -> error.stringify)
-                  })))
-                } else {
-                  resOK(Json.obj("assetIds" -> results.map {
-                    case (id, error) => id
-                  }))
-                }
-            }
-
           }
+
+          Future.sequence(futureAssetIds).map {
+            results =>
+              val errors = results.filter(_._2.inError)
+
+              if (errors.length > 0) {
+                Logger.error("Error updating message: " + errors)
+                InternalServerError(resKO(JsArray(errors.map {
+                  case (id,
+                    error) => Json.obj(id -> error.stringify)
+                })))
+              }
+              else {
+                resOK(Json.obj("assetIds" -> results.map {
+                  case (id, error) => id
+                }))
+              }
+          }
+
         }
       }
+  }
 
   def getAsset(token: String, assetId: String) = Action.async {
     request =>
-    // everybody is allowed to download assets
+      // everybody is allowed to download assets
       val file = gridFS.find(BSONDocument("assetId" -> new BSONString(assetId)))
       // Frontend always wants inline
       serve(gridFS, file, CONTENT_DISPOSITION_INLINE)
@@ -108,16 +110,16 @@ object AssetController extends ExtendedController {
 
   }
 
-//  def getMedia(token: String) = AuthAction.async {
-//    request =>
-//      User.find(request.token.username.getOrElse("")).map {
-//        case None => NotFound(resKO("invalid user"))
-//        case Some(user) => {
-//          val res =
-//            Json.obj("numberOfAssets" -> user.media.getOrElse(Seq()).size) ++
-//              Asset.toSortedJsonObjectOrEmpty("assets", user.media)
-//          Ok(resOK(res))
-//        }
-//      }
-//  }
+  //  def getMedia(token: String) = AuthAction.async {
+  //    request =>
+  //      User.find(request.token.username.getOrElse("")).map {
+  //        case None => NotFound(resKO("invalid user"))
+  //        case Some(user) => {
+  //          val res =
+  //            Json.obj("numberOfAssets" -> user.media.getOrElse(Seq()).size) ++
+  //              Asset.toSortedJsonObjectOrEmpty("assets", user.media)
+  //          Ok(resOK(res))
+  //        }
+  //      }
+  //  }
 }

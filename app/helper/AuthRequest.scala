@@ -1,11 +1,10 @@
 package helper
 
 import play.api.mvc._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import models.{MongoId, Identity, Token}
+import models.{ MongoId, Identity, Token }
 import helper.ResultHelper._
-
 
 /**
  * User: Björn Reimer
@@ -30,7 +29,7 @@ object AuthAction extends ActionBuilder[AuthRequest] {
           case None => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))
           case Some(token) => {
             Identity.find(token.identityId).flatMap {
-              case None => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))
+              case None           => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))
               case Some(identity) => block(new AuthRequest[A](identity, request))
             }
           }

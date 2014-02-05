@@ -1,9 +1,9 @@
 package actors
 
 import akka.actor.Actor
-import play.api.{Play, Logger}
+import play.api.{ Play, Logger }
 import play.api.Play.current
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{ JsValue, Json }
 import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WS
@@ -11,7 +11,6 @@ import scala.concurrent.Future
 import models._
 import constants.Messaging._
 import play.api.libs.json.JsString
-
 
 /**
  * User: Björn Reimer
@@ -31,36 +30,40 @@ class SendSMSActor extends Actor with MongoHelper {
     val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 
     response.map {
-      nexmoResponse => {
-        val messages: Seq[MessageStatus] = {
-          if (nexmoResponse.status < 300) {
+      nexmoResponse =>
+        {
+          val messages: Seq[MessageStatus] = {
+            if (nexmoResponse.status < 300) {
 
-            val jsResponse = nexmoResponse.json
+              val jsResponse = nexmoResponse.json
 
-            val messageReports = (jsResponse \ "messages").asOpt[Seq[JsValue]].getOrElse(Seq())
+              val messageReports = (jsResponse \ "messages").asOpt[Seq[JsValue]].getOrElse(Seq())
 
-            messageReports.map {
-              report => {
-                if ((report \ "status").asOpt[String].get.equals("0")) {
-                  val s = "SMS Send. Id: " + (report \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
-                    (report \ "network").asOpt[String].getOrElse("none")
-                  new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, s)
-                } else {
-                  val s = "Error sending SMS message. Response: " + jsResponse.toString
-                  new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
-                }
+              messageReports.map {
+                report =>
+                  {
+                    if ((report \ "status").asOpt[String].get.equals("0")) {
+                      val s = "SMS Send. Id: " + (report \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
+                        (report \ "network").asOpt[String].getOrElse("none")
+                      new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, s)
+                    }
+                    else {
+                      val s = "Error sending SMS message. Response: " + jsResponse.toString
+                      new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
+                    }
+                  }
               }
             }
-          } else {
-            val s = "Error connecting to Nexmo: " + nexmoResponse.statusText
-            Seq(new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s))
+            else {
+              val s = "Error connecting to Nexmo: " + nexmoResponse.statusText
+              Seq(new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s))
+            }
           }
-        }
 
-        val message = messages.head
-        Logger.info("SendSMSActor: Sent SMS to " + sms.to + " from " + sms.from + " STATUS: " + message)
-        message
-      }
+          val message = messages.head
+          Logger.info("SendSMSActor: Sent SMS to " + sms.to + " from " + sms.from + " STATUS: " + message)
+          message
+        }
     }
   }
 
@@ -73,9 +76,11 @@ class SendSMSActor extends Actor with MongoHelper {
         val ms = new MessageStatus(identity.id, MESSAGE_STATUS_ERROR, "max try count reached")
         // TODO update status of single message
         //message.updateStatus(Seq(ms))
-      } else if (identity.phoneNumber.isEmpty) {
+      }
+      else if (identity.phoneNumber.isEmpty) {
         // Do something else (send mail maybe
-      } else {
+      }
+      else {
 
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
@@ -89,7 +94,8 @@ class SendSMSActor extends Actor with MongoHelper {
         val bodyWithFooter: String = {
           if (footer.length + body.length > 160) {
             body.substring(0, 160 - footer.length) + footer
-          } else {
+          }
+          else {
             body + footer
           }
         }
@@ -97,14 +103,16 @@ class SendSMSActor extends Actor with MongoHelper {
         val sms = new SmsMessage(from, to, body)
 
         sendSMS(sms).map {
-          statusMessage => {
-            if (statusMessage.status.equals(MESSAGE_STATUS_SEND)) {
-              // WOO
-            } else {
-              // try again
-              sendSmsActor !(message, fromIdentity, identity, tryCount + 1)
+          statusMessage =>
+            {
+              if (statusMessage.status.equals(MESSAGE_STATUS_SEND)) {
+                // WOO
+              }
+              else {
+                // try again
+                sendSmsActor ! (message, fromIdentity, identity, tryCount + 1)
+              }
             }
-          }
         }
       }
     }
@@ -112,8 +120,9 @@ class SendSMSActor extends Actor with MongoHelper {
     case (sms: SmsMessage, tryCount: Int) => {
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         Logger.error("Max try count of message reached: " + sms)
-      } else {
-          sendSMS(sms)
+      }
+      else {
+        sendSMS(sms)
       }
     }
 

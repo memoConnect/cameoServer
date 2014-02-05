@@ -1,11 +1,11 @@
 package models
 
 import java.util.Date
-import traits.{Model, MongoHelper}
+import traits.{ Model, MongoHelper }
 import play.api.libs.json._
 import helper.IdHelper
 import play.api.libs.functional.syntax._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 
 /**
@@ -13,14 +13,12 @@ import ExecutionContext.Implicits.global
  * Date: 6/26/13
  * Time: 2:36 PM
  */
-case class Message(
-                    id: MongoId,
-                    messageBody: String,
-                    fromIdentityId: MongoId,
-                    messageStatus: Seq[MessageStatus],
-                    assets: Seq[Asset],
-                    created: Date
-                    ) {
+case class Message(id: MongoId,
+                   messageBody: String,
+                   fromIdentityId: MongoId,
+                   messageStatus: Seq[MessageStatus],
+                   assets: Seq[Asset],
+                   created: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
 
@@ -38,12 +36,11 @@ object Message extends MongoHelper with Model[Message] {
 
   def createReads(fromIdentityId: MongoId) = (
     Reads.pure[MongoId](IdHelper.generateMessageId()) and
-      (__ \ 'messageBody).read[String] and
-      Reads.pure[MongoId](fromIdentityId) and
-      Reads.pure[Seq[MessageStatus]](Seq()) and
-      Reads.pure[Seq[Asset]](Seq()) and
-      Reads.pure[Date](new Date)
-    )(Message.apply _)
+    (__ \ 'messageBody).read[String] and
+    Reads.pure[MongoId](fromIdentityId) and
+    Reads.pure[Seq[MessageStatus]](Seq()) and
+    Reads.pure[Seq[Asset]](Seq()) and
+    Reads.pure[Date](new Date))(Message.apply _)
 
   def outputWrites = Writes[Message] {
     m =>
@@ -60,7 +57,7 @@ object Message extends MongoHelper with Model[Message] {
     val projection = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
     Conversation.col.find(messageQuery(id), projection).one[JsValue].map {
-      case None => None
+      case None     => None
       case Some(js) => Some((js \ "messages")(0).as[Message])
     }
 

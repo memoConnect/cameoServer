@@ -1,11 +1,11 @@
 package models
 
 import java.util.Date
-import traits.{Model, MongoHelper}
+import traits.{ Model, MongoHelper }
 import play.api.libs.json._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import reactivemongo.api.indexes.{IndexType, Index}
+import reactivemongo.api.indexes.{ IndexType, Index }
 import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.IdHelper
 
@@ -14,11 +14,9 @@ import helper.IdHelper
  * Date: 6/26/13
  * Time: 9:31 PM
  */
-case class Token(
-                  id: MongoId,
-                  identityId: MongoId,
-                  created: Date
-                  ) {
+case class Token(id: MongoId,
+                 identityId: MongoId,
+                 created: Date) {
   def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
 }
 

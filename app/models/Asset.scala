@@ -1,9 +1,9 @@
 package models
 
 import java.util.Date
-import traits.{Model}
+import traits.{ Model }
 import play.api.libs.json._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 
 /**
@@ -11,13 +11,11 @@ import ExecutionContext.Implicits.global
  * Date: 6/29/13
  * Time: 3:04 PM
  */
-case class Asset(
-                  id: MongoId,
-                  filesize: String,
-                  filename: String,
-                  fileType: String,
-                  created: Date
-                  ) {
+case class Asset(id: MongoId,
+                 filesize: String,
+                 filename: String,
+                 fileType: String,
+                 created: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Asset.outputWrites).as[JsObject]
 

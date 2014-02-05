@@ -2,8 +2,8 @@ package models
 
 import java.util.Date
 import traits.Model
-import scala.concurrent.{ExecutionContext, Future}
-import helper.{OutputLimits, IdHelper}
+import scala.concurrent.{ ExecutionContext, Future }
+import helper.{ OutputLimits, IdHelper }
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -19,14 +19,12 @@ import helper.ResultHelper._
  * Time: 1:29 PM
  */
 
-case class Conversation(
-                         id: MongoId,
-                         subject: Option[String],
-                         recipients: Seq[MongoId],
-                         messages: Seq[Message],
-                         created: Date,
-                         lastUpdated: Date
-                         ) {
+case class Conversation(id: MongoId,
+                        subject: Option[String],
+                        recipients: Seq[MongoId],
+                        messages: Seq[Message],
+                        created: Date,
+                        lastUpdated: Date) {
 
   def toJson(offset: Int = 0, limit: Int = 0): JsObject = Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject]
 
@@ -37,16 +35,18 @@ case class Conversation(
   def toJsonWithDisplayNames(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
     // get identity of each recipient
     val recipients: Seq[Future[JsObject]] = this.recipients.map {
-      id => Identity.find(id).map {
-        case None => Json.obj()
-        case Some(i) => i.toSummaryJson
-      }
+      id =>
+        Identity.find(id).map {
+          case None    => Json.obj()
+          case Some(i) => i.toSummaryJson
+        }
     }
 
     Future.sequence(recipients).map {
-      r => {
-        this.toJson(offset, limit) ++ Json.obj("recipients" -> r)
-      }
+      r =>
+        {
+          this.toJson(offset, limit) ++ Json.obj("recipients" -> r)
+        }
     }
   }
 
@@ -85,12 +85,11 @@ object Conversation extends Model[Conversation] {
 
   def createReads = (
     Reads.pure[MongoId](IdHelper.generateConversationId()) and
-      (__ \ 'subject).readNullable[String] and
-      ((__ \ 'recipients).read[Seq[MongoId]] or Reads.pure[Seq[MongoId]](Seq())) and
-      Reads.pure[Seq[Message]](Seq()) and
-      Reads.pure[Date](new Date) and
-      Reads.pure[Date](new Date)
-    )(Conversation.apply _)
+    (__ \ 'subject).readNullable[String] and
+    ((__ \ 'recipients).read[Seq[MongoId]] or Reads.pure[Seq[MongoId]](Seq())) and
+    Reads.pure[Seq[Message]](Seq()) and
+    Reads.pure[Date](new Date) and
+    Reads.pure[Date](new Date))(Conversation.apply _)
 
   def outputWrites(offset: Int, limit: Int) = Writes[Conversation] {
     c =>
@@ -110,7 +109,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("lastMessage" -> {
           c.messages.lastOption match {
             case Some(m) => m.messageBody
-            case None => Json.obj()
+            case None    => Json.obj()
           }
         })
   }
@@ -124,7 +123,6 @@ object Conversation extends Model[Conversation] {
     val id = IdHelper.generateConversationId()
     new Conversation(id, None, Seq(), Seq(), new Date, new Date)
   }
-
 
   //  def hasMember(conversation: Conversation, user: String): Boolean = {
   //    conversation.recipients.exists(r => {

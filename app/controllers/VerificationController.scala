@@ -2,14 +2,14 @@ package controllers
 
 import helper.AuthAction
 import traits.ExtendedController
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.{ Action, Controller }
 import helper.ResultHelper._
 
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import constants.Verification._
-import models.{Identity, VerificationSecret, MongoId}
-import scala.concurrent.{ExecutionContext, Future}
+import models.{ Identity, VerificationSecret, MongoId }
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 
 object VerificationController extends Controller with ExtendedController {
@@ -19,18 +19,16 @@ object VerificationController extends Controller with ExtendedController {
 
       val reads = (
         (__ \ "verifyPhoneNumber").readNullable[Boolean] and
-          (__ \ "verifyEmail").readNullable[Boolean]
-        )(VerifyRequest.apply _)
-
+        (__ \ "verifyEmail").readNullable[Boolean])(VerifyRequest.apply _)
 
       // TODO: Write tests for this
       request.body.validate[VerifyRequest](reads).map {
         vr =>
           if (vr.verifyPhoneNumber.getOrElse(false)) {
-            actors.verifyActor !(VERIFY_TYPE_PHONENUMBER, request.identity)
+            actors.verifyActor ! (VERIFY_TYPE_PHONENUMBER, request.identity)
           }
           if (vr.verifyMail.getOrElse(false)) {
-            actors.verifyActor !(VERIFY_TYPE_MAIL, request.identity)
+            actors.verifyActor ! (VERIFY_TYPE_MAIL, request.identity)
           }
           resOK()
       }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
@@ -52,7 +50,8 @@ object VerificationController extends Controller with ExtendedController {
                 val newMail = i.email.get.copy(isVerified = true)
                 i.update(email = Some(newMail))
                 resOK("verified")
-              } else {
+              }
+              else {
                 Unauthorized(resKO("mail has changed"))
               }
             }
@@ -63,7 +62,8 @@ object VerificationController extends Controller with ExtendedController {
                 val newTel = i.phoneNumber.get.copy(isVerified = true)
                 i.update(phoneNumber = Some(newTel))
                 resOK("verified")
-              } else {
+              }
+              else {
                 Unauthorized(resKO("phonenumber has changed"))
               }
             }
@@ -73,7 +73,6 @@ object VerificationController extends Controller with ExtendedController {
       }
 
     }
-
 
   }
 }

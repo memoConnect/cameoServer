@@ -2,7 +2,7 @@ package actors
 
 import akka.actor.Actor
 import constants.Verification._
-import models.{SmsMessage, MailMessage, VerificationSecret, Identity}
+import models.{ SmsMessage, MailMessage, VerificationSecret, Identity }
 import play.api.Play
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
@@ -28,7 +28,7 @@ class VerifyActor extends Actor {
 
       val body = "Click the following link to verify this mail address (" + email + ")\n\n" + link
 
-      val from =  Play.configuration.getString("verification.mail.from").get
+      val from = Play.configuration.getString("verification.mail.from").get
       val subject = "[Cameo] Mail verification"
 
       val mail = new MailMessage(from, email, body, subject)
@@ -44,15 +44,15 @@ class VerifyActor extends Actor {
 
       val secret = VerificationSecret.create(identity.id, number, VERIFY_TYPE_PHONENUMBER)
       VerificationSecret.col.insert(secret)
-      
+
       val link = Play.configuration.getString("shortUrl.address").get + "/v/" + secret.id
 
       val body = "Click the following link to verify this phonenumber (" + number + ")\n\n" + link
 
-      val from =  Play.configuration.getString("verification.sms.from").get
-      
+      val from = Play.configuration.getString("verification.sms.from").get
+
       val sms = new SmsMessage(from, number, body)
-      
+
       sendSmsActor ! (sms, 0)
     }
   }

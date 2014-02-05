@@ -4,12 +4,12 @@ import traits.Model
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import reactivemongo.api.indexes.{IndexType, Index}
+import reactivemongo.api.indexes.{ IndexType, Index }
 import java.util.Date
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import helper.IdHelper
-import play.api.{Logger, Play}
+import play.api.Play
 import reactivemongo.core.commands.LastError
 import play.api.Play.current
 
@@ -18,20 +18,16 @@ import play.api.Play.current
  * Date: 1/16/14
  * Time: 4:19 PM
  */
+case class Account(id: MongoId,
+                   loginName: String,
+                   password: String,
+                   identities: Seq[MongoId],
+                   phoneNumber: Option[String],
+                   email: Option[String],
+                   created: Date,
+                   lastUpdated: Date) {
 
-
-case class Account(
-                    id: MongoId,
-                    loginName: String,
-                    password: String,
-                    identities: Seq[MongoId],
-                    phoneNumber: Option[String],
-                    email: Option[String],
-                    created: Date,
-                    lastUpdated: Date
-                    ) {
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
-
 }
 
 object Account extends Model[Account] {
@@ -50,8 +46,7 @@ object Account extends Model[Account] {
       (__ \ 'phoneNumber).readNullable[String] and
       (__ \ 'email).readNullable[String] and
       Reads.pure[Date](new Date()) and
-      Reads.pure[Date](new Date())
-      )(Account.apply _)
+      Reads.pure[Date](new Date()))(Account.apply _)
   }
 
   def outputWrites: Writes[Account] = Writes {
@@ -81,34 +76,33 @@ object Account extends Model[Account] {
     val currentTry = loginName + "_" + count
 
     findByLoginName(currentTry).flatMap {
-      case Some(l) => findAlternative(loginName, count + 1)   // o_O recursive futures ftw!
+      case Some(l) => findAlternative(loginName, count + 1) // o_O recursive futures ftw!
       case None => {
         // check if it is reserved
         AccountReservation.checkReserved(currentTry).flatMap {
           case Some(r) => findAlternative(loginName, count + 1)
-          case None => Future(currentTry)
+          case None    => Future(currentTry)
         }
       }
     }
   }
 }
 
-case class AccountReservation(
-                               loginName: String,
-                               id: MongoId,
-                               created: Date) {
+case class AccountReservation(loginName: String,
+                              id: MongoId,
+                              created: Date) {
+
   def toJson: JsObject = {
     Json.obj("loginName" -> this.loginName) ++
-    Json.obj("reservationSecret" -> this.id.toString)
+      Json.obj("reservationSecret" -> this.id.toString)
   }
 }
-
 
 object AccountReservation extends Model[AccountReservation] {
 
   implicit val col = reservedAccountCollection
-
-  implicit val mongoFormat: Format[AccountReservation] = createMongoFormat(Json.reads[AccountReservation], Json.writes[AccountReservation])
+  implicit val mongoFormat: Format[AccountReservation] = createMongoFormat(Json.reads[AccountReservation],
+    Json.writes[AccountReservation])
 
   def reserve(loginName: String): Future[AccountReservation] = {
     val res = new AccountReservation(loginName, IdHelper.generateReservationSecret(), new Date)
@@ -124,9 +118,11 @@ object AccountReservation extends Model[AccountReservation] {
       case None => Future(None)
       case Some(ar) => {
         // check if the reservation has run out
-        if ((((new Date).getTime - ar.created.getTime) / (1000 * 60)) < Play.configuration.getInt("loginName.reservation.timeout").get) {
+        if ((((new Date).getTime - ar.created.getTime) / (1000 * 60)) <
+          Play.configuration.getInt("loginName.reservation.timeout").get) {
           Future(Some(ar.id.id))
-        } else {
+        }
+        else {
           // delete reservation
           deleteReserved(loginName).map {
             lastError => None

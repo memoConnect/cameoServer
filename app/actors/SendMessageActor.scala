@@ -4,7 +4,7 @@ import akka.actor.Actor
 import play.api.Logger
 import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
-import models.{MessageStatus, Identity, MongoId, Message}
+import models.{ MessageStatus, Identity, MongoId, Message }
 import constants.Messaging._
 import scala.concurrent.Future
 
@@ -30,29 +30,31 @@ class SendMessageActor extends Actor with MongoHelper {
         case Some(fromIdentity: Identity) => {
 
           val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
-            id => {
-              // dont send back to sender
-              if (!id.equals(fromIdentity.id)) {
-                Identity.find(id).map {
-                  case None => {
-                    val error = "Could not find identityID " + id
-                    Logger.error(error)
-                    new MessageStatus(id, MESSAGE_STATUS_ERROR, error)
-                  }
-                  case Some(identity) => {
-                    identity.preferredMessageType match {
-                      case MESSAGE_TYPE_SMS => sendSmsActor !(message, fromIdentity, identity, 0)
-                      case MESSAGE_TYPE_EMAIL => sendMailActor !(message, fromIdentity,identity, 0)
-                      case MESSAGE_TYPE_DEFAULT => sendMailActor !(message, fromIdentity,identity, 0)
-                      // TODO case _ => sendFailActor ! (message, identity)
+            id =>
+              {
+                // dont send back to sender
+                if (!id.equals(fromIdentity.id)) {
+                  Identity.find(id).map {
+                    case None => {
+                      val error = "Could not find identityID " + id
+                      Logger.error(error)
+                      new MessageStatus(id, MESSAGE_STATUS_ERROR, error)
                     }
-                    new MessageStatus(id, MESSAGE_STATUS_QUEUED, identity.preferredMessageType)
+                    case Some(identity) => {
+                      identity.preferredMessageType match {
+                        case MESSAGE_TYPE_SMS     => sendSmsActor ! (message, fromIdentity, identity, 0)
+                        case MESSAGE_TYPE_EMAIL   => sendMailActor ! (message, fromIdentity, identity, 0)
+                        case MESSAGE_TYPE_DEFAULT => sendMailActor ! (message, fromIdentity, identity, 0)
+                        // TODO case _ => sendFailActor ! (message, identity)
+                      }
+                      new MessageStatus(id, MESSAGE_STATUS_QUEUED, identity.preferredMessageType)
+                    }
                   }
                 }
-              } else {
-                Future.successful(new MessageStatus(id, MESSAGE_STATUS_NONE, "sender"))
+                else {
+                  Future.successful(new MessageStatus(id, MESSAGE_STATUS_NONE, "sender"))
+                }
               }
-            }
           }
 
           // convert to a singe future and write status to message

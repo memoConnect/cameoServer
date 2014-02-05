@@ -1,11 +1,10 @@
 package models
 
-
 import play.api.libs.json._
 import helper.IdHelper
 import traits.MongoHelper
 import java.util.Date
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 
 /**
@@ -14,16 +13,13 @@ import ExecutionContext.Implicits.global
  * Time: 7:15 PM
  */
 
-case class VerificationSecret(
-                               id: MongoId,
-                               identityId: MongoId,
-                               verificationType: String,
-                               valueToBeVerified: String,
-                               created: Date
-                               )
+case class VerificationSecret(id: MongoId,
+                              identityId: MongoId,
+                              verificationType: String,
+                              valueToBeVerified: String,
+                              created: Date)
 
 object VerificationSecret extends MongoHelper {
-
 
   implicit val mongoFormat: Format[VerificationSecret] = createMongoFormat(Json.reads[VerificationSecret], Json.writes[VerificationSecret])
 
@@ -35,14 +31,12 @@ object VerificationSecret extends MongoHelper {
       identityId,
       verificationType,
       valueToBeVerified,
-      new Date
-    )
+      new Date)
   }
 
   def find(id: MongoId): Future[Option[VerificationSecret]] = {
     val query = Json.obj("_id" -> id)
     col.find(query).one[VerificationSecret]
   }
-
 
 }

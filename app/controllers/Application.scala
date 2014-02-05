@@ -6,14 +6,14 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 object Application extends Controller {
 
-  def redirect(url: String ) = Action {
+  def redirect(url: String) = Action {
     Redirect(url)
   }
 
   def index = Action {
     request =>
 
-    Ok("Cameo API")
+      Ok("Cameo API")
   }
 
   def staticAssets(path: String, file: String, foo: String) =

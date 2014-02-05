@@ -8,8 +8,8 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import java.text.SimpleDateFormat
-import java.util.{Date, TimeZone}
-import reactivemongo.api.indexes.{IndexType, Index}
+import java.util.{ Date, TimeZone }
+import reactivemongo.api.indexes.{ IndexType, Index }
 
 /**
  * User: Björn Reimer
@@ -56,9 +56,10 @@ trait MongoHelper {
   }
 
   def createMongoReads[T](reads: Reads[T]): Reads[T] = Reads {
-    js => js.transform(fromMongoDates andThen fromMongoId).map {
-      obj: JsValue => obj.as[T](reads)
-    }
+    js =>
+      js.transform(fromMongoDates andThen fromMongoId).map {
+        obj: JsValue => obj.as[T](reads)
+      }
   }
 
   def createMongoWrites[T](writes: Writes[T]): Writes[T] = Writes {
@@ -66,9 +67,8 @@ trait MongoHelper {
   }
 
   def createMongoFormat[T](
-                            reads: Reads[T],
-                            writes: Writes[T]
-                            ) = Format(createMongoReads(reads), createMongoWrites(writes))
+    reads: Reads[T],
+    writes: Writes[T]) = Format(createMongoReads(reads), createMongoWrites(writes))
 
   val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
   defaultDateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"))

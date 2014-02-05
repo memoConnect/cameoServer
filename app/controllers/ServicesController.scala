@@ -1,8 +1,8 @@
 package controllers
 
-import play.api.libs.json.{JsValue, Json}
-import traits.{ExtendedController}
-import models.{Conversation, Purl}
+import play.api.libs.json.{ JsValue, Json }
+import traits.{ ExtendedController }
+import models.{ Conversation, Purl }
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.AuthAction
@@ -59,7 +59,7 @@ object ServicesController extends ExtendedController {
       (jsBody \ "emailAddress").asOpt[String] match {
         case Some(emailAddress) =>
           """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$""".r.unapplySeq(emailAddress).isDefined match {
-            case true => resOK()
+            case true  => resOK()
             case false => BadRequest(resKO("emailAddress invalid: " + emailAddress))
           }
         case None => BadRequest(resKO("missing emailAddress"))

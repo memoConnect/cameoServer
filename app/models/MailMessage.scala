@@ -7,9 +7,7 @@ package models
  */
 
 // assumes that all data is verified
-case class MailMessage(
-                        from: String,
-                        to: String,
-                        body: String,
-                        subject: String
-                        )
+case class MailMessage(from: String,
+                       to: String,
+                       body: String,
+                       subject: String)

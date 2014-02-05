@@ -5,7 +5,7 @@ import play.api.libs.functional.syntax._
 import java.util.Date
 import traits.Model
 import play.api.libs.json.Reads._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import helper.IdHelper
 import ExecutionContext.Implicits.global
 import constants.Messaging._
@@ -17,22 +17,19 @@ import reactivemongo.core.commands.LastError
  * Time: 4:19 PM
  */
 
-
-case class Identity(
-                     id: MongoId,
-                     accountId: Option[MongoId],
-                     displayName: Option[String],
-                     email: Option[VerifiedString],
-                     phoneNumber: Option[VerifiedString],
-                     preferredMessageType: String, // "mail" or "sms"
-                     userKey: String,
-                     contacts: Seq[Contact],
-                     conversations: Seq[MongoId],
-                     assets: Seq[Asset],
-                     tokens: Seq[MongoId],
-                     created: Date,
-                     lastUpdated: Date
-                     ) {
+case class Identity(id: MongoId,
+                    accountId: Option[MongoId],
+                    displayName: Option[String],
+                    email: Option[VerifiedString],
+                    phoneNumber: Option[VerifiedString],
+                    preferredMessageType: String, // "mail" or "sms"
+                    userKey: String,
+                    contacts: Seq[Contact],
+                    conversations: Seq[MongoId],
+                    assets: Seq[Asset],
+                    tokens: Seq[MongoId],
+                    created: Date,
+                    lastUpdated: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Identity.outputWrites).as[JsObject]
 
@@ -68,13 +65,12 @@ case class Identity(
       else Json.obj()
     }
 
-    val setValues = maybeJson("email", email.map{Json.toJson(_)}) ++ maybeJson("phoneNumber", phoneNumber.map{Json.toJson(_)})
+    val setValues = maybeJson("email", email.map { Json.toJson(_) }) ++ maybeJson("phoneNumber", phoneNumber.map { Json.toJson(_) })
     val set = Json.obj("$set" -> setValues)
 
     Identity.col.update(query, set)
   }
 }
-
 
 object Identity extends Model[Identity] {
 
@@ -86,41 +82,41 @@ object Identity extends Model[Identity] {
   //TODO: create functionality for multiple evolutions
   val evolution: Reads[JsObject] = Reads {
     // convert mail and phoneNumber to verified string
-    js => {
-      val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
-        case None => __.json.pickBranch
-        case Some(email) => {
-          __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
+    js =>
+      {
+        val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
+          case None => __.json.pickBranch
+          case Some(email) => {
+            __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
+          }
         }
-      }
-      val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
-        case None => __.json.pickBranch
-        case Some(tel) => {
-          __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
+        val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
+          case None => __.json.pickBranch
+          case Some(tel) => {
+            __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
+          }
         }
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
       }
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-      js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
-    }
   }
 
   implicit val mongoFormat: Format[Identity] = Format(mongoReads, mongoWrites)
 
   def createReads: Reads[Identity] = (
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
-      Reads.pure[Option[MongoId]](None) and
-      (__ \ 'displayName).readNullable[String] and
-      (__ \ 'email).readNullable[VerifiedString](VerifiedString.createReads) and
-      (__ \ 'phoneNumber).readNullable[VerifiedString](VerifiedString.createReads) and
-      ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
-      Reads.pure[String](IdHelper.generateUserKey()) and
-      Reads.pure[Seq[Contact]](Seq()) and
-      Reads.pure[Seq[MongoId]](Seq()) and
-      Reads.pure[Seq[Asset]](Seq()) and
-      Reads.pure[Seq[MongoId]](Seq()) and
-      Reads.pure[Date](new Date()) and
-      Reads.pure[Date](new Date())
-    )(Identity.apply _)
+    Reads.pure[Option[MongoId]](None) and
+    (__ \ 'displayName).readNullable[String] and
+    (__ \ 'email).readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ 'phoneNumber).readNullable[VerifiedString](VerifiedString.createReads) and
+    ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
+    Reads.pure[String](IdHelper.generateUserKey()) and
+    Reads.pure[Seq[Contact]](Seq()) and
+    Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Seq[Asset]](Seq()) and
+    Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Date](new Date()) and
+    Reads.pure[Date](new Date()))(Identity.apply _)
 
   def outputWrites: Writes[Identity] = Writes {
     i =>
@@ -130,7 +126,7 @@ object Identity extends Model[Identity] {
         maybeEmpty("email", i.email.map {
           _.toJson
         }) ++
-        maybeEmpty("phoneNumber", i.phoneNumber.map{_.toJson}) ++
+        maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
@@ -145,7 +141,7 @@ object Identity extends Model[Identity] {
   def find(id: MongoId): Future[Option[Identity]] = {
     val query = Json.obj("_id" -> id)
     col.find(query).one[JsObject].map {
-      case None => None
+      case None     => None
       case Some(js) => Some(read(js))
     }
   }
@@ -176,9 +172,7 @@ object Identity extends Model[Identity] {
       Seq(),
       Seq(),
       new Date,
-      new Date
-    )
+      new Date)
   }
 }
-
 
