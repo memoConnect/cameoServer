@@ -33,6 +33,11 @@ Technical issues
     * Phonegap
     * Bootstrap
 
+API
+===
+
+cameo Server offers a API. API docs can be found [here](http://docs.cameo.apiary.io/)
+
 Getting started
 ================
 
