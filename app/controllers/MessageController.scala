@@ -11,7 +11,7 @@ import ExecutionContext.Implicits.global
 import reactivemongo.core.commands._
 import play.modules.reactivemongo.json.BSONFormats._
 import play.api.Logger
-import reactivemongo.bson.{ BSONInteger, BSON, BSONValue }
+import reactivemongo.bson.{ BSONString, BSONInteger, BSON, BSONValue }
 import reactivemongo.api.SortOrder
 import java.util.Date
 import helper.MongoHelper._
@@ -67,7 +67,7 @@ object MessageController extends ExtendedController {
     implicit val format: Format[FilterRules] = createMongoFormat(Json.reads[FilterRules], Json.writes[FilterRules])
   }
 
-  def filter(offset: Int = 0, varLimit: Int = 0) = AuthAction.async(parse.tolerantJson) {
+  def filter(offset: Int = 0, varLimit: Int = 0, count: String = "false") = AuthAction.async(parse.tolerantJson) {
     request =>
 
       // set default limit
@@ -94,28 +94,57 @@ object MessageController extends ExtendedController {
                 Match(toBson(Json.obj()).get)
               }
               else {
-                val matchJson = Json.obj("$or" -> ids.map(id => Json.obj("_id" -> id)))
+                val matchJson = Json.obj("$or" -> ids.map(matchFunction))
+                Logger.debug("MATCH: " + matchJson.toString())
                 Match(toBson(matchJson).get)
               }
             }
 
-            val pipeline: Seq[PipelineOperator] = Seq(
+            val basePipeline: Seq[PipelineOperator] = Seq(
               createMatch(conversations, id => Json.obj("_id" -> id)),
               Unwind("messages"),
               Project(("messages", BSONInteger(1)), ("_id", BSONInteger(-1))),
               createMatch(from, id => Json.obj("messages.fromIdentityId" -> id)),
-              createMatch(to, id => Json.obj("messages.messageStatus.identityId" -> id)),
-              Sort(Seq(Ascending("messages.created"))),
-              Skip(offset),
-              Limit(limit)
-            )
+              createMatch(to, id => Json.obj("messages.messageStatus.identityId" -> id)))
 
-            val aggregationCommand = Aggregate(Conversation.col.name, pipeline)
+            Logger.debug("BASE" + basePipeline)
 
-            mongoDB.command(aggregationCommand).map {
-              res =>
-                val messages: Seq[JsValue] = res.force.toList.map(Json.toJson(_))
-                resOK(messages.map(js => (js \ "messages").as[Message].toJson))
+            if (count.equalsIgnoreCase("true")) {
+              val pipeline = basePipeline ++
+                Seq(Group(BSONString("result"))(("count", SumValue(1))))
+
+              val aggregationCommand = Aggregate(Conversation.col.name, pipeline)
+
+              mongoDB.command(aggregationCommand).map {
+                res =>
+
+                  val result = res.force.toList.headOption
+
+                  if (result.isEmpty) {
+                    resOK("0")
+                  }
+                  else {
+                    val count = (Json.toJson(result.get) \ "count").as[Int]
+                    resOK(count.toString)
+                  }
+              }
+
+            }
+            else {
+              val pipeline = basePipeline ++
+                Seq(
+                  Sort(Seq(Ascending("messages.created"))),
+                  Skip(offset),
+                  Limit(limit)
+                )
+
+              val aggregationCommand = Aggregate(Conversation.col.name, pipeline)
+
+              mongoDB.command(aggregationCommand).map {
+                res =>
+                  val messages: Seq[JsValue] = res.force.toList.map(Json.toJson(_))
+                  resOK(messages.map(js => (js \ "messages").as[Message].toJson))
+              }
             }
           }
       }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
