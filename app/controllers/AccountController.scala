@@ -38,7 +38,7 @@ object AccountController extends ExtendedController {
             case None => Future(BadRequest(resKO("no reservation secret")))
             case Some(rs) => AccountReservation.checkReserved(account.loginName).flatMap {
 
-              case false => Future(Unauthorized(resKO("loginName is reserved, wait 10 min")))
+              case None => Future(Unauthorized(resKO("loginName is reserved, wait 10 min")))
               case Some(secret) =>
 
                 secret.equals(rs) match {

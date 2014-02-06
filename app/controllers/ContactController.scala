@@ -86,6 +86,7 @@ object ContactController extends ExtendedController {
 
   def getGroups = AuthAction {
     request =>
+      val groups = request.identity.getGroups
       resOK(Json.toJson(groups))
   }
 

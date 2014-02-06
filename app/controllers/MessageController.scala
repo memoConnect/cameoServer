@@ -14,6 +14,7 @@ import play.api.Logger
 import reactivemongo.bson.{ BSONInteger, BSON, BSONValue }
 import reactivemongo.api.SortOrder
 import java.util.Date
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -114,7 +115,7 @@ object MessageController extends ExtendedController {
             mongoDB.command(aggregationCommand).map {
               res =>
                 val messages: Seq[JsValue] = res.force.toList.map(Json.toJson(_))
-                Ok(messages.toString())
+                resOK(messages.map(js => (js \ "messages").as[Message].toJson))
             }
           }
       }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
