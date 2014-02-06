@@ -23,12 +23,26 @@ case class Account(id: MongoId,
                    loginName: String,
                    password: String,
                    identities: Seq[MongoId],
-                   phoneNumber: Option[String],
-                   email: Option[String],
+                   phoneNumber: Option[String], // not used anymore
+                   email: Option[String], // not used anymore
                    created: Date,
                    lastUpdated: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
+
+  def toJsonWithIdentities: Future[JsObject] = {
+    val js = this.identities.map {
+      iId =>
+        Identity.find(iId).map {
+          case None    => Json.obj()
+          case Some(i) => i.toJson
+        }
+    }
+
+    Future.sequence(js).map {
+      futureIdentities => this.toJson ++ Json.obj("identities" -> futureIdentities)
+    }
+  }
 }
 
 object Account extends Model[Account] {
@@ -44,8 +58,8 @@ object Account extends Model[Account] {
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       Reads.pure[Seq[MongoId]](Seq()) and
-      (__ \ 'phoneNumber).readNullable[String] and
-      (__ \ 'email).readNullable[String] and
+      Reads.pure[Option[String]](None) and
+      Reads.pure[Option[String]](None) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -55,8 +69,6 @@ object Account extends Model[Account] {
       Json.obj("id" -> a.id.toJson) ++
         Json.obj("loginName" -> a.loginName) ++
         Json.obj("identities" -> a.identities.map(id => id.toJson)) ++
-        toJsonOrEmpty("phoneNumber", a.phoneNumber) ++
-        toJsonOrEmpty("email", a.email) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }

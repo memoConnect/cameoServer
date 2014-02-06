@@ -18,6 +18,7 @@ import helper.MongoHelper._
 case class Token(id: MongoId,
                  identityId: MongoId,
                  created: Date) {
+
   def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
 }
 

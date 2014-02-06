@@ -3,12 +3,13 @@ package controllers
 import play.api.mvc.Action
 import play.api.libs.json._
 import traits.ExtendedController
-import models.{ AccountReservation, Identity, Account }
+import models.{IdentityUpdate, AccountReservation, Identity, Account}
 import reactivemongo.core.errors.DatabaseException
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 import helper.ResultHelper._
 import helper.MongoHelper._
+import helper.AuthAction
 
 /**
  * User: Björn Reimer
@@ -53,14 +54,14 @@ object AccountController extends ExtendedController {
               Identity.col.insert(identity)
               val account2 = account.copy(identities = Seq(identity.id))
 
-              accountCollection.insert(account2).map {
+              accountCollection.insert(account2).flatMap {
                 lastError =>
                   {
                     if (lastError.ok) {
-                      resOK(account2.toJson)
+                      account2.toJsonWithIdentities.map { resOK(_) }
                     }
                     else {
-                      InternalServerError(resKO("MongoError: " + lastError))
+                      Future(InternalServerError(resKO("MongoError: " + lastError)))
                     }
                   }
               }.recover {
@@ -81,9 +82,9 @@ object AccountController extends ExtendedController {
 
   def getAccount(loginName: String) = Action.async {
     request =>
-      Account.findByLoginName(loginName).map {
-        case None          => NotFound(resKO("Account not found: " + loginName))
-        case Some(account) => resOK(account.toJson)
+      Account.findByLoginName(loginName).flatMap {
+        case None          => Future(NotFound(resKO("Account not found: " + loginName)))
+        case Some(account) => account.toJsonWithIdentities.map { resOK(_) }
       }
   }
 
@@ -131,19 +132,21 @@ object AccountController extends ExtendedController {
       }.recoverTotal(e => Future(BadRequest(resKO(JsError.toFlatJson(e)))))
   }
 
-  def deleteAccount(loginName: String) = Action.async {
-    request =>
-      Account.col.remove[JsValue](Json.obj("loginName" -> loginName)).map {
-        lastError =>
-          if (lastError.updated > 0) {
-            resOK(Json.obj("deleted Account" -> loginName))
-          }
-          else if (lastError.ok) {
-            NotFound(resKO("Account not found"))
-          }
-          else {
-            InternalServerError(resKO(lastError.stringify))
-          }
-      }
-  }
+
+
+    def deleteAccount(loginName: String) = AuthAction.async {
+      request =>
+        Account.col.remove[JsValue](Json.obj("loginName" -> loginName)).map {
+          lastError =>
+            if (lastError.updated > 0) {
+              resOK(Json.obj("deleted Account" -> loginName))
+            }
+            else if (lastError.ok) {
+              NotFound(resKO("Account not found"))
+            }
+            else {
+              InternalServerError(resKO(lastError.stringify))
+            }
+        }
+    }
 }

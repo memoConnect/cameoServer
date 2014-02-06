@@ -16,6 +16,7 @@ DELETE         /api/v1/account/:loginName                controllers.AccountCont
 
 # IDENTITIES
 GET            /api/v1/identity/:id                      controllers.IdentityController.getIdentity(id)
+PUT            /api/v1/identity                          controllers.IdentityController.updateIdentity()
 
 
 # CONVERSATIONS
