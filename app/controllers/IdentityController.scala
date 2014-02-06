@@ -41,7 +41,7 @@ object IdentityController extends ExtendedController {
         update =>
           {
             def getNewValue(old: Option[VerifiedString], newValue: String): Option[VerifiedString] = {
-              if (old.isEmpty || old.get.value.equals(newValue)) {
+              if (old.isDefined && old.get.value.equals(newValue)) {
                 None
               }
               else {

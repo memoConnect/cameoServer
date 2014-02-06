@@ -1,13 +1,15 @@
 package test
 
 import play.api.test._
-import play.api.libs.json.{Json, JsObject}
+import play.api.libs.json.{ Json, JsObject }
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
 import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import scala.concurrent.ExecutionContext
+import play.api.{ GlobalSettings, Logger }
+import services.DbAdminUtilities
 
 /**
  * Add your spec here.
@@ -27,15 +29,33 @@ class ControllerSpec extends Specification {
 
   "Controllers" should {
 
+    // fill db on startup
+    val globalSettings = Some(new GlobalSettings() {
+      override def onStart(app: play.api.Application) {
+        DbAdminUtilities.loadFixtures()
+      }
+    })
+
+    val additionalConfig = Map("mongodb.db" -> dbName , "mongo.init.loadOnStart" -> "false")
+
+    // valid users in the inital Data: login;password;identityId;token
+    //Ox0F55Om;password;5WtjLmPMEFYVzsn62DrP;zQuTMDVRDMKYQgUVIbAKFdRLQTxeeMMXphvCUByf
+    //8sBIEpP2;password;uYAWgPqwi8H11QDjxnd7;IBuGTnqR66vCCvnhokAci0a4mRSghrfzbGMHpsrf
+    //qsBV59ML;password;D9bVvOric1aERBhRLejU;tvaIH6bRoCMQH7UfhNMijq8EM6QusLfx8nalQNxI
+
     // Use the same FakeApplication for all tests, so the mongoConnection does not break
-    lazy val app = FakeApplication(additionalConfiguration = Map("mongodb.db" -> dbName))
+    lazy val app = FakeApplication(additionalConfiguration = additionalConfig, withGlobal = globalSettings)
     step(play.api.Play.start(app))
 
     val login = randomString(8)
     val pass = randomString(8)
+    val mail = "e@mail.de"
+    val tel = "+491234567890"
     var identityId = ""
     var token = ""
     var regSec = ""
+
+    val token2 = "zQuTMDVRDMKYQgUVIbAKFdRLQTxeeMMXphvCUByf"
 
     "Refuse invalid Logins" in {
 
@@ -44,14 +64,15 @@ class ControllerSpec extends Specification {
       val logins = Seq("asdf", "asdfasdfasdfasdfasdfa", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\")
 
       logins.map {
-        l => {
-          val json = Json.obj("loginName" -> l)
+        l =>
+          {
+            val json = Json.obj("loginName" -> l)
 
-          val req = FakeRequest(POST, path).withJsonBody(json)
-          val res = route(req).get
+            val req = FakeRequest(POST, path).withJsonBody(json)
+            val res = route(req).get
 
-          status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
-        }
+            status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
+          }
       }
 
     }
@@ -103,7 +124,7 @@ class ControllerSpec extends Specification {
 
     "Create Account" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass) ++ Json.obj("reservationSecret" -> regSec)
+      val json = createUser(login, pass, Some(tel), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -112,7 +133,9 @@ class ControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      val identityOpt = (data \ "identities")(0).asOpt[String]
+      val identity = (data \ "identities")(0).as[JsObject]
+
+      val identityOpt = (identity \ "id").asOpt[String]
 
       if (identityOpt.isDefined) {
         identityId = identityOpt.get
@@ -179,13 +202,40 @@ class ControllerSpec extends Specification {
 
       (data \ "id").asOpt[String] must beSome
       (data \ "userKey").asOpt[String] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome(mail)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
+    }
+
+    "Edit an identity" in {
+
+      val path = basePath + "/identity?token=" + token2
+
+      val newPhone = "12345"
+      val newMail = "asdfasdf"
+      val newName = "new"
+
+      val json = Json.obj("phoneNumber" -> newPhone, "email" -> newMail, "displayName" -> newName)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      Logger.debug("DATA" + data.toString)
+
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newPhone)
+      (data \ "phoneNumber" \ "isVerfied").asOpt[Boolean] must beSome(false)
+      (data \ "email" \ "value").asOpt[String] must beSome(newMail)
+      (data \ "email" \ "isVerfied").asOpt[Boolean] must beSome(false)
+      (data \ "displayName").asOpt[String] must beSome(newName)
     }
 
     "drop the test database" in {
       ReactiveMongoPlugin.db.drop()(ExecutionContext.Implicits.global)
       1 === 1
     }
-
 
     step(play.api.Play.stop())
   }

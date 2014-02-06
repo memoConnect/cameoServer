@@ -17,7 +17,9 @@ class ServicesSpec extends Specification {
     val basePath = "/api/v1"
     val dbName = "cameo_test"
 
-    lazy val app = FakeApplication(additionalConfiguration = Map("mongodb.db" -> dbName))
+    val additionalConfig = Map("mongodb.db" -> dbName , "mongo.init.loadOnStart" -> "false")
+
+    lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
     step(play.api.Play.start(app))
 
     "Check valid phoneNumbers " in  {

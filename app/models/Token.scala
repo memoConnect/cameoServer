@@ -24,7 +24,7 @@ case class Token(id: MongoId,
 
 object Token extends Model[Token] {
 
-  implicit lazy val col: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
+  def col: JSONCollection = tokenCollection
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
@@ -40,4 +40,5 @@ object Token extends Model[Token] {
       id,
       new Date)
   }
+
 }

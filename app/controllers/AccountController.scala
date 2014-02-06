@@ -3,7 +3,7 @@ package controllers
 import play.api.mvc.Action
 import play.api.libs.json._
 import traits.ExtendedController
-import models.{IdentityUpdate, AccountReservation, Identity, Account}
+import models.{ AccountReservation, Identity, Account }
 import reactivemongo.core.errors.DatabaseException
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
@@ -132,21 +132,19 @@ object AccountController extends ExtendedController {
       }.recoverTotal(e => Future(BadRequest(resKO(JsError.toFlatJson(e)))))
   }
 
-
-
-    def deleteAccount(loginName: String) = AuthAction.async {
-      request =>
-        Account.col.remove[JsValue](Json.obj("loginName" -> loginName)).map {
-          lastError =>
-            if (lastError.updated > 0) {
-              resOK(Json.obj("deleted Account" -> loginName))
-            }
-            else if (lastError.ok) {
-              NotFound(resKO("Account not found"))
-            }
-            else {
-              InternalServerError(resKO(lastError.stringify))
-            }
-        }
-    }
+  def deleteAccount(loginName: String) = AuthAction.async {
+    request =>
+      Account.col.remove[JsValue](Json.obj("loginName" -> loginName)).map {
+        lastError =>
+          if (lastError.updated > 0) {
+            resOK(Json.obj("deleted Account" -> loginName))
+          }
+          else if (lastError.ok) {
+            NotFound(resKO("Account not found"))
+          }
+          else {
+            InternalServerError(resKO(lastError.stringify))
+          }
+      }
+  }
 }

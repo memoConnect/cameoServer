@@ -16,6 +16,7 @@ import play.api.http.HeaderNames._
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.Play.current
+import services.DbAdminUtilities
 
 object Global extends GlobalSettings with DynamicEmbedMongoPort {
 
@@ -29,20 +30,10 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
         ACCESS_CONTROL_ALLOW_ORIGIN -> "*", ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization, Content-type"))
   }
 
-  // TODO: finish initial data
-  //  override def onStart(app: play.api.Application) = {
-  //    if (Play.configuration.getString("mongo.init.loadOnStart").getOrElse("fail").equalsIgnoreCase("true")) {
-  //
-  //      val driver = new MongoDriver
-  //      val connection = driver.connection(List("localhost"))
-  //
-  //      Account.col.insert()
-  //      Index
-  //
-  //
-  //      Logger.info("Loading initial data")
-  //    }
-  //
-  //
-  //  }
+  override def onStart(app: play.api.Application) = {
+    if (Play.configuration.getString("mongo.init.loadOnStart").getOrElse("fail").equalsIgnoreCase("true")) {
+      Logger.info("Loading initial data")
+      DbAdminUtilities.loadFixtures()
+    }
+  }
 }

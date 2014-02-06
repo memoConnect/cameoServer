@@ -58,8 +58,8 @@ object Account extends Model[Account] {
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       Reads.pure[Seq[MongoId]](Seq()) and
-      Reads.pure[Option[String]](None) and
-      Reads.pure[Option[String]](None) and
+      (__ \ 'phoneNumber).readNullable[String] and
+      (__ \ 'email).readNullable[String] and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -94,6 +94,12 @@ object Account extends Model[Account] {
   }
 }
 
+case class IdentityUpdate(phoneNumber: Option[String],
+                         email: Option[String])
+
+object IdentityUpdate {
+  implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
+}
 case class AccountReservation(loginName: String,
                               id: MongoId,
                               created: Date) {
