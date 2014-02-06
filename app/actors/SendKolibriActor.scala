@@ -1,18 +1,19 @@
 package actors
 
 import akka.actor.{ Props, Actor }
-import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Logger
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
+import helper.MongoHelper._
+
 /**
  * User: Björn Reimer
  * Date: 8/30/13
  * Time: 8:24 PM
  */
 
-class SendKolibriActor extends Actor with MongoHelper {
+class SendKolibriActor extends Actor {
 
   def receive = {
     case (message: models.Message) => {

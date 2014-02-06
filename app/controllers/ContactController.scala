@@ -45,8 +45,6 @@ object ContactController extends ExtendedController {
             contact =>
               {
                 request.identity.addContact(contact)
-                Logger.debug("ID" + id.toString)
-
                 contact.toJsonWithIdentity.map(js => resOK(js))
               }
           }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))

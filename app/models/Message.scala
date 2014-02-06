@@ -1,12 +1,14 @@
 package models
 
 import java.util.Date
-import traits.{ Model, MongoHelper }
+import traits.{ Model }
 import play.api.libs.json._
 import helper.IdHelper
 import play.api.libs.functional.syntax._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
+import helper.MongoHelper._
+import play.modules.reactivemongo.json.collection.JSONCollection
 
 /**
  * User: Björn Reimer
@@ -30,7 +32,9 @@ case class Message(id: MongoId,
 
 }
 
-object Message extends MongoHelper with Model[Message] {
+object Message extends Model[Message] {
+
+  def col: JSONCollection = conversationCollection
 
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
@@ -53,7 +57,7 @@ object Message extends MongoHelper with Model[Message] {
 
   def messageQuery(id: MongoId): JsObject = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
-  def find(id: MongoId): Future[Option[Message]] = {
+  override def find(id: MongoId): Future[Option[Message]] = {
     val projection = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
     Conversation.col.find(messageQuery(id), projection).one[JsValue].map {

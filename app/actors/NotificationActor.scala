@@ -2,18 +2,18 @@ package actors
 
 import play.api.Play.current
 import akka.actor.{ Props, Actor }
-import traits.MongoHelper
 import models.{ Message }
 import play.api.Logger
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
  * Date: 9/19/13
  * Time: 7:23 PM
  */
-class NotificationActor extends Actor with MongoHelper {
+class NotificationActor extends Actor {
 
   def receive = {
     // notify user that a message has been received

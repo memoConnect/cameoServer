@@ -6,17 +6,18 @@ import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail.model._
 import play.api.Play.current
-import traits.MongoHelper
 import com.amazonaws.{ AmazonServiceException, AmazonClientException }
 import models.MailMessage
 import play.api.Play.current
+import helper.MongoHelper._
+
 /**
  * User: Björn Reimer
  * Date: 6/12/13
  * Time: 8:01 PM
  */
 
-class SendMailActor extends Actor with MongoHelper {
+class SendMailActor extends Actor {
 
   def receive = {
     case (mail: MailMessage) => {
