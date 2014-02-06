@@ -63,8 +63,8 @@ case class Identity(id: MongoId,
 
     val setValues = {
       maybeEmpty("email", email.map { Json.toJson(_) }) ++
-      maybeEmpty("phoneNumber", phoneNumber.map { Json.toJson(_) }) ++
-      toJsonOrEmpty("displayName", displayName)
+        maybeEmpty("phoneNumber", phoneNumber.map { Json.toJson(_) }) ++
+        toJsonOrEmpty("displayName", displayName)
     }
 
     val set = Json.obj("$set" -> setValues)

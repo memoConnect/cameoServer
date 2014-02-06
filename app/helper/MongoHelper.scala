@@ -113,7 +113,7 @@ object MongoHelper {
       Some(VerifiedString.create(newValue))
     }
   }
-  
+
   def getNewValueString(old: Option[String], newValue: String): Option[String] = {
     if (old.isDefined && old.get.equals(newValue)) {
       None

@@ -31,8 +31,7 @@ object IdentityController extends ExtendedController {
 
   case class IdentityUpdate(phoneNumber: Option[String],
                             email: Option[String],
-                            displayName: Option[String]
-                             )
+                            displayName: Option[String])
 
   object IdentityUpdate {
     implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
@@ -43,7 +42,6 @@ object IdentityController extends ExtendedController {
       request.body.validate[IdentityUpdate].map {
         update =>
           {
-
 
             val newMail = update.email.flatMap { getNewValueVerifiedString(request.identity.email, _) }
             val newPhoneNumber = update.phoneNumber.flatMap { getNewValueVerifiedString(request.identity.phoneNumber, _) }

@@ -36,7 +36,10 @@ class ControllerSpec extends Specification {
       }
     })
 
-    val additionalConfig = Map("mongodb.db" -> dbName , "mongo.init.loadOnStart" -> "false")
+    val additionalConfig = Map("mongodb.db" -> dbName,
+      "mongo.init.loadOnStart" -> "false",
+      "embed.mongo.enabled" -> "false"
+    )
 
     // valid users in the inital Data: login;password;identityId;token
     //Ox0F55Om;password;5WtjLmPMEFYVzsn62DrP;zQuTMDVRDMKYQgUVIbAKFdRLQTxeeMMXphvCUByf
@@ -226,9 +229,9 @@ class ControllerSpec extends Specification {
       Logger.debug("DATA" + data.toString)
 
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newPhone)
-      (data \ "phoneNumber" \ "isVerfied").asOpt[Boolean] must beSome(false)
+      (data \ "phoneNumber" \ "isVerified").asOpt[Boolean] must beSome(false)
       (data \ "email" \ "value").asOpt[String] must beSome(newMail)
-      (data \ "email" \ "isVerfied").asOpt[Boolean] must beSome(false)
+      (data \ "email" \ "isVerified").asOpt[Boolean] must beSome(false)
       (data \ "displayName").asOpt[String] must beSome(newName)
     }
 
