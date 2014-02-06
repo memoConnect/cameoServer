@@ -10,6 +10,8 @@ import play.api.libs.functional.syntax._
 import java.text.SimpleDateFormat
 import java.util.{ Date, TimeZone }
 import reactivemongo.api.indexes.{ IndexType, Index }
+import reactivemongo.bson.BSONDocument
+import play.modules.reactivemongo.json.BSONFormats
 
 /**
  * User: Björn Reimer
@@ -79,5 +81,9 @@ trait MongoHelper {
 
   def addLastUpdated(date: Date): JsObject = {
     Json.obj("lastUpdated" -> defaultDateFormat.format(date))
+  }
+
+  def toBson(json: JsValue): Option[BSONDocument] = {
+    BSONFormats.toBSON(json).asOpt.map(_.asInstanceOf[BSONDocument])
   }
 }
