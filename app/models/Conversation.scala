@@ -12,6 +12,7 @@ import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -79,7 +80,7 @@ case class Conversation(id: MongoId,
 
 object Conversation extends Model[Conversation] {
 
-  lazy val col: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
+  def col: JSONCollection = conversationCollection
 
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
 
@@ -104,7 +105,7 @@ object Conversation extends Model[Conversation] {
   val summaryWrites = Writes[Conversation] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
-        Conversation.addLastUpdated(c.lastUpdated) ++
+        addLastUpdated(c.lastUpdated) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
         Json.obj("lastMessage" -> {
           c.messages.lastOption match {
@@ -112,11 +113,6 @@ object Conversation extends Model[Conversation] {
             case None    => Json.obj()
           }
         })
-  }
-
-  def find(id: MongoId): Future[Option[Conversation]] = {
-    val query = Json.obj("_id" -> id)
-    col.find(query).one[Conversation]
   }
 
   def create: Conversation = {

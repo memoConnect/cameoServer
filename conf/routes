@@ -16,6 +16,7 @@ DELETE         /api/v1/account/:loginName                controllers.AccountCont
 
 # IDENTITIES
 GET            /api/v1/identity/:id                      controllers.IdentityController.getIdentity(id)
+PUT            /api/v1/identity                          controllers.IdentityController.updateIdentity()
 
 
 # CONVERSATIONS
@@ -61,6 +62,10 @@ POST           /api/v1/services/checkEmailAddress        controllers.ServicesCon
 
 # Deal with options
 OPTIONS        /api/v1/*foo                              controllers.TokenController.getTokenOptions(foo)
+
+# Utitility functions
+GET            /api/v1/dumpDb                            controllers.Application.dumpDb()
+GET            /api/v1/loadDb                            controllers.Application.loadFixtures()
 
 ##
 ##   WebClient

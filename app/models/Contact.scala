@@ -10,6 +10,7 @@ import play.api.mvc.{ Results, SimpleResult }
 import play.mvc.Result
 import helper.ResultHelper._
 import play.api.Logger
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -39,6 +40,8 @@ case class Contact(id: MongoId,
 object Contact extends Model[Contact] {
 
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
+
+  implicit def col = identityCollection
 
   def createReads(identityId: MongoId): Reads[Contact] = (
     Reads.pure[MongoId](IdHelper.generateContactId()) and

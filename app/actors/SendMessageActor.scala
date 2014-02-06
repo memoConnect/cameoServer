@@ -2,18 +2,18 @@ package actors
 
 import akka.actor.Actor
 import play.api.Logger
-import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
 import models.{ MessageStatus, Identity, MongoId, Message }
 import constants.Messaging._
 import scala.concurrent.Future
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
  * Date: 6/12/13
  * Time: 5:36 PM
  */
-class SendMessageActor extends Actor with MongoHelper {
+class SendMessageActor extends Actor {
 
   def receive = {
     case (message: Message, recipients: Seq[MongoId]) => {

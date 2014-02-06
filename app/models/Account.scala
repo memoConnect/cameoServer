@@ -8,10 +8,11 @@ import reactivemongo.api.indexes.{ IndexType, Index }
 import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import helper.IdHelper
+import helper.{ IdHelper }
 import play.api.Play
 import reactivemongo.core.commands.LastError
 import play.api.Play.current
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -22,12 +23,26 @@ case class Account(id: MongoId,
                    loginName: String,
                    password: String,
                    identities: Seq[MongoId],
-                   phoneNumber: Option[String],
-                   email: Option[String],
+                   phoneNumber: Option[String], // not used anymore
+                   email: Option[String], // not used anymore
                    created: Date,
                    lastUpdated: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
+
+  def toJsonWithIdentities: Future[JsObject] = {
+    val js = this.identities.map {
+      iId =>
+        Identity.find(iId).map {
+          case None    => Json.obj()
+          case Some(i) => i.toJson
+        }
+    }
+
+    Future.sequence(js).map {
+      futureIdentities => this.toJson ++ Json.obj("identities" -> futureIdentities)
+    }
+  }
 }
 
 object Account extends Model[Account] {
@@ -54,17 +69,8 @@ object Account extends Model[Account] {
       Json.obj("id" -> a.id.toJson) ++
         Json.obj("loginName" -> a.loginName) ++
         Json.obj("identities" -> a.identities.map(id => id.toJson)) ++
-        toJsonOrEmpty("phoneNumber", a.phoneNumber) ++
-        toJsonOrEmpty("email", a.email) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
-  }
-
-  def find(id: String): Future[Option[Account]] = find(new MongoId(id))
-
-  def find(id: MongoId): Future[Option[Account]] = {
-    val query = Json.obj("_id" -> id)
-    col.find(query).one[Account]
   }
 
   def findByLoginName(loginName: String): Future[Option[Account]] = {
@@ -88,6 +94,12 @@ object Account extends Model[Account] {
   }
 }
 
+case class IdentityUpdate(phoneNumber: Option[String],
+                          email: Option[String])
+
+object IdentityUpdate {
+  implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
+}
 case class AccountReservation(loginName: String,
                               id: MongoId,
                               created: Date) {

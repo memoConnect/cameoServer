@@ -1,10 +1,9 @@
 package models
 
 import java.util.Date
-import traits.MongoHelper
-
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -21,7 +20,7 @@ case class VerifiedString(isVerified: Boolean,
   def toJson: JsObject = Json.toJson(this)(VerifiedString.outputWrites).as[JsObject]
 }
 
-object VerifiedString extends MongoHelper {
+object VerifiedString {
 
   implicit val mongoFormat: Format[VerifiedString] = createMongoFormat(Json.reads[VerifiedString], Json.writes[VerifiedString])
 

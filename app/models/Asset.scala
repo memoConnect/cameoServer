@@ -5,6 +5,7 @@ import traits.{ Model }
 import play.api.libs.json._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -12,8 +13,8 @@ import ExecutionContext.Implicits.global
  * Time: 3:04 PM
  */
 case class Asset(id: MongoId,
-                 filesize: String,
-                 filename: String,
+                 fileSize: String,
+                 fileName: String,
                  fileType: String,
                  created: Date) {
 
@@ -30,9 +31,9 @@ object Asset extends Model[Asset] {
   def outputWrites: Writes[Asset] = Writes {
     asset =>
       Json.obj("id" -> asset.id.toJson) ++
-        Json.obj("name" -> asset.filename) ++
+        Json.obj("name" -> asset.fileName) ++
         Json.obj("type" -> asset.fileType) ++
-        Json.obj("size" -> asset.filesize) ++
+        Json.obj("size" -> asset.fileSize) ++
         addCreated(asset.created)
   }
 }
