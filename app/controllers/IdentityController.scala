@@ -10,6 +10,7 @@ import helper.AuthAction
 import scala.Some
 import play.api.libs.json.{ Json, Format, JsError }
 import scala.Some
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -29,7 +30,9 @@ object IdentityController extends ExtendedController {
   }
 
   case class IdentityUpdate(phoneNumber: Option[String],
-                            email: Option[String])
+                            email: Option[String],
+                            displayName: Option[String]
+                             )
 
   object IdentityUpdate {
     implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
@@ -40,19 +43,13 @@ object IdentityController extends ExtendedController {
       request.body.validate[IdentityUpdate].map {
         update =>
           {
-            def getNewValue(old: Option[VerifiedString], newValue: String): Option[VerifiedString] = {
-              if (old.isDefined && old.get.value.equals(newValue)) {
-                None
-              }
-              else {
-                Some(VerifiedString.create(newValue))
-              }
-            }
 
-            val newMail = update.email.flatMap { getNewValue(request.identity.email, _) }
-            val newPhoneNumber = update.phoneNumber.flatMap { getNewValue(request.identity.phoneNumber, _) }
 
-            request.identity.update(email = newMail, phoneNumber = newPhoneNumber).flatMap {
+            val newMail = update.email.flatMap { getNewValueVerifiedString(request.identity.email, _) }
+            val newPhoneNumber = update.phoneNumber.flatMap { getNewValueVerifiedString(request.identity.phoneNumber, _) }
+            val newDisplayName = update.displayName.flatMap { getNewValueString(request.identity.displayName, _) }
+
+            request.identity.update(email = newMail, phoneNumber = newPhoneNumber, displayName = newDisplayName).flatMap {
               lastError =>
                 {
                   Identity.find(request.identity.id).map {

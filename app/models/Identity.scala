@@ -59,14 +59,14 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
-  def update(email: Option[VerifiedString] = None, phoneNumber: Option[VerifiedString] = None): Future[LastError] = {
+  def update(email: Option[VerifiedString] = None, phoneNumber: Option[VerifiedString] = None, displayName: Option[String] = None): Future[LastError] = {
 
-    def maybeJson(key: String, obj: Option[JsValue]): JsObject = {
-      if (obj.isDefined) Json.obj(key -> Json.toJson(obj.get))
-      else Json.obj()
+    val setValues = {
+      maybeEmpty("email", email.map { Json.toJson(_) }) ++
+      maybeEmpty("phoneNumber", phoneNumber.map { Json.toJson(_) }) ++
+      toJsonOrEmpty("displayName", displayName)
     }
 
-    val setValues = maybeJson("email", email.map { Json.toJson(_) }) ++ maybeJson("phoneNumber", phoneNumber.map { Json.toJson(_) })
     val set = Json.obj("$set" -> setValues)
 
     Identity.col.update(query, set)

@@ -5,6 +5,7 @@
  */
 
 import models.Account
+import play.api.libs.json.{ JsValue, Json }
 import play.api.{ Logger, Play, GlobalSettings }
 import info.schleichardt.play.embed.mongo.DynamicEmbedMongoPort
 import play.api.mvc.EssentialAction
@@ -17,6 +18,7 @@ import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.Play.current
 import services.DbAdminUtilities
+import helper.MongoHelper._
 
 object Global extends GlobalSettings with DynamicEmbedMongoPort {
 
@@ -32,8 +34,13 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
 
   override def onStart(app: play.api.Application) = {
     if (Play.configuration.getString("mongo.init.loadOnStart").getOrElse("fail").equalsIgnoreCase("true")) {
-      Logger.info("Loading initial data")
-      DbAdminUtilities.loadFixtures()
+
+      // only load if there is no data in the DB alread
+      conversationCollection.find(Json.obj()).one[JsValue].map {
+        case None =>
+          Logger.info("Loading initial data")
+          DbAdminUtilities.loadFixtures()
+      }
     }
   }
 }

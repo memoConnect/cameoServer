@@ -10,6 +10,7 @@ import play.api.libs.functional.syntax._
 import java.text.SimpleDateFormat
 import java.util.{ Date, TimeZone }
 import reactivemongo.api.indexes.{ IndexType, Index }
+import models.VerifiedString
 
 /**
  * User: Björn Reimer
@@ -97,10 +98,28 @@ object MongoHelper {
     }
   }
 
-  def maybeEmpty(key: String, value: Option[JsObject]): JsObject = {
+  def maybeEmpty(key: String, value: Option[JsValue]): JsObject = {
     value match {
       case Some(s) => Json.obj(key -> s)
       case None    => Json.obj()
+    }
+  }
+
+  def getNewValueVerifiedString(old: Option[VerifiedString], newValue: String): Option[VerifiedString] = {
+    if (old.isDefined && old.get.value.equals(newValue)) {
+      None
+    }
+    else {
+      Some(VerifiedString.create(newValue))
+    }
+  }
+  
+  def getNewValueString(old: Option[String], newValue: String): Option[String] = {
+    if (old.isDefined && old.get.equals(newValue)) {
+      None
+    }
+    else {
+      Some(newValue)
     }
   }
 
