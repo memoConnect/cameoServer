@@ -8,10 +8,11 @@ import reactivemongo.api.indexes.{ IndexType, Index }
 import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import helper.IdHelper
+import helper.{ IdHelper }
 import play.api.Play
 import reactivemongo.core.commands.LastError
 import play.api.Play.current
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -58,13 +59,6 @@ object Account extends Model[Account] {
         toJsonOrEmpty("email", a.email) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
-  }
-
-  def find(id: String): Future[Option[Account]] = find(new MongoId(id))
-
-  def find(id: MongoId): Future[Option[Account]] = {
-    val query = Json.obj("_id" -> id)
-    col.find(query).one[Account]
   }
 
   def findByLoginName(loginName: String): Future[Option[Account]] = {

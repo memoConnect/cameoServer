@@ -12,6 +12,6 @@ import models.{ Purl, Token }
  */
 
 //TODO: clean this up
-trait ExtendedController extends Controller with MongoController with MongoHelper {
+trait ExtendedController extends Controller with MongoController {
 
 }

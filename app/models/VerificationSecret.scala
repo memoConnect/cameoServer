@@ -1,11 +1,11 @@
 package models
 
 import play.api.libs.json._
-import helper.IdHelper
-import traits.MongoHelper
+import helper.{ MongoHelper, IdHelper }
 import java.util.Date
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -19,7 +19,7 @@ case class VerificationSecret(id: MongoId,
                               valueToBeVerified: String,
                               created: Date)
 
-object VerificationSecret extends MongoHelper {
+object VerificationSecret {
 
   implicit val mongoFormat: Format[VerificationSecret] = createMongoFormat(Json.reads[VerificationSecret], Json.writes[VerificationSecret])
 

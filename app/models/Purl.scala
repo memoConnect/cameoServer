@@ -7,6 +7,7 @@ import helper.IdHelper
 import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -42,11 +43,6 @@ object Purl extends Model[Purl] {
         toJsonOrEmpty("username", purl.username) ++
         toJsonOrEmpty("name", purl.name) ++
         toJsonOrEmpty("token", purl.token)
-  }
-
-  def find(purl: String): Future[Option[Purl]] = {
-    val query = Json.obj("purl" -> purl)
-    col.find(query).one[Purl]
   }
 
   /*
