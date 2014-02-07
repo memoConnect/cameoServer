@@ -11,10 +11,37 @@ import ExecutionContext.Implicits.global
 import reactivemongo.core.commands._
 import play.modules.reactivemongo.json.BSONFormats._
 import play.api.Logger
-import reactivemongo.bson.{ BSONString, BSONInteger, BSON, BSONValue }
+import reactivemongo.bson._
 import reactivemongo.api.SortOrder
 import java.util.Date
 import helper.MongoHelper._
+import reactivemongo.core.commands.Group
+import reactivemongo.core.commands.Sort
+import reactivemongo.core.commands.Match
+import scala.Some
+import reactivemongo.core.commands.SumValue
+import reactivemongo.core.commands.Unwind
+import reactivemongo.core.commands.Limit
+import reactivemongo.core.commands.Project
+import play.api.libs.json.JsObject
+import reactivemongo.core.commands.Skip
+import reactivemongo.core.commands.Ascending
+import play.api.libs.functional.syntax._
+import reactivemongo.core.commands.Group
+import reactivemongo.core.commands.Sort
+import reactivemongo.core.commands.Match
+import reactivemongo.bson.BSONDateTime
+import reactivemongo.bson.BSONString
+import scala.Some
+import reactivemongo.core.commands.SumValue
+import reactivemongo.bson.BSONInteger
+import reactivemongo.core.commands.Unwind
+import reactivemongo.core.commands.Limit
+import reactivemongo.core.commands.Project
+import play.api.libs.json.JsObject
+import reactivemongo.core.commands.Skip
+import reactivemongo.core.commands.Ascending
+import java.lang.NumberFormatException
 
 /**
  * User: Björn Reimer
@@ -64,7 +91,32 @@ object MessageController extends ExtendedController {
                          endDate: Option[Date])
 
   object FilterRules {
-    implicit val format: Format[FilterRules] = createMongoFormat(Json.reads[FilterRules], Json.writes[FilterRules])
+
+    val dateReads: Reads[Date] = Reads {
+      js =>
+        js.asOpt[String] match {
+          case None =>
+            JsError()
+          case Some(s) => {
+            try {
+              JsSuccess(new Date(s.toLong * 1000))
+            }
+            catch {
+              case e: NumberFormatException => JsError()
+            }
+          }
+        }
+    }
+
+    implicit val reads: Reads[FilterRules] = (
+      (__ \ 'fromIdentities).readNullable[Seq[String]] and
+      (__ \ 'toIdentities).readNullable[Seq[String]] and
+      (__ \ 'fromGroups).readNullable[Seq[String]] and
+      (__ \ 'fromGroups).readNullable[Seq[String]] and
+      (__ \ 'startDate).readNullable[Date](dateReads) and
+      (__ \ 'endDate).readNullable[Date](dateReads)
+    )(FilterRules.apply _)
+
   }
 
   def filter(offset: Int = 0, varLimit: Int = 0, count: String = "false") = AuthAction.async(parse.tolerantJson) {
@@ -72,6 +124,8 @@ object MessageController extends ExtendedController {
 
       // set default limit
       val limit = if (varLimit < 1) 150 else varLimit
+
+      implicit val dateReads: Reads[Date] = Reads.IsoDateReads
 
       request.body.validate[FilterRules].map {
         fr =>
@@ -88,6 +142,7 @@ object MessageController extends ExtendedController {
             val conversations = request.identity.conversations
             val from: Seq[MongoId] = collectIdentities(fr.fromIdentities, fr.fromGroups)
             val to: Seq[MongoId] = collectIdentities(fr.toIdentities, fr.toGroups)
+            //            val startDate: Date = new Date(fr.startDate)
 
             def createMatch(ids: Seq[MongoId], matchFunction: (MongoId => JsObject)): Match = {
               if (ids.size < 1) {
@@ -95,8 +150,18 @@ object MessageController extends ExtendedController {
               }
               else {
                 val matchJson = Json.obj("$or" -> ids.map(matchFunction))
-                Logger.debug("MATCH: " + matchJson.toString())
                 Match(toBson(matchJson).get)
+              }
+            }
+
+            def createDateMatch(dateOpt: Option[Date], matchOperator: String): Seq[Match] = {
+              dateOpt match {
+                case None => Seq()
+                case Some(date) => {
+                  val d = BSONDateTime(date.getTime)
+                  val doc = BSONDocument(("messages.created", BSONDocument((matchOperator, d))))
+                  Seq(Match(doc))
+                }
               }
             }
 
@@ -105,9 +170,9 @@ object MessageController extends ExtendedController {
               Unwind("messages"),
               Project(("messages", BSONInteger(1)), ("_id", BSONInteger(-1))),
               createMatch(from, id => Json.obj("messages.fromIdentityId" -> id)),
-              createMatch(to, id => Json.obj("messages.messageStatus.identityId" -> id)))
-
-            Logger.debug("BASE" + basePipeline)
+              createMatch(to, id => Json.obj("messages.messageStatus.identityId" -> id))) ++
+              createDateMatch(fr.startDate, "$gt") ++
+              createDateMatch(fr.endDate, "$lt")
 
             if (count.equalsIgnoreCase("true")) {
               val pipeline = basePipeline ++
