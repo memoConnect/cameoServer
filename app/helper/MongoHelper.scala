@@ -10,6 +10,8 @@ import play.api.libs.functional.syntax._
 import java.text.SimpleDateFormat
 import java.util.{ Date, TimeZone }
 import reactivemongo.api.indexes.{ IndexType, Index }
+import reactivemongo.bson.BSONDocument
+import play.modules.reactivemongo.json.BSONFormats
 import models.VerifiedString
 
 /**
@@ -121,6 +123,10 @@ object MongoHelper {
     else {
       Some(newValue)
     }
+  }
+
+  def toBson(json: JsValue): Option[BSONDocument] = {
+    BSONFormats.toBSON(json).asOpt.map(_.asInstanceOf[BSONDocument])
   }
 
 }

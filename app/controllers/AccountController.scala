@@ -28,53 +28,54 @@ object AccountController extends ExtendedController {
     request =>
       val jsBody: JsValue = request.body
 
-      // there might be a reservation secret for reserved accounts
       val reservationSecret: Option[String] = (jsBody \ "reservationSecret").asOpt[String]
 
       jsBody.validate[Account](Account.createReads).map {
         account =>
 
-          // check if this loginName has been reserved
-          val allowed: Future[Boolean] = AccountReservation.checkReserved(account.loginName).map {
-            case Some(secret) => if (secret.equals(reservationSecret.getOrElse("fail"))) {
-              AccountReservation.deleteReserved(account.loginName)
-              true
-            }
-            else {
-              false
-            }
-            case None => true
-          }
+          // check for reservation secret
+          reservationSecret match {
+            case None => Future(BadRequest(resKO("no reservation secret")))
+            case Some(rs) => AccountReservation.checkReserved(account.loginName).flatMap {
 
-          allowed.flatMap {
-            case false => Future(Unauthorized(resKO("loginName is reserved, wait 10 min")))
-            case true => {
-              // create identity and add it to account
-              val identity = Identity.create(Some(account.id), account.email, account.phoneNumber)
-              Identity.col.insert(identity)
-              val account2 = account.copy(identities = Seq(identity.id))
+              case None => Future(Unauthorized(resKO("loginName is reserved, wait 10 min")))
+              case Some(secret) =>
 
-              accountCollection.insert(account2).flatMap {
-                lastError =>
-                  {
-                    if (lastError.ok) {
-                      account2.toJsonWithIdentities.map { resOK(_) }
+                secret.equals(rs) match {
+                  case false => Future(Unauthorized(resKO("invalid reservation secret")))
+                  case true => {
+
+                    // everything is ok, we can create the account now
+                    AccountReservation.deleteReserved(account.loginName)
+
+                    // create identity and add it to account
+                    val identity = Identity.create(Some(account.id), account.email, account.phoneNumber)
+                    Identity.col.insert(identity)
+                    val account2 = account.copy(identities = Seq(identity.id))
+
+                    accountCollection.insert(account2).flatMap {
+                      lastError =>
+                        {
+                          if (lastError.ok) {
+                            account2.toJsonWithIdentities.map{resOK(_)}
+                          }
+                          else {
+                            Future(InternalServerError(resKO("MongoError: " + lastError)))
+                          }
+                        }
+                    }.recover {
+                      // deal with exceptions from duplicate loginNames
+                      case de: DatabaseException =>
+                        if (de.getMessage().contains("loginName")) {
+                          BadRequest(resKO("The username already exists"))
+                        }
+                        else {
+                          BadRequest(resKO("Error: " + de.getMessage()))
+                        }
+                      case e => InternalServerError(resKO("Mongo Error: " + e.toString))
                     }
-                    else {
-                      Future(InternalServerError(resKO("MongoError: " + lastError)))
-                    }
                   }
-              }.recover {
-                // deal with exceptions from duplicate loginNames
-                case de: DatabaseException =>
-                  if (de.getMessage().contains("loginName")) {
-                    BadRequest(resKO("The username already exists"))
-                  }
-                  else {
-                    BadRequest(resKO("Error: " + de.getMessage()))
-                  }
-                case e => InternalServerError(resKO("Mongo Error: " + e.toString))
-              }
+                }
             }
           }
       }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))

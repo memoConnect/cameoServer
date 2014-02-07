@@ -42,9 +42,9 @@ class ControllerSpec extends Specification {
     )
 
     // valid users in the inital Data: login;password;identityId;token
-    //Ox0F55Om;password;5WtjLmPMEFYVzsn62DrP;zQuTMDVRDMKYQgUVIbAKFdRLQTxeeMMXphvCUByf
-    //8sBIEpP2;password;uYAWgPqwi8H11QDjxnd7;IBuGTnqR66vCCvnhokAci0a4mRSghrfzbGMHpsrf
-    //qsBV59ML;password;D9bVvOric1aERBhRLejU;tvaIH6bRoCMQH7UfhNMijq8EM6QusLfx8nalQNxI
+//    aC5LIRpX;password;shgofPlb0QlUxj80XHJL;GQhSOUDZ9Lm1En9bvgkh9Wb3vxgBZwamoxyundex
+//    D2z3SOx3;password;DvrT60qr9cOncpwt4wFH;xlBdkdxFIzpnIdM32XirEGct5imtJUCsrrIoTOBf
+
 
     // Use the same FakeApplication for all tests, so the mongoConnection does not break
     lazy val app = FakeApplication(additionalConfiguration = additionalConfig, withGlobal = globalSettings)
@@ -58,7 +58,7 @@ class ControllerSpec extends Specification {
     var token = ""
     var regSec = ""
 
-    val token2 = "zQuTMDVRDMKYQgUVIbAKFdRLQTxeeMMXphvCUByf"
+    val token2 = "xlBdkdxFIzpnIdM32XirEGct5imtJUCsrrIoTOBf"
 
     "Refuse invalid Logins" in {
 
@@ -122,7 +122,7 @@ class ControllerSpec extends Specification {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
-      status(res) must equalTo(UNAUTHORIZED)
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     "Create Account" in {

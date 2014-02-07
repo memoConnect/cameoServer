@@ -8,6 +8,7 @@ import traits.ExtendedController
 import models.{ MongoId, Identity, Account, Token }
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.ResultHelper._
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -21,9 +22,10 @@ object TokenController extends ExtendedController {
    */
   // decode username and password
   def decodeBasicAuth(auth: String) = {
-    val baStr = auth.replaceFirst("Basic ", "")
+    val baStr = auth.replaceFirst("Basic ", "").replace(" ", "")
     val Array(user, pass) = new String(new sun.misc.BASE64Decoder().decodeBuffer(baStr), "UTF-8").split(":")
     (user, pass)
+
   }
 
   /**
@@ -38,7 +40,6 @@ object TokenController extends ExtendedController {
           }
           case Some(basicAuth) => {
             val (loginName, password) = decodeBasicAuth(basicAuth)
-
             //find account and get first identity
             Account.findByLoginName(loginName).flatMap {
               case None => Future(Unauthorized(resKO("Invalid password/loginName")))

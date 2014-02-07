@@ -71,6 +71,14 @@ case class Identity(id: MongoId,
 
     Identity.col.update(query, set)
   }
+
+  def getGroup(groupName: String): Seq[Contact] = {
+    this.contacts.filter(_.groups.contains(groupName))
+  }
+
+  def getGroups: Seq[String] = {
+    this.contacts.flatMap(_.groups).distinct
+  }
 }
 
 object Identity extends Model[Identity] {

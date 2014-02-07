@@ -9,6 +9,7 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import models.MongoId
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -39,7 +40,10 @@ trait Model[A] {
     js =>
       js.asOpt[String] match {
         case None       => JsError("No password")
-        case Some(pass) => JsSuccess(BCrypt.hashpw(pass, BCrypt.gensalt()))
+        case Some(pass) => JsSuccess({
+          val hashed = BCrypt.hashpw(pass, BCrypt.gensalt())
+          hashed
+        })
       }
   }
 

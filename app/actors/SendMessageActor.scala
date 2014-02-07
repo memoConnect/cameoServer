@@ -18,12 +18,12 @@ class SendMessageActor extends Actor {
   def receive = {
     case (message: Message, recipients: Seq[MongoId]) => {
 
-      Logger.info("SendMessageActor: Processing message with id " + message.id)
+//      Logger.info("SendMessageActor: Processing message with id " + message.id)
 
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
         case None => {
-          val error = "Could not find identityID " + message.fromIdentityId
+          val error = "Could not find fromIdentityID " + message.fromIdentityId
           Logger.error(error)
           new MessageStatus(message.fromIdentityId, MESSAGE_STATUS_ERROR, error)
         }
@@ -42,9 +42,9 @@ class SendMessageActor extends Actor {
                     }
                     case Some(identity) => {
                       identity.preferredMessageType match {
-                        case MESSAGE_TYPE_SMS     => sendSmsActor ! (message, fromIdentity, identity, 0)
-                        case MESSAGE_TYPE_EMAIL   => sendMailActor ! (message, fromIdentity, identity, 0)
-                        case MESSAGE_TYPE_DEFAULT => sendMailActor ! (message, fromIdentity, identity, 0)
+                        case MESSAGE_TYPE_SMS     => //sendSmsActor ! (message, fromIdentity, identity, 0)
+                        case MESSAGE_TYPE_EMAIL   => //sendMailActor ! (message, fromIdentity, identity, 0)
+                        case MESSAGE_TYPE_DEFAULT => //sendMailActor ! (message, fromIdentity, identity, 0)
                         // TODO case _ => sendFailActor ! (message, identity)
                       }
                       new MessageStatus(id, MESSAGE_STATUS_QUEUED, identity.preferredMessageType)
