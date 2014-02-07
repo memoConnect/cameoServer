@@ -53,14 +53,14 @@ object AccountController extends ExtendedController {
                     Identity.col.insert(identity)
                     val account2 = account.copy(identities = Seq(identity.id))
 
-                    accountCollection.insert(account2).map {
+                    accountCollection.insert(account2).flatMap {
                       lastError =>
                         {
                           if (lastError.ok) {
-                            resOK(account2.toJson)
+                            account2.toJsonWithIdentities.map{resOK(_)}
                           }
                           else {
-                            InternalServerError(resKO("MongoError: " + lastError))
+                            Future(InternalServerError(resKO("MongoError: " + lastError)))
                           }
                         }
                     }.recover {

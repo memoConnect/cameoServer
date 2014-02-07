@@ -18,12 +18,12 @@ class SendMessageActor extends Actor {
   def receive = {
     case (message: Message, recipients: Seq[MongoId]) => {
 
-      Logger.info("SendMessageActor: Processing message with id " + message.id)
+//      Logger.info("SendMessageActor: Processing message with id " + message.id)
 
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
         case None => {
-          val error = "Could not find identityID " + message.fromIdentityId
+          val error = "Could not find fromIdentityID " + message.fromIdentityId
           Logger.error(error)
           new MessageStatus(message.fromIdentityId, MESSAGE_STATUS_ERROR, error)
         }
