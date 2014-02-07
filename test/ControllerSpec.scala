@@ -58,7 +58,7 @@ class ControllerSpec extends Specification {
     var token = ""
     var regSec = ""
 
-    val token2 = "zQuTMDVRDMKYQgUVIbAKFdRLQTxeeMMXphvCUByf"
+    val token2 = "xlBdkdxFIzpnIdM32XirEGct5imtJUCsrrIoTOBf"
 
     "Refuse invalid Logins" in {
 
@@ -122,7 +122,7 @@ class ControllerSpec extends Specification {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
-      status(res) must equalTo(UNAUTHORIZED)
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     "Create Account" in {
