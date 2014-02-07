@@ -42,9 +42,9 @@ class SendMessageActor extends Actor {
                     }
                     case Some(identity) => {
                       identity.preferredMessageType match {
-                        case MESSAGE_TYPE_SMS     => sendSmsActor ! (message, fromIdentity, identity, 0)
-                        case MESSAGE_TYPE_EMAIL   => sendMailActor ! (message, fromIdentity, identity, 0)
-                        case MESSAGE_TYPE_DEFAULT => sendMailActor ! (message, fromIdentity, identity, 0)
+                        case MESSAGE_TYPE_SMS     => //sendSmsActor ! (message, fromIdentity, identity, 0)
+                        case MESSAGE_TYPE_EMAIL   => //sendMailActor ! (message, fromIdentity, identity, 0)
+                        case MESSAGE_TYPE_DEFAULT => //sendMailActor ! (message, fromIdentity, identity, 0)
                         // TODO case _ => sendFailActor ! (message, identity)
                       }
                       new MessageStatus(id, MESSAGE_STATUS_QUEUED, identity.preferredMessageType)

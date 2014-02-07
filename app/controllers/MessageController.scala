@@ -40,7 +40,7 @@ object MessageController extends ExtendedController {
               case None => NotFound(resKO("invalid id"))
               case Some(conversation) => {
                 conversation.addMessage(message)
-                //actors.sendMessageActor ! (message, conversation.recipients)
+                actors.sendMessageActor ! (message, conversation.recipients)
                 resOK(message.toJson)
               }
             }
