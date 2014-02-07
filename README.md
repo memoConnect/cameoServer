@@ -8,6 +8,7 @@ cameo aims to be the new open multimedia messenger and social platform hub, that
 cameo integrates all your important messenger and social services into one new universe, that is still connected to the existing outside communication islands.
 
 cameo is:
+
 * end-to-end encrypted (RAS4096, AES256)
 * easy to use
 * enables users to reach all of their friends, does
