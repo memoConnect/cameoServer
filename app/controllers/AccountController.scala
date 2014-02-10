@@ -57,7 +57,7 @@ object AccountController extends ExtendedController {
                       lastError =>
                         {
                           if (lastError.ok) {
-                            account2.toJsonWithIdentities.map{resOK(_)}
+                            account2.toJsonWithIdentities.map { resOK(_) }
                           }
                           else {
                             Future(InternalServerError(resKO("MongoError: " + lastError)))
