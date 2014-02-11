@@ -1,0 +1,743 @@
+FORMAT: 1A
+HOST: http://cameo.io
+
+# Cameo API
+new and improved ;)
+
+
+# Group Authentication
+
+## Create new Token [/api/v1/token]
+
+### GET
+
++ Headers
+
+            Authorization: Basic
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "token": "FPqYIrbvPdTmxUE5fb2TIRfy1Gmy7JS1OxfdIhNJ",
+            "created": "22.01.2014 16:34:54"
+          }
+        }
+        
+## Delete Token [/api/token/{token}]
+
+### DELETE
+
++ Parameters
+    + token 
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "deletedToken": "34AmUnliV2SXqj9vOTfHDiymmu5XF9B7KGEVV126"
+          }
+        }
+
+
+# Group Accounts
+Account Management
+
+## Check Username [/account/check]
+
+### [POST]
+
++ Request (application/json)
+
+        {
+            "loginName":"testtest"
+        }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "loginName": "testtest",
+            "reservationSecret": "VaXdx3xAAzk3cTXvdDlC"
+          }
+        }
+        
++ Response 400
+
+        {
+          "res": "KO",
+          "error": {
+            "alternative": {
+              "loginName": "testtest_1",
+              "reservationSecret": "JP1r7H63EKyE674G0TUS"
+            }
+          }
+        }
+
+## Create Account [/account]
+
+### [POST]
+
++ Request (application/json)
+
+        {
+          "loginName": "testtest",
+          "password": "password",
+          "email": "mail",
+          "phoneNumber": "12335"
+          "reservationSecret":"VaXdx3xAAzk3cTXvdDlC"
+        }
+
++ Response 200 (application/json)
+
+        {
+          "res": "OK",
+          "data": {
+            "loginName": "test",
+            "identities": [
+              "ZVtXkxMmPj4WtLYea8ci"
+            ],
+            "phoneNumber": "12335",
+            "email": "mail",
+            "created": "22.01.2014 16:34:54",
+            "lastUpdated": "22.01.2014 16:34:54"
+        }
+        
+        
+        
+        
+
+## Manage Accounts [/account/{loginName}{?token}]
+
+### [GET]
+
++ Parameters
+    + loginName
+    + token  ... Authentification token
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "loginName": "test",
+            "identities": [
+              "ZVtXkxMmPj4WtLYea8ci"
+            ],
+            "phoneNumber": "12335",
+            "email": "mail",
+            "created": "22.01.2014 16:34:54",
+            "lastUpdated": "22.01.2014 16:34:54"
+        } 
+
+### [DELETE]
+
++ Parameters
+    + loginName
+    + token  ... Authentification token
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "deleted Account": "test1"
+          }
+        }
+
+## Verification [/verify{?token}]
+
+Send a verification mail/sms. Both parameters in the JSON are optional.
+
+### [POST]
+
++ Parameters
+    + token  ... Authentification token
+
++ Request
+
+        {
+          "verifyPhoneNumber": true,
+          "verifyEmail": true
+        }
+        
++ Response 200
+
+        {
+          "res": "OK"
+        }
+        
+
+## Confirm Verification [/verify/{secret}]
+
+### [GET]
+
++ Parameters
+    + secret ... The secret that is contained in the verification link
+    
++ Response 200
+
+        {
+            "res": "OK",
+            "data": "verified"
+        }
+        
+## Identities [/identity/{id}{?token}]
+
+### [GET]
+
++ Parameters
+    + id ... Identity Id
+    + token  ... Authentification token
+    
++ Response 200 
+    
+        {
+          "res": "OK",
+          "data": {
+            "id": "ZVtXkxMmPj4WtLYea8ci",
+            "userKey": "89lKqFI4VYz1SKsesc1ZK8O9KNHADpPkRfNSQy6J",
+            "contacts": [],
+            "email": "mail",
+            "phoneNumber": "12335",
+            "preferredMessageType": "default",
+            "created": "22.01.2014 16:34:54",
+            "lastUpdated": "22.01.2014 16:34:54"
+          }
+        }
+
+## Edit identity [/identity{?token}]
+
+### [PUT]
+Edit the identity of the user. Only those values contained in the json will be modified.
+
++ Parameters
+    + token  ... Authentification token
+
++ Request 
+
+        {
+          "phoneNumber": "+49123456789",
+          "email": "mail",
+          "displayName": "newNick"
+        }
+        
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "5WtjLmPMEFYVzsn62DrP",
+            "displayName": "newNick",
+            "userKey": "pSkgMI2ithOxLfsPpWD0XuEcKjEK6Prn9oPZ3Xp1",
+            "email": {
+              "value": "mail",
+              "isVerified": false
+            },
+            "phoneNumber": {
+              "value": "+49123456789",
+              "isVerified": false
+            },
+            "preferredMessageType": "default",
+            "created": "06.02.2014 15:51:46",
+            "lastUpdated": "06.02.2014 15:51:46"
+          }
+        }
+        
+        
+            
+# Group Messanging
+Sending and reading messages
+
+## Start a new Conversation [/conversation{?token}]
+
+### [POST]
+
++ Parameters
+    + token  ... Authentification token
+    
++ Request
+
+        {
+            "subject":"Test Conversation 1 (optional)"
+        }
+        
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "WvbpPu2X8btdAOpA4IRF",
+            "recipients": [],
+            "messages": [],
+            "numberOfMessages": 0,
+            "created": "22.01.2014 16:34:55",
+            "lastUpdated": "22.01.2014 16:34:55"
+          }
+        }
+        
+## Manage Conversations [/conversation/{id}{?token,offset,limit}]
+
+### [GET]
+
++ Parameters
+    + id ... Conversation id
+    + token  ... Authentification token
+    + offset (optional) ... First message to be returned
+    + limit  (optional)... Max number of messages returned
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "WvbpPu2X8btdAOpA4IRF",
+            "messages": [
+              {
+                "id": "vwUmVfjkn5lXXwXGvxzS",
+                "messageBody": "text",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [
+                  {
+                    "identityId": "s29FpU4TFhxXOdRGfzLk",
+                    "status": "queued",
+                    "message": "default"
+                  },
+                  {
+                    "identityId": "V8SXRiE4o1lfN2WmGf0S",
+                    "status": "queued",
+                    "message": "sms"
+                  },
+                  {
+                    "identityId": "j07EKjJiGOXdfx2wqs0N",
+                    "status": "queued",
+                    "message": "default"
+                  }
+                ],
+                "created": "22.01.2014 16:34:55"
+              },
+              {
+                "id": "6ftwTSBMiQfmlOphLND3",
+                "messageBody": "text2",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [
+                  {
+                    "identityId": "s29FpU4TFhxXOdRGfzLk",
+                    "status": "queued",
+                    "message": "default"
+                  },
+                  {
+                    "identityId": "V8SXRiE4o1lfN2WmGf0S",
+                    "status": "queued",
+                    "message": "sms"
+                  },
+                  {
+                    "identityId": "j07EKjJiGOXdfx2wqs0N",
+                    "status": "queued",
+                    "message": "default"
+                  }
+                ],
+                "created": "22.01.2014 16:34:55"
+              },
+              {
+                "id": "O5uz1fBnuWFRwnqOCGuN",
+                "messageBody": "text3",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [
+                  {
+                    "identityId": "s29FpU4TFhxXOdRGfzLk",
+                    "status": "queued",
+                    "message": "default"
+                  },
+                  {
+                    "identityId": "V8SXRiE4o1lfN2WmGf0S",
+                    "status": "queued",
+                    "message": "sms"
+                  },
+                  {
+                    "identityId": "j07EKjJiGOXdfx2wqs0N",
+                    "status": "queued",
+                    "message": "default"
+                  }
+                ],
+                "created": "22.01.2014 16:34:55"
+              }
+            ],
+            "numberOfMessages": 3,
+            "created": "22.01.2014 16:34:55",
+            "lastUpdated": "22.01.2014 16:34:55",
+            "recipients": [
+              {
+                "id": "s29FpU4TFhxXOdRGfzLk",
+                "displayName": "NoName"
+              },
+              {
+                "id": "V8SXRiE4o1lfN2WmGf0S",
+                "displayName": "Ulrich"
+              },
+              {
+                "id": "j07EKjJiGOXdfx2wqs0N",
+                "displayName": "Aaron"
+              }
+            ]
+          }
+        }
+        
+## Add new Recipient to Conversation [/conversation/{id}/recipient{?token}]
+
+### POST
+
++ Parameters
+    + id ... Conversation id
+    + token  ... Authentification token
+    
++ Request
+
+        {
+          "recipients": [
+            "s29FpU4TFhxXOdRGfzLk",
+            "V8SXRiE4o1lfN2WmGf0S",
+            "j07EKjJiGOXdfx2wqs0N"
+          ]
+        }
+        
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "updated"
+        }
+        
+
+## Add message to conversation [/conversation/{id}/message{?token}]
+
+### POST
+
++ Parameters
+    + id ... Conversation id
+    + token  ... Authentification token
+    
++ Request
+
+        {
+            "messageBody": "text"
+        }
+        
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "vwUmVfjkn5lXXwXGvxzS",
+            "messageBody": "text",
+            "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+            "messageStatus": [],
+            "created": "22.01.2014 16:34:55"
+          }
+        }
+        
+
+## Get single Message [/message/{id}{?token}]
+
+### GET
+
++ Parameters
+    + id ... Message id
+    + token  ... Authentification token
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "vwUmVfjkn5lXXwXGvxzS",
+            "messageBody": "text",
+            "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+            "messageStatus": [
+              {
+                "identityId": "s29FpU4TFhxXOdRGfzLk",
+                "status": "queued",
+                "message": "default"
+              },
+              {
+                "identityId": "V8SXRiE4o1lfN2WmGf0S",
+                "status": "queued",
+                "message": "sms"
+              },
+              {
+                "identityId": "j07EKjJiGOXdfx2wqs0N",
+                "status": "queued",
+                "message": "default"
+              }
+            ],
+            "created": "22.01.2014 16:34:55"
+          }
+        }
+        
+# Group Contacts
+Manage your Contacts
+
+## Add Contact [/contact{?token}]
+
+### POST
+
++ Parameters
+    + token  ... Authentification token
+    
++ Request
+
+        {
+          "identity": {
+            "displayName": "Ulrich",
+            "email": "c@mail.de",
+            "phoneNumber": "+491234567890",
+            "preferredMessageType": "sms/mail/default"
+          },
+          "groups": [
+            "friends",
+            "job"
+          ]
+        }
+        
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "SnPjHLilBf3NcmeHLLBp",
+            "groups": [
+              "friends",
+              "job"
+            ],
+            "identity": {
+              "id": "V8SXRiE4o1lfN2WmGf0S",
+              "displayName": "Ulrich",
+              "userKey": "FdlZ5ixQjo73aufdAclttOctkfHkwy7sTtQ9vp7B",
+              "contacts": [],
+              "email": "c@mail.de",
+              "phoneNumber": "+49174560277",
+              "preferredMessageType": "sms",
+              "created": "22.01.2014 16:34:55",
+              "lastUpdated": "22.01.2014 16:34:55"
+            }
+          }
+        }
+        
+        
+## Get all contacts [/contacts{?token,offset,limit}]
+
+### GET 
+
++ Parameters
+    + token  ... Authentification token
+    + offset (optional) ... First contact to be returned
+    + limit  (optional)... Max number of contacts returned
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": [
+            {
+              "id": "SnPjHLilBf3NcmeHLLBp",
+              "groups": [
+                "friends",
+                "job"
+              ],
+              "identityId": "V8SXRiE4o1lfN2WmGf0S",
+              "identity": {
+                "id": "V8SXRiE4o1lfN2WmGf0S",
+                "displayName": "Ulrich",
+                "userKey": "FdlZ5ixQjo73aufdAclttOctkfHkwy7sTtQ9vp7B",
+                "contacts": [],
+                "email": "c@mail.de",
+                "phoneNumber": "+49123456789",
+                "preferredMessageType": "sms",
+                "created": "22.01.2014 16:34:55",
+                "lastUpdated": "22.01.2014 16:34:55"
+              }
+            },
+            {
+              "id": "VnEppGR3bqvtE11dDl9U",
+              "groups": [
+                "friends"
+              ],
+              "identityId": "j07EKjJiGOXdfx2wqs0N",
+              "identity": {
+                "id": "j07EKjJiGOXdfx2wqs0N",
+                "displayName": "Aaron",
+                "userKey": "Su4NDX8W8FAcWmwPPm6Ord0tLYaZP60yE6Mpnczi",
+                "contacts": [],
+                "email": "contact2@mail.de",
+                "phoneNumber": "+491234567892",
+                "preferredMessageType": "default",
+                "created": "22.01.2014 16:34:55",
+                "lastUpdated": "22.01.2014 16:34:55"
+              }
+            }
+          ]
+        }
+        
+## Get single Contact [/contact/{id}{?token}]
+
+### GET
+
++ Parameters
+    + id ... Contact id
+    + token  ... Authentification token
+        
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "SnPjHLilBf3NcmeHLLBp",
+            "groups": [
+              "friends",
+              "job"
+            ],
+            "identityId": "V8SXRiE4o1lfN2WmGf0S",
+            "identity": {
+              "id": "V8SXRiE4o1lfN2WmGf0S",
+              "displayName": "Ulrich",
+              "userKey": "FdlZ5ixQjo73aufdAclttOctkfHkwy7sTtQ9vp7B",
+              "contacts": [],
+              "email": "c@mail.de",
+              "phoneNumber": "+123456789",
+              "preferredMessageType": "sms",
+              "created": "22.01.2014 16:34:55",
+              "lastUpdated": "22.01.2014 16:34:55"
+            }
+          }
+        }
+        
+## Get all contact groups [/contact-groups{?token}]
+
+### GET
+
++ Parameters
+    + token  ... Authentification token
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": [
+            "friends",
+            "job"
+          ]
+        }
+        
+## Get all contacts from a group [/contact-group/{groupName}{?token,offset,limit}]
+
+### GET
+
++ Parameters
+    + groupName ... Name of the group
+    + token  ... Authentification token
+    + offset (optional) ... First contact to be returned
+    + limit  (optional)... Max number of contacts returned
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": [
+            {
+              "id": "SnPjHLilBf3NcmeHLLBp",
+              "groups": [
+                "friends",
+                "job"
+              ],
+              "identityId": "V8SXRiE4o1lfN2WmGf0S",
+              "identity": {
+                "id": "V8SXRiE4o1lfN2WmGf0S",
+                "displayName": "Ulrich",
+                "userKey": "FdlZ5ixQjo73aufdAclttOctkfHkwy7sTtQ9vp7B",
+                "contacts": [],
+                "email": "c@mail.de",
+                "phoneNumber": "+49123456789",
+                "preferredMessageType": "sms",
+                "created": "22.01.2014 16:34:55",
+                "lastUpdated": "22.01.2014 16:34:55"
+              }
+            },
+            {
+              "id": "VnEppGR3bqvtE11dDl9U",
+              "groups": [
+                "friends"
+              ],
+              "identityId": "j07EKjJiGOXdfx2wqs0N",
+              "identity": {
+                "id": "j07EKjJiGOXdfx2wqs0N",
+                "displayName": "Aaron",
+                "userKey": "Su4NDX8W8FAcWmwPPm6Ord0tLYaZP60yE6Mpnczi",
+                "contacts": [],
+                "email": "contact2@mail.de",
+                "phoneNumber": "+491234567892",
+                "preferredMessageType": "default",
+                "created": "22.01.2014 16:34:55",
+                "lastUpdated": "22.01.2014 16:34:55"
+              }
+            }
+          ]
+        }
+
+# Group Services
+
+## check phoneNumber [/api/v1/services/checkPhoneNumber]    
+
+phoneNumber as a String that should be verified, default country code is german. country codes will be added in response.
+
+### [POST]
+
++ Request
+    
+        { 
+            "phoneNumber" : "01732312123123123" 
+        }
+        
++ Response 200
+
+        {
+            "res": "OK",
+            "data": {
+                "status": "ok",
+                "phoneNumber": "+491732312123123123"
+            }
+        }
+
++ Response 400
+
+        {
+            "res": "KO",
+            "error": "The string supplied did not seem to be a phone number. > invalidPhoneNumber"
+        }
+
+## check emailAddresses [/api/v1/services/checkEmailAddress]    
+
+check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$"""
+
+### [POST]
+
++ Request
+    
+        { 
+            "emailAddress" : "a-b.c_d@a-b.c_d.co" 
+        }
+        
++ Response 200
+
+        {
+            "res": "OK"
+        }
+
++ Response 400
+
+        {
+            "res": "KO"
+        }
+

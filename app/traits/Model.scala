@@ -39,7 +39,7 @@ trait Model[A] {
   val hashPassword: Reads[String] = Reads[String] {
     js =>
       js.asOpt[String] match {
-        case None       => JsError("No password")
+        case None => JsError("No password")
         case Some(pass) => JsSuccess({
           val hashed = BCrypt.hashpw(pass, BCrypt.gensalt())
           hashed

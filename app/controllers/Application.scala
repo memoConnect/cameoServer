@@ -17,8 +17,7 @@ object Application extends Controller {
 
   def index = Action {
     request =>
-
-      Ok("Cameo API")
+      Ok(views.html.index())
   }
 
   def dumpDb() = Action {
