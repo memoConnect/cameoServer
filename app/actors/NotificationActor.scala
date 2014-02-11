@@ -1,8 +1,8 @@
 package actors
 
 import play.api.Play.current
-import akka.actor.{ Props, Actor }
-import models.{ Message }
+import akka.actor.{Props, Actor}
+import models.{Message}
 import play.api.Logger
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
@@ -14,7 +14,7 @@ import helper.MongoHelper._
  * Time: 7:23 PM
  */
 class NotificationActor extends Actor {
-
+ //TODO implementation missing
   def receive = {
     // notify user that a message has been received
     case (username: String, message: Message) => {
