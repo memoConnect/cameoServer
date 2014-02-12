@@ -47,7 +47,7 @@ Account Management
 
 ## Check Username [/account/check]
 
-### [POST]
+### POST
 
 + Request (application/json)
 
@@ -65,21 +65,18 @@ Account Management
           }
         }
 
-+ Response 400
++ Response 232
 
         {
           "res": "KO",
-          "error": {
-            "alternative": {
-              "loginName": "testtest_1",
-              "reservationSecret": "JP1r7H63EKyE674G0TUS"
-            }
+          "data": {
+            "alternative": "testtest_1",
           }
         }
 
 ## Create Account [/account]
 
-### [POST]
+### POST
 
 + Request (application/json)
 
@@ -112,7 +109,7 @@ Account Management
 
 ## Manage Accounts [/account/{loginName}{?token}]
 
-### [GET]
+### GET
 
 + Parameters
     + loginName
@@ -152,7 +149,7 @@ Account Management
 
 Send a verification mail/sms. Both parameters in the JSON are optional.
 
-### [POST]
+### POST
 
 + Parameters
     + token  ... Authentification token
@@ -173,7 +170,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
 ## Confirm Verification [/verify/{secret}]
 
-### [GET]
+### GET
 
 + Parameters
     + secret ... The secret that is contained in the verification link
@@ -187,7 +184,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
 ## Identities [/identity/{id}{?token}]
 
-### [GET]
+### GET
 
 + Parameters
     + id ... Identity Id
@@ -211,7 +208,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
 ## Edit identity [/identity{?token}]
 
-### [PUT]
+### PUT
 Edit the identity of the user. Only those values contained in the json will be modified.
 
 + Parameters
@@ -254,7 +251,7 @@ Sending and reading messages
 
 ## Start a new Conversation [/conversation{?token}]
 
-### [POST]
+### POST
 
 + Parameters
     + token  ... Authentification token
@@ -281,7 +278,7 @@ Sending and reading messages
 
 ## Manage Conversations [/conversation/{id}{?token,offset,limit}]
 
-### [GET]
+### GET
 
 + Parameters
     + id ... Conversation id
@@ -692,7 +689,7 @@ Manage your Contacts
 
 phoneNumber as a String that should be verified, default country code is german. country codes will be added in response.
 
-### [POST]
+### POST
 
 + Request
 
@@ -721,7 +718,7 @@ phoneNumber as a String that should be verified, default country code is german.
 
 check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$"""
 
-### [POST]
+### POST
 
 + Request
 
