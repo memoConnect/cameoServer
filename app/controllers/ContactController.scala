@@ -68,7 +68,7 @@ object ContactController extends ExtendedController {
       val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
 
       Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
-        c => resOK(c)
+        c => resOKSeq(c)
       }
 
   }
@@ -80,7 +80,7 @@ object ContactController extends ExtendedController {
       val limited = OutputLimits.applyLimits(contacts, offset, limit)
 
       Future.sequence(limited.map(_.toJsonWithIdentity)).map {
-        c => resOK(c)
+        c => resOKSeq(c)
       }
   }
 

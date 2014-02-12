@@ -15,21 +15,23 @@ class AuthRequest[A](val identity: Identity, request: Request[A]) extends Wrappe
 
 object AuthAction extends ActionBuilder[AuthRequest] {
 
-  val REQUEST_TOKEN = "token"
-  val REQUEST_TOKEN_MISSING = "no token"
+  val REQUEST_TOKEN_HEADER_KEY = "CAMEO-TOKEN"
+  val REQUEST_TOKEN_MISSING = "no token in header"
   val REQUEST_ACCESS_DENIED = "not allowed"
   val EMPTY_USER = ""
 
   def invokeBlock[A](request: Request[A], block: (AuthRequest[A]) => Future[SimpleResult]) = {
     // check if a token is passed
-    request.getQueryString(REQUEST_TOKEN) match {
-      case None => Future.successful(Results.Unauthorized(resKO(REQUEST_TOKEN_MISSING)))
+    request.headers.get(REQUEST_TOKEN_HEADER_KEY) match {
+      case None => Future.successful(resUnauthorizedError(REQUEST_TOKEN_MISSING))
       case Some(tokenId) => {
+
         Token.find(new MongoId(tokenId)).flatMap {
-          case None => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED + "1")))
+          case None => Future.successful(resUnauthorized())
           case Some(token) => {
+
             Identity.find(token.identityId).flatMap {
-              case None           => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))
+              case None           => Future.successful(resUnauthorized())
               case Some(identity) => block(new AuthRequest[A](identity, request))
             }
           }
