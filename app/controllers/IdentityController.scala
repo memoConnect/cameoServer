@@ -15,9 +15,20 @@ import helper.AuthAction
  */
 object IdentityController extends ExtendedController {
 
-  def getIdentity(id: String) = AuthAction.async {
+  def getIdentityById(id: String) = AuthAction.async {
 
     val mongoId = new MongoId(id)
+
+    Identity.find(mongoId).map {
+      case None           => NotFound(resKO("Identity not found"))
+      case Some(identity) => resOK(identity.toJson)
+    }
+  }
+
+  def getIdentityByToken() = AuthAction.async {
+  	request =>
+
+    val mongoId = request.identity.id
 
     Identity.find(mongoId).map {
       case None           => NotFound(resKO("Identity not found"))

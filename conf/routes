@@ -15,7 +15,8 @@ GET            /api/v1/account/:loginName                controllers.AccountCont
 DELETE         /api/v1/account/:loginName                controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
-GET            /api/v1/identity/:id                      controllers.IdentityController.getIdentity(id)
+GET            /api/v1/identity/:id                      controllers.IdentityController.getIdentityById(id)
+GET            /api/v1/identity	                         controllers.IdentityController.getIdentityByToken()
 
 
 # CONVERSATIONS
