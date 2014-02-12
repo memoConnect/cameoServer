@@ -61,7 +61,7 @@ class SendMessageActor extends Actor {
           // convert to a singe future and write status to message
           Future.sequence(futureMessageStatus).map {
             s =>
-              message.updateStatus(s).map{
+              message.updateStatus(s).map {
                 lastError => Logger.debug("lastError: " + lastError)
               }
           }

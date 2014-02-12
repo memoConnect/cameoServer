@@ -27,7 +27,7 @@ trait Model[A] {
     col.find(query).one[A]
   }
 
-//  def createReads: Reads[A]
+  //  def createReads: Reads[A]
 
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
 

@@ -1,6 +1,6 @@
 package helper
 
-import play.api.mvc.{Action, SimpleResult, Results}
+import play.api.mvc.{ Action, SimpleResult, Results }
 import play.api.mvc.Results._
 import play.api.libs.json._
 import helper.MongoHelper._
@@ -107,7 +107,7 @@ object ResultHelper {
   def validate[T](js: JsValue, reads: Reads[T])(action: ((T => SimpleResult))): SimpleResult = {
     js.validate(reads).map {
       action
-    }.recoverTotal{
+    }.recoverTotal {
       error => resBadRequestError(JsError.toFlatJson(error).toString())
     }
   }
@@ -115,7 +115,7 @@ object ResultHelper {
   def validateFuture[T](js: JsValue, reads: Reads[T])(action: ((T => Future[SimpleResult]))): Future[SimpleResult] = {
     js.validate(reads).map {
       action
-    }.recoverTotal{
+    }.recoverTotal {
       error => Future.successful(resBadRequestError(JsError.toFlatJson(error).toString()))
     }
   }

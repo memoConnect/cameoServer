@@ -18,7 +18,6 @@ import helper.AuthAction
  */
 object AccountController extends ExtendedController {
 
-
   def checkLogin(login: String): Boolean = {
     login.length >= 6 &&
       login.length < 20 &&
@@ -126,7 +125,7 @@ object AccountController extends ExtendedController {
             resOK(Json.obj("deleted Account" -> loginName))
           }
           else if (lastError.ok) {
-           resNotFound("account")
+            resNotFound("account")
           }
           else {
             resServerError(lastError.stringify)

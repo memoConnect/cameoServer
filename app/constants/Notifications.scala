@@ -11,5 +11,4 @@ object Notifications {
   var USER_MESSAGE_LEVEL_WARN: String = "warn"
   var USER_MESSAGE_LEVEL_ERROR: String = "error"
 
-
 }
