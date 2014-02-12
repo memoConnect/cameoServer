@@ -16,9 +16,8 @@ import helper.MongoHelper._
 class SendMessageActor extends Actor {
 
   def receive = {
-    case (message: Message, recipients: Seq[MongoId]) => {
 
-      //      Logger.info("SendMessageActor: Processing message with id " + message.id)
+    case (message: Message, recipients: Seq[MongoId]) => {
 
       // get identity of sender
       Identity.find(message.fromIdentityId).map {

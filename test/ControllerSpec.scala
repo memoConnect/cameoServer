@@ -226,8 +226,6 @@ class ControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      Logger.debug("DATA" + data.toString)
-
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newPhone)
       (data \ "phoneNumber" \ "isVerified").asOpt[Boolean] must beSome(false)
       (data \ "email" \ "value").asOpt[String] must beSome(newMail)
