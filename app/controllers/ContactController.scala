@@ -45,8 +45,6 @@ object ContactController extends ExtendedController {
             contact =>
               {
                 request.identity.addContact(contact)
-                Logger.debug("ID" + id.toString)
-
                 contact.toJsonWithIdentity.map(js => resOK(js))
               }
           }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
@@ -77,17 +75,18 @@ object ContactController extends ExtendedController {
 
   def getGroup(group: String, offset: Int, limit: Int) = AuthAction.async {
     request =>
-      val filtered = request.identity.contacts.filter(_.groups.contains(group))
-      val contacts = OutputLimits.applyLimits(filtered, offset, limit)
 
-      Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
+      val contacts = request.identity.getGroup(group)
+      val limited = OutputLimits.applyLimits(contacts, offset, limit)
+
+      Future.sequence(limited.map(_.toJsonWithIdentity)).map {
         c => resOK(c)
       }
   }
 
   def getGroups = AuthAction {
     request =>
-      val groups = request.identity.contacts.flatMap(_.groups).distinct
+      val groups = request.identity.getGroups
       resOK(Json.toJson(groups))
   }
 

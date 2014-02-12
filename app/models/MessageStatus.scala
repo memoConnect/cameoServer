@@ -1,7 +1,7 @@
 package models
 
-import traits.MongoHelper
 import play.api.libs.json.{ JsObject, Writes, Format, Json }
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -17,7 +17,7 @@ case class MessageStatus(identityId: MongoId,
   }
 }
 
-object MessageStatus extends MongoHelper {
+object MessageStatus {
 
   implicit val mongoFormat: Format[MessageStatus] = createMongoFormat(Json.reads[MessageStatus], Json.writes[MessageStatus])
 

@@ -26,7 +26,7 @@ object AuthAction extends ActionBuilder[AuthRequest] {
       case None => Future.successful(Results.Unauthorized(resKO(REQUEST_TOKEN_MISSING)))
       case Some(tokenId) => {
         Token.find(new MongoId(tokenId)).flatMap {
-          case None => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))
+          case None => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED + "1")))
           case Some(token) => {
             Identity.find(token.identityId).flatMap {
               case None           => Future.successful(Results.Unauthorized(resKO(REQUEST_ACCESS_DENIED)))

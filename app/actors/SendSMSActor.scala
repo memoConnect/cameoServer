@@ -4,20 +4,20 @@ import akka.actor.Actor
 import play.api.{ Play, Logger }
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
-import traits.MongoHelper
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WS
 import scala.concurrent.Future
 import models._
 import constants.Messaging._
 import play.api.libs.json.JsString
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
  * Date: 6/12/13
  * Time: 8:01 PM
  */
-class SendSMSActor extends Actor with MongoHelper {
+class SendSMSActor extends Actor {
 
   def sendSMS(sms: SmsMessage): Future[MessageStatus] = {
 
@@ -69,9 +69,9 @@ class SendSMSActor extends Actor with MongoHelper {
 
   def receive = {
     // send message to recipient
-    case (message: Message, fromIdentity: Identity, identity: Identity, tryCount: Int) => {
+    case (message: Message, fromIdentity: Identity, identity: Identity, tryCount: Int) =>
 
-      // check how offen we tried to send this message
+      // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(identity.id, MESSAGE_STATUS_ERROR, "max try count reached")
         // TODO update status of single message
@@ -115,7 +115,6 @@ class SendSMSActor extends Actor with MongoHelper {
             }
         }
       }
-    }
 
     case (sms: SmsMessage, tryCount: Int) => {
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {

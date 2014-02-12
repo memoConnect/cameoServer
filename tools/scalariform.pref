@@ -1,6 +1,6 @@
 alignParameters=true
 alignSingleLineCaseStatements=true
-alignSingleLineCaseStatements.maxArrowIndent=20
+alignSingleLineCaseStatements.maxArrowIndent=50
 compactControlReadability=true
 compactStringConcatenation=false
 doubleIndentClassDeclaration=true

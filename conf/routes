@@ -15,8 +15,10 @@ GET            /api/v1/account/:loginName                controllers.AccountCont
 DELETE         /api/v1/account/:loginName                controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
+
 GET            /api/v1/identity/:id                      controllers.IdentityController.getIdentityById(id)
 GET            /api/v1/identity	                         controllers.IdentityController.getIdentityByToken()
+PUT            /api/v1/identity                          controllers.IdentityController.updateIdentity()
 
 
 # CONVERSATIONS
@@ -27,7 +29,8 @@ POST           /api/v1/conversation/:id/recipient        controllers.Conversatio
 # MESSAGES
 POST           /api/v1/conversation/:id/message          controllers.MessageController.createMessage(id)
 GET            /api/v1/message/:id                       controllers.MessageController.getMessage(id)
-
+POST            /api/v1/message/filter                   controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "false")
+POST            /api/v1/message/filter/count             controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "true")
 
 #GET            /api/v1/conversation/:conversationId/summary        controllers.ConversationController.getConversationSummary(conversationId: String, token: String)
 #GET            /api/v1/conversations                               controllers.ConversationController.getConversations(token: String, offset: Int ?= 0, limit: Int ?= 0)
@@ -62,6 +65,10 @@ POST           /api/v1/services/checkEmailAddress        controllers.ServicesCon
 
 # Deal with options
 OPTIONS        /api/v1/*foo                              controllers.TokenController.getTokenOptions(foo)
+
+# Utitility functions
+GET            /api/v1/dumpDb                            controllers.Application.dumpDb()
+GET            /api/v1/loadDb                            controllers.Application.loadFixtures()
 
 ##
 ##   WebClient

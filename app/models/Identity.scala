@@ -10,6 +10,7 @@ import helper.IdHelper
 import ExecutionContext.Implicits.global
 import constants.Messaging._
 import reactivemongo.core.commands.LastError
+import helper.MongoHelper._
 
 /**
  * User: Björn Reimer
@@ -37,38 +38,46 @@ case class Identity(id: MongoId,
 
   private val query = Json.obj("_id" -> this.id)
 
-  def addContact(contact: Contact) = {
+  def addContact(contact: Contact): Future[LastError] = {
     val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
     //    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
     Identity.col.update(query, set)
   }
 
-  def addConversation(conversationId: MongoId) = {
+  def addConversation(conversationId: MongoId): Future[LastError] = {
     val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
     Identity.col.update(query, set)
   }
 
-  def addAsset(assetId: MongoId) = {
+  def addAsset(assetId: MongoId): Future[LastError] = {
     val set = Json.obj("$addToSet" -> Json.obj("assets" -> assetId))
     Identity.col.update(query, set)
   }
 
-  def addToken(tokenId: MongoId) = {
+  def addToken(tokenId: MongoId): Future[LastError] = {
     val set = Json.obj("$push" -> Json.obj("tokens" -> tokenId))
     Identity.col.update(query, set)
   }
 
-  def update(email: Option[VerifiedString] = None, phoneNumber: Option[VerifiedString] = None): Future[LastError] = {
+  def update(email: Option[VerifiedString] = None, phoneNumber: Option[VerifiedString] = None, displayName: Option[String] = None): Future[LastError] = {
 
-    def maybeJson(key: String, obj: Option[JsValue]): JsObject = {
-      if (obj.isDefined) Json.obj(key -> Json.toJson(obj.get))
-      else Json.obj()
+    val setValues = {
+      maybeEmpty("email", email.map { Json.toJson(_) }) ++
+        maybeEmpty("phoneNumber", phoneNumber.map { Json.toJson(_) }) ++
+        toJsonOrEmpty("displayName", displayName)
     }
 
-    val setValues = maybeJson("email", email.map { Json.toJson(_) }) ++ maybeJson("phoneNumber", phoneNumber.map { Json.toJson(_) })
     val set = Json.obj("$set" -> setValues)
 
     Identity.col.update(query, set)
+  }
+
+  def getGroup(groupName: String): Seq[Contact] = {
+    this.contacts.filter(_.groups.contains(groupName))
+  }
+
+  def getGroups: Seq[String] = {
+    this.contacts.flatMap(_.groups).distinct
   }
 }
 
@@ -86,15 +95,14 @@ object Identity extends Model[Identity] {
       {
         val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
           case None => __.json.pickBranch
-          case Some(email) => {
+          case Some(email) =>
             __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
-          }
+
         }
         val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
           case None => __.json.pickBranch
-          case Some(tel) => {
+          case Some(tel) =>
             __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
-          }
         }
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
         js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
@@ -138,7 +146,7 @@ object Identity extends Model[Identity] {
         Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
   }
 
-  def find(id: MongoId): Future[Option[Identity]] = {
+  override def find(id: MongoId): Future[Option[Identity]] = {
     val query = Json.obj("_id" -> id)
     col.find(query).one[JsObject].map {
       case None     => None
