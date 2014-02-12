@@ -25,6 +25,8 @@ object MockupFactory {
     Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
   }
 
+  def tokenHeader(token: String): (String, String) = ("Authorization", token)
+
 
 
 

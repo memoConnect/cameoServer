@@ -27,22 +27,21 @@ object AccountController extends ExtendedController {
   def createAccount = Action.async(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
-
       val reservationSecret: Option[String] = (jsBody \ "reservationSecret").asOpt[String]
 
-      jsBody.validate[Account](Account.createReads).map {
-        account =>
+      validateFuture[Account](jsBody, Account.createReads) {
 
+        account =>
           // check for reservation secret
           reservationSecret match {
-            case None => Future(BadRequest(resKO("no reservation secret")))
+            case None => Future(resBadRequestError("no reservation secret"))
             case Some(rs) => AccountReservation.checkReserved(account.loginName).flatMap {
 
-              case None => Future(Unauthorized(resKO("loginName is reserved, wait 10 min")))
+              case None => Future(resBadRequestError("this loginName is not reserved"))
               case Some(secret) =>
 
                 secret.equals(rs) match {
-                  case false => Future(Unauthorized(resKO("invalid reservation secret")))
+                  case false => Future(resBadRequestError("invalid reservation secret"))
                   case true => {
 
                     // everything is ok, we can create the account now
@@ -60,31 +59,21 @@ object AccountController extends ExtendedController {
                             account2.toJsonWithIdentities.map { resOK(_) }
                           }
                           else {
-                            Future(InternalServerError(resKO("MongoError: " + lastError)))
+                            Future(resServerError("MongoError: " + lastError))
                           }
                         }
-                    }.recover {
-                      // deal with exceptions from duplicate loginNames
-                      case de: DatabaseException =>
-                        if (de.getMessage().contains("loginName")) {
-                          BadRequest(resKO("The username already exists"))
-                        }
-                        else {
-                          BadRequest(resKO("Error: " + de.getMessage()))
-                        }
-                      case e => InternalServerError(resKO("Mongo Error: " + e.toString))
                     }
                   }
                 }
             }
           }
-      }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
+      }
   }
 
   def getAccount(loginName: String) = Action.async {
     request =>
       Account.findByLoginName(loginName).flatMap {
-        case None          => Future(NotFound(resKO("Account not found: " + loginName)))
+        case None          => Future(resNotFound("account"))
         case Some(account) => account.toJsonWithIdentities.map { resOK(_) }
       }
   }
@@ -97,27 +86,22 @@ object AccountController extends ExtendedController {
         l => VerifyRequest(l)
       }
 
-      request.body.validate[VerifyRequest](reads).map {
+      validateFuture[VerifyRequest](request.body, reads) {
         vr =>
           if (checkLogin(vr.loginName)) {
+            // check if loginName exists
             Account.findByLoginName(vr.loginName).flatMap {
-              case Some(a) => Account.findAlternative(vr.loginName).flatMap {
-                newLoginName =>
-                  {
-                    AccountReservation.reserve(newLoginName).map {
-                      res => BadRequest(resKO(Json.obj("alternative" -> res.toJson)))
-                    }
-                  }
+              // it exists, find alternative
+              case Some(a) => Account.findAlternative(vr.loginName).map {
+                newLoginName => resKOData(Json.obj("alternative" -> newLoginName))
               }
+              // it does not exist, check if it is reserved
               case None => AccountReservation.checkReserved(vr.loginName).flatMap {
-                case Some(ra) => Account.findAlternative(vr.loginName).flatMap {
-                  newLoginName =>
-                    {
-                      AccountReservation.reserve(newLoginName).map {
-                        res => BadRequest(resKO(Json.obj("alternative" -> res.toJson)))
-                      }
-                    }
+                // it is reserved, get alternative
+                case Some(ra) => Account.findAlternative(vr.loginName).map {
+                  newLoginName => resKOData(Json.obj("alternative" -> newLoginName))
                 }
+                // not reserve, reserve it and return reservation Secret
                 case None => {
                   AccountReservation.reserve(vr.loginName).map {
                     res =>
@@ -128,9 +112,9 @@ object AccountController extends ExtendedController {
             }
           }
           else {
-            Future(BadRequest(resKO("invalid login name")))
+            Future(resBadRequestError("invalid login name"))
           }
-      }.recoverTotal(e => Future(BadRequest(resKO(JsError.toFlatJson(e)))))
+      }
   }
 
   def deleteAccount(loginName: String) = AuthAction.async {
@@ -141,10 +125,10 @@ object AccountController extends ExtendedController {
             resOK(Json.obj("deleted Account" -> loginName))
           }
           else if (lastError.ok) {
-            NotFound(resKO("Account not found"))
+            resNotFound("account")
           }
           else {
-            InternalServerError(resKO(lastError.stringify))
+            resServerError(lastError.stringify)
           }
       }
   }

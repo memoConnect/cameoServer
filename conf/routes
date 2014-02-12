@@ -67,8 +67,8 @@ POST           /api/v1/services/checkEmailAddress        controllers.ServicesCon
 OPTIONS        /api/v1/*foo                              controllers.TokenController.getTokenOptions(foo)
 
 # Utitility functions
-GET            /api/v1/dumpDb                            controllers.Application.dumpDb()
-GET            /api/v1/loadDb                            controllers.Application.loadFixtures()
+#GET            /api/v1/dumpDb                            controllers.Application.dumpDb()
+#GET            /api/v1/loadDb                            controllers.Application.loadFixtures()
 
 ##
 ##   WebClient

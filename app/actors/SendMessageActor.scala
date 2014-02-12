@@ -19,6 +19,8 @@ class SendMessageActor extends Actor {
 
     case (message: Message, recipients: Seq[MongoId]) => {
 
+      Logger.info("SendMessageActor: Processing message with id " + message.id)
+
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
         case None => {
@@ -59,7 +61,9 @@ class SendMessageActor extends Actor {
           // convert to a singe future and write status to message
           Future.sequence(futureMessageStatus).map {
             s =>
-              message.updateStatus(s)
+              message.updateStatus(s).map {
+                lastError => Logger.debug("lastError: " + lastError)
+              }
           }
         }
 

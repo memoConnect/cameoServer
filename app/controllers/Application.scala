@@ -20,17 +20,17 @@ object Application extends Controller {
       Ok(views.html.index())
   }
 
-  def dumpDb() = Action {
-
-    DbAdminUtilities.dumpDb()
-    Ok("dumped")
-
-  }
-
-  def loadFixtures = Action {
-    DbAdminUtilities.loadFixtures()
-    Ok("loaded")
-  }
+  //  def dumpDb() = Action {
+  //
+  //    DbAdminUtilities.dumpDb()
+  //    Ok("dumped")
+  //
+  //  }
+  //
+  //  def loadFixtures = Action {
+  //    DbAdminUtilities.loadFixtures()
+  //    Ok("loaded")
+  //  }
 
   def staticAssets(path: String, file: String, foo: String) =
     controllers.Assets.at(path, file)

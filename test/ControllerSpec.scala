@@ -106,13 +106,11 @@ class ControllerSpec extends Specification {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
-      status(res) must equalTo(BAD_REQUEST)
+      status(res) must equalTo(232)
 
-      val data = (contentAsJson(res) \ "error").as[JsObject]
+      val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "alternative" \ "loginName").asOpt[String] must beSome(login + "_1")
-
-      (data \ "alternative" \ "reservationSecret").asOpt[String] must beSome
+      (data \ "alternative").asOpt[String] must beSome(login + "_1")
     }
 
     "Refuse to claim reserved login without secret" in {
@@ -165,13 +163,11 @@ class ControllerSpec extends Specification {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
-      status(res) must equalTo(BAD_REQUEST)
+      status(res) must equalTo(232)
 
-      val data = (contentAsJson(res) \ "error").as[JsObject]
+      val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "alternative" \ "loginName").asOpt[String] must beSome(login + "_2")
-
-      (data \ "alternative" \ "reservationSecret").asOpt[String] must beSome
+      (data \ "alternative" ).asOpt[String] must beSome(login + "_1")
     }
 
     "Return a token" in {
@@ -194,9 +190,9 @@ class ControllerSpec extends Specification {
     }
 
     "Automatically create an identity for a new account" in {
-      val path = basePath + "/identity/" + identityId + "?token=" + token
+      val path = basePath + "/identity/" + identityId
 
-      val req = FakeRequest(GET, path)
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -211,7 +207,7 @@ class ControllerSpec extends Specification {
 
     "Edit an identity" in {
 
-      val path = basePath + "/identity?token=" + token2
+      val path = basePath + "/identity"
 
       val newPhone = "12345"
       val newMail = "asdfasdf"
@@ -219,7 +215,7 @@ class ControllerSpec extends Specification {
 
       val json = Json.obj("phoneNumber" -> newPhone, "email" -> newMail, "displayName" -> newName)
 
-      val req = FakeRequest(PUT, path).withJsonBody(json)
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
       val res = route(req).get
 
       status(res) must equalTo(OK)

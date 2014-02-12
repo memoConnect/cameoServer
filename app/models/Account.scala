@@ -8,7 +8,7 @@ import reactivemongo.api.indexes.{ IndexType, Index }
 import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import helper.{ IdHelper }
+import helper.IdHelper
 import play.api.Play
 import reactivemongo.core.commands.LastError
 import play.api.Play.current
@@ -123,6 +123,11 @@ object AccountReservation extends Model[AccountReservation] {
     }
   }
 
+  /**
+   * checks if a loginName is reserved
+   * @param loginName the loginName to be checked
+   * @return returns the secret associated with the login
+   */
   def checkReserved(loginName: String): Future[Option[String]] = {
     val query = Json.obj("loginName" -> loginName)
 

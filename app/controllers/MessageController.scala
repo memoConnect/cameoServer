@@ -203,7 +203,7 @@ object MessageController extends ExtendedController {
               mongoDB.command(aggregationCommand).map {
                 res =>
                   val messages: Seq[JsValue] = res.force.toList.map(Json.toJson(_))
-                  resOK(messages.map(js => (js \ "messages").as[Message].toJson))
+                  resOKSeq(messages.map(js => (js \ "messages").as[Message].toJson))
               }
             }
           }
