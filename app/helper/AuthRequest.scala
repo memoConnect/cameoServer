@@ -15,7 +15,7 @@ class AuthRequest[A](val identity: Identity, request: Request[A]) extends Wrappe
 
 object AuthAction extends ActionBuilder[AuthRequest] {
 
-  val REQUEST_TOKEN_HEADER_KEY = "CAMEO-TOKEN"
+  val REQUEST_TOKEN_HEADER_KEY = "Authorization"
   val REQUEST_TOKEN_MISSING = "no token in header"
   val REQUEST_ACCESS_DENIED = "not allowed"
   val EMPTY_USER = ""
