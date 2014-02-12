@@ -13,6 +13,8 @@ import reactivemongo.api.indexes.{ IndexType, Index }
 import reactivemongo.bson.BSONDocument
 import play.modules.reactivemongo.json.BSONFormats
 import models.VerifiedString
+import scala.concurrent.ExecutionContext
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -23,7 +25,11 @@ object MongoHelper {
 
   val mongoDB = ReactiveMongoPlugin.db
 
-  lazy val conversationCollection: JSONCollection = mongoDB.collection[JSONCollection]("conversations")
+  lazy val conversationCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("conversations")
+    col.indexesManager.ensure(Index(Seq("messages._id" -> IndexType.Ascending)))
+    col
+  }
   lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
   lazy val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")
