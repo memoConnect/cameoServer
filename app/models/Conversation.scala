@@ -65,6 +65,15 @@ case class Conversation(id: MongoId,
     Conversation.col.update(query, set)
   }
 
+  def hasMember(recipient: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
+    if (this.recipients.contains(recipient)) {
+      action
+    }
+    else {
+      Future(resUnauthorized("identity is not a member of the conversation"))
+    }
+  }
+
   def addMessage(message: Message): Future[LastError] = {
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$push" ->
@@ -98,6 +107,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         Json.obj("messages" -> OutputLimits.applyLimits(c.messages.map(_.toJson), offset, limit)) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
+        toJsonOrEmpty("subject", c.subject) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
@@ -107,10 +117,11 @@ object Conversation extends Model[Conversation] {
       Json.obj("id" -> c.id.toJson) ++
         addLastUpdated(c.lastUpdated) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
+        toJsonOrEmpty("subject", c.subject) ++
         Json.obj("lastMessage" -> {
           c.messages.lastOption match {
             case Some(m) => m.messageBody
-            case None    => Json.obj()
+            case None    => ""
           }
         })
   }
