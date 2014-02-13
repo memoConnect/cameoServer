@@ -83,7 +83,7 @@ object AssetController extends ExtendedController {
                 Logger.error("Error updating message: " + errors)
                 resServerError(JsArray(errors.map {
                   case (id,
-                  error) => Json.obj(id -> error.stringify)
+                    error) => Json.obj(id -> error.stringify)
                 }).toString())
               }
               else {

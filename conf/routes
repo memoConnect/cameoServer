@@ -6,83 +6,84 @@
 ##
 ##   API
 ##
-GET            /api/v1                                   controllers.Application.index
+GET            /api/v1                                        controllers.Application.index
 
 # ACCOUNT
-POST           /api/v1/account                           controllers.AccountController.createAccount
-POST           /api/v1/account/check                     controllers.AccountController.checkLoginName
-GET            /api/v1/account/:loginName                controllers.AccountController.getAccount(loginName)
-DELETE         /api/v1/account/:loginName                controllers.AccountController.deleteAccount(loginName)
+POST           /api/v1/account                                controllers.AccountController.createAccount
+POST           /api/v1/account/check                          controllers.AccountController.checkLoginName
+GET            /api/v1/account/:loginName                     controllers.AccountController.getAccount(loginName)
+DELETE         /api/v1/account/:loginName                     controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
 
-GET            /api/v1/identity/:id                      controllers.IdentityController.getIdentityById(id)
-GET            /api/v1/identity	                         controllers.IdentityController.getIdentityByToken()
-PUT            /api/v1/identity                          controllers.IdentityController.updateIdentity()
+GET            /api/v1/identity/:id                           controllers.IdentityController.getIdentityById(id)
+GET            /api/v1/identity                               controllers.IdentityController.getIdentityByToken()
+PUT            /api/v1/identity                               controllers.IdentityController.updateIdentity()
 
 
 # CONVERSATIONS
-POST           /api/v1/conversation                      controllers.ConversationController.createConversation()
-GET            /api/v1/conversation/:id                  controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0)
-POST           /api/v1/conversation/:id/recipient        controllers.ConversationController.addRecipients(id)
+POST           /api/v1/conversation                           controllers.ConversationController.createConversation()
+GET            /api/v1/conversation/:id                       controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0)
+POST           /api/v1/conversation/:id/recipient             controllers.ConversationController.addRecipients(id)
+DELETE         /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.deleteRecipient(id, rid)
+GET            /api/v1/conversation/:id/summary               controllers.ConversationController.getConversationSummary(id: String)
+GET            /api/v1/conversations                          controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0)
+
 
 # MESSAGES
-POST           /api/v1/conversation/:id/message          controllers.MessageController.createMessage(id)
-GET            /api/v1/message/:id                       controllers.MessageController.getMessage(id)
-POST            /api/v1/message/filter                   controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "false")
-POST            /api/v1/message/filter/count             controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "true")
-
-#GET            /api/v1/conversation/:conversationId/summary        controllers.ConversationController.getConversationSummary(conversationId: String, token: String)
-#GET            /api/v1/conversations                               controllers.ConversationController.getConversations(token: String, offset: Int ?= 0, limit: Int ?= 0)
+POST           /api/v1/conversation/:id/message               controllers.MessageController.createMessage(id)
+GET            /api/v1/message/:id                            controllers.MessageController.getMessage(id)
+POST           /api/v1/message/filter                         controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "false")
+POST           /api/v1/message/filter/count                   controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "true")
 
 # TOKENS
-GET            /api/v1/token                             controllers.TokenController.createToken
-GET            /api/vi/:token                            controllers.TokenController.getToken(token)
-DELETE         /api/v1/token/:token                      controllers.TokenController.deleteToken(token: String)
+GET            /api/v1/token                                  controllers.TokenController.createToken
+GET            /api/vi/:token                                 controllers.TokenController.getToken(token)
+DELETE         /api/v1/token/:token                           controllers.TokenController.deleteToken(token: String)
 
 # CONTACTS
-POST           /api/v1/contact                           controllers.ContactController.addContact
-GET            /api/v1/contacts                          controllers.ContactController.getContacts(offset: Int ?= 0, limit: Int ?= 0)
-GET            /api/v1/contact/:id                       controllers.ContactController.getContact(id: String)
-GET            /api/v1/contact-groups                    controllers.ContactController.getGroups()
-GET            /api/v1/contact-group/:id                 controllers.ContactController.getGroup(id: String,  offset: Int ?= 0, limit: Int ?= 0)
+POST           /api/v1/contact                                controllers.ContactController.addContact
+GET            /api/v1/contacts                               controllers.ContactController.getContacts(offset: Int ?= 0, limit: Int ?= 0)
+GET            /api/v1/contact/:id                            controllers.ContactController.getContact(id: String)
+GET            /api/v1/contact-groups                         controllers.ContactController.getGroups()
+GET            /api/v1/contact-group/:id                      controllers.ContactController.getGroup(id: String,  offset: Int ?= 0, limit: Int ?= 0)
 
 # ASSETS
-POST           /api/v1/asset                             controllers.AssetController.uploadAsset(token: String, messageId: String)
-GET            /api/v1/asset/:assetId                    controllers.AssetController.getAsset(token: String, assetId: String)
+#POST           /api/v1/asset                             controllers.AssetController.uploadAsset(token: String, messageId: String)
+#GET            /api/v1/asset/:assetId                    controllers.AssetController.getAsset(token: String, assetId: String)
 #GET            /api/v1/media                            controllers.AssetController.getMedia(token: String)
 
 # VERIFICATION
-POST           /api/v1/verify                            controllers.VerificationController.sendVerifyMessage()
-GET            /api/v1/verify/:id                        controllers.VerificationController.verifyMessage(id)
+POST           /api/v1/verify                                 controllers.VerificationController.sendVerifyMessage()
+GET            /api/v1/verify/:id                             controllers.VerificationController.verifyMessage(id)
 
 # PURLS
 #GET            /api/v1/purl/:purl                       controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0, token: String ?= "")
 
 # Services
-POST           /api/v1/services/checkPhoneNumber         controllers.ServicesController.checkPhoneNumber
-POST           /api/v1/services/checkEmailAddress        controllers.ServicesController.checkEmailAddress
+POST           /api/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber
+POST           /api/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
 
 # Deal with options
-OPTIONS        /api/v1/*foo                              controllers.TokenController.getTokenOptions(foo)
+OPTIONS        /api/v1/*foo                                   controllers.TokenController.getTokenOptions(foo)
 
 # Utitility functions
-#GET            /api/v1/dumpDb                            controllers.Application.dumpDb()
-#GET            /api/v1/loadDb                            controllers.Application.loadFixtures()
+GET            /api/v1/dumpDb                                 controllers.Application.dumpDb()
+GET            /api/v1/loadDb                                 controllers.Application.loadFixtures()
 
 ##
 ##   WebClient
 ##
 
 # Redirect for Shorturls
-GET            /p/:id                                    controllers.ShortUrlController.redirect(urlType = "p", id: String)
-GET            /v/:id                                    controllers.ShortUrlController.redirect(urlType = "v", id: String)
+GET            /p/:id                                         controllers.ShortUrlController.redirect(urlType = "p", id: String)
+GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
 # WEBCLENT
-GET            /app/                                     controllers.Assets.at(path="/public/app", file="index.html")
-GET            /app                                      controllers.Assets.at(path="/public/app", file="index.html")
-GET            /app/*file                                controllers.Assets.at(path="/public/app", file)
+GET            /app/                                          controllers.Assets.at(path="/public/app", file="index.html")
+GET            /app                                           controllers.Assets.at(path="/public/app", file="index.html")
+GET            /app/*file                                     controllers.Assets.at(path="/public/app", file)
 
 
 # Redirect everything else to /app
-GET            /                                         controllers.Application.redirect(url = "/app/")
+GET            /                                              controllers.Application.redirect(url = "/app/")
