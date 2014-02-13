@@ -20,7 +20,7 @@ esac
 
 ./stop.sh
 git pull
-cd puplic
+cd public
 git pull
 cd ..
 ./compile.sh

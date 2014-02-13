@@ -15,11 +15,9 @@ GET            /api/v1/account/:loginName                     controllers.Accoun
 DELETE         /api/v1/account/:loginName                     controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
-
 GET            /api/v1/identity/:id                           controllers.IdentityController.getIdentityById(id)
 GET            /api/v1/identity                               controllers.IdentityController.getIdentityByToken()
 PUT            /api/v1/identity                               controllers.IdentityController.updateIdentity()
-
 
 # CONVERSATIONS
 POST           /api/v1/conversation                           controllers.ConversationController.createConversation()
@@ -28,7 +26,6 @@ POST           /api/v1/conversation/:id/recipient             controllers.Conver
 DELETE         /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.deleteRecipient(id, rid)
 GET            /api/v1/conversation/:id/summary               controllers.ConversationController.getConversationSummary(id: String)
 GET            /api/v1/conversations                          controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0)
-
 
 # MESSAGES
 POST           /api/v1/conversation/:id/message               controllers.MessageController.createMessage(id)
