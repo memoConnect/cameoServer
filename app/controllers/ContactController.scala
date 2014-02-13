@@ -47,7 +47,7 @@ object ContactController extends ExtendedController {
                 request.identity.addContact(contact)
                 contact.toJsonWithIdentity.map(js => resOK(js))
               }
-          }.recoverTotal(e => Future.successful(BadRequest(resKO(JsError.toFlatJson(e)))))
+          }.recoverTotal(e => Future.successful(resBadRequest(JsError.toFlatJson(e).toString())))
         }
       }
   }
@@ -68,7 +68,7 @@ object ContactController extends ExtendedController {
       val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
 
       Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
-        c => resOKSeq(c)
+        c => resOK(c)
       }
 
   }
@@ -80,7 +80,7 @@ object ContactController extends ExtendedController {
       val limited = OutputLimits.applyLimits(contacts, offset, limit)
 
       Future.sequence(limited.map(_.toJsonWithIdentity)).map {
-        c => resOKSeq(c)
+        c => resOK(c)
       }
   }
 

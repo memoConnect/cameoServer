@@ -22,34 +22,39 @@ object ResultHelper {
   // OK
   def resOK(): SimpleResult = Ok(Json.obj("res" -> "OK"))
 
-  def resOK(data: JsValue, notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resOK(data: JsValue): SimpleResult =
     Ok(Json.obj("res" -> "OK") ++
-      Json.obj("data" -> data) ++
-      addMessagesOrEmpty(notifications))
+      Json.obj("data" -> data) )
+//      ++
+//      addMessagesOrEmpty(notifications))
 
-  def resOKSeq(data: Seq[JsValue], notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resOK(data: Seq[JsValue]): SimpleResult =
     Ok(Json.obj("res" -> "OK") ++
-      Json.obj("data" -> data) ++
-      addMessagesOrEmpty(notifications))
+      Json.obj("data" -> data) )
+//      ++
+//      addMessagesOrEmpty(notifications))
 
   // OK but could not fullfill request
-  def resKOData(data: JsValue, notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resKO(data: JsValue): SimpleResult =
     Status(232)(Json.obj("res" -> "KO")
-      ++ Json.obj("data" -> data) ++
-      addMessagesOrEmpty(notifications))
+      ++ Json.obj("data" -> data))
+//      ++
+//      addMessagesOrEmpty(notifications))
 
-  def resKO(notifications: Seq[UserNotification] = Seq()): SimpleResult =
-    Status(232)(Json.obj("res" -> "KO") ++
-      addMessagesOrEmpty(notifications))
+  def resKO(): SimpleResult =
+    Status(232)(Json.obj("res" -> "KO"))
+//      ++
+//      addMessagesOrEmpty(notifications))
 
   // Bad Request
-  def resBadRequestError(error: String, notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resBadRequest(error: String): SimpleResult =
     BadRequest(
       Json.obj("res" -> "KO") ++
-        Json.obj("error" -> error) ++
-        addMessagesOrEmpty(notifications))
+        Json.obj("error" -> error))
+//        ++
+//        addMessagesOrEmpty(notifications))
 
-  def resBadRequest(notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resBadRequest(implicit notifications: Seq[UserNotification] = Seq()): SimpleResult =
     BadRequest(
       Json.obj("res" -> "KO") ++
         addMessagesOrEmpty(notifications))
@@ -64,14 +69,14 @@ object ResultHelper {
   }
 
   // Not Authorized
-  def resUnauthorized(notifications: Seq[UserNotification] = Seq()): SimpleResult = {
-    Unauthorized(
-      Json.obj("res" -> "KO") ++
-        addMessagesOrEmpty(notifications)
+  def resUnauthorized(): SimpleResult = {
+    Unauthorized(""
+//      Json.obj("res" -> "KO") ++
+//        addMessagesOrEmpty(notifications)
     )
   }
 
-  def resUnauthorizedError(error: String, notifications: Seq[UserNotification] = Seq()): SimpleResult = {
+  def resUnauthorized(error: String)(implicit notifications: Seq[UserNotification] = Seq()): SimpleResult = {
     Unauthorized(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error) ++
@@ -108,7 +113,7 @@ object ResultHelper {
     js.validate(reads).map {
       action
     }.recoverTotal {
-      error => resBadRequestError(JsError.toFlatJson(error).toString())
+      error => resBadRequest(JsError.toFlatJson(error).toString())
     }
   }
 
@@ -116,7 +121,7 @@ object ResultHelper {
     js.validate(reads).map {
       action
     }.recoverTotal {
-      error => Future.successful(resBadRequestError(JsError.toFlatJson(error).toString()))
+      error => Future.successful(resBadRequest(JsError.toFlatJson(error).toString()))
     }
   }
 
@@ -126,7 +131,7 @@ object ResultHelper {
 
   def resOK(data: String): SimpleResult = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
-  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
+//  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   def resKO(data: JsValue,
             error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error) ++ Json.obj("data" -> data)

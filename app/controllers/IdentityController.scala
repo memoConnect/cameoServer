@@ -50,7 +50,7 @@ object IdentityController extends ExtendedController {
 
   def updateIdentity() = AuthAction.async(parse.tolerantJson) {
     request =>
-      request.body.validate[IdentityUpdate].map {
+      validateFuture[IdentityUpdate](request.body, IdentityUpdate.format) {
         update =>
           {
 
@@ -69,7 +69,7 @@ object IdentityController extends ExtendedController {
 
             }
           }
-      }.recoverTotal(e => Future(BadRequest(resKO(JsError.toFlatJson(e)))))
+      }
   }
 
 }

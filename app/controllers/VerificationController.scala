@@ -22,7 +22,7 @@ object VerificationController extends Controller with ExtendedController {
         (__ \ "verifyEmail").readNullable[Boolean])(VerifyRequest.apply _)
 
       // TODO: Write tests for this
-      request.body.validate[VerifyRequest](reads).map {
+      validate[VerifyRequest](request.body, reads) {
         vr =>
           if (vr.verifyPhoneNumber.getOrElse(false)) {
             actors.verifyActor ! (VERIFY_TYPE_PHONENUMBER, request.identity)
@@ -31,7 +31,7 @@ object VerificationController extends Controller with ExtendedController {
             actors.verifyActor ! (VERIFY_TYPE_MAIL, request.identity)
           }
           resOK()
-      }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
+      }
   }
 
   def verifyMessage(id: String) = Action.async {

@@ -51,7 +51,7 @@ object MessageController extends ExtendedController {
 
   def createMessage(id: String) = AuthAction.async(parse.tolerantJson) {
     request =>
-      request.body.validate[Message](Message.createReads(request.identity.id)).map {
+      validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
           {
             Conversation.find(new MongoId(id)).map {
@@ -65,7 +65,7 @@ object MessageController extends ExtendedController {
               }
             }
           }
-      }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
+      }
   }
 
   def getMessage(id: String) = AuthAction.async {
@@ -120,7 +120,7 @@ object MessageController extends ExtendedController {
 
       implicit val dateReads: Reads[Date] = Reads.IsoDateReads
 
-      request.body.validate[FilterRules].map {
+      validateFuture[FilterRules](request.body, FilterRules.reads) {
         fr =>
           {
             def collectIdentities(ids: Option[Seq[String]], groups: Option[Seq[String]]): Seq[MongoId] = {
@@ -203,10 +203,10 @@ object MessageController extends ExtendedController {
               mongoDB.command(aggregationCommand).map {
                 res =>
                   val messages: Seq[JsValue] = res.force.toList.map(Json.toJson(_))
-                  resOKSeq(messages.map(js => (js \ "messages").as[Message].toJson))
+                  resOK(messages.map(js => (js \ "messages").as[Message].toJson))
               }
             }
           }
-      }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
+      }
   }
 }

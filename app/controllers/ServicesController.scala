@@ -46,7 +46,7 @@ object ServicesController extends ExtendedController {
               BadRequest(resKO(e.getMessage + " > " + phoneNumber))
             }
           }
-        case None => BadRequest(resKO("missing phoneNumber"))
+        case None => resBadRequest("no phoneNumber")
       }
   }
 

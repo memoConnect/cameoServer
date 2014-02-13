@@ -23,7 +23,7 @@ object AuthAction extends ActionBuilder[AuthRequest] {
   def invokeBlock[A](request: Request[A], block: (AuthRequest[A]) => Future[SimpleResult]) = {
     // check if a token is passed
     request.headers.get(REQUEST_TOKEN_HEADER_KEY) match {
-      case None => Future.successful(resUnauthorizedError(REQUEST_TOKEN_MISSING))
+      case None => Future.successful(resUnauthorized(REQUEST_TOKEN_MISSING))
       case Some(tokenId) => {
 
         Token.find(new MongoId(tokenId)).flatMap {

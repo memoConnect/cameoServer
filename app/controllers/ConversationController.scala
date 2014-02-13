@@ -19,14 +19,14 @@ object ConversationController extends ExtendedController {
   def createConversation = AuthAction(parse.tolerantJson) {
     request =>
       {
-        request.body.validate[Conversation](Conversation.createReads).map {
+        validate[Conversation](request.body, Conversation.createReads) {
           conversation =>
             {
               Conversation.col.insert(conversation)
               request.identity.addConversation(conversation.id)
               resOK(conversation.toJson)
             }
-        }.recoverTotal(error => BadRequest(resKO(JsError.toFlatJson(error))))
+        }
       }
   }
 
@@ -57,7 +57,7 @@ object ConversationController extends ExtendedController {
                   }
               }
             }
-        }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
+        }.recoverTotal(error => Future.successful(resBadRequest(JsError.toFlatJson(error).toString())))
     }
 
   //

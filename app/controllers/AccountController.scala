@@ -34,14 +34,14 @@ object AccountController extends ExtendedController {
         account =>
           // check for reservation secret
           reservationSecret match {
-            case None => Future(resBadRequestError("no reservation secret"))
+            case None => Future(resBadRequest("no reservation secret"))
             case Some(rs) => AccountReservation.checkReserved(account.loginName).flatMap {
 
-              case None => Future(resBadRequestError("this loginName is not reserved"))
+              case None => Future(resBadRequest("this loginName is not reserved"))
               case Some(secret) =>
 
                 secret.equals(rs) match {
-                  case false => Future(resBadRequestError("invalid reservation secret"))
+                  case false => Future(resBadRequest("invalid reservation secret"))
                   case true => {
 
                     // everything is ok, we can create the account now
@@ -93,13 +93,13 @@ object AccountController extends ExtendedController {
             Account.findByLoginName(vr.loginName).flatMap {
               // it exists, find alternative
               case Some(a) => Account.findAlternative(vr.loginName).map {
-                newLoginName => resKOData(Json.obj("alternative" -> newLoginName))
+                newLoginName => resKO(Json.obj("alternative" -> newLoginName))
               }
               // it does not exist, check if it is reserved
               case None => AccountReservation.checkReserved(vr.loginName).flatMap {
                 // it is reserved, get alternative
                 case Some(ra) => Account.findAlternative(vr.loginName).map {
-                  newLoginName => resKOData(Json.obj("alternative" -> newLoginName))
+                  newLoginName => resKO(Json.obj("alternative" -> newLoginName))
                 }
                 // not reserve, reserve it and return reservation Secret
                 case None => {
@@ -112,7 +112,7 @@ object AccountController extends ExtendedController {
             }
           }
           else {
-            Future(resBadRequestError("invalid login name"))
+            Future(resBadRequest("invalid login name"))
           }
       }
   }
