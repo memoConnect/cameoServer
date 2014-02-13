@@ -84,6 +84,19 @@ object ConversationController extends ExtendedController {
       }
   }
 
+  def deleteRecipient(id: String, rid: String) = AuthAction.async {
+    request =>
+      Conversation.find(id).flatMap {
+        case None => Future(resNotFound("conversation"))
+        case Some(c) => c.hasMember(request.identity.id) {
+          c.deleteRecipient(new MongoId(rid)).map {
+            case false => resNotFound("recipient")
+            case true  => resOK()
+          }
+        }
+      }
+  }
+
   def getConversationSummary(id: String) = AuthAction.async {
     request =>
       Conversation.find(id).flatMap {

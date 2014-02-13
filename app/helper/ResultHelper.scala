@@ -24,35 +24,35 @@ object ResultHelper {
 
   def resOK(data: JsValue): SimpleResult =
     Ok(Json.obj("res" -> "OK") ++
-      Json.obj("data" -> data) )
-//      ++
-//      addMessagesOrEmpty(notifications))
+      Json.obj("data" -> data))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
 
   def resOK(data: Seq[JsValue]): SimpleResult =
     Ok(Json.obj("res" -> "OK") ++
-      Json.obj("data" -> data) )
-//      ++
-//      addMessagesOrEmpty(notifications))
+      Json.obj("data" -> data))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
 
   // OK but could not fullfill request
   def resKO(data: JsValue): SimpleResult =
     Status(232)(Json.obj("res" -> "KO")
       ++ Json.obj("data" -> data))
-//      ++
-//      addMessagesOrEmpty(notifications))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
 
   def resKO(): SimpleResult =
     Status(232)(Json.obj("res" -> "KO"))
-//      ++
-//      addMessagesOrEmpty(notifications))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
 
   // Bad Request
   def resBadRequest(error: String): SimpleResult =
     BadRequest(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error))
-//        ++
-//        addMessagesOrEmpty(notifications))
+  //        ++
+  //        addMessagesOrEmpty(notifications))
 
   def resBadRequest(notifications: Seq[UserNotification] = Seq()): SimpleResult =
     BadRequest(
@@ -71,8 +71,8 @@ object ResultHelper {
   // Not Authorized
   def resUnauthorized(): SimpleResult = {
     Unauthorized(""
-//      Json.obj("res" -> "KO") ++
-//        addMessagesOrEmpty(notifications)
+    //      Json.obj("res" -> "KO") ++
+    //        addMessagesOrEmpty(notifications)
     )
   }
 
@@ -131,7 +131,7 @@ object ResultHelper {
 
   def resOK(data: String): SimpleResult = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
-//  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
+  //  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   def resKO(data: JsValue,
             error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error) ++ Json.obj("data" -> data)

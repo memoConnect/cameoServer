@@ -58,7 +58,10 @@ class ControllerSpec extends Specification {
     var regSec = ""
     var cidNew = ""
     val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
+    val cidOther = "2GOdNSfdPMavyl95KUah"
     val identityExisting = "g9PWZY7xKNbeCO6LPNnx"
+    val validRecipients = Seq("6iOuCefN12ma0wF7QxR5", "dKeg67XtSNBCFMq8WQor")
+    val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
 
     val token2 = "hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo"
 
@@ -358,6 +361,93 @@ class ControllerSpec extends Specification {
       data.count(c => (c \ "id").asOpt[String] == Some(cidNew)) must beEqualTo(1)
       data.count(c => (c \ "id").asOpt[String] == Some(cidExisting)) must beEqualTo(1)
     }
+
+    "add recipient to conversation" in {
+      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+
+      val json = Json.obj("recipients" -> validRecipients)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "conversation should contain new recipients" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      val recipients = (data \ "recipients").as[Seq[JsObject]]
+
+      recipients.count(r => (r \ "id").as[String] == validRecipients(0)) must beEqualTo(1)
+      recipients.count(r => (r \ "id").as[String] == validRecipients(1)) must beEqualTo(1)
+    }
+
+    "refuse to add non-existing recipients" in {
+      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+
+      val json = Json.obj("recipients" -> Seq("asdf"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+
+      contentAsString(res) must contain("\"res\":\"KO\"")
+      contentAsString(res) must contain("at least one recipientId is invalid")
+    }
+
+    "refuse non-members to add recipients to conversation" in {
+
+      val path = basePath + "/conversation/" + cidOther + "/recipient"
+
+      val json = Json.obj("recipients" -> validRecipients)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+
+      contentAsString(res) must contain("\"res\":\"KO\"")
+      contentAsString(res) must contain("identity is not a member of the conversation")
+    }
+
+    "delete recipient from conversation" in {
+
+      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + recipientMemberOfConversation
+
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      Logger.debug("DATATA" + contentAsString(res))
+
+      status(res) must equalTo(OK)
+    }
+
+    "conversation should not contain deleted recipient" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      val recipients = (data \ "recipients").as[Seq[JsObject]]
+
+      recipients.count(r => (r \ "id").as[String] == recipientMemberOfConversation) must beEqualTo(0)
+    }
+
+
 
     "drop the test database" in {
       ReactiveMongoPlugin.db.drop()(ExecutionContext.Implicits.global)

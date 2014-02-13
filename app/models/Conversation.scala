@@ -13,6 +13,7 @@ import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
 import helper.MongoHelper._
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -63,6 +64,15 @@ case class Conversation(id: MongoId,
       Json.obj("recipients" ->
         Json.obj("$each" -> recipients)))
     Conversation.col.update(query, set)
+  }
+
+  def deleteRecipient(recipient: MongoId): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$pull" ->
+      Json.obj("recipients" -> recipient))
+
+    Logger.debug("SET:" + set)
+    Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
   def hasMember(recipient: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
@@ -130,15 +140,4 @@ object Conversation extends Model[Conversation] {
     val id = IdHelper.generateConversationId()
     new Conversation(id, None, Seq(), Seq(), new Date, new Date)
   }
-
-  //  def hasMember(conversation: Conversation, user: String): Boolean = {
-  //    conversation.recipients.exists(r => {
-  //      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
-  //      if (r.messageType.equals("otherUser")) {
-  //        r.sendTo.equals(user)
-  //      } else {
-  //        r.name.equals(user)
-  //      }
-  //    })
-  //  }
 }
