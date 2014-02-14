@@ -8,7 +8,7 @@ import ExecutionContext.Implicits.global
 import reactivemongo.api.indexes.{ IndexType, Index }
 import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.IdHelper
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

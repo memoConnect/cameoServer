@@ -5,7 +5,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.Logger
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

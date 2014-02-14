@@ -12,7 +12,7 @@ import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
-import helper.MongoHelper._
+import helper.JsonHelper._
 import play.api.Logger
 
 /**

@@ -7,7 +7,7 @@ import helper.IdHelper
 import play.api.libs.functional.syntax._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import helper.MongoHelper._
+import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 
 /**

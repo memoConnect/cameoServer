@@ -5,7 +5,7 @@ import traits.{ Model }
 import play.api.libs.json._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

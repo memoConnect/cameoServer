@@ -18,7 +18,7 @@ import play.api.http.HeaderNames._
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.Play.current
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 object Global extends GlobalSettings with DynamicEmbedMongoPort {
 

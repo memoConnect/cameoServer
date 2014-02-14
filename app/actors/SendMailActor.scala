@@ -9,7 +9,7 @@ import play.api.Play.current
 import com.amazonaws.{ AmazonServiceException, AmazonClientException }
 import models.MailMessage
 import play.api.Play.current
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

@@ -10,7 +10,7 @@ import helper.AuthAction
 import scala.Some
 import play.api.libs.json.{ Json, Format, JsError }
 import scala.Some
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

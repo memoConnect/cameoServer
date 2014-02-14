@@ -20,6 +20,12 @@ case class MongoId(id: String) {
 
 object MongoId {
 
+  def createReads: Reads[MongoId] = {
+    __.read[String].map {
+      l => MongoId(l)
+    }
+  }
+
   implicit def mongoReads: Reads[MongoId] =
     (__ \ 'mongoId).read[String].map {
       l => MongoId(l)

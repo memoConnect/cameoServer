@@ -12,7 +12,7 @@ import reactivemongo.core.commands._
 import play.modules.reactivemongo.json.BSONFormats._
 import reactivemongo.bson._
 import java.util.Date
-import helper.MongoHelper._
+import helper.JsonHelper._
 import play.api.libs.functional.syntax._
 import reactivemongo.core.commands.Group
 import reactivemongo.core.commands.Sort

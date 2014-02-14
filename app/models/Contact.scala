@@ -10,7 +10,7 @@ import play.api.mvc.{ Results, SimpleResult }
 import play.mvc.Result
 import helper.ResultHelper._
 import play.api.Logger
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

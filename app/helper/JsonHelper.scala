@@ -15,13 +15,14 @@ import play.modules.reactivemongo.json.BSONFormats
 import models.VerifiedString
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
+import org.mindrot.jbcrypt.BCrypt
 
 /**
  * User: Björn Reimer
  * Date: 6/12/13
  * Time: 7:10 PM
  */
-object MongoHelper {
+object JsonHelper {
 
   val mongoDB = ReactiveMongoPlugin.db
 
@@ -133,6 +134,17 @@ object MongoHelper {
 
   def toBson(json: JsValue): Option[BSONDocument] = {
     BSONFormats.toBSON(json).asOpt.map(_.asInstanceOf[BSONDocument])
+  }
+
+  val hashPassword: Reads[String] = Reads[String] {
+    js =>
+      js.asOpt[String] match {
+        case None => JsError("No password")
+        case Some(pass) => JsSuccess({
+          val hashed = BCrypt.hashpw(pass, BCrypt.gensalt())
+          hashed
+        })
+      }
   }
 
 }
