@@ -22,7 +22,6 @@ class SendMailActor extends Actor {
   def receive = {
     case (mail: MailMessage) => {
 
-      // add footer to the mail
       Logger.debug("SendMailActor: Sending email to " + mail.to + " from " + mail.from + " with subject \'" + mail.subject + "\'")
 
       val credentials = new BasicAWSCredentials(Play.configuration.getString("aws.accessKey").getOrElse(""),

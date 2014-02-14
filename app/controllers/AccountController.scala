@@ -101,7 +101,7 @@ object AccountController extends ExtendedController {
                 case Some(ra) => Account.findAlternative(vr.loginName).map {
                   newLoginName => resKO(Json.obj("alternative" -> newLoginName))
                 }
-                // not reserve, reserve it and return reservation Secret
+                // not reserved, reserve it and return reservation Secret
                 case None => {
                   AccountReservation.reserve(vr.loginName).map {
                     res =>

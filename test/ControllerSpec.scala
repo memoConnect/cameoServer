@@ -9,7 +9,7 @@ import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import scala.concurrent.ExecutionContext
 import play.api.{ GlobalSettings, Logger }
-import services.DbAdminUtilities
+import helper.DbAdminUtilities
 
 /**
  * Add your spec here.

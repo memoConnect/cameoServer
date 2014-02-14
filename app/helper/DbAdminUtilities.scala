@@ -1,4 +1,4 @@
-package services
+package helper
 
 import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.MongoHelper._

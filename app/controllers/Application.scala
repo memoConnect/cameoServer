@@ -7,7 +7,7 @@ import helper.MongoHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.FileWriter
 import play.api.libs.json.JsObject
-import services.DbAdminUtilities
+import helper.DbAdminUtilities
 
 object Application extends Controller {
 

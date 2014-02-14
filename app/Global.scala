@@ -4,6 +4,7 @@
  * Time: 4:27 PM
  */
 
+import helper.DbAdminUtilities
 import models.Account
 import play.api.libs.json.{ JsValue, Json }
 import play.api.{ Logger, Play, GlobalSettings }
@@ -17,7 +18,6 @@ import play.api.http.HeaderNames._
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import play.api.Play.current
-import services.DbAdminUtilities
 import helper.MongoHelper._
 
 object Global extends GlobalSettings with DynamicEmbedMongoPort {

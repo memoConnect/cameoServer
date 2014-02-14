@@ -29,7 +29,7 @@ object IdentityController extends ExtendedController {
     }
   }
 
-  def getIdentityByToken() = AuthAction.async {
+  def getIdentityByToken = AuthAction.async {
     request =>
 
       val mongoId = request.identity.id

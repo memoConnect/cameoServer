@@ -58,7 +58,7 @@ object MessageController extends ExtendedController {
               case None => NotFound(resKO("invalid id"))
               case Some(conversation) => {
                 conversation.addMessage(message)
-                // initiate new actor for this message
+                // initiate new actor for each request
                 val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
                 sendMessageActor ! (message, conversation.recipients)
                 resOK(message.toJson)
