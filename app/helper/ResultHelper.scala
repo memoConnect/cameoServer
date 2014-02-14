@@ -46,6 +46,11 @@ object ResultHelper {
   //      ++
   //      addMessagesOrEmpty(notifications))
 
+  def resKO(notifications: Seq[UserNotification] = Seq()): SimpleResult =
+    Status(232)(
+      Json.obj("res" -> "KO") ++
+        addMessagesOrEmpty(notifications))
+
   // Bad Request
   def resBadRequest(error: String): SimpleResult =
     BadRequest(

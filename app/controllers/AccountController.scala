@@ -3,14 +3,23 @@ package controllers
 import play.api.mvc.Action
 import play.api.libs.json._
 import traits.ExtendedController
-import models.{ AccountReservation, Identity, Account }
+import models._
 import reactivemongo.core.errors.DatabaseException
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 import helper.ResultHelper._
 import helper.JsonHelper._
-import helper.AuthAction
+import helper.{ IdHelper, UserNotification, AuthAction }
 import play.api.libs.json
+import scala.Some
+import constants.Messaging._
+import scala.Some
+import scala.Some
+import scala.Some
+import java.util.Date
+
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
 
 /**
  * User: Björn Reimer
@@ -26,53 +35,64 @@ object AccountController extends ExtendedController {
   }
 
   case class AdditionalValues(
-                               reservationSecret: String,
-                               cameoId: String)
+    reservationSecret: String,
+    cameoId: String)
 
   object AdditionalValues {
-    val reads = Json.reads[AdditionalValues]
+    val reads: Reads[AdditionalValues] = (
+      (__ \ 'reservationSecret).read[String] and
+      (__ \ 'cameoId).read[String]
+    )(AdditionalValues.apply _)
   }
 
   def createAccount = Action.async(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
 
-         validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
+      validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
         additionalValues =>
+          // check if cameoId exists
+          Identity.find(additionalValues.cameoId).flatMap {
+            case Some(i) => Future(resKO(errorNotify("cameo id already exists")))
+            case None => {
+              validateFuture[Account](jsBody, Account.createReads) {
+                account =>
+                  {
 
-          validateFuture[Account](jsBody, Account.createReads) {
-            account =>
+                    AccountReservation.checkReserved(account.loginName).flatMap {
+                      case None => Future(resBadRequest("this loginName is not reserved"))
+                      case Some(secret) => {
+//
+//                        secret.equals(additionalValues.reservationSecret) match {
+//                          case false => Future(resBadRequest("invalid reservation secret"))
+//                          case true => {
 
-              AccountReservation.checkReserved(account.loginName).flatMap {
-                case None => Future(resBadRequest("this loginName is not reserved"))
-                case Some(secret) =>
+                            // everything is ok, we can create the account now
+                            AccountReservation.deleteReserved(account.loginName)
 
-                  secret.equals(additionalValues.reservationSecret) match {
-                    case false => Future(resBadRequest("invalid reservation secret"))
-                    case true => {
+                            // create identity and add it to account
+                            val identity = Identity.create(Some(account.id), additionalValues.cameoId, account.email, account.phoneNumber)
+                            Identity.col.insert(identity)
+                            val account2 = account.copy(identities = Seq(identity.id))
 
-                      // everything is ok, we can create the account now
-                      AccountReservation.deleteReserved(account.loginName)
-
-                      // create identity and add it to account
-                      val identity = Identity.create(Some(account.id), additionalValues.cameoId, account.email, account.phoneNumber)
-                      Identity.col.insert(identity)
-                      val account2 = account.copy(identities = Seq(identity.id))
-
-                      accountCollection.insert(account2).flatMap {
-                        lastError =>
-                          {
-                            if (lastError.ok) {
-                              account2.toJsonWithIdentities.map { resOK(_) }
-                            }
-                            else {
-                              Future(resServerError("MongoError: " + lastError))
+                            accountCollection.insert(account2).flatMap {
+                              lastError =>
+                                {
+                                  if (lastError.ok) {
+                                    account2.toJsonWithIdentities.map { resOK(_) }
+                                  }
+                                  else {
+                                    Future(resServerError("MongoError: " + lastError))
+                                  }
+                                }
                             }
                           }
+                        }
                       }
                     }
-                  }
-              }
+//                  }
+//              }
+            }
           }
       }
   }

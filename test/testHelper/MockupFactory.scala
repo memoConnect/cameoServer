@@ -9,11 +9,11 @@ import play.api.libs.json.{Json, JsObject}
  */
 object MockupFactory {
 
-  def createUser(login: String, password: String, tel: Option[String] = None, email: Option[String] = None): JsObject = {
+  def createUser(login: String, password: String, cameoId: String, tel: Option[String] = None, email: Option[String] = None): JsObject = {
     Json.obj(
       "loginName" -> login,
       "password" -> password,
-      "cameoId" -> login) ++ {
+      "cameoId" -> cameoId) ++ {
       if(tel.isDefined) Json.obj("phoneNumber" -> tel.get) else Json.obj() } ++ {
       if(email.isDefined) Json.obj("email" -> email.get) else Json.obj() }
   }

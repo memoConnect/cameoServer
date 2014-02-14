@@ -31,9 +31,13 @@ object JsonHelper {
     col.indexesManager.ensure(Index(Seq("messages._id" -> IndexType.Ascending)))
     col
   }
+  lazy val identityCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("identities")
+    col.indexesManager.ensure(Index(Seq("cameoId" -> IndexType.Ascending)))
+    col
+  }
   lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
-  lazy val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
   lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
 

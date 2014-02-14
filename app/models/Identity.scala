@@ -88,7 +88,7 @@ case class Identity(id: MongoId,
 object Identity extends Model[Identity] {
 
   implicit def col = identityCollection
-  val docVersion = 2
+  val docVersion = 1
 
   val mongoReads = createMongoReads(Json.reads[Identity])
   val mongoWrites = createMongoWrites(Json.writes[Identity])
@@ -160,6 +160,11 @@ object Identity extends Model[Identity] {
       docVersion)
   }
 
+  def findCameoId(cameoId: String): Future[Option[Identity]] = {
+    val query = Json.obj("cameoId" -> cameoId)
+    col.find(query).one[Identity]
+  }
+
   def readWithEvolutions(js: JsObject): Identity = {
     // catch exceptions and apply evolutions
     try {
@@ -184,12 +189,11 @@ object Identity extends Model[Identity] {
 
   def getEvolutions(fromVersion: Int): Reads[JsObject] = {
     fromVersion match {
-      case i if i == (Identity.docVersion - 1) => __.json.pickBranch
-      case i if i < (Identity.docVersion -1) => {
+      case i if i == Identity.docVersion => __.json.pickBranch
+      case i if i < Identity.docVersion => {
         evolutions(i) andThen getEvolutions(i + 1)
       }
     }
-
   }
 
   val evolutionAddCameoId: Reads[JsObject] = Reads {

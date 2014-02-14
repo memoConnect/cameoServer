@@ -16,6 +16,8 @@ libraryDependencies ++= Seq(
   "com.googlecode.libphonenumber" % "libphonenumber" % "5.9"
 )
 
+scalacOptions ++= Seq("-Xmax-classfile-name", "254")
+
 play.Project.playScalaSettings
 
 

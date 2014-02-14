@@ -50,12 +50,14 @@ class ControllerSpec extends Specification {
     step(play.api.Play.start(app))
 
     val login = randomString(8)
+    val login2 = randomString(8)
     val pass = randomString(8)
     val mail = "e@mail.de"
     val tel = "+491234567890"
     var identityId = ""
     var token = ""
     var regSec = ""
+    var regSec2 = ""
     var cidNew = ""
     val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
     val cidOther = "2GOdNSfdPMavyl95KUah"
@@ -104,6 +106,25 @@ class ControllerSpec extends Specification {
       regSeqOpt aka "returned registration secret" must beSome
     }
 
+    "Reserve another Login" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> login2)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val regSeqOpt = (data \ "reservationSecret").asOpt[String]
+
+      if (regSeqOpt.isDefined) {
+        regSec2 = regSeqOpt.get
+      }
+
+      regSeqOpt aka "returned registration secret" must beSome
+    }
+
     "Refuse to reserve reserved loginName and return alternative" in {
       val path = basePath + "/account/check"
       val json = Json.obj("loginName" -> login)
@@ -120,7 +141,7 @@ class ControllerSpec extends Specification {
 
     "Refuse to claim reserved login without secret" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass)
+      val json = createUser(login, pass, login)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -130,7 +151,7 @@ class ControllerSpec extends Specification {
 
     "Create Account" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass, Some(tel), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
+      val json = createUser(login, pass, login, Some(tel), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -151,14 +172,16 @@ class ControllerSpec extends Specification {
       (data \ "id").asOpt[String] must beSome
     }
 
-    "Refuse duplicate Account names" in {
+    "Refuse duplicate CameoIds names" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass)
+      val json = createUser(login2, pass, login)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
-      status(res) must equalTo(BAD_REQUEST)
+      Logger.debug("RES: " + contentAsString(res))
+
+      status(res) must equalTo(232)
     }
 
     "Refuse to reserve existing loginName and return next alternative" in {
@@ -209,6 +232,10 @@ class ControllerSpec extends Specification {
       (data \ "cameoId").asOpt[String] must beSome(login)
       (data \ "email" \ "value").asOpt[String] must beSome(mail)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
+    }
+
+    "Refuse to create account with existing identity" in {
+
     }
 
     "Edit an identity" in {
