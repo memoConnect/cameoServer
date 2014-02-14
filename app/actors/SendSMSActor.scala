@@ -10,7 +10,7 @@ import scala.concurrent.Future
 import models._
 import constants.Messaging._
 import play.api.libs.json.JsString
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

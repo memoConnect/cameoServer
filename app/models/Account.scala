@@ -12,7 +12,7 @@ import helper.IdHelper
 import play.api.Play
 import reactivemongo.core.commands.LastError
 import play.api.Play.current
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

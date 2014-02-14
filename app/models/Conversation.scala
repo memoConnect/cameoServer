@@ -12,7 +12,7 @@ import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
-import helper.MongoHelper._
+import helper.JsonHelper._
 import play.api.Logger
 
 /**
@@ -70,8 +70,6 @@ case class Conversation(id: MongoId,
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$pull" ->
       Json.obj("recipients" -> recipient))
-
-    Logger.debug("SET:" + set)
     Conversation.col.update(query, set).map { _.updatedExisting }
   }
 

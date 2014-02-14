@@ -3,7 +3,7 @@ package helper
 import play.api.mvc.{ Action, SimpleResult, Results }
 import play.api.mvc.Results._
 import play.api.libs.json._
-import helper.MongoHelper._
+import helper.JsonHelper._
 import constants.Notifications._
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
@@ -45,6 +45,11 @@ object ResultHelper {
     Status(232)(Json.obj("res" -> "KO"))
   //      ++
   //      addMessagesOrEmpty(notifications))
+
+  def resKO(notifications: Seq[UserNotification] = Seq()): SimpleResult =
+    Status(232)(
+      Json.obj("res" -> "KO") ++
+        addMessagesOrEmpty(notifications))
 
   // Bad Request
   def resBadRequest(error: String): SimpleResult =

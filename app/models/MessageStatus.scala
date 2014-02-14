@@ -1,7 +1,7 @@
 package models
 
 import play.api.libs.json.{ JsObject, Writes, Format, Json }
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

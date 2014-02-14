@@ -6,7 +6,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import models.{ MessageStatus, Identity, MongoId, Message }
 import constants.Messaging._
 import scala.concurrent.Future
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

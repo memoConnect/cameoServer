@@ -84,7 +84,8 @@ Account Management
           "loginName": "testtest",
           "password": "password",
           "email": "mail",
-          "phoneNumber": "12335"
+          "phoneNumber": "12335",
+          "cameoId":"testtest",
           "reservationSecret":"VaXdx3xAAzk3cTXvdDlC"
         }
 
@@ -198,6 +199,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
             "email": "mail",
             "phoneNumber": "12335",
             "preferredMessageType": "default",
+            "cameoId": "testtest",
             "created": "22.01.2014 16:34:54",
             "lastUpdated": "22.01.2014 16:34:54"
           }
@@ -239,6 +241,25 @@ Edit the identity of the user. Only those values contained in the json will be m
             "created": "06.02.2014 15:51:46",
             "lastUpdated": "06.02.2014 15:51:46"
           }
+        }
+
+
+## Search for cameoIds [/identity/search]
+
+### POST
+Returns all existing cameoIds that contain the given string
+
++ Request
+
+        {
+            "cameoId":"max"
+        }
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data": ["test", "test1", "testtest", "23test"]
         }
 
 

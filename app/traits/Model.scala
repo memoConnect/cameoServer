@@ -27,26 +27,8 @@ trait Model[A] {
     col.find(query).one[A]
   }
 
-  //  def createReads: Reads[A]
-
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
 
   implicit def mongoFormat: Format[A]
 
-  /**
-   * Helper
-   */
-
-  // TODO: put this somewhere more sensible
-  val hashPassword: Reads[String] = Reads[String] {
-    js =>
-      js.asOpt[String] match {
-        case None => JsError("No password")
-        case Some(pass) => JsSuccess({
-          val hashed = BCrypt.hashpw(pass, BCrypt.gensalt())
-          hashed
-        })
-      }
   }
-
-}

@@ -18,6 +18,7 @@ DELETE         /api/v1/account/:loginName                     controllers.Accoun
 GET            /api/v1/identity/:id                           controllers.IdentityController.getIdentityById(id)
 GET            /api/v1/identity                               controllers.IdentityController.getIdentityByToken()
 PUT            /api/v1/identity                               controllers.IdentityController.updateIdentity()
+POST           /api/v1/identity/search                        controllers.IdentityController.search()
 
 # CONVERSATIONS
 POST           /api/v1/conversation                           controllers.ConversationController.createConversation()

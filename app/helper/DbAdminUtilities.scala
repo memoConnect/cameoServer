@@ -1,7 +1,7 @@
 package helper
 
 import play.modules.reactivemongo.json.collection.JSONCollection
-import helper.MongoHelper._
+import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
 import play.api.libs.json.{ Json, JsObject }
