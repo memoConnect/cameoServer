@@ -52,7 +52,7 @@ object AccountController extends ExtendedController {
       validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
         additionalValues =>
           // check if cameoId exists
-          Identity.find(additionalValues.cameoId).flatMap {
+          Identity.findCameoId(additionalValues.cameoId).flatMap {
             case Some(i) => Future(resKO(errorNotify("cameo id already exists")))
             case None => {
               validateFuture[Account](jsBody, Account.createReads) {
@@ -62,10 +62,10 @@ object AccountController extends ExtendedController {
                     AccountReservation.checkReserved(account.loginName).flatMap {
                       case None => Future(resBadRequest("this loginName is not reserved"))
                       case Some(secret) => {
-//
-//                        secret.equals(additionalValues.reservationSecret) match {
-//                          case false => Future(resBadRequest("invalid reservation secret"))
-//                          case true => {
+
+                        secret.equals(additionalValues.reservationSecret) match {
+                          case false => Future(resBadRequest("invalid reservation secret"))
+                          case true => {
 
                             // everything is ok, we can create the account now
                             AccountReservation.deleteReserved(account.loginName)
@@ -90,8 +90,8 @@ object AccountController extends ExtendedController {
                         }
                       }
                     }
-//                  }
-//              }
+                  }
+              }
             }
           }
       }

@@ -1,7 +1,7 @@
 package test
 
 import play.api.test._
-import play.api.libs.json.{ Json, JsObject }
+import play.api.libs.json.{JsArray, Json, JsObject}
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
 import testHelper.MockupFactory._
@@ -84,7 +84,6 @@ class ControllerSpec extends Specification {
             status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
           }
       }
-
     }
 
     "Reserve Login" in {
@@ -172,16 +171,28 @@ class ControllerSpec extends Specification {
       (data \ "id").asOpt[String] must beSome
     }
 
-    "Refuse duplicate CameoIds names" in {
+    "Refuse to register with same secret" in {
       val path = basePath + "/account"
-      val json = createUser(login2, pass, login)
+      val json = createUser(login, pass, login)  ++ Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
-      Logger.debug("RES: " + contentAsString(res))
+      status(res) must equalTo(232)
+    }
+
+    "Refuse duplicate CameoIds" in {
+      val path = basePath + "/account"
+      val json = createUser(login2, pass, login, Some(tel), Some(mail)) ++ Json.obj("reservationSecret" -> regSec2)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
 
       status(res) must equalTo(232)
+
+      val messages = (contentAsJson(res) \ "messages").asOpt[JsArray]
+
+      messages must beSome
     }
 
     "Refuse to reserve existing loginName and return next alternative" in {
@@ -232,10 +243,6 @@ class ControllerSpec extends Specification {
       (data \ "cameoId").asOpt[String] must beSome(login)
       (data \ "email" \ "value").asOpt[String] must beSome(mail)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
-    }
-
-    "Refuse to create account with existing identity" in {
-
     }
 
     "Edit an identity" in {
