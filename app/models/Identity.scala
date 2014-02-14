@@ -117,6 +117,7 @@ object Identity extends Model[Identity] {
       Json.obj("id" -> i.id.toJson) ++
         toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
+        Json.obj("cameoId" -> i.cameoId) ++
         maybeEmpty("email", i.email.map {
           _.toJson
         }) ++
@@ -140,14 +141,14 @@ object Identity extends Model[Identity] {
     }
   }
 
-  def create(accountId: Option[MongoId], /*cameoId: String,*/ email: Option[String], phoneNumber: Option[String]): Identity = {
+  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String]): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
       accountId,
       None,
       VerifiedString.createOpt(email),
       VerifiedString.createOpt(phoneNumber),
-      "smoo",
+      cameoId,
       MESSAGE_TYPE_DEFAULT,
       IdHelper.generateUserKey(),
       Seq(),

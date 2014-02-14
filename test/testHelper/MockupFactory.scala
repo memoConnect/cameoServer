@@ -12,7 +12,8 @@ object MockupFactory {
   def createUser(login: String, password: String, tel: Option[String] = None, email: Option[String] = None): JsObject = {
     Json.obj(
       "loginName" -> login,
-      "password" -> password) ++ {
+      "password" -> password,
+      "cameoId" -> login) ++ {
       if(tel.isDefined) Json.obj("phoneNumber" -> tel.get) else Json.obj() } ++ {
       if(email.isDefined) Json.obj("email" -> email.get) else Json.obj() }
   }

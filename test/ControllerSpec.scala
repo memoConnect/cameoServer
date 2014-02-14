@@ -206,6 +206,7 @@ class ControllerSpec extends Specification {
 
       (data \ "id").asOpt[String] must beSome
       (data \ "userKey").asOpt[String] must beSome
+      (data \ "cameoId").asOpt[String] must beSome(login)
       (data \ "email" \ "value").asOpt[String] must beSome(mail)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
     }

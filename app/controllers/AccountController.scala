@@ -10,6 +10,7 @@ import scala.concurrent.Future
 import helper.ResultHelper._
 import helper.JsonHelper._
 import helper.AuthAction
+import play.api.libs.json
 
 /**
  * User: Björn Reimer
@@ -24,48 +25,54 @@ object AccountController extends ExtendedController {
       login.matches("^\\w+$")
   }
 
+  case class AdditionalValues(
+                               reservationSecret: String,
+                               cameoId: String)
+
+  object AdditionalValues {
+    val reads = Json.reads[AdditionalValues]
+  }
+
   def createAccount = Action.async(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
-      val reservationSecret: Option[String] = (jsBody \ "reservationSecret").asOpt[String]
 
-      validateFuture[Account](jsBody, Account.createReads) {
+         validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
+        additionalValues =>
 
-        account =>
-          // check for reservation secret
-          reservationSecret match {
-            case None => Future(resBadRequest("no reservation secret"))
-            case Some(rs) => AccountReservation.checkReserved(account.loginName).flatMap {
+          validateFuture[Account](jsBody, Account.createReads) {
+            account =>
 
-              case None => Future(resBadRequest("this loginName is not reserved"))
-              case Some(secret) =>
+              AccountReservation.checkReserved(account.loginName).flatMap {
+                case None => Future(resBadRequest("this loginName is not reserved"))
+                case Some(secret) =>
 
-                secret.equals(rs) match {
-                  case false => Future(resBadRequest("invalid reservation secret"))
-                  case true => {
+                  secret.equals(additionalValues.reservationSecret) match {
+                    case false => Future(resBadRequest("invalid reservation secret"))
+                    case true => {
 
-                    // everything is ok, we can create the account now
-                    AccountReservation.deleteReserved(account.loginName)
+                      // everything is ok, we can create the account now
+                      AccountReservation.deleteReserved(account.loginName)
 
-                    // create identity and add it to account
-                    val identity = Identity.create(Some(account.id), account.email, account.phoneNumber)
-                    Identity.col.insert(identity)
-                    val account2 = account.copy(identities = Seq(identity.id))
+                      // create identity and add it to account
+                      val identity = Identity.create(Some(account.id), additionalValues.cameoId, account.email, account.phoneNumber)
+                      Identity.col.insert(identity)
+                      val account2 = account.copy(identities = Seq(identity.id))
 
-                    accountCollection.insert(account2).flatMap {
-                      lastError =>
-                        {
-                          if (lastError.ok) {
-                            account2.toJsonWithIdentities.map { resOK(_) }
+                      accountCollection.insert(account2).flatMap {
+                        lastError =>
+                          {
+                            if (lastError.ok) {
+                              account2.toJsonWithIdentities.map { resOK(_) }
+                            }
+                            else {
+                              Future(resServerError("MongoError: " + lastError))
+                            }
                           }
-                          else {
-                            Future(resServerError("MongoError: " + lastError))
-                          }
-                        }
+                      }
                     }
                   }
-                }
-            }
+              }
           }
       }
   }
