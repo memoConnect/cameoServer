@@ -1,7 +1,7 @@
 package test
 
 import play.api.test._
-import play.api.libs.json.{JsArray, Json, JsObject}
+import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
 import testHelper.MockupFactory._
@@ -173,7 +173,7 @@ class ControllerSpec extends Specification {
 
     "Refuse to register with same secret" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass, login)  ++ Json.obj("reservationSecret" -> regSec)
+      val json = createUser(login, pass, login) ++ Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -267,6 +267,70 @@ class ControllerSpec extends Specification {
       (data \ "email" \ "value").asOpt[String] must beSome(newMail)
       (data \ "email" \ "isVerified").asOpt[Boolean] must beSome(false)
       (data \ "displayName").asOpt[String] must beSome(newName)
+    }
+
+    "Search for an CameoId" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("cameoId" -> login)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
+
+      data(0) must beEqualTo(login)
+
+      data.length must beEqualTo(1)
+    }
+
+    "Search for an CameoId with substring" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("cameoId" -> login.substring(0, 4))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
+
+      data(0) must beEqualTo(login)
+
+      data.length must beEqualTo(1)
+    }
+
+    "Refuse to Search for an CameoId if the search term is too short" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("cameoId" -> "abc")
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "Find nothing for non-existing CameoIds" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("cameoId" -> "abcabc")
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
+
+      data.length must beEqualTo(0)
     }
 
     "Create a new conversation with subject" in {
@@ -479,8 +543,6 @@ class ControllerSpec extends Specification {
 
       recipients.count(r => (r \ "id").as[String] == recipientMemberOfConversation) must beEqualTo(0)
     }
-
-
 
     "drop the test database" in {
       ReactiveMongoPlugin.db.drop()(ExecutionContext.Implicits.global)

@@ -165,6 +165,11 @@ object Identity extends Model[Identity] {
     col.find(query).one[Identity]
   }
 
+  def matchCameoId(cameoId: String): Future[Seq[Identity]] = {
+    val query = Json.obj("cameoId" -> Json.obj("$regex" -> cameoId))
+    col.find(query).cursor[Identity].collect[Seq](1000, stopOnError = true)
+  }
+
   def readWithEvolutions(js: JsObject): Identity = {
     // catch exceptions and apply evolutions
     try {
