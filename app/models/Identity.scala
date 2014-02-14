@@ -11,6 +11,7 @@ import ExecutionContext.Implicits.global
 import constants.Messaging._
 import reactivemongo.core.commands.LastError
 import helper.JsonHelper._
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -139,14 +140,14 @@ object Identity extends Model[Identity] {
     }
   }
 
-  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String]): Identity = {
+  def create(accountId: Option[MongoId], /*cameoId: String,*/ email: Option[String], phoneNumber: Option[String]): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
       accountId,
       None,
       VerifiedString.createOpt(email),
       VerifiedString.createOpt(phoneNumber),
-      cameoId,
+      "smoo",
       MESSAGE_TYPE_DEFAULT,
       IdHelper.generateUserKey(),
       Seq(),
@@ -167,8 +168,16 @@ object Identity extends Model[Identity] {
       case JsResultException(e) =>
         // get document version, none == Version 0
         val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
-        val readsWithEvolution = getEvolutions(currentDocVersion) andThen mongoReads
-        js.as[Identity](readsWithEvolution)
+        val readsWithEvolution = getEvolutions(currentDocVersion)
+
+        // update identity in db
+        val newJs: JsObject = js.transform(readsWithEvolution).get
+        Identity.col.save(newJs).map {
+          lastError => if (!lastError.updatedExisting) {
+            Logger.error("Error applying DB evolution to " + js)
+          }
+        }
+        newJs.as[Identity]
     }
   }
 
@@ -182,32 +191,35 @@ object Identity extends Model[Identity] {
 
   }
 
-  val evolutionVerifiedMail: Reads[JsObject] = Reads {
-    // convert mail and phoneNumber to verified string
-    js =>
-      {
-        val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
-          case None => __.json.pickBranch
-          case Some(email) =>
-            __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
-        }
-        val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
-          case None => __.json.pickBranch
-          case Some(tel) =>
-            __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
-        }
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-        js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
-      }
-  }
-
   val evolutionAddCameoId: Reads[JsObject] = Reads {
     js =>
       {
-        val addCameoId: Reads[JsObject] = __.json.update((__ \ 'docVersion).json.copyFrom((__ \ 'loginName).json.pick))
-        js.transform(addCameoId)
+        // getLoginName
+        val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(addCameoId andThen addVersion)
       }
   }
 
-  val evolutions: Map[Int, Reads[JsObject]] = Map(1 -> evolutionVerifiedMail, 2 -> evolutionAddCameoId)
+  val evolutions: Map[Int, Reads[JsObject]] = Map(0 -> evolutionAddCameoId)
+
+  // not used anymore
+  val evolutionVerifiedMail: Reads[JsObject] = Reads {
+    // convert mail and phoneNumber to verified string
+    js =>
+    {
+      val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
+        case None => __.json.pickBranch
+        case Some(email) =>
+          __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
+      }
+      val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
+        case None => __.json.pickBranch
+        case Some(tel) =>
+          __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
+      }
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+      js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
+    }
+  }
 }

@@ -426,8 +426,6 @@ class ControllerSpec extends Specification {
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(token2))
       val res = route(req).get
 
-      Logger.debug("DATATA" + contentAsString(res))
-
       status(res) must equalTo(OK)
     }
 

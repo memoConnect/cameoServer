@@ -70,8 +70,6 @@ case class Conversation(id: MongoId,
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$pull" ->
       Json.obj("recipients" -> recipient))
-
-    Logger.debug("SET:" + set)
     Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
