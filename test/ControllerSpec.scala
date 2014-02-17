@@ -891,7 +891,7 @@ class ControllerSpec extends Specification {
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(token2))
       val res = route(req).get
 
-      status(res) must equalTo(BAD_REQUEST)
+      status(res) must equalTo(NOT_FOUND)
     }
 
     "drop the test database" in {
