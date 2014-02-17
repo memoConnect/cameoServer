@@ -5,7 +5,7 @@ package constants
  * Date: 2/17/14
  * Time: 12:36 PM
  */
-object contacts {
+object Contacts {
 
   val CONTACT_TYPE_EXTERNAL = "external"
   val CONTACT_TYPE_INTERNAL = "internal"

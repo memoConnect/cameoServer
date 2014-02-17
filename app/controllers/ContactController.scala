@@ -3,13 +3,13 @@ package controllers
 import traits.ExtendedController
 
 import play.api.libs.json._
-import models.{ MongoId, Identity, Contact }
+import models.{ContactUpdate, MongoId, Identity, Contact}
 import helper.{ OutputLimits, AuthAction }
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
 import scala.Some
 import ExecutionContext.Implicits.global
-import constants.contacts._
+import constants.Contacts._
 import play.api.Logger
 
 /**
@@ -59,19 +59,21 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def editContact(contactId: String) = AuthAction.async(parse.tolerantJson) {
-
+  def editContact(contactId: String) = AuthAction(parse.tolerantJson) {
     request =>
-
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
       res match {
-        case None          => Future(resNotFound("contact not found"))
+        case None          => resNotFound("contact not found")
         case Some(contact) => {
           // check if we are allowed to edit it
           contact.contactType match {
-            case CONTACT_TYPE_INTERNAL => Future(resUnauthorized("cannot edit contact details of cameo user"))
-            case CONTACT_TYPE_EXTERNAL =>
+            case CONTACT_TYPE_INTERNAL => resUnauthorized("cannot edit contact details of cameo user")
+            case CONTACT_TYPE_EXTERNAL => validate(request.body, ContactUpdate.format) {
+              updateContact =>
+                contact.update(updateContact)
+                resOK()
+            }
           }
         }
       }

@@ -16,6 +16,7 @@ import models.VerifiedString
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -78,6 +79,42 @@ object JsonHelper {
       }
   }
 
+  def createMongoReadsWithEvolutions[T](reads: Reads[T], evolutions: Map[Int, Reads[JsObject]], latestVersion: Int, col: JSONCollection): Reads[T] = Reads {
+    js =>
+      try {
+        js.transform(fromMongoDates andThen fromMongoId).map {
+          obj: JsValue => obj.as[T](reads)
+        }
+      }
+      catch {
+        case JsResultException(e) =>
+          // get document version, none == Version 0
+          val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
+          val readsWithEvolution = getEvolutions(currentDocVersion, evolutions, latestVersion)
+          val newJs: JsObject = js.transform(readsWithEvolution andThen fromMongoDates andThen fromMongoId).get
+
+          // TODO: update in db
+          //            col.save(newJs).map {
+          //              lastError => if (!lastError.updatedExisting) {
+          //                Logger.error("Error applying DB evolution to " + js)
+          //              }
+          //            }
+
+          JsSuccess(newJs.as[T](reads))
+        case _ => JsError()
+      }
+
+  }
+
+  def getEvolutions(fromVersion: Int, evolutions: Map[Int, Reads[JsObject]], wantedVersion: Int): Reads[JsObject] = {
+    fromVersion match {
+      case i if i == wantedVersion => __.json.pickBranch
+      case i if i < wantedVersion => {
+        evolutions(i) andThen getEvolutions(i + 1, evolutions, wantedVersion)
+      }
+    }
+  }
+
   def createMongoWrites[T](writes: Writes[T]): Writes[T] = Writes {
     obj: T => Json.toJson[T](obj)(writes).transform(toMongoDates andThen toMongoId).getOrElse(Json.obj())
   }
@@ -118,12 +155,12 @@ object JsonHelper {
     }
   }
 
-  def getNewValueVerifiedString(old: Option[VerifiedString], newValue: String): Option[VerifiedString] = {
-    if (old.isDefined && old.get.value.equals(newValue)) {
+  def getNewValueVerifiedString(old: Option[VerifiedString], newValue: VerifiedString): Option[VerifiedString] = {
+    if (old.isDefined && old.get.value.equals(newValue.value)) {
       None
     }
     else {
-      Some(VerifiedString.create(newValue))
+      Some(newValue)
     }
   }
 

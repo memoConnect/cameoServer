@@ -8,7 +8,7 @@ import helper.ResultHelper._
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import constants.Verification._
-import models.{ Identity, VerificationSecret, MongoId }
+import models.{IdentityUpdate, Identity, VerificationSecret, MongoId}
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 
@@ -47,8 +47,8 @@ object VerificationController extends Controller with ExtendedController {
               if (i.email.map {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
-                val newMail = i.email.get.copy(isVerified = true)
-                i.update(email = Some(newMail))
+                val identityUpdate = IdentityUpdate.create(email = Some(i.email.get.copy(isVerified = true)))
+                i.update(identityUpdate)
                 resOK("verified")
               }
               else {
@@ -59,8 +59,8 @@ object VerificationController extends Controller with ExtendedController {
               if (i.phoneNumber.map {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
-                val newTel = i.phoneNumber.get.copy(isVerified = true)
-                i.update(phoneNumber = Some(newTel))
+                val identityUpdate = IdentityUpdate.create(phoneNumber = Some(i.phoneNumber.get.copy(isVerified = true)))
+                i.update(identityUpdate)
                 resOK("verified")
               }
               else {
