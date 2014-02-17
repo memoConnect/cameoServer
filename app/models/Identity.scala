@@ -47,6 +47,13 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
+  def deleteContact(contactId: MongoId): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$pull" ->
+      Json.obj("contacts" -> Json.obj("_id" -> contactId)))
+    Identity.col.update(query, set).map { _.updatedExisting }
+  }
+
   def addConversation(conversationId: MongoId): Future[LastError] = {
     val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
     Identity.col.update(query, set)
@@ -62,14 +69,16 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
-  def update(email: Option[VerifiedString] = None,
-             phoneNumber: Option[VerifiedString] = None,
-             displayName: Option[String] = None): Future[LastError] = {
+  def update(update: IdentityUpdate): Future[LastError] = {
+
+    val newMail = update.email.flatMap { getNewValueVerifiedString(this.email, _) }
+    val newPhoneNumber = update.phoneNumber.flatMap { getNewValueVerifiedString(this.phoneNumber, _) }
+    val newDisplayName = update.displayName.flatMap { getNewValueString(this.displayName, _) }
 
     val setValues = {
-      maybeEmpty("email", email.map { Json.toJson(_) }) ++
-        maybeEmpty("phoneNumber", phoneNumber.map { Json.toJson(_) }) ++
-        toJsonOrEmpty("displayName", displayName)
+      maybeEmpty("email", newMail.map { Json.toJson(_) }) ++
+        maybeEmpty("phoneNumber", newPhoneNumber.map { Json.toJson(_) }) ++
+        toJsonOrEmpty("displayName", newDisplayName)
     }
     val set = Json.obj("$set" -> setValues)
 
@@ -101,7 +110,7 @@ object Identity extends Model[Identity] {
     (__ \ 'displayName).readNullable[String] and
     (__ \ 'email).readNullable[VerifiedString](VerifiedString.createReads) and
     (__ \ 'phoneNumber).readNullable[VerifiedString](VerifiedString.createReads) and
-    (__ \ 'cameoId).read[String] and
+    ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId) )and
     ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and
@@ -170,6 +179,7 @@ object Identity extends Model[Identity] {
     col.find(query).cursor[Identity].collect[Seq](1000, stopOnError = true)
   }
 
+  // TODO: use the general approach: createMongoReadsWithEvolutions
   def readWithEvolutions(js: JsObject): Identity = {
     // catch exceptions and apply evolutions
     try {
@@ -231,5 +241,22 @@ object Identity extends Model[Identity] {
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
       js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
     }
+  }
+}
+
+case class IdentityUpdate(phoneNumber: Option[VerifiedString],
+                          email: Option[VerifiedString],
+                          displayName: Option[String])
+
+object IdentityUpdate {
+
+  implicit val reads: Reads[IdentityUpdate] = (
+    (__ \ "phoneNumber").readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ "email").readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ "displayName").readNullable[String]
+    ) (IdentityUpdate.apply _)
+
+  def create(phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None, displayName: Option[String] = None): IdentityUpdate = {
+    new IdentityUpdate(phoneNumber,email, displayName)
   }
 }

@@ -94,12 +94,6 @@ object Account extends Model[Account] {
   }
 }
 
-case class IdentityUpdate(phoneNumber: Option[String],
-                          email: Option[String])
-
-object IdentityUpdate {
-  implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
-}
 case class AccountReservation(loginName: String,
                               id: MongoId,
                               created: Date) {

@@ -59,9 +59,16 @@ class ControllerSpec extends Specification {
     var regSec = ""
     var regSec2 = ""
     var cidNew = ""
+    var identityOf10thContact = ""
+    var idOf10thContact = ""
+    var contactId = ""
+    val newContactMail = "new@mail.foo"
+    val newContactTel = "+4561233"
+    val newContactName = "foobar"
     val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
     val cidOther = "2GOdNSfdPMavyl95KUah"
     val identityExisting = "g9PWZY7xKNbeCO6LPNnx"
+    val identityExisting2 = "N2HKgBdxxnWBGxlYY7Dn"
     val validRecipients = Seq("6iOuCefN12ma0wF7QxR5", "dKeg67XtSNBCFMq8WQor")
     val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
 
@@ -230,6 +237,23 @@ class ControllerSpec extends Specification {
 
     "Automatically create an identity for a new account" in {
       val path = basePath + "/identity/" + identityId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "userKey").asOpt[String] must beSome
+      (data \ "cameoId").asOpt[String] must beSome(login)
+      (data \ "email" \ "value").asOpt[String] must beSome(mail)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
+    }
+
+    "Get the identity behind a token" in {
+      val path = basePath + "/identity"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
@@ -542,6 +566,332 @@ class ControllerSpec extends Specification {
       val recipients = (data \ "recipients").as[Seq[JsObject]]
 
       recipients.count(r => (r \ "id").as[String] == recipientMemberOfConversation) must beEqualTo(0)
+    }
+
+    "get all contacts" in {
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(44)
+
+      val contact = data(10)
+      ( contact \ "groups")(0).asOpt[String] must beSome("group1")
+      ( contact \ "identityId").asOpt[String] must beSome
+      identityOf10thContact = ( contact \ "identityId").as[String]
+      ( contact \ "id").asOpt[String] must beSome
+      idOf10thContact = ( contact \ "id").as[String]
+      ( contact \ "identity" \ "displayName").asOpt[String] must beSome
+    }
+
+    "get all contacts with offset" in {
+
+      val path = basePath + "/contacts?offset=10"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(34)
+    }
+
+    "get all contacts with limit" in {
+
+      val path = basePath + "/contacts?limit=20"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(20)
+    }
+
+    "get all contacts with limit and offset" in {
+      val path = basePath + "/contacts?offset=10&limit=20"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(20)
+      (data(0) \ "identityId").asOpt[String] must beSome(identityOf10thContact)
+    }
+
+    "add internal contact" in {
+      val path = basePath + "/contact"
+
+      val json = Json.obj("groups" -> Seq("group3","group1"), "identityId" -> identityId )
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      ( data \ "id").asOpt[String] must beSome
+      contactId = (data \ "id").as[String]
+      (data \ "groups")(0).asOpt[String] must beSome("group3")
+      (data \ "groups")(1).asOpt[String] must beSome("group1")
+      (data \ "identityId").asOpt[String] must beSome(identityId)
+      (data \ "contactType").asOpt[String] must beSome("internal")
+
+    }
+
+    "refuse to add internal contact with invalid identity" in {
+      val path = basePath + "/contact"
+
+      val json = Json.obj("groups" -> Seq("group3","group1"), "identityId" -> "asdf" )
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "get the new internal contact" in {
+
+      val path = basePath + "/contact/" + contactId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "identityId").asOpt[String] must beSome(identityId)
+    }
+
+    "edit groups of internal contact" in {
+
+      val path = basePath + "/contact/" + contactId
+
+      val newGroups = Seq("group1","group4")
+      val json = Json.obj("groups" -> newGroups)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "refuse to edit mail of internal contact" in {
+      val path = basePath + "/contact/" + contactId
+
+      val newMail = "new@mail.de"
+      val json = Json.obj("email" -> newMail)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    "refuse to edit phoneNumber of internal contact" in {
+      val path = basePath + "/contact/" + contactId
+
+      val newPhone = "+142536"
+      val json = Json.obj("phoneNumber" -> newPhone)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    "refuse to edit DisplayName of internal contact" in {
+      val path = basePath + "/contact/" + contactId
+
+      val newName = "fail"
+      val json = Json.obj("displayName" -> newName)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    "add external contact" in {
+      val path = basePath + "/contact"
+
+      val mail = "some@mail.com"
+      val tel = "+123456789123"
+      val name = "foo"
+      val json = Json.obj("groups" -> Seq("group1","group2"),
+        "identity" -> Json.obj("email" -> mail, "phoneNumber" -> tel, "displayName" -> name ) )
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      Logger.debug("DASDF: " + contentAsString(res))
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      ( data \ "id").asOpt[String] must beSome
+      contactId = (data \ "id").as[String]
+      (data \ "groups")(0).asOpt[String] must beSome("group1")
+      (data \ "groups")(1).asOpt[String] must beSome("group2")
+      (data \ "contactType").asOpt[String] must beSome("external")
+      (data \ "identity" \ "email" \ "value").asOpt[String] must beSome(mail)
+      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
+      (data \ "identity" \ "displayName").asOpt[String] must beSome(name)
+
+    }
+
+    "get the new external contact" in {
+
+      val path = basePath + "/contact/" + contactId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      ( data \ "id").asOpt[String] must beSome(contactId)
+      (data \ "groups")(0).asOpt[String] must beSome("group1")
+      (data \ "groups")(1).asOpt[String] must beSome("group2")
+      (data \ "contactType").asOpt[String] must beSome("external")
+      (data \ "identity" \ "email" \ "value").asOpt[String] must beSome
+      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome
+      (data \ "identity" \ "displayName").asOpt[String] must beSome
+    }
+
+    "edit groups of external contact" in {
+
+      val path = basePath + "/contact/" + contactId
+
+      val newGroups = Seq("group1","group3")
+      val json = Json.obj("groups" -> newGroups)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "edit details of new contact" in {
+      val path = basePath + "/contact/" + contactId
+
+      val json = Json.obj("email" -> newContactMail, "phoneNumber" -> newContactTel, "displayName" -> newContactName)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "get all contact groups" in {
+      val path = basePath + "/contact-groups"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[String]]
+
+      data.find(_.equals("group1")) aka "contain group 1" must beSome
+      data.find(_.equals("group2")) aka "contain group 2" must beSome
+      data.find(_.equals("group3")) aka "contain group 3" must beSome
+      data.find(_.equals("group4")) aka "contain group 4" must beSome
+    }
+
+    "get single group" in {
+      val path = basePath + "/contact-group/group1"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(24)
+
+    }
+
+    "get group with created internal contact" in {
+      val path = basePath + "/contact-group/group4"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(1)
+
+      (data(0) \ "identityId").asOpt[String] must beSome(identityId)
+    }
+
+    "get group with created external contact" in {
+      val path = basePath + "/contact-group/group3"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(1)
+
+      (data(0) \ "id").asOpt[String] must beSome(contactId)
+      (data(0) \ "groups")(0).asOpt[String] must beSome("group1")
+      (data(0) \ "groups")(1).asOpt[String] must beSome("group3")
+      (data(0) \ "contactType").asOpt[String] must beSome("external")
+      (data(0) \ "identity" \ "email" \ "value").asOpt[String] must beSome(newContactMail)
+      (data(0) \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(newContactTel)
+      (data(0) \ "identity" \ "displayName").asOpt[String] must beSome(newContactName)
+    }
+
+    "delete Contact" in {
+      val path = basePath + "/contact/" + idOf10thContact
+
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      Logger.debug("ID: " + idOf10thContact)
+
+      status(res) must equalTo(OK)
+    }
+
+    "check deletion" in {
+      val path = basePath + "/contact/" + idOf10thContact
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "refuse to delete non-existing contact" in {
+      val path = basePath + "/contact/asdfasdf"
+
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(NOT_FOUND)
     }
 
     "drop the test database" in {

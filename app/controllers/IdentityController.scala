@@ -45,25 +45,12 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  case class IdentityUpdate(phoneNumber: Option[String],
-                            email: Option[String],
-                            displayName: Option[String])
-
-  object IdentityUpdate {
-    implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
-  }
-
   def updateIdentity() = AuthAction.async(parse.tolerantJson) {
     request =>
-      validateFuture[IdentityUpdate](request.body, IdentityUpdate.format) {
-        update =>
+      validateFuture[IdentityUpdate](request.body, IdentityUpdate.reads) {
+        identityUpdate =>
           {
-
-            val newMail = update.email.flatMap { getNewValueVerifiedString(request.identity.email, _) }
-            val newPhoneNumber = update.phoneNumber.flatMap { getNewValueVerifiedString(request.identity.phoneNumber, _) }
-            val newDisplayName = update.displayName.flatMap { getNewValueString(request.identity.displayName, _) }
-
-            request.identity.update(email = newMail, phoneNumber = newPhoneNumber, displayName = newDisplayName).flatMap {
+            request.identity.update(identityUpdate).flatMap {
               lastError =>
                 {
                   Identity.find(request.identity.id).map {
