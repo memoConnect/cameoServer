@@ -47,6 +47,13 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
+  def deleteContact(contactId: MongoId): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$pull" ->
+      Json.obj("contacts" -> Json.obj("_id" -> contactId)))
+    Identity.col.update(query, set).map { _.updatedExisting }
+  }
+
   def addConversation(conversationId: MongoId): Future[LastError] = {
     val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
     Identity.col.update(query, set)
@@ -103,7 +110,7 @@ object Identity extends Model[Identity] {
     (__ \ 'displayName).readNullable[String] and
     (__ \ 'email).readNullable[VerifiedString](VerifiedString.createReads) and
     (__ \ 'phoneNumber).readNullable[VerifiedString](VerifiedString.createReads) and
-    (__ \ 'cameoId).read[String] and
+    ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId) )and
     ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and

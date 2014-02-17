@@ -44,11 +44,12 @@ case class Contact(id: MongoId,
 
     // edit groups
     if (contactUpdate.groups.isDefined) {
-      val query = Json.obj("contacts.id" -> this.id)
-      val newGroups = maybeEmpty("contacts.id.groups", contactUpdate.groups.map(Json.toJson(_)))
+      val query = Json.obj("contacts" -> Json.obj("$elemMatch" -> Json.obj("_id" -> this.id)))
+      val newGroups = maybeEmpty("contacts.$.groups", contactUpdate.groups.map(Json.toJson(_)))
       val set = Json.obj("$set" -> newGroups)
+
       Contact.col.update(query, set).map {
-        lastError => Logger.error("Could not update Contact: " + query + ":" + set)
+        lastError => if (!lastError.updatedExisting) Logger.error("Could not update Contact: " + query + ":" + set)
       }
     }
 
@@ -83,6 +84,7 @@ object Contact extends Model[Contact] {
         Json.obj("identityId" -> c.identityId.toJson) ++
         Json.obj("contactType" -> c.contactType)
   }
+
 
   val evolutionAddContactType: Reads[JsObject] = Reads[JsObject] {
     js =>

@@ -68,7 +68,7 @@ object ResultHelper {
   def resNotFound(what: String, notifications: Seq[UserNotification] = Seq()): SimpleResult = {
     NotFound(
       Json.obj("res" -> "KO") ++
-        Json.obj("error" -> (what + "not found")) ++
+        Json.obj("error" -> (what + " not found")) ++
         addMessagesOrEmpty(notifications)
     )
   }

@@ -3,14 +3,13 @@ package controllers
 import traits.ExtendedController
 
 import play.api.libs.json._
-import models.{ContactUpdate, MongoId, Identity, Contact}
+import models.{ ContactUpdate, MongoId, Identity, Contact }
 import helper.{ OutputLimits, AuthAction }
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
 import scala.Some
 import ExecutionContext.Implicits.global
 import constants.Contacts._
-import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -27,7 +26,7 @@ object ContactController extends ExtendedController {
       val (contactType, maybeIdentity): (String, Future[Option[(Identity)]]) = (jsBody \ "identityId").asOpt[String] match {
         case Some(id) => {
           // check if identity exists
-          (CONTACT_TYPE_INTERNAL,Identity.find(id))
+          (CONTACT_TYPE_INTERNAL, Identity.find(id))
         }
         case None => {
           // if not check if there is a valid identity object
@@ -64,16 +63,19 @@ object ContactController extends ExtendedController {
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
       res match {
-        case None          => resNotFound("contact not found")
+        case None => resNotFound("contact")
         case Some(contact) => {
-          // check if we are allowed to edit it
-          contact.contactType match {
-            case CONTACT_TYPE_INTERNAL => resUnauthorized("cannot edit contact details of cameo user")
-            case CONTACT_TYPE_EXTERNAL => validate(request.body, ContactUpdate.format) {
-              updateContact =>
-                contact.update(updateContact)
+          validate(request.body, ContactUpdate.format) {
+            contactUpdate =>
+              // if the contact is internal we can only change the groups
+              if (contact.contactType.equals(CONTACT_TYPE_INTERNAL) &&
+                (contactUpdate.email.isDefined || contactUpdate.phoneNumber.isDefined || contactUpdate.displayName.isDefined)) {
+                resUnauthorized("cannot change contact details of another cameo user")
+              }
+              else {
+                contact.update(contactUpdate)
                 resOK()
-            }
+              }
           }
         }
       }
@@ -81,11 +83,10 @@ object ContactController extends ExtendedController {
 
   def getContact(contactId: String) = AuthAction.async {
     request =>
-
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
       res match {
-        case None          => Future(resNotFound("contact not found"))
+        case None          => Future(resNotFound("contact"))
         case Some(contact) => contact.toJsonWithIdentityResult
       }
   }
@@ -96,6 +97,20 @@ object ContactController extends ExtendedController {
 
       Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
         c => resOK(c)
+      }
+  }
+
+  def deleteContact(contactId: String) = AuthAction.async {
+    request =>
+      val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
+
+      res match {
+        case None => Future(resNotFound("contact"))
+        case Some(c) =>
+          request.identity.deleteContact(c.id).map {
+            case false => resBadRequest("unable to delete")
+            case true  => resOK("deleted")
+          }
       }
   }
 

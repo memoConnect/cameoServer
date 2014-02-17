@@ -32,6 +32,10 @@ object IdHelper {
     randomString(40)
   }
 
+  def generateCameoId: String = {
+    randomString(15)
+  }
+
   def generateVerificationSecret(): MongoId = {
     new MongoId(randomString(8))
   }
