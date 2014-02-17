@@ -47,10 +47,9 @@ object IdentityController extends ExtendedController {
 
   def updateIdentity() = AuthAction.async(parse.tolerantJson) {
     request =>
-      validateFuture[IdentityUpdate](request.body, IdentityUpdate.format) {
+      validateFuture[IdentityUpdate](request.body, IdentityUpdate.reads) {
         identityUpdate =>
           {
-
             request.identity.update(identityUpdate).flatMap {
               lastError =>
                 {

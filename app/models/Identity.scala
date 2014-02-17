@@ -242,7 +242,12 @@ case class IdentityUpdate(phoneNumber: Option[VerifiedString],
                           displayName: Option[String])
 
 object IdentityUpdate {
-  implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
+
+  implicit val reads: Reads[IdentityUpdate] = (
+    (__ \ "phoneNumber").readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ "email").readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ "displayName").readNullable[String]
+    ) (IdentityUpdate.apply _)
 
   def create(phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None, displayName: Option[String] = None): IdentityUpdate = {
     new IdentityUpdate(phoneNumber,email, displayName)
