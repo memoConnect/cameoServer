@@ -9,6 +9,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
 import scala.Some
 import ExecutionContext.Implicits.global
+import constants.contacts._
 import play.api.Logger
 
 /**
@@ -23,31 +24,55 @@ object ContactController extends ExtendedController {
       val jsBody: JsValue = request.body
 
       // check if an identity id is given
-      val identityId: Option[MongoId] = (jsBody \ "identityId").asOpt[String] match {
-        case Some(id) => Some(new MongoId(id))
+      val (contactType, maybeIdentity): (String, Future[Option[(Identity)]]) = (jsBody \ "identityId").asOpt[String] match {
+        case Some(id) => {
+          // check if identity exists
+          (CONTACT_TYPE_INTERNAL,Identity.find(id))
+        }
         case None => {
           // if not check if there is a valid identity object
-          (jsBody \ "identity").validate[Identity](Identity.createReads).map {
+          val i = (jsBody \ "identity").validate[Identity](Identity.createReads).map {
             identity =>
               {
-                Identity.col.insert(identity)
-                Some(identity.id)
+                Identity.col.insert(identity).map {
+                  lastError => Some(identity)
+                }
               }
-          }.recoverTotal(e => None)
+          }.recoverTotal(e => Future(None))
+          (CONTACT_TYPE_EXTERNAL, i)
         }
+
       }
 
       // read contact and add identity id
-      identityId match {
-        case None => Future(BadRequest(resKO("invalid identity")))
-        case Some(id) => {
-          jsBody.validate[Contact](Contact.createReads(id)).map {
+      maybeIdentity.flatMap {
+        case None => Future(resBadRequest("invalid identity"))
+        case Some(identity) => {
+          validateFuture(jsBody, Contact.createReads(identity.id, contactType)) {
             contact =>
               {
                 request.identity.addContact(contact)
                 contact.toJsonWithIdentity.map(js => resOK(js))
               }
-          }.recoverTotal(e => Future.successful(resBadRequest(JsError.toFlatJson(e).toString())))
+          }
+        }
+      }
+  }
+
+  def editContact(contactId: String) = AuthAction.async(parse.tolerantJson) {
+
+    request =>
+
+      val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
+
+      res match {
+        case None          => Future(resNotFound("contact not found"))
+        case Some(contact) => {
+          // check if we are allowed to edit it
+          contact.contactType match {
+            case CONTACT_TYPE_INTERNAL => Future(resUnauthorized("cannot edit contact details of cameo user"))
+            case CONTACT_TYPE_EXTERNAL =>
+          }
         }
       }
   }
@@ -55,10 +80,10 @@ object ContactController extends ExtendedController {
   def getContact(contactId: String) = AuthAction.async {
     request =>
 
-      val res = request.identity.contacts.find(
-        contact => contact.id.toString.equals(contactId))
+      val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
+
       res match {
-        case None          => Future(NotFound(resKO("contact not found")))
+        case None          => Future(resNotFound("contact not found"))
         case Some(contact) => contact.toJsonWithIdentityResult
       }
   }
@@ -70,7 +95,6 @@ object ContactController extends ExtendedController {
       Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
         c => resOK(c)
       }
-
   }
 
   def getGroup(group: String, offset: Int, limit: Int) = AuthAction.async {

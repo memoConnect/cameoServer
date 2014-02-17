@@ -19,7 +19,8 @@ import helper.JsonHelper._
  */
 case class Contact(id: MongoId,
                    groups: Seq[String],
-                   identityId: MongoId) {
+                   identityId: MongoId,
+                   contactType: String) {
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
@@ -43,16 +44,25 @@ object Contact extends Model[Contact] {
 
   implicit def col = identityCollection
 
-  def createReads(identityId: MongoId): Reads[Contact] = (
+  def createReads(identityId: MongoId, contactType: String): Reads[Contact] = (
     Reads.pure[MongoId](IdHelper.generateContactId()) and
     ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
-    Reads.pure[MongoId](identityId))(Contact.apply _)
+    Reads.pure[MongoId](identityId) and
+    Reads.pure[String](contactType)
+  )(Contact.apply _)
 
   def outputWrites: Writes[Contact] = Writes {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("groups" -> c.groups) ++
-        Json.obj("identityId" -> c.identityId.toJson)
+        Json.obj("identityId" -> c.identityId.toJson) ++
+        Json.obj("contactType" -> c.contactType)
   }
 }
+
+case class UpdateContact(groups: Option[Seq[String]],
+
+
+
+                          )
 
