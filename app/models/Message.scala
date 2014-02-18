@@ -64,7 +64,10 @@ object Message extends Model[Message] {
       case None     => None
       case Some(js) => Some((js \ "messages")(0).as[Message])
     }
+  }
 
+  def findConversation(id: MongoId): Future[Option[Conversation]] = {
+    Conversation.col.find(messageQuery(id)).one[Conversation]
   }
 
   // gets the position of a message in a conversation

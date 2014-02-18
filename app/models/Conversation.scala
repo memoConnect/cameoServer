@@ -73,12 +73,21 @@ case class Conversation(id: MongoId,
     Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
-  def hasMember(recipient: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
+  def hasMemberFuture(recipient: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
     if (this.recipients.contains(recipient)) {
       action
     }
     else {
       Future(resUnauthorized("identity is not a member of the conversation"))
+    }
+  }
+
+  def hasMember(recipient: MongoId)(action: SimpleResult):SimpleResult  = {
+    if (this.recipients.contains(recipient)) {
+      action
+    }
+    else {
+      resUnauthorized("identity is not a member of the conversation")
     }
   }
 
@@ -92,6 +101,10 @@ case class Conversation(id: MongoId,
 
     Conversation.col.update(query, set)
     //TODO: update lastUpdated
+  }
+
+  def getMessage(messageId: MongoId): Option[Message] = {
+    this.messages.find(_.id.equals(messageId))
   }
 }
 
