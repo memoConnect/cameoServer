@@ -51,7 +51,7 @@ GET            /api/v1/contact-group/:id                      controllers.Contac
 # FRIEND_REQUESTS
 GET            /api/v1/friendRequests                         controllers.ContactController.getFriendRequests
 POST           /api/v1/friendRequest                          controllers.ContactController.sendFriendRequest
-POST           /api/v1/friendRequest/awnser                   controllers.ContactController.anwserFriendRequest
+POST           /api/v1/friendRequest/answer                   controllers.ContactController.answerFriendRequest
 
 # ASSETS
 #POST           /api/v1/asset                             controllers.AssetController.uploadAsset(token: String, messageId: String)

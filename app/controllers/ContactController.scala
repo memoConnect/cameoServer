@@ -191,17 +191,17 @@ object ContactController extends ExtendedController {
       }
   }
 
-  case class AnwserFriendRequest(identityId: String, anwserType: String)
+  case class AnswerFriendRequest(identityId: String, answerType: String)
 
-  object AnwserFriendRequest { implicit val format = Json.format[AnwserFriendRequest] }
+  object AnswerFriendRequest { implicit val format = Json.format[AnswerFriendRequest] }
 
-  def anwserFriendRequest = AuthAction.async(parse.tolerantJson) {
+  def answerFriendRequest = AuthAction.async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, AnwserFriendRequest.format) {
+      validateFuture(request.body, AnswerFriendRequest.format) {
         afr =>
           request.identity.friendRequests.find(_.id.equals(afr.identityId)) match {
             case None => Future(resBadRequest("no friendRequest from this identityId"))
-            case Some(o) => afr.anwserType match {
+            case Some(o) => afr.answerType match {
               case FRIEND_REQUEST_REJECT => request.identity.removeFriendRequest(new MongoId(afr.identityId)).map {
                 lastError => if (lastError.updatedExisting) resOK() else resServerError("unable to delete")
               }
@@ -221,7 +221,7 @@ object ContactController extends ExtendedController {
                       }
                     }
                 }
-              case _ => Future(resBadRequest("invalid awnser type"))
+              case _ => Future(resBadRequest("invalid answer type"))
             }
           }
       }

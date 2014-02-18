@@ -952,9 +952,9 @@ class ControllerSpec extends Specification {
     }
 
     "accept FriendRequest" in {
-      val path = basePath + "/friendRequest/awnser"
+      val path = basePath + "/friendRequest/answer"
 
-      val json = Json.obj("anwserType" -> "accept", "identityId" -> identityExisting2)
+      val json = Json.obj("answerType" -> "accept", "identityId" -> identityExisting2)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token)).withJsonBody(json)
       val res = route(req).get
@@ -992,9 +992,9 @@ class ControllerSpec extends Specification {
     }
 
     "reject FriendRequest" in {
-      val path = basePath + "/friendRequest/awnser"
+      val path = basePath + "/friendRequest/answer"
 
-      val json = Json.obj("anwserType" -> "reject", "identityId" -> identityExisting)
+      val json = Json.obj("answerType" -> "reject", "identityId" -> identityExisting)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token)).withJsonBody(json)
       val res = route(req).get
