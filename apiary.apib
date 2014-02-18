@@ -302,7 +302,13 @@ Returns all existing cameoIds that contain the string
 
         {
             "res":"OK",
-            "data": ["test", "test1", "testtest", "23test"]
+            "data": [
+                {
+                    "id":"vCXqmtXycssTuENaa3rh",
+                    "cameoId":"oOqn9Nj3lDQeMGLFdHM5",
+                    "displayName":"NoName"
+                }
+            ]
         }
 
 
@@ -891,13 +897,11 @@ Returns all Friendship Requests for one identity
                 [
                     {
                         "cameoId": "test",
-                        "identityId": "1234658Xdf4fgre",
-                        "displayName": "Hans"
+                        "requestId": "1234658Xdf4fgre"
                     },
                     {
-                        "cameoId": "test2",
-                        "identityId": "oewlcZe5Asewf5",
-                        "displayName": "Ulli"
+                        "cameoId": "test",
+                        "requestId": "oewlcZe5Asewf5"
                     }
                 ]
             }
@@ -926,7 +930,7 @@ Send a Friendship Request to an other identity. Either the identityID or the cam
         }
 
 
-## Answer Friendship Request  [/friendRequest/answer]
+## Answer Friendship Request  [/friendRequest/{requestId}]
 
 ### POST
 Accept or Reject FriendshipRequests
@@ -942,7 +946,6 @@ Accept or Reject FriendshipRequests
     + Body
     
             {
-              "identityId" : "asdfjhlasdfnjlkasdfjhlk",
               "type": "accept || reject"
             }
 
