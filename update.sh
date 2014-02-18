@@ -57,7 +57,7 @@ if [ -f ${fileName} ]; then
     c=$(cat ${fileName})
     echo "found scheduled update, starting it now"
     rm ${fileName}
-    ./update.sh ${c} &
+    ./update.sh $1 ${c} &
 else
     rm ${fileName}
 fi
