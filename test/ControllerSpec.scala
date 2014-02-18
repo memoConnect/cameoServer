@@ -553,6 +553,7 @@ class ControllerSpec extends Specification {
       status(res) must equalTo(OK)
     }
 
+
     "conversation should not contain deleted recipient" in {
       val path = basePath + "/conversation/" + cidExisting
 
@@ -568,6 +569,69 @@ class ControllerSpec extends Specification {
 
       recipients.count(r => (r \ "id").as[String] == recipientMemberOfConversation) must beEqualTo(0)
     }
+
+    var messageId = ""
+
+    "add message to conversation" in {
+      val path = basePath + "/conversation/" + cidExisting + "/message"
+
+      val json = Json.obj("messageBody"-> "wir rocken")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId = (data \ "id").as[String]
+      (data \ "messageBody").asOpt[String] must beSome("wir rocken")
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
+      (data \ "fromIdentity").asOpt[String] must beSome
+      (data \ "created").asOpt[String] must beSome
+    }
+
+    "get single message" in {
+      val path = basePath + "/message/" + messageId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId = (data \ "id").as[String]
+      (data \ "messageBody").asOpt[String] must beSome("wir rocken")
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
+      (data \ "fromIdentity").asOpt[String] must beSome
+      (data \ "created").asOpt[String] must beSome
+    }
+
+    "refuse non-members to send message to conversation" in {
+
+      val path = basePath + "/conversation/" + cidExisting + "/message"
+
+      val json = Json.obj("messageBody"-> "wir rocken")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token3)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+
+    }
+
+    "refuse non-members to get single message" in  {
+      val path = basePath + "/message/" + messageId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
 
     "get all contacts" in {
       val path = basePath + "/contacts"
@@ -958,8 +1022,6 @@ class ControllerSpec extends Specification {
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token)).withJsonBody(json)
       val res = route(req).get
-
-      Logger.debug("RES: " + contentAsString(res))
 
       status(res) must equalTo(OK)
     }

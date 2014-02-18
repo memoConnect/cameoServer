@@ -42,10 +42,6 @@ import play.api.Play.current
 object MessageController extends ExtendedController {
 
   /**
-   * Helper
-   */
-
-  /**
    * Actions
    */
 
@@ -54,14 +50,17 @@ object MessageController extends ExtendedController {
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
           {
-            Conversation.find(new MongoId(id)).map {
-              case None => NotFound(resKO("invalid id"))
+            Conversation.find(new MongoId(id)).flatMap {
+              case None => Future(resNotFound("conversation"))
               case Some(conversation) => {
-                conversation.addMessage(message)
-                // initiate new actor for each request
-                val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
-                sendMessageActor ! (message, conversation.recipients)
-                resOK(message.toJson)
+                // only members can add message to conversation
+                conversation.hasMemberFuture(request.identity.id) {
+                  conversation.addMessage(message)
+                  // initiate new actor for each request
+                  val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
+                  sendMessageActor ! (message, conversation.recipients)
+                  Future(resOK(message.toJson))
+                }
               }
             }
           }
@@ -70,9 +69,15 @@ object MessageController extends ExtendedController {
 
   def getMessage(id: String) = AuthAction.async {
     (request) =>
-      Message.find(new MongoId(id)).map {
-        case None    => NotFound(resKO("message not found"))
-        case Some(m) => resOK(m.toJson)
+      Message.findConversation(new MongoId(id)).map {
+        case None => resNotFound("message")
+        case Some(c) =>
+          c.hasMember(request.identity.id) {
+            c.getMessage(new MongoId(id)) match {
+              case None    => resServerError("unable to get message from conversation")
+              case Some(m) => resOK(m.toJson)
+            }
+          }
       }
   }
 
@@ -210,3 +215,4 @@ object MessageController extends ExtendedController {
       }
   }
 }
+

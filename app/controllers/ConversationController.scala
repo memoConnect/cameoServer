@@ -36,7 +36,7 @@ object ConversationController extends ExtendedController {
     request =>
       Conversation.find(new MongoId(id)).flatMap {
         case None => Future.successful(resNotFound("conversation"))
-        case Some(c) => c.hasMember(request.identity.id) {
+        case Some(c) => c.hasMemberFuture(request.identity.id) {
           c.toJsonWithDisplayNamesResult(offset, limit)
         }
       }
@@ -49,7 +49,7 @@ object ConversationController extends ExtendedController {
         case None => Future.successful(resNotFound("conversation"))
         case Some(c) => {
 
-          c.hasMember(request.identity.id) {
+          c.hasMemberFuture(request.identity.id) {
 
             validateFuture[Seq[String]](request.body \ "recipients", Reads.seq[String]) {
               recipientIds =>
@@ -88,7 +88,7 @@ object ConversationController extends ExtendedController {
     request =>
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))
-        case Some(c) => c.hasMember(request.identity.id) {
+        case Some(c) => c.hasMemberFuture(request.identity.id) {
           c.deleteRecipient(new MongoId(rid)).map {
             case false => resNotFound("recipient")
             case true  => resOK()
@@ -101,7 +101,7 @@ object ConversationController extends ExtendedController {
     request =>
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))
-        case Some(c) => c.hasMember(request.identity.id) {
+        case Some(c) => c.hasMemberFuture(request.identity.id) {
           Future(resOK(c.toSummaryJson))
         }
       }

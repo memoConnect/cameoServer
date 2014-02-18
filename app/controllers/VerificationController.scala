@@ -8,7 +8,7 @@ import helper.ResultHelper._
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import constants.Verification._
-import models.{IdentityUpdate, Identity, VerificationSecret, MongoId}
+import models.{ IdentityUpdate, Identity, VerificationSecret, MongoId }
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 

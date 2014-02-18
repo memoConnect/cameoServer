@@ -151,7 +151,7 @@ object Identity extends Model[Identity] {
   def summaryWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
-      Json.obj("cameoId" -> i.cameoId) ++
+        Json.obj("cameoId" -> i.cameoId) ++
         Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
   }
 
@@ -204,23 +204,23 @@ object IdentityUpdate {
 }
 
 object IdentityEvolutions {
-  
+
   val evolutionAddCameoId: Reads[JsObject] = Reads {
     js =>
-    {
-      val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-      js.transform(addCameoId andThen addVersion)
-    }
+      {
+        val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(addCameoId andThen addVersion)
+      }
   }
 
   val evolutionAddFriedRequest: Reads[JsObject] = Reads {
     js =>
-    {
-      val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
-      js.transform(addFriendRequest andThen addVersion)
-    }
+      {
+        val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+        js.transform(addFriendRequest andThen addVersion)
+      }
   }
 
   val evolutions: Map[Int, Reads[JsObject]] = Map(0 -> evolutionAddCameoId, 1 -> evolutionAddFriedRequest)
@@ -229,19 +229,19 @@ object IdentityEvolutions {
   val evolutionVerifiedMail: Reads[JsObject] = Reads {
     // convert mail and phoneNumber to verified string
     js =>
-    {
-      val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
-        case None => __.json.pickBranch
-        case Some(email) =>
-          __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
+      {
+        val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
+          case None => __.json.pickBranch
+          case Some(email) =>
+            __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
+        }
+        val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
+          case None => __.json.pickBranch
+          case Some(tel) =>
+            __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
+        }
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
       }
-      val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
-        case None => __.json.pickBranch
-        case Some(tel) =>
-          __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
-      }
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-      js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
-    }
   }
 }
