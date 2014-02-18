@@ -305,9 +305,10 @@ class ControllerSpec extends Specification {
 
       status(res) must equalTo(OK)
 
-      val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data(0) must beEqualTo(login)
+      (data(0) \ "cameoId").asOpt[String] must beSome(login)
+      (data(0) \ "id").asOpt[String] must beSome(identityId)
 
       data.length must beEqualTo(1)
     }
@@ -323,9 +324,10 @@ class ControllerSpec extends Specification {
 
       status(res) must equalTo(OK)
 
-      val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data(0) must beEqualTo(login)
+      (data(0) \ "cameoId").asOpt[String] must beSome(login)
+      (data(0) \ "id").asOpt[String] must beSome(identityId)
 
       data.length must beEqualTo(1)
     }
