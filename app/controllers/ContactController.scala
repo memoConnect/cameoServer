@@ -10,6 +10,9 @@ import helper.ResultHelper._
 import scala.Some
 import ExecutionContext.Implicits.global
 import constants.Contacts._
+import reactivemongo.core.commands.LastError
+import play.api.mvc.SimpleResult
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -131,4 +134,96 @@ object ContactController extends ExtendedController {
       resOK(Json.toJson(groups))
   }
 
+  def getFriendRequests = AuthAction.async {
+    request =>
+      val futureFriendRequests = request.identity.friendRequests.map {
+        id =>
+          Identity.find(id).map {
+            case None    => Json.obj()
+            case Some(i) => i.toSummaryJson
+          }
+      }
+
+      Future.sequence(futureFriendRequests).map {
+        seq => resOK(seq)
+      }
+  }
+
+  case class SendFriendRequest(identityId: Option[String],
+                               cameoId: Option[String])
+
+  object SendFriendRequest {
+    implicit val reads: Reads[SendFriendRequest] = Json.reads[SendFriendRequest]
+  }
+
+  def sendFriendRequest = AuthAction.async(parse.tolerantJson) {
+    request =>
+      def executeFriendRequest(receiver: MongoId): Future[SimpleResult] = {
+        // check if identityId exists
+        Identity.find(receiver).flatMap {
+          case None => Future(resNotFound("identity"))
+          case Some(other) => other.addFriendRequest(request.identity.id).map {
+            lastError =>
+              if (lastError.updatedExisting) {
+                resOK()
+              }
+              else {
+                resServerError("could not update")
+              }
+          }
+        }
+      }
+
+      validateFuture(request.body, SendFriendRequest.reads) {
+        sfr =>
+          (sfr.identityId, sfr.cameoId) match {
+            case (None, None)            => Future(resBadRequest("either identityId or cameoId required"))
+            case (Some(i), Some(c))      => Future(resBadRequest("only one identityId or cameoId allowed"))
+            case (Some(i: String), None) => executeFriendRequest(new MongoId(i))
+            case (None, Some(c: String)) => {
+              // search for cameoId and get identityId
+              Identity.findCameoId(c).flatMap {
+                case None           => Future(resNotFound("cameoId"))
+                case Some(identity) => executeFriendRequest(identity.id)
+              }
+            }
+          }
+      }
+  }
+
+  case class AnswerFriendRequest(identityId: String, answerType: String)
+
+  object AnswerFriendRequest { implicit val format = Json.format[AnswerFriendRequest] }
+
+  def answerFriendRequest = AuthAction.async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, AnswerFriendRequest.format) {
+        afr =>
+          request.identity.friendRequests.find(_.id.equals(afr.identityId)) match {
+            case None => Future(resBadRequest("no friendRequest from this identityId"))
+            case Some(o) => afr.answerType match {
+              case FRIEND_REQUEST_REJECT => request.identity.removeFriendRequest(new MongoId(afr.identityId)).map {
+                lastError => if (lastError.updatedExisting) resOK() else resServerError("unable to delete")
+              }
+              case FRIEND_REQUEST_ACCEPT =>
+                // add contact to both identites
+                request.identity.removeFriendRequest(new MongoId(afr.identityId))
+                Identity.find(afr.identityId).flatMap {
+                  case None => Future(resNotFound("other identity"))
+                  case Some(otherIdentity) =>
+                    for {
+                      le1 <- otherIdentity.addContact(Contact.create(request.identity.id, CONTACT_TYPE_INTERNAL))
+                      le2 <- request.identity.addContact(Contact.create(otherIdentity.id, CONTACT_TYPE_INTERNAL))
+                    } yield {
+                      le1.updatedExisting && le2.updatedExisting match {
+                        case true  => resOK("added contacts")
+                        case false => resServerError("error adding contacts")
+                      }
+                    }
+                }
+              case _ => Future(resBadRequest("invalid answer type"))
+            }
+          }
+      }
+  }
 }

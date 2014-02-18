@@ -85,6 +85,10 @@ object Contact extends Model[Contact] {
         Json.obj("contactType" -> c.contactType)
   }
 
+  def create(identityId: MongoId, contactType: String, groups: Seq[String] = Seq()): Contact = {
+    new Contact(IdHelper.generateContactId(), groups, identityId, contactType, docVersion)
+  }
+
 
   val evolutionAddContactType: Reads[JsObject] = Reads[JsObject] {
     js =>

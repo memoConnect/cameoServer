@@ -73,6 +73,7 @@ class ControllerSpec extends Specification {
     val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
 
     val token2 = "hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo"
+    val token3 = "viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ"
 
     "Refuse invalid Logins" in {
 
@@ -738,8 +739,6 @@ class ControllerSpec extends Specification {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
       val res = route(req).get
 
-      Logger.debug("DASDF: " + contentAsString(res))
-
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -871,8 +870,6 @@ class ControllerSpec extends Specification {
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(token2))
       val res = route(req).get
 
-      Logger.debug("ID: " + idOf10thContact)
-
       status(res) must equalTo(OK)
     }
 
@@ -893,6 +890,131 @@ class ControllerSpec extends Specification {
 
       status(res) must equalTo(NOT_FOUND)
     }
+
+    "send FriendRequest with identityId" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> identityId)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "refuse to send FriendRequest to invalid identityId" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> "asdfasdf")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "send FriendRequest with cameoId" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("cameoId" -> login)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token3)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "refuse to send FriendRequest to invalid cameoId" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("cameoId" -> "pups")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token3)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "get friendRequests" in {
+      val path = basePath + "/friendRequests"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(2)
+
+      (data(0) \ "id").asOpt[String] must beSome(identityExisting)
+      (data(1) \ "id").asOpt[String] must beSome(identityExisting2)
+    }
+
+    "accept FriendRequest" in {
+      val path = basePath + "/friendRequest/answer"
+
+      val json = Json.obj("answerType" -> "accept", "identityId" -> identityExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token)).withJsonBody(json)
+      val res = route(req).get
+
+      Logger.debug("RES: " + contentAsString(res))
+
+      status(res) must equalTo(OK)
+    }
+
+    "check if contact was added to sender" in {
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.find(c => (c \ "identityId").as[String].equals(identityExisting2)) must beSome
+
+    }
+
+    "check if contact was added to receiver" in {
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.find(c => (c \ "identityId").as[String].equals(identityId)) must beSome
+    }
+
+    "reject FriendRequest" in {
+      val path = basePath + "/friendRequest/answer"
+
+      val json = Json.obj("answerType" -> "reject", "identityId" -> identityExisting)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "check if friendRequests are gone" in {
+      val path = basePath + "/friendRequests"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(0)
+    }
+
 
     "drop the test database" in {
       ReactiveMongoPlugin.db.drop()(ExecutionContext.Implicits.global)

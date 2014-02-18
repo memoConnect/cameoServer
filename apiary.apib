@@ -891,11 +891,13 @@ Returns all Friendship Requests for one identity
                 [
                     {
                         "cameoId": "test",
-                        "requestId": "1234658Xdf4fgre"
+                        "identityId": "1234658Xdf4fgre",
+                        "displayName": "Hans"
                     },
                     {
-                        "cameoId": "test",
-                        "requestId": "oewlcZe5Asewf5"
+                        "cameoId": "test2",
+                        "identityId": "oewlcZe5Asewf5",
+                        "displayName": "Ulli"
                     }
                 ]
             }
@@ -924,7 +926,7 @@ Send a Friendship Request to an other identity. Either the identityID or the cam
         }
 
 
-## Answer Friendship Request  [/friendRequest/{requestId}]
+## Answer Friendship Request  [/friendRequest/answer]
 
 ### POST
 Accept or Reject FriendshipRequests
@@ -940,6 +942,7 @@ Accept or Reject FriendshipRequests
     + Body
     
             {
+              "identityId" : "asdfjhlasdfnjlkasdfjhlk",
               "type": "accept || reject"
             }
 
