@@ -70,6 +70,16 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
+  def addFriendRequest(friendRequestId: MongoId): Future[LastError] = {
+    val set = Json.obj("$addToSet" -> Json.obj("friendRequest" -> friendRequestId))
+    Identity.col.update(query, set)
+  }
+
+  def removeFriendRequest(friendRequestId: MongoId): Future[LastError] = {
+    val set = Json.obj("$pull" -> Json.obj("friendRequest" -> friendRequestId))
+    Identity.col.update(query, set)
+  }
+
   def update(update: IdentityUpdate): Future[LastError] = {
 
     val newMail = update.email.flatMap { getNewValueVerifiedString(this.email, _) }
@@ -141,6 +151,7 @@ object Identity extends Model[Identity] {
   def summaryWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
+      Json.obj("cameoId" -> i.cameoId) ++
         Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
   }
 
@@ -233,5 +244,4 @@ object IdentityEvolutions {
       js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
     }
   }
-
 }

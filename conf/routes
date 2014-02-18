@@ -48,6 +48,11 @@ DELETE         /api/v1/contact/:id                            controllers.Contac
 GET            /api/v1/contact-groups                         controllers.ContactController.getGroups()
 GET            /api/v1/contact-group/:id                      controllers.ContactController.getGroup(id: String,  offset: Int ?= 0, limit: Int ?= 0)
 
+# FRIEND_REQUESTS
+GET            /api/v1/friendRequests                         controllers.ContactController.getFriendRequests
+POST           /api/v1/friendRequest                          controllers.ContactController.sendFriendRequest
+POST           /api/v1/friendRequest/:id                      controllers.ContactController.anwserFriendRequest(id)
+
 # ASSETS
 #POST           /api/v1/asset                             controllers.AssetController.uploadAsset(token: String, messageId: String)
 #GET            /api/v1/asset/:assetId                    controllers.AssetController.getAsset(token: String, assetId: String)
