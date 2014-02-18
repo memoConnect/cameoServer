@@ -78,7 +78,7 @@ object IdentityController extends ExtendedController {
       validateFuture(request.body, reads) {
         vr =>
           Identity.matchCameoId(vr.cameoId).map {
-            list => resOK(list.map { i => JsString(i.cameoId) })
+            list => resOK(list.map { i => i.toSummaryJson })
           }
       }
   }
