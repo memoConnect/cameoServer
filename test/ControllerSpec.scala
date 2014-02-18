@@ -952,7 +952,7 @@ class ControllerSpec extends Specification {
     }
 
     "accept FriendRequest" in {
-      val path = basePath + "/friendRequest/answerd"
+      val path = basePath + "/friendRequest/answer"
 
       val json = Json.obj("answerType" -> "accept", "identityId" -> identityExisting2)
 
