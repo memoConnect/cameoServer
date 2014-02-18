@@ -20,12 +20,8 @@ esac
 
 case "$2" in
    "server")
-      echo Running as prod
-      app_options=-Dconfig.file=/opt/cameoSecrets/secret_prod.conf
       ;;
    "client")
-      echo Running as dev
-      app_options=-Dconfig.file=/opt/cameoSecrets/secret_dev.conf
       ;;
    *)
       echo Deployment component is required: "[server|client]"
