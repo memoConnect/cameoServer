@@ -31,6 +31,7 @@ case class Identity(id: MongoId,
                     conversations: Seq[MongoId],
                     assets: Seq[Asset],
                     tokens: Seq[MongoId],
+                    friendRequests: Seq[MongoId],
                     created: Date,
                     lastUpdated: Date,
                     docVersion: Int) {
@@ -97,9 +98,9 @@ case class Identity(id: MongoId,
 object Identity extends Model[Identity] {
 
   implicit def col = identityCollection
-  val docVersion = 1
+  val docVersion = 2
 
-  val mongoReads = createMongoReads(Json.reads[Identity])
+  val mongoReads = createMongoReadsWithEvolutions(Json.reads[Identity], IdentityEvolutions.evolutions, docVersion, col)
   val mongoWrites = createMongoWrites(Json.writes[Identity])
 
   implicit val mongoFormat: Format[Identity] = Format(mongoReads, mongoWrites)
@@ -110,12 +111,13 @@ object Identity extends Model[Identity] {
     (__ \ 'displayName).readNullable[String] and
     (__ \ 'email).readNullable[VerifiedString](VerifiedString.createReads) and
     (__ \ 'phoneNumber).readNullable[VerifiedString](VerifiedString.createReads) and
-    ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId) )and
+    ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId)) and
     ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Seq[Asset]](Seq()) and
+    Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
@@ -142,14 +144,6 @@ object Identity extends Model[Identity] {
         Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
   }
 
-  override def find(id: MongoId): Future[Option[Identity]] = {
-    val query = Json.obj("_id" -> id)
-    col.find(query).one[JsObject].map {
-      case None     => None
-      case Some(js) => Some(readWithEvolutions(js))
-    }
-  }
-
   def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String]): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
@@ -160,6 +154,7 @@ object Identity extends Model[Identity] {
       cameoId,
       MESSAGE_TYPE_DEFAULT,
       IdHelper.generateUserKey(),
+      Seq(),
       Seq(),
       Seq(),
       Seq(),
@@ -178,50 +173,46 @@ object Identity extends Model[Identity] {
     val query = Json.obj("cameoId" -> Json.obj("$regex" -> cameoId))
     col.find(query).cursor[Identity].collect[Seq](1000, stopOnError = true)
   }
+}
 
-  // TODO: use the general approach: createMongoReadsWithEvolutions
-  def readWithEvolutions(js: JsObject): Identity = {
-    // catch exceptions and apply evolutions
-    try {
-      js.as[Identity]
-    }
-    catch {
-      case JsResultException(e) =>
-        // get document version, none == Version 0
-        val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
-        val readsWithEvolution = getEvolutions(currentDocVersion)
+case class IdentityUpdate(phoneNumber: Option[VerifiedString],
+                          email: Option[VerifiedString],
+                          displayName: Option[String])
 
-        // update identity in db
-        val newJs: JsObject = js.transform(readsWithEvolution).get
-        Identity.col.save(newJs).map {
-          lastError => if (!lastError.updatedExisting) {
-            Logger.error("Error applying DB evolution to " + js)
-          }
-        }
-        newJs.as[Identity]
-    }
+object IdentityUpdate {
+
+  implicit val reads: Reads[IdentityUpdate] = (
+    (__ \ "phoneNumber").readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ "email").readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ "displayName").readNullable[String]
+  )(IdentityUpdate.apply _)
+
+  def create(phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None, displayName: Option[String] = None): IdentityUpdate = {
+    new IdentityUpdate(phoneNumber, email, displayName)
   }
+}
 
-  def getEvolutions(fromVersion: Int): Reads[JsObject] = {
-    fromVersion match {
-      case i if i == Identity.docVersion => __.json.pickBranch
-      case i if i < Identity.docVersion => {
-        evolutions(i) andThen getEvolutions(i + 1)
-      }
-    }
-  }
-
+object IdentityEvolutions {
+  
   val evolutionAddCameoId: Reads[JsObject] = Reads {
     js =>
-      {
-        // getLoginName
-        val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-        js.transform(addCameoId andThen addVersion)
-      }
+    {
+      val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+      js.transform(addCameoId andThen addVersion)
+    }
   }
 
-  val evolutions: Map[Int, Reads[JsObject]] = Map(0 -> evolutionAddCameoId)
+  val evolutionAddFriedRequest: Reads[JsObject] = Reads {
+    js =>
+    {
+      val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+      js.transform(addFriendRequest andThen addVersion)
+    }
+  }
+
+  val evolutions: Map[Int, Reads[JsObject]] = Map(0 -> evolutionAddCameoId, 1 -> evolutionAddFriedRequest)
 
   // not used anymore
   val evolutionVerifiedMail: Reads[JsObject] = Reads {
@@ -242,21 +233,5 @@ object Identity extends Model[Identity] {
       js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
     }
   }
-}
 
-case class IdentityUpdate(phoneNumber: Option[VerifiedString],
-                          email: Option[VerifiedString],
-                          displayName: Option[String])
-
-object IdentityUpdate {
-
-  implicit val reads: Reads[IdentityUpdate] = (
-    (__ \ "phoneNumber").readNullable[VerifiedString](VerifiedString.createReads) and
-    (__ \ "email").readNullable[VerifiedString](VerifiedString.createReads) and
-    (__ \ "displayName").readNullable[String]
-    ) (IdentityUpdate.apply _)
-
-  def create(phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None, displayName: Option[String] = None): IdentityUpdate = {
-    new IdentityUpdate(phoneNumber,email, displayName)
-  }
 }
