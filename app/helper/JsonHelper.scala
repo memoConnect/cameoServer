@@ -94,9 +94,6 @@ object JsonHelper {
           val readsWithEvolution = getEvolutions(currentDocVersion, evolutions, latestVersion)
           val newJs: JsObject = js.transform(readsWithEvolution andThen fromMongoDates andThen fromMongoId).get
 
-
-          Logger.debug("current version: " + currentDocVersion + " latest: " + latestVersion)
-
           // TODO: update in db
           //            col.save(newJs).map {
           //              lastError => if (!lastError.updatedExisting) {

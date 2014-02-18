@@ -12,6 +12,7 @@ import ExecutionContext.Implicits.global
 import constants.Contacts._
 import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -135,7 +136,6 @@ object ContactController extends ExtendedController {
 
   def getFriendRequests = AuthAction.async {
     request =>
-
       val futureFriendRequests = request.identity.friendRequests.map {
         id =>
           Identity.find(id).map {
@@ -158,24 +158,11 @@ object ContactController extends ExtendedController {
 
   def sendFriendRequest = AuthAction.async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, SendFriendRequest.reads) {
-        case (None, None)            => Future(resBadRequest("either identityId or cameoId required"))
-        case (Some(i), Some(c))      => Future(resBadRequest("only one identityId or cameoId allowed"))
-        case (Some(i: String), None) => executeFriendRequest(new MongoId(i))
-        case (None, Some(c: String)) => {
-          // search for cameoId and get identityId
-          Identity.findCameoId(c).flatMap {
-            case None           => Future(resNotFound("cameoId"))
-            case Some(identity) => executeFriendRequest(identity.id)
-          }
-        }
-      }
-
       def executeFriendRequest(receiver: MongoId): Future[SimpleResult] = {
         // check if identityId exists
         Identity.find(receiver).flatMap {
           case None => Future(resNotFound("identity"))
-          case Some(i) => i.addFriendRequest(request.identity.id).map {
+          case Some(other) => other.addFriendRequest(request.identity.id).map {
             lastError =>
               if (lastError.updatedExisting) {
                 resOK()
@@ -186,36 +173,56 @@ object ContactController extends ExtendedController {
           }
         }
       }
-  }
 
-  def anwserFriendRequest(id: String) = AuthAction.async(parse.tolerantJson) {
-    request =>
-      // check if id exists
-      request.identity.friendRequests.find(mid => mid.id.equals(id)) match {
-        case None => Future(resNotFound("requestId"))
-        case Some(otherIdentityId) =>
-          (request.body \ "type").asOpt[String] match {
-            case None => Future(resBadRequest("no answer type"))
-            case Some(FRIEND_REQUEST_REJECT) => request.identity.removeFriendRequest(new MongoId(id)).map {
-              lastError => if (lastError.updatedExisting) resOK() else resServerError("unable to delete")
-            }
-            case Some(FRIEND_REQUEST_ACCEPT) => {
-              // add contact to both identites
-              Identity.find(otherIdentityId).flatMap {
-                case None => Future(resNotFound("other identity"))
-                case Some(otherIdentity) =>
-                  for {
-                    le1 <- otherIdentity.addContact(Contact.create(request.identity.id, CONTACT_TYPE_INTERNAL))
-                    le2 <- request.identity.addContact(Contact.create(otherIdentity.id, CONTACT_TYPE_INTERNAL))
-                  } yield {
-                    le1.updatedExisting && le2.updatedExisting match {
-                      case true  => resOK("added contacts")
-                      case false => resServerError("error adding contacts")
-                    }
-                  }
+      validateFuture(request.body, SendFriendRequest.reads) {
+        sfr =>
+          (sfr.identityId, sfr.cameoId) match {
+            case (None, None)            => Future(resBadRequest("either identityId or cameoId required"))
+            case (Some(i), Some(c))      => Future(resBadRequest("only one identityId or cameoId allowed"))
+            case (Some(i: String), None) => executeFriendRequest(new MongoId(i))
+            case (None, Some(c: String)) => {
+              // search for cameoId and get identityId
+              Identity.findCameoId(c).flatMap {
+                case None           => Future(resNotFound("cameoId"))
+                case Some(identity) => executeFriendRequest(identity.id)
               }
             }
-            case _ => Future(resBadRequest("invalid awnser type"))
+          }
+      }
+  }
+
+  case class AnwserFriendRequest(identityId: String, anwserType: String)
+
+  object AnwserFriendRequest { implicit val format = Json.format[AnwserFriendRequest] }
+
+  def anwserFriendRequest = AuthAction.async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, AnwserFriendRequest.format) {
+        afr =>
+          request.identity.friendRequests.find(_.id.equals(afr.identityId)) match {
+            case None => Future(resBadRequest("no friendRequest from this identityId"))
+            case Some(o) => afr.anwserType match {
+              case FRIEND_REQUEST_REJECT => request.identity.removeFriendRequest(new MongoId(afr.identityId)).map {
+                lastError => if (lastError.updatedExisting) resOK() else resServerError("unable to delete")
+              }
+              case FRIEND_REQUEST_ACCEPT =>
+                // add contact to both identites
+                request.identity.removeFriendRequest(new MongoId(afr.identityId))
+                Identity.find(afr.identityId).flatMap {
+                  case None => Future(resNotFound("other identity"))
+                  case Some(otherIdentity) =>
+                    for {
+                      le1 <- otherIdentity.addContact(Contact.create(request.identity.id, CONTACT_TYPE_INTERNAL))
+                      le2 <- request.identity.addContact(Contact.create(otherIdentity.id, CONTACT_TYPE_INTERNAL))
+                    } yield {
+                      le1.updatedExisting && le2.updatedExisting match {
+                        case true  => resOK("added contacts")
+                        case false => resServerError("error adding contacts")
+                      }
+                    }
+                }
+              case _ => Future(resBadRequest("invalid awnser type"))
+            }
           }
       }
   }
