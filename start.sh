@@ -18,4 +18,4 @@ case "$1" in
       ;;
 esac
 
-nohup bash -c "./target/universal/stage/bin/cameoserver $app_options" &
+nohup bash -c "./target/universal/stage/bin/cameoserver $app_options -Dsbt.log.noformat=true" &
