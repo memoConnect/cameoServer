@@ -31,4 +31,4 @@ trait Model[A] {
 
   implicit def mongoFormat: Format[A]
 
-  }
+}

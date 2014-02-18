@@ -73,7 +73,6 @@ case class Conversation(id: MongoId,
     Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
-
   def hasMember(recipient: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
     if (this.recipients.contains(recipient)) {
       action

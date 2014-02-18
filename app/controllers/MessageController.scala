@@ -42,10 +42,6 @@ import play.api.Play.current
 object MessageController extends ExtendedController {
 
   /**
-   * Helper
-   */
-
-  /**
    * Actions
    */
 
@@ -55,7 +51,7 @@ object MessageController extends ExtendedController {
         message =>
           {
             Conversation.find(new MongoId(id)).map {
-              case None => NotFound(resKO("invalid id"))
+              case None => resNotFound("conversation")
               case Some(conversation) => {
                 conversation.addMessage(message)
                 // initiate new actor for each request
@@ -71,7 +67,7 @@ object MessageController extends ExtendedController {
   def getMessage(id: String) = AuthAction.async {
     (request) =>
       Message.find(new MongoId(id)).map {
-        case None    => NotFound(resKO("message not found"))
+        case None    => resNotFound("message not found")
         case Some(m) => resOK(m.toJson)
       }
   }

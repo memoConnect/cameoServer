@@ -23,7 +23,7 @@ case class Contact(id: MongoId,
                    groups: Seq[String],
                    identityId: MongoId,
                    contactType: String,
-                   docVersion: Int ) {
+                   docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
@@ -89,7 +89,6 @@ object Contact extends Model[Contact] {
     new Contact(IdHelper.generateContactId(), groups, identityId, contactType, docVersion)
   }
 
-
   val evolutionAddContactType: Reads[JsObject] = Reads[JsObject] {
     js =>
       val addType = __.json.update((__ \ 'contactType).json.put(JsString(CONTACT_TYPE_INTERNAL)))
@@ -97,7 +96,7 @@ object Contact extends Model[Contact] {
       js.transform(addType andThen addVersion)
   }
 
-  val evolutions: Map[Int, Reads[JsObject]] = Map( 0 -> evolutionAddContactType)
+  val evolutions: Map[Int, Reads[JsObject]] = Map(0 -> evolutionAddContactType)
 
   val docVersion = 1
   val mongoReads: Reads[Contact] = createMongoReadsWithEvolutions(Json.reads[Contact], evolutions, docVersion, col)
