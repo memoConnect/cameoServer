@@ -18,10 +18,46 @@ case "$1" in
       ;;
 esac
 
+case "$2" in
+   "server")
+      ;;
+   "client")
+      ;;
+   *)
+      echo Deployment component is required: "[server|client]"
+      exit 1
+      ;;
+esac
+
+fileName="UPDATING"
+# check if we are alreade updating
+if [ -e ${fileName} ]; then
+    echo "already updating, update scheduled"
+    echo $2 > ${fileName}
+    exit 1
+else
+    touch ${fileName}
+fi
+
 ./stop.sh
-git pull
-cd public
-git pull
-cd ..
+
+if [ "$2" == "client" ];then
+    cd public
+    git pull
+    cd ..
+else
+    git pull
+fi
+
 ./compile.sh
 ./start.sh $1
+
+# check if another update is sheduled
+if [ -f ${fileName} ]; then
+    c=$(cat ${fileName})
+    echo "found scheduled update, starting it now"
+    rm ${fileName}
+    ./update.sh $1 ${c} &
+else
+    rm ${fileName}
+fi
