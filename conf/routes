@@ -53,6 +53,12 @@ GET            /api/v1/friendRequests                         controllers.Contac
 POST           /api/v1/friendRequest                          controllers.ContactController.sendFriendRequest
 POST           /api/v1/friendRequest/answer                   controllers.ContactController.answerFriendRequest
 
+## FILES
+#POST           /api/uploadFile                                controllers.FileController.sendFile
+#POST           /api/uploadFile/:id                            controllers.FileController.sendFileChunks(assetId)
+#GET            /api/getFile/:id                               controllers.FileController.getFile(assetId)
+#GET            /api/getFile/:id/:chunkIndex                   controllers.FileController.getFileChunk(assetId, chunkIndex)
+
 # ASSETS
 #POST           /api/v1/asset                             controllers.AssetController.uploadAsset(token: String, messageId: String)
 #GET            /api/v1/asset/:assetId                    controllers.AssetController.getAsset(token: String, assetId: String)

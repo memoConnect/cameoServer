@@ -19,7 +19,7 @@ case class Message(id: MongoId,
                    messageBody: String,
                    fromIdentityId: MongoId,
                    messageStatus: Seq[MessageStatus],
-                   assets: Seq[Asset],
+                   assets: Seq[FileMeta],
                    created: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
@@ -43,7 +43,7 @@ object Message extends Model[Message] {
     (__ \ 'messageBody).read[String] and
     Reads.pure[MongoId](fromIdentityId) and
     Reads.pure[Seq[MessageStatus]](Seq()) and
-    Reads.pure[Seq[Asset]](Seq()) and
+    Reads.pure[Seq[FileMeta]](Seq()) and
     Reads.pure[Date](new Date))(Message.apply _)
 
   def outputWrites = Writes[Message] {
