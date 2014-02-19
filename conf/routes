@@ -56,7 +56,7 @@ POST           /api/v1/friendRequest/answer                   controllers.Contac
 ## FILES
 POST           /api/v1/file                                controllers.FileController.uploadFile
 POST           /api/v1/file/:id                            controllers.FileController.uploadFileChunks(id)
-#GET            /api/file/:id                               controllers.FileController.getFile(id)
+GET            /api/v1/file/:id                            controllers.FileController.getFile(id)
 #GET            /api/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION

@@ -4,7 +4,7 @@ import traits.ExtendedController
 import scala.util.Random
 import reactivemongo.bson.BSONObjectID
 import play.api.libs.json.{ JsError, JsObject, Json }
-import models.{ FileChunk, FileMeta }
+import models.{MongoId, FileChunk, FileMeta}
 import helper.{ General, IdHelper, AuthAction }
 import helper.ResultHelper._
 import scala.concurrent.{ExecutionContext, Future}
@@ -102,4 +102,14 @@ object FileController extends ExtendedController {
       }
   }
 
+  def getFile(id: String) = AuthAction.async {
+    request =>
+      FileMeta.find(id).map {
+        case None => resNotFound("file")
+        case Some(fileMeta) => {
+          //TODO ownership have to be checked!! Important!!!!
+          resOK(fileMeta.toJson)
+        }
+      }
+  }
 }

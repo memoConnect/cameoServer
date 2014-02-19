@@ -1,14 +1,14 @@
 package test
 
 import play.api.test._
-import play.api.libs.json.{ JsArray, Json, JsObject }
+import play.api.libs.json.{JsArray, Json, JsObject}
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
 import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import scala.concurrent.ExecutionContext
-import play.api.{ GlobalSettings, Logger }
+import play.api.{GlobalSettings, Logger}
 import helper.DbAdminUtilities
 import testHelper.MockupFactory
 
@@ -83,15 +83,14 @@ class ControllerSpec extends Specification {
       val logins = Seq("asdf", "asdfasdfasdfasdfasdfa", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\")
 
       logins.map {
-        l =>
-          {
-            val json = Json.obj("loginName" -> l)
+        l => {
+          val json = Json.obj("loginName" -> l)
 
-            val req = FakeRequest(POST, path).withJsonBody(json)
-            val res = route(req).get
+          val req = FakeRequest(POST, path).withJsonBody(json)
+          val res = route(req).get
 
-            status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
-          }
+          status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
+        }
       }
     }
 
@@ -1099,7 +1098,7 @@ class ControllerSpec extends Specification {
         ("X-Index", "0")) :+
         tokenHeader(token)
 
-      val req = FakeRequest(POST, path).withHeaders(header:_*).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -1115,12 +1114,32 @@ class ControllerSpec extends Specification {
       (data \ "fileType").asOpt[String] must beSome(fileType)
     }
 
+    "refuse to return not authozized FileMeta requests" in {
+      val path = basePath + "/file/0"
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    "refuse to return non existing FileMeta" in {
+      val path = basePath + "/file/0"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
+      val res = route(req).get
+
+      status(res) must equalTo(NOT_FOUND)
+    }
+
     "drop the test database" in {
       ReactiveMongoPlugin.db.drop()(ExecutionContext.Implicits.global)
       1 === 1
     }
 
     step(play.api.Play.stop())
+
+
   }
 
 }
