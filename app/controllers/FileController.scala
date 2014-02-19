@@ -109,8 +109,25 @@ object FileController extends ExtendedController {
       FileMeta.find(id).map {
         case None => resNotFound("file")
         case Some(fileMeta) => {
-          //TODO ownership have to be checked!! Important!!!!
           resOK(fileMeta.toJson)
+        }
+      }
+  }
+
+  def getFileChunks(id: String, chunkIndex: Int) = AuthAction.async {
+    request =>
+      // check if file exists
+      FileMeta.find(id).flatMap {
+        case None => Future(resNotFound("file"))
+        case Some(fileMeta) => {
+          fileMeta.chunks.find(_.index == chunkIndex) match {
+            case None => Future(resNotFound("chunk index"))
+            case Some(meta) =>
+              FileChunk.find(meta.chunkId).map {
+                case None => resServerError("unable to retrieve chunk")
+                case Some(chunk) => resOK(chunk.toJson)
+              }
+          }
         }
       }
   }

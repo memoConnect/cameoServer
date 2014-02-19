@@ -24,7 +24,9 @@ import ExecutionContext.Implicits.global
 case class FileChunk(
                       id: MongoId,
                       chunk: String
-                      )
+                      ) {
+  def toJson: JsObject= Json.obj("chunk" -> chunk)
+}
 
 object FileChunk extends Model[FileChunk]{
 

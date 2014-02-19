@@ -1116,15 +1116,6 @@ class ControllerSpec extends Specification {
     }
 
 
-    "refuse to return non existing FileMeta" in {
-      val path = basePath + "/file/0"
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
-      val res = route(req).get
-
-      status(res) must equalTo(NOT_FOUND)
-
-      }
       
     "upload the other chunks" in {
       val path = basePath + "/file/" + fileId
@@ -1158,6 +1149,16 @@ class ControllerSpec extends Specification {
           val res = route(req).get
 
           status(res) must equalTo(NOT_FOUND)
+    }
+
+
+    "refuse to return non existing FileMeta" in {
+      val path = basePath + "/file/0"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
+      val res = route(req).get
+
+      status(res) must equalTo(NOT_FOUND)
     }
 
     "drop the test database" in {
