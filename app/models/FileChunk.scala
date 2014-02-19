@@ -6,6 +6,12 @@ import play.api.libs.json.{Reads, Json, Format}
 import play.api.Play.current
 import traits.Model
 import helper.JsonHelper._
+import helper.IdHelper
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
+import java.util.Date
+import traits.Model
+import play.api.libs.json.Reads._
 
 /**
  * User: Björn Reimer
@@ -24,6 +30,10 @@ object FileChunk extends Model[FileChunk]{
 
   implicit val mongoFormat: Format[FileChunk] = createMongoFormat(Json.reads[FileChunk],Json.writes[FileChunk])
 
-  val createReads : Reads[FileChunk] = mongoFormat
+  val createReads : Reads[FileChunk] = (
+    Reads.pure[MongoId](IdHelper.generateChunkId) and
+      (__ \ 'chunk).read[String]
+    )(FileChunk.apply _)
+
 
 }

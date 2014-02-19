@@ -8,6 +8,8 @@ import models.{ FileChunk, FileMeta }
 import helper.{ General, IdHelper, AuthAction }
 import helper.ResultHelper._
 import scala.concurrent.Future
+import play.api.mvc.{ Request, Action }
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -59,5 +61,52 @@ object FileController extends ExtendedController {
       }
   }
 
+  def uploadFileChunks(id: String) = Action.async(parse.tolerantJson(512 * 1024)) {
+    request =>
+      {
+        val fileName = request.headers.get("X-File-Name")
+        val maxChunks = request.headers.get("X-Max-Chunks")
+        val fileSize = request.headers.get("X-File-Size")
+        val fileType = request.headers.get("X-File-Type")
+        val chunkIndex = request.headers.get("X-Index")
+
+        val headerInvalid = {
+          fileName.isEmpty ||
+            maxChunks.isEmpty ||
+            fileSize.isEmpty ||
+            fileType.isEmpty ||
+            chunkIndex.isEmpty ||
+            General.safeStringToInt(maxChunks.get).isEmpty ||
+            General.safeStringToInt(fileSize.get).isEmpty
+          General.safeStringToInt(chunkIndex.get).isEmpty
+        }
+
+        headerInvalid match {
+          case false => Future(resBadRequest("header content missing or invalid"))
+          case true => {
+            validateFuture(request.body, FileChunk.createReads) {
+              chunk =>
+                // check if the give fileId exists
+                FileMeta.find(id).flatMap {
+                  case None => Future(resNotFound("file"))
+                  case Some(fileMeta) => {
+                    val futureResult: Future[Boolean] = for {
+                      le1 <- fileMeta.addChunk(Mapchunk.id)
+                      le2 <- FileChunk.col.insert(chunk)
+                    } yield {
+                      le1.updatedExisting && le2.updatedExisting
+                    }
+
+                    futureResult.map {
+                      case false => resServerError("could not store chunk")
+                      case true  => resOK()
+                    }
+                  }
+                }
+            }
+          }
+        }
+      }
+  }
 
 }

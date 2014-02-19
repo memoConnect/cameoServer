@@ -5,6 +5,8 @@ import helper.JsonHelper._
 import traits.Model
 import java.util.Date
 import helper.IdHelper
+import scala.concurrent.Future
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -20,6 +22,13 @@ case class FileMeta(id: MongoId,
                     created: Date) {
 
   def toJson: JsObject = Json.toJson(this)(FileMeta.outputWrites).as[JsObject]
+
+  def addChunk(chunkId: MongoId, index: Int): Future[LastError] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$set" -> Json.obj("chunks." + index -> chunkId))
+    Identity.col.update(query, set)
+  }
+
 }
 
 object FileMeta extends Model[FileMeta] {

@@ -76,4 +76,8 @@ object IdHelper {
     new MongoId(randomString(defaultLength))
   }
 
+  def generateChunkId: MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
 }
