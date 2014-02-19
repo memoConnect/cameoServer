@@ -114,22 +114,6 @@ object ResultHelper {
   def errorNotify(text: String): Seq[UserNotification] =
     Seq(new UserNotification(USER_MESSAGE_LEVEL_ERROR, text))
 
-  def validate[T](js: JsValue, reads: Reads[T])(action: ((T => SimpleResult))): SimpleResult = {
-    js.validate(reads).map {
-      action
-    }.recoverTotal {
-      error => resBadRequest(JsError.toFlatJson(error).toString())
-    }
-  }
-
-  def validateFuture[T](js: JsValue, reads: Reads[T])(action: ((T => Future[SimpleResult]))): Future[SimpleResult] = {
-    js.validate(reads).map {
-      action
-    }.recoverTotal {
-      error => Future.successful(resBadRequest(JsError.toFlatJson(error).toString()))
-    }
-  }
-
   /**
    * depreciated
    */

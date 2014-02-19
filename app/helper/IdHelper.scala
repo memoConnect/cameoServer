@@ -64,7 +64,7 @@ object IdHelper {
     new MongoId(randomString(defaultLength))
   }
 
-  def generateAssetId(): MongoId = {
+  def generateFileId(): MongoId = {
     new MongoId(randomString(defaultLength))
   }
 
