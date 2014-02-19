@@ -1107,21 +1107,14 @@ class ControllerSpec extends Specification {
 
       (data \ "id").asOpt[String] must beSome
       fileId = (data \ "id").as[String]
-      (data \ "chunks")(0).asOpt[String] must beSome
+      (data \ "chunks")(0).asOpt[JsObject] must beSome
+      (data \ "chunks")(1).asOpt[JsObject] must beNone
       (data \ "fileName").asOpt[String] must beSome(fileName)
       (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
       (data \ "fileSize").asOpt[Int] must beSome(fileSize)
       (data \ "fileType").asOpt[String] must beSome(fileType)
     }
 
-    "refuse to return not authozized FileMeta requests" in {
-      val path = basePath + "/file/0"
-
-      val req = FakeRequest(GET, path)
-      val res = route(req).get
-
-      status(res) must equalTo(UNAUTHORIZED)
-    }
 
     "refuse to return non existing FileMeta" in {
       val path = basePath + "/file/0"
@@ -1130,6 +1123,41 @@ class ControllerSpec extends Specification {
       val res = route(req).get
 
       status(res) must equalTo(NOT_FOUND)
+
+      }
+      
+    "upload the other chunks" in {
+      val path = basePath + "/file/" + fileId
+
+      chunks.tail.zipWithIndex.map {
+        case (chunk, i) =>
+
+          val json = Json.obj("chunk" -> chunk)
+
+          val header: Seq[(String, String)] = Seq(
+            ("X-Index", (i +1).toString)) :+
+            tokenHeader(token)
+
+          val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+          val res = route(req).get
+
+          status(res) must equalTo(OK)
+      }
+    }
+
+    "refuse upload to chunks to invalid fileId" in {
+      val path = basePath + "/file/" + "asdfasdf"
+
+          val json = Json.obj("chunk" -> chunks(1))
+
+          val header: Seq[(String, String)] = Seq(
+            ("X-Index", "2")) :+
+            tokenHeader(token)
+
+          val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+          val res = route(req).get
+
+          status(res) must equalTo(NOT_FOUND)
     }
 
     "drop the test database" in {

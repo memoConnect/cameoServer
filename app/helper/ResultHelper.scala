@@ -54,7 +54,6 @@ object ResultHelper {
 
   // Bad Request
   def resBadRequest(error: String): SimpleResult = {
-    Logger.debug("BAD_REQUEST: " + error)
     BadRequest(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error))
@@ -69,7 +68,6 @@ object ResultHelper {
 
   // NotFound
   def resNotFound(what: String, notifications: Seq[UserNotification] = Seq()): SimpleResult = {
-    Logger.debug("NOT_FOUND: " + what)
     NotFound(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> (what + " not found")) ++

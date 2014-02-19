@@ -8,6 +8,7 @@ import helper.IdHelper
 import scala.concurrent.{ExecutionContext, Future}
 import reactivemongo.core.commands.LastError
 import ExecutionContext.Implicits.global
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -15,7 +16,7 @@ import ExecutionContext.Implicits.global
  * Time: 10:51 AM
  */
 case class FileMeta(id: MongoId,
-                    chunks: Map[String, MongoId],
+                    chunks: Seq[ChunkMeta],
                     fileName: String,
                     maxChunks: Int,
                     fileSize: Int,
@@ -24,10 +25,10 @@ case class FileMeta(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(FileMeta.outputWrites).as[JsObject]
 
-  def addChunk(chunkId: MongoId, index: Int): Future[LastError] = {
+  def addChunk(chunkMeta: ChunkMeta): Future[LastError] = {
     val query = Json.obj("_id" -> this.id)
-    val set = Json.obj("$set" -> Json.obj("chunks." + index -> chunkId))
-    Identity.col.update(query, set)
+    val set = Json.obj("$addToSet" -> Json.obj("chunks" -> chunkMeta))
+    FileMeta.col.update(query, set)
   }
 
 }
@@ -40,8 +41,8 @@ object FileMeta extends Model[FileMeta] {
   
   val outputWrites: Writes[FileMeta] = Writes {
     fm =>
-      Json.obj("id" -> fm.id) ++
-      Json.obj("chunks" -> fm.chunks) ++
+      Json.obj("id" -> fm.id.toJson) ++
+      Json.obj("chunks" -> fm.chunks.map(_.toJson)) ++
       Json.obj("fileName" -> fm.fileName) ++
       Json.obj("maxChunks" -> fm.maxChunks) ++
       Json.obj("fileSize" -> fm.fileSize) ++
@@ -49,7 +50,7 @@ object FileMeta extends Model[FileMeta] {
       addCreated(fm.created)
   }
 
-  def create(chunks: Map[String, MongoId], fileName: String, maxChunks: Int, fileSize: Int, fileType: String): FileMeta = {
+  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String): FileMeta = {
     new FileMeta(
       IdHelper.generateFileId(),
       chunks,
@@ -60,5 +61,15 @@ object FileMeta extends Model[FileMeta] {
       new Date
     )
   }
-
 }
+
+case class ChunkMeta(index: Int, chunkId: MongoId) {
+
+  def toJson: JsObject = Json.obj(index.toString -> chunkId.toJson)
+}
+
+object ChunkMeta {
+  implicit val mongoFormat: Format[ChunkMeta] = Json.format[ChunkMeta]
+}
+
+

@@ -4,7 +4,7 @@ import traits.ExtendedController
 import scala.util.Random
 import reactivemongo.bson.BSONObjectID
 import play.api.libs.json.{ JsError, JsObject, Json }
-import models.{MongoId, FileChunk, FileMeta}
+import models.{ChunkMeta, FileChunk, FileMeta}
 import helper.{ General, IdHelper, AuthAction }
 import helper.ResultHelper._
 import scala.concurrent.{ExecutionContext, Future}
@@ -28,8 +28,6 @@ object FileController extends ExtendedController {
       val fileType = request.headers.get("X-File-Type")
       val chunkIndex = request.headers.get("X-Index")
 
-      Logger.debug("HEADER" + fileName + ":" + maxChunks + ":" + fileSize + ":" + fileType + ":" + chunkIndex)
-
       val headerInvalid = {
         fileName.isEmpty ||
           maxChunks.isEmpty ||
@@ -42,22 +40,24 @@ object FileController extends ExtendedController {
       }
 
       headerInvalid match {
-        case false => Future(resBadRequest("header content missing or invalid"))
-        case true => {
+        case true => Future(resBadRequest("header content missing or invalid"))
+        case false => {
           validateFuture(request.body, FileChunk.createReads) {
             chunk =>
-              val fileMeta = FileMeta.create(Map(chunkIndex.get -> chunk.id), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get)
+              val fileMeta = FileMeta.create(Seq(new ChunkMeta(chunkIndex.get.toInt, chunk.id)), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get)
 
-              val futureResult: Future[Boolean] = for {
+              val futureResult: Future[(Boolean, Boolean)] = for {
                 le1 <- FileChunk.col.insert(chunk)
                 le2 <- FileMeta.col.insert(fileMeta)
               } yield {
-                le1.updatedExisting && le2.updatedExisting
+                (le1.ok, le2.ok)
               }
 
               futureResult.map {
-                case false => resServerError("could not save chunk")
-                case true  => resOK(fileMeta.toJson)
+                case (false, false) => resServerError("could not save chunk and metadata")
+                case (true, false) => resServerError("could not update metadata")
+                case (false, true) => resServerError("could not save chunk")
+                case (true, true)  => resOK(fileMeta.toJson)
               }
           }
         }
@@ -75,24 +75,26 @@ object FileController extends ExtendedController {
         }
 
         headerInvalid match {
-          case false => Future(resBadRequest("header content missing or invalid"))
-          case true => {
+          case true => Future(resBadRequest("header content missing or invalid"))
+          case false => {
             validateFuture(request.body, FileChunk.createReads) {
               chunk =>
                 // check if the give fileId exists
                 FileMeta.find(id).flatMap {
                   case None => Future(resNotFound("file"))
                   case Some(fileMeta) => {
-                    val futureResult: Future[Boolean] = for {
-                      le1 <- fileMeta.addChunk(chunk.id, chunkIndex.get.toInt)
+                    val futureResult: Future[(Boolean, Boolean)] = for {
+                      le1 <- fileMeta.addChunk(new ChunkMeta(chunkIndex.get.toInt, chunk.id))
                       le2 <- FileChunk.col.insert(chunk)
                     } yield {
-                      le1.updatedExisting && le2.updatedExisting
+                      (le1.ok, le2.ok)
                     }
 
                     futureResult.map {
-                      case false => resServerError("could not store chunk")
-                      case true  => resOK()
+                      case (false, false) => resServerError("could not save chunk and metadata")
+                      case (true, false) => resServerError("could not update metadata")
+                      case (false, true) => resServerError("could not save chunk")
+                      case (true, true)  => resOK()
                     }
                   }
                 }

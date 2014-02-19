@@ -1,6 +1,7 @@
 package helper
 
 import java.lang.NumberFormatException
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -13,7 +14,10 @@ object General {
     try {
     Some(str.toInt)
   } catch {
-    case e: NumberFormatException => None
+    case e: NumberFormatException =>
+      Logger.debug("NOT a number: " + str)
+
+      None
   }
 
 }
