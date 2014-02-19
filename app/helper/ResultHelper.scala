@@ -8,6 +8,7 @@ import constants.Notifications._
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
 import traits.Model
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -52,13 +53,14 @@ object ResultHelper {
         addMessagesOrEmpty(notifications))
 
   // Bad Request
-  def resBadRequest(error: String): SimpleResult =
+  def resBadRequest(error: String): SimpleResult = {
     BadRequest(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error))
   //        ++
   //        addMessagesOrEmpty(notifications))
 
+  }
   def resBadRequest(notifications: Seq[UserNotification] = Seq()): SimpleResult =
     BadRequest(
       Json.obj("res" -> "KO") ++
@@ -113,22 +115,6 @@ object ResultHelper {
 
   def errorNotify(text: String): Seq[UserNotification] =
     Seq(new UserNotification(USER_MESSAGE_LEVEL_ERROR, text))
-
-  def validate[T](js: JsValue, reads: Reads[T])(action: ((T => SimpleResult))): SimpleResult = {
-    js.validate(reads).map {
-      action
-    }.recoverTotal {
-      error => resBadRequest(JsError.toFlatJson(error).toString())
-    }
-  }
-
-  def validateFuture[T](js: JsValue, reads: Reads[T])(action: ((T => Future[SimpleResult]))): Future[SimpleResult] = {
-    js.validate(reads).map {
-      action
-    }.recoverTotal {
-      error => Future.successful(resBadRequest(JsError.toFlatJson(error).toString()))
-    }
-  }
 
   /**
    * depreciated

@@ -36,7 +36,7 @@ POST           /api/v1/message/filter/count                   controllers.Messag
 
 # TOKENS
 GET            /api/v1/token                                  controllers.TokenController.createToken
-GET            /api/vi/:token                                 controllers.TokenController.getToken(token)
+#GET            /api/vi/:token                                 controllers.TokenController.getToken(token)
 DELETE         /api/v1/token/:token                           controllers.TokenController.deleteToken(token: String)
 
 # CONTACTS
@@ -53,10 +53,11 @@ GET            /api/v1/friendRequests                         controllers.Contac
 POST           /api/v1/friendRequest                          controllers.ContactController.sendFriendRequest
 POST           /api/v1/friendRequest/answer                   controllers.ContactController.answerFriendRequest
 
-# ASSETS
-#POST           /api/v1/asset                             controllers.AssetController.uploadAsset(token: String, messageId: String)
-#GET            /api/v1/asset/:assetId                    controllers.AssetController.getAsset(token: String, assetId: String)
-#GET            /api/v1/media                            controllers.AssetController.getMedia(token: String)
+## FILES
+POST           /api/v1/file                                   controllers.FileController.uploadFile
+POST           /api/v1/file/:id                               controllers.FileController.uploadFileChunks(id)
+GET            /api/v1/file/:id                               controllers.FileController.getFile(id)
+GET            /api/v1/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex: Int)
 
 # VERIFICATION
 POST           /api/v1/verify                                 controllers.VerificationController.sendVerifyMessage()
