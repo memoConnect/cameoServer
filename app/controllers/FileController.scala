@@ -7,9 +7,10 @@ import play.api.libs.json.{ JsError, JsObject, Json }
 import models.{ FileChunk, FileMeta }
 import helper.{ General, IdHelper, AuthAction }
 import helper.ResultHelper._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import play.api.mvc.{ Request, Action }
 import play.api.Logger
+ import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -91,7 +92,7 @@ object FileController extends ExtendedController {
                   case None => Future(resNotFound("file"))
                   case Some(fileMeta) => {
                     val futureResult: Future[Boolean] = for {
-                      le1 <- fileMeta.addChunk(Mapchunk.id)
+                      le1 <- fileMeta.addChunk(chunk.id, chunkIndex.get.toInt)
                       le2 <- FileChunk.col.insert(chunk)
                     } yield {
                       le1.updatedExisting && le2.updatedExisting

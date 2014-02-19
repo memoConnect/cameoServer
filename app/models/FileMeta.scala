@@ -5,8 +5,9 @@ import helper.JsonHelper._
 import traits.Model
 import java.util.Date
 import helper.IdHelper
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import reactivemongo.core.commands.LastError
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer

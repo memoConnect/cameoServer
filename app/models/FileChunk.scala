@@ -12,6 +12,9 @@ import play.api.libs.functional.syntax._
 import java.util.Date
 import traits.Model
 import play.api.libs.json.Reads._
+import scala.concurrent.ExecutionContext
+import ExecutionContext.Implicits.global
+
 
 /**
  * User: Björn Reimer

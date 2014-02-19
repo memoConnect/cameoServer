@@ -1,5 +1,7 @@
 package helper
 
+import java.lang.NumberFormatException
+
 /**
  * User: Björn Reimer
  * Date: 2/19/14
@@ -7,11 +9,11 @@ package helper
  */
 object General {
 
-  def safeStringToInt(str: String): Option[Int] = try {
+  def safeStringToInt(str: String): Option[Int] =
+    try {
     Some(str.toInt)
   } catch {
-    case NumberFormatException => None
+    case e: NumberFormatException => None
   }
-
 
 }
