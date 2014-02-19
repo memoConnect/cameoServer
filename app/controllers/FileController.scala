@@ -114,7 +114,7 @@ object FileController extends ExtendedController {
       }
   }
 
-  def getFileChunks(id: String, chunkIndex: Int) = AuthAction.async {
+  def getFileChunk(id: String, chunkIndex: Int) = AuthAction.async {
     request =>
       // check if file exists
       FileMeta.find(id).flatMap {

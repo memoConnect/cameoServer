@@ -1,14 +1,14 @@
 package test
 
 import play.api.test._
-import play.api.libs.json.{JsArray, Json, JsObject}
+import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
 import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import scala.concurrent.ExecutionContext
-import play.api.{GlobalSettings, Logger}
+import play.api.{ GlobalSettings, Logger }
 import helper.DbAdminUtilities
 import testHelper.MockupFactory
 
@@ -83,14 +83,15 @@ class ControllerSpec extends Specification {
       val logins = Seq("asdf", "asdfasdfasdfasdfasdfa", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\")
 
       logins.map {
-        l => {
-          val json = Json.obj("loginName" -> l)
+        l =>
+          {
+            val json = Json.obj("loginName" -> l)
 
-          val req = FakeRequest(POST, path).withJsonBody(json)
-          val res = route(req).get
+            val req = FakeRequest(POST, path).withJsonBody(json)
+            val res = route(req).get
 
-          status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
-        }
+            status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
+          }
       }
     }
 
@@ -1096,7 +1097,7 @@ class ControllerSpec extends Specification {
         ("X-File-Size", fileSize.toString),
         ("X-File-Type", fileType),
         ("X-Index", "0")) :+
-        tokenHeader(token)
+        tokenHeader(token2)
 
       val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
       val res = route(req).get
@@ -1107,16 +1108,14 @@ class ControllerSpec extends Specification {
 
       (data \ "id").asOpt[String] must beSome
       fileId = (data \ "id").as[String]
-      (data \ "chunks")(0).asOpt[JsObject] must beSome
-      (data \ "chunks")(1).asOpt[JsObject] must beNone
+      (data \ "chunks")(0).asOpt[Int] must beSome
+      (data \ "chunks")(1).asOpt[Int] must beNone
       (data \ "fileName").asOpt[String] must beSome(fileName)
       (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
       (data \ "fileSize").asOpt[Int] must beSome(fileSize)
       (data \ "fileType").asOpt[String] must beSome(fileType)
     }
 
-
-      
     "upload the other chunks" in {
       val path = basePath + "/file/" + fileId
 
@@ -1126,8 +1125,8 @@ class ControllerSpec extends Specification {
           val json = Json.obj("chunk" -> chunk)
 
           val header: Seq[(String, String)] = Seq(
-            ("X-Index", (i +1).toString)) :+
-            tokenHeader(token)
+            ("X-Index", (i + 1).toString)) :+
+            tokenHeader(token2)
 
           val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
           val res = route(req).get
@@ -1139,18 +1138,84 @@ class ControllerSpec extends Specification {
     "refuse upload to chunks to invalid fileId" in {
       val path = basePath + "/file/" + "asdfasdf"
 
-          val json = Json.obj("chunk" -> chunks(1))
+      val json = Json.obj("chunk" -> chunks(1))
 
-          val header: Seq[(String, String)] = Seq(
-            ("X-Index", "2")) :+
-            tokenHeader(token)
+      val header: Seq[(String, String)] = Seq(
+        ("X-Index", "2")) :+
+        tokenHeader(token)
 
-          val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "get file meta information" in  {
+
+      val path = basePath + "/file/" + fileId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      fileId = (data \ "id").as[String]
+      (data \ "chunks").asOpt[Seq[Int]] must beSome
+      val returnedChunks: Seq[Int] = (data \ "chunks").as[Seq[Int]].sorted
+      returnedChunks.size must beEqualTo(10)
+      returnedChunks.min must beEqualTo(0)
+      returnedChunks.max must beEqualTo(9)
+      (data \ "fileName").asOpt[String] must beSome(fileName)
+      (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
+      (data \ "fileSize").asOpt[Int] must beSome(fileSize)
+      (data \ "fileType").asOpt[String] must beSome(fileType)
+    }
+
+    "get all chunks of a file" in {
+      chunks.zipWithIndex.map {
+        case (chunk, i) => {
+          val path = basePath + "/file/" + fileId + "/" + i
+
+          val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+          val res = route(req).get
+
+          status(res) must equalTo(OK)
+
+          val data = (contentAsJson(res) \ "data").as[JsObject]
+
+          (data \ "chunk").asOpt[String] must beSome(chunks(i))
+        }
+      }
+    }
+
+    "refuse to return non existing chunk" in {
+      chunks.zipWithIndex.map {
+        case (chunk, i) => {
+          val path = basePath + "/file/" + fileId + "/15"
+
+          val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
           val res = route(req).get
 
           status(res) must equalTo(NOT_FOUND)
+        }
+      }
     }
 
+    "detect non-numerical chunk index" in {
+      chunks.zipWithIndex.map {
+        case (chunk, i) => {
+          val path = basePath + "/file/" + fileId + "/d"
+
+          val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+          val res = route(req).get
+
+          status(res) must equalTo(BAD_REQUEST)
+        }
+      }
+    }
 
     "refuse to return non existing FileMeta" in {
       val path = basePath + "/file/0"
@@ -1167,7 +1232,6 @@ class ControllerSpec extends Specification {
     }
 
     step(play.api.Play.stop())
-
 
   }
 
