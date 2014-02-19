@@ -8,6 +8,7 @@ import constants.Notifications._
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
 import traits.Model
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -52,13 +53,15 @@ object ResultHelper {
         addMessagesOrEmpty(notifications))
 
   // Bad Request
-  def resBadRequest(error: String): SimpleResult =
+  def resBadRequest(error: String): SimpleResult = {
+    Logger.debug("BAD_REQUEST: " + error)
     BadRequest(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error))
   //        ++
   //        addMessagesOrEmpty(notifications))
 
+  }
   def resBadRequest(notifications: Seq[UserNotification] = Seq()): SimpleResult =
     BadRequest(
       Json.obj("res" -> "KO") ++
@@ -66,6 +69,7 @@ object ResultHelper {
 
   // NotFound
   def resNotFound(what: String, notifications: Seq[UserNotification] = Seq()): SimpleResult = {
+    Logger.debug("NOT_FOUND: " + what)
     NotFound(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> (what + " not found")) ++

@@ -10,6 +10,7 @@ import play.api.Play.current
 import scala.concurrent.ExecutionContext
 import play.api.{ GlobalSettings, Logger }
 import helper.DbAdminUtilities
+import testHelper.MockupFactory
 
 /**
  * Add your spec here.
@@ -555,7 +556,6 @@ class ControllerSpec extends Specification {
       status(res) must equalTo(OK)
     }
 
-
     "conversation should not contain deleted recipient" in {
       val path = basePath + "/conversation/" + cidExisting
 
@@ -577,7 +577,7 @@ class ControllerSpec extends Specification {
     "add message to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/message"
 
-      val json = Json.obj("messageBody"-> "wir rocken")
+      val json = Json.obj("messageBody" -> "wir rocken")
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
       val res = route(req).get
@@ -616,7 +616,7 @@ class ControllerSpec extends Specification {
 
       val path = basePath + "/conversation/" + cidExisting + "/message"
 
-      val json = Json.obj("messageBody"-> "wir rocken")
+      val json = Json.obj("messageBody" -> "wir rocken")
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token3)).withJsonBody(json)
       val res = route(req).get
@@ -625,7 +625,7 @@ class ControllerSpec extends Specification {
 
     }
 
-    "refuse non-members to get single message" in  {
+    "refuse non-members to get single message" in {
       val path = basePath + "/message/" + messageId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
@@ -633,7 +633,6 @@ class ControllerSpec extends Specification {
 
       status(res) must equalTo(UNAUTHORIZED)
     }
-
 
     "get all contacts" in {
       val path = basePath + "/contacts"
@@ -648,12 +647,12 @@ class ControllerSpec extends Specification {
       data.length must beEqualTo(44)
 
       val contact = data(10)
-      ( contact \ "groups")(0).asOpt[String] must beSome("group1")
-      ( contact \ "identityId").asOpt[String] must beSome
-      identityOf10thContact = ( contact \ "identityId").as[String]
-      ( contact \ "id").asOpt[String] must beSome
-      idOf10thContact = ( contact \ "id").as[String]
-      ( contact \ "identity" \ "displayName").asOpt[String] must beSome
+      (contact \ "groups")(0).asOpt[String] must beSome("group1")
+      (contact \ "identityId").asOpt[String] must beSome
+      identityOf10thContact = (contact \ "identityId").as[String]
+      (contact \ "id").asOpt[String] must beSome
+      idOf10thContact = (contact \ "id").as[String]
+      (contact \ "identity" \ "displayName").asOpt[String] must beSome
     }
 
     "get all contacts with offset" in {
@@ -701,7 +700,7 @@ class ControllerSpec extends Specification {
     "add internal contact" in {
       val path = basePath + "/contact"
 
-      val json = Json.obj("groups" -> Seq("group3","group1"), "identityId" -> identityId )
+      val json = Json.obj("groups" -> Seq("group3", "group1"), "identityId" -> identityId)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
       val res = route(req).get
@@ -710,7 +709,7 @@ class ControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      ( data \ "id").asOpt[String] must beSome
+      (data \ "id").asOpt[String] must beSome
       contactId = (data \ "id").as[String]
       (data \ "groups")(0).asOpt[String] must beSome("group3")
       (data \ "groups")(1).asOpt[String] must beSome("group1")
@@ -722,7 +721,7 @@ class ControllerSpec extends Specification {
     "refuse to add internal contact with invalid identity" in {
       val path = basePath + "/contact"
 
-      val json = Json.obj("groups" -> Seq("group3","group1"), "identityId" -> "asdf" )
+      val json = Json.obj("groups" -> Seq("group3", "group1"), "identityId" -> "asdf")
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
       val res = route(req).get
@@ -748,7 +747,7 @@ class ControllerSpec extends Specification {
 
       val path = basePath + "/contact/" + contactId
 
-      val newGroups = Seq("group1","group4")
+      val newGroups = Seq("group1", "group4")
       val json = Json.obj("groups" -> newGroups)
 
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
@@ -799,8 +798,8 @@ class ControllerSpec extends Specification {
       val mail = "some@mail.com"
       val tel = "+123456789123"
       val name = "foo"
-      val json = Json.obj("groups" -> Seq("group1","group2"),
-        "identity" -> Json.obj("email" -> mail, "phoneNumber" -> tel, "displayName" -> name ) )
+      val json = Json.obj("groups" -> Seq("group1", "group2"),
+        "identity" -> Json.obj("email" -> mail, "phoneNumber" -> tel, "displayName" -> name))
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
       val res = route(req).get
@@ -809,7 +808,7 @@ class ControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      ( data \ "id").asOpt[String] must beSome
+      (data \ "id").asOpt[String] must beSome
       contactId = (data \ "id").as[String]
       (data \ "groups")(0).asOpt[String] must beSome("group1")
       (data \ "groups")(1).asOpt[String] must beSome("group2")
@@ -831,7 +830,7 @@ class ControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      ( data \ "id").asOpt[String] must beSome(contactId)
+      (data \ "id").asOpt[String] must beSome(contactId)
       (data \ "groups")(0).asOpt[String] must beSome("group1")
       (data \ "groups")(1).asOpt[String] must beSome("group2")
       (data \ "contactType").asOpt[String] must beSome("external")
@@ -844,7 +843,7 @@ class ControllerSpec extends Specification {
 
       val path = basePath + "/contact/" + contactId
 
-      val newGroups = Seq("group1","group3")
+      val newGroups = Seq("group1", "group3")
       val json = Json.obj("groups" -> newGroups)
 
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
@@ -1079,6 +1078,42 @@ class ControllerSpec extends Specification {
       data.length must beEqualTo(0)
     }
 
+    val chunks: Seq[String] = {
+      Seq.fill(10)(MockupFactory.randomString(256))
+    }
+    val fileName = "some_name.pdf"
+    val fileType = "some_type"
+    val fileSize = 1234567
+    var fileId = ""
+
+    "upload first chunk of file" in {
+      val path = basePath + "/file"
+
+      val json = Json.obj("chunk" -> chunks.head)
+
+      val header: Seq[(String, String)] = Seq(
+        ("X-File-Name", fileName),
+        ("X-Max-Chunks", chunks.size.toString),
+        ("X-File-Size", fileSize.toString),
+        ("X-File-Type", fileType),
+        ("X-Index", "0")) :+
+        tokenHeader(token)
+
+      val req = FakeRequest(POST, path).withHeaders(header:_*).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      fileId = (data \ "id").as[String]
+      (data \ "chunks")(0).asOpt[String] must beSome
+      (data \ "fileName").asOpt[String] must beSome(fileName)
+      (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
+      (data \ "fileSize").asOpt[Int] must beSome(fileSize)
+      (data \ "fileType").asOpt[String] must beSome(fileType)
+    }
 
     "drop the test database" in {
       ReactiveMongoPlugin.db.drop()(ExecutionContext.Implicits.global)

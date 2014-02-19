@@ -54,15 +54,10 @@ POST           /api/v1/friendRequest                          controllers.Contac
 POST           /api/v1/friendRequest/answer                   controllers.ContactController.answerFriendRequest
 
 ## FILES
-#POST           /api/uploadFile                                controllers.FileController.sendFile
-#POST           /api/uploadFile/:id                            controllers.FileController.sendFileChunks(assetId)
-#GET            /api/getFile/:id                               controllers.FileController.getFile(assetId)
-#GET            /api/getFile/:id/:chunkIndex                   controllers.FileController.getFileChunk(assetId, chunkIndex)
-
-# ASSETS
-#POST           /api/v1/asset                             controllers.AssetController.uploadAsset(token: String, messageId: String)
-#GET            /api/v1/asset/:assetId                    controllers.AssetController.getAsset(token: String, assetId: String)
-#GET            /api/v1/media                            controllers.AssetController.getMedia(token: String)
+POST           /api/v1/file                                controllers.FileController.uploadFile
+POST           /api/v1/file/:id                            controllers.FileController.uploadFileChunks(id)
+#GET            /api/file/:id                               controllers.FileController.getFile(id)
+#GET            /api/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
 POST           /api/v1/verify                                 controllers.VerificationController.sendVerifyMessage()

@@ -28,6 +28,8 @@ object FileController extends ExtendedController {
       val fileType = request.headers.get("X-File-Type")
       val chunkIndex = request.headers.get("X-Index")
 
+      Logger.debug("HEADER" + fileName + ":" + maxChunks + ":" + fileSize + ":" + fileType + ":" + chunkIndex)
+
       val headerInvalid = {
         fileName.isEmpty ||
           maxChunks.isEmpty ||
@@ -35,7 +37,7 @@ object FileController extends ExtendedController {
           fileType.isEmpty ||
           chunkIndex.isEmpty ||
           General.safeStringToInt(maxChunks.get).isEmpty ||
-          General.safeStringToInt(fileSize.get).isEmpty
+          General.safeStringToInt(fileSize.get).isEmpty ||
         General.safeStringToInt(chunkIndex.get).isEmpty
       }
 
@@ -65,20 +67,10 @@ object FileController extends ExtendedController {
   def uploadFileChunks(id: String) = Action.async(parse.tolerantJson(512 * 1024)) {
     request =>
       {
-        val fileName = request.headers.get("X-File-Name")
-        val maxChunks = request.headers.get("X-Max-Chunks")
-        val fileSize = request.headers.get("X-File-Size")
-        val fileType = request.headers.get("X-File-Type")
         val chunkIndex = request.headers.get("X-Index")
 
         val headerInvalid = {
-          fileName.isEmpty ||
-            maxChunks.isEmpty ||
-            fileSize.isEmpty ||
-            fileType.isEmpty ||
             chunkIndex.isEmpty ||
-            General.safeStringToInt(maxChunks.get).isEmpty ||
-            General.safeStringToInt(fileSize.get).isEmpty
           General.safeStringToInt(chunkIndex.get).isEmpty
         }
 
