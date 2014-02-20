@@ -9,6 +9,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import helper.IdHelper
 import ExecutionContext.Implicits.global
 import constants.Messaging._
+import constants.Contacts._
 import reactivemongo.core.commands.LastError
 import helper.JsonHelper._
 import play.api.Logger
@@ -149,6 +150,7 @@ object Identity extends Model[Identity] {
         }) ++
         maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
+        Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL))
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
   }

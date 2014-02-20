@@ -41,18 +41,25 @@ class SendMessageActor extends Actor {
                       Logger.error(error)
                       new MessageStatus(id, MESSAGE_STATUS_ERROR, error)
                     }
-                    case Some(identity) => {
-                      identity.preferredMessageType match {
-                        case MESSAGE_TYPE_SMS     => //sendSmsActor ! (message, fromIdentity, identity, 0)
-                        case MESSAGE_TYPE_EMAIL   => //sendMailActor ! (message, fromIdentity, identity, 0)
-                        case MESSAGE_TYPE_DEFAULT => //sendMailActor ! (message, fromIdentity, identity, 0)
+                    case Some(toIdentity) => {
+                      toIdentity.preferredMessageType match {
+                        case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)
+                        case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, 0)
+                        case MESSAGE_TYPE_DEFAULT =>
+                          // if recipient has a mail, send mail (for now, only for external users
+                          if (!toIdentity.accountId.isDefined) {
+                            if (toIdentity.email.isDefined) {
+                              sendMailActor ! (message, fromIdentity, toIdentity, 0)
+                            } else if (toIdentity.phoneNumber.isDefined) {
+                              sendSmsActor ! (message, fromIdentity, toIdentity, 0)
+                            }
+                          }
                         // TODO case _ => sendFailActor ! (message, identity)
                       }
-                      new MessageStatus(id, MESSAGE_STATUS_QUEUED, identity.preferredMessageType)
+                      new MessageStatus(id, MESSAGE_STATUS_QUEUED, toIdentity.preferredMessageType)
                     }
                   }
-                }
-                else {
+                } else {
                   Future.successful(new MessageStatus(id, MESSAGE_STATUS_NONE, "sender"))
                 }
               }

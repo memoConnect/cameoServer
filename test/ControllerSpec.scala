@@ -51,7 +51,7 @@ class ControllerSpec extends Specification {
     var identityOf10thContact = ""
     var idOf10thContact = ""
     var contactId = ""
-    val newContactMail = "new@mail.foo"
+    val newContactMail = "test@bjrm.de"
     val newContactTel = "+4561233"
     val newContactName = "foobar"
     val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
