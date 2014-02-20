@@ -65,8 +65,13 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
-  def addToken(tokenId: MongoId): Future[LastError] = {
-    val set = Json.obj("$push" -> Json.obj("tokens" -> tokenId))
+  def addToken(token: Token): Future[LastError] = {
+    val set = Json.obj("$addToSet" -> Json.obj("tokens" -> token))
+    Identity.col.update(query, set)
+  }
+
+  def deleteToken(tokenId: MongoId): Future[LastError] = {
+    val set = Json.obj("$pull" -> Json.obj("$elemMatch" -> Json.obj("tokens" -> tokenId)))
     Identity.col.update(query, set)
   }
 
@@ -75,7 +80,7 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
-  def removeFriendRequest(friendRequestId: MongoId): Future[LastError] = {
+  def deleteFriendRequest(friendRequestId: MongoId): Future[LastError] = {
     val set = Json.obj("$pull" -> Json.obj("friendRequests" -> friendRequestId))
     Identity.col.update(query, set)
   }
@@ -173,6 +178,11 @@ object Identity extends Model[Identity] {
       new Date,
       new Date,
       docVersion)
+  }
+
+  def findToken(tokenId: MongoId): Future[Option[Identity]] = {
+    val query = Json.obj("tokens" -> Json.obj("$elemMatch" -> Json.obj("_id" -> tokenId)))
+    col.find(query).one[Identity]
   }
 
   def findCameoId(cameoId: String): Future[Option[Identity]] = {

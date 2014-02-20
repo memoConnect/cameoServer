@@ -16,15 +16,12 @@ import helper.JsonHelper._
  * Time: 9:31 PM
  */
 case class Token(id: MongoId,
-                 identityId: MongoId,
                  created: Date) {
 
   def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
 }
 
-object Token extends Model[Token] {
-
-  def col: JSONCollection = tokenCollection
+object Token  {
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
@@ -34,10 +31,9 @@ object Token extends Model[Token] {
         addCreated(t.created)
   }
 
-  def create(id: MongoId): Token = {
+  def create(): Token = {
     new Token(
       IdHelper.generateAccessToken(),
-      id,
       new Date)
   }
 

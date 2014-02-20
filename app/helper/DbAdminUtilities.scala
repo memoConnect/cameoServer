@@ -4,14 +4,19 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
-import play.api.libs.json.{ Json, JsObject }
+import play.api.libs.json.{Reads, Json, JsObject}
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Logger
 import scala.io.Source
 import reactivemongo.core.commands.LastError
-import models.{MongoId, Token}
+import models.{ MongoId, Token }
 import play.api.libs.iteratee.Iteratee
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
+import java.util.Date
+import traits.Model
+import play.api.libs.json.Reads._
 
 /**
  * User: Björn Reimer
@@ -23,7 +28,7 @@ object DbAdminUtilities {
   def dumpDb() = {
     val path = "fixtures/dump"
 
-    val collections: Seq[JSONCollection] = Seq(tokenCollection, conversationCollection, accountCollection, reservedAccountCollection, identityCollection, purlCollection)
+    val collections: Seq[JSONCollection] = Seq(conversationCollection, accountCollection, reservedAccountCollection, identityCollection, purlCollection)
 
     collections.map {
       col =>
@@ -51,6 +56,8 @@ object DbAdminUtilities {
         if (file.getName.endsWith(".json")) {
 
           Logger.debug("Loading Fixture: " + file.getName)
+
+          lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
 
           val col: JSONCollection = file.getName.replace(".json", "") match {
             case ("conversations") => conversationCollection
@@ -83,11 +90,11 @@ object DbAdminUtilities {
 
     // set global state to migrating
     val query = Json.obj()
-    val set = Json.obj("migrating" -> true)
+    val set = Json.obj("$set" -> Json.obj("migrating" -> true))
 
     val doUpdate: Future[Boolean] = globalStateCollection.update(query, set).map { _.updatedExisting }
 
-    doUpdate.flatMap {
+    val res = doUpdate.flatMap {
       case false =>
         Logger.info("not migrating, since migrating flag is already set to true in global State"); Future(false)
       case true =>
@@ -95,35 +102,48 @@ object DbAdminUtilities {
           i =>
             Logger.info("migrating version " + i + " (latestVersion: " + latestDbVersion + ")")
             migrations.get(i) match {
-              case None            =>
+              case None =>
                 Logger.error("no migration found for version " + i); Future(false)
               case Some(migration) => migration
             }
         }
         Future.sequence(res).map(_.forall(b => b))
     }
-  }
 
+    res.map {
+      res =>
+        val set2 = Json.obj("$set" -> Json.obj("migrating" -> false))
+        globalStateCollection.update(query, set).map { _.updatedExisting }
+        res
+    }
+  }
 
   // todo find out how to do this with iteratees...
   def migrateTokens: Future[Boolean] = {
     Logger.debug("migrating tokens")
 
-    val addTokensToIdentity: (JsObject => Future[Boolean]) =  {
-       js =>
-      // get identityId
-      val id = (js \ "_id" ).as[MongoId]
 
-      // find all tokens with this identityId
-      val query = Json.obj("identityId" -> id)
-      val futureTokens: Future[Seq[Token]] = Token.col.find(query).cursor[Token].collect[Seq]()
+    val addTokensToIdentity: (JsObject => Future[Boolean]) = {
+      js =>
+        // get identityId
+        val id = (js \ "_id").as[MongoId]
 
-      // update identity
-      futureTokens.flatMap { tokens =>
-        val query2 = Json.obj("_id" -> id)
-        val set = Json.obj("$set" -> Json.obj("tokens" -> tokens))
-        identityCollection.update(query2, set).map (_.updatedExisting)
-      }
+        // find all tokens with this identityId
+        lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
+        val query = Json.obj("identityId" -> id)
+        val futureTokens: Future[Seq[JsObject]] = tokenCollection.find(query).cursor[JsObject].collect[Seq]()
+
+        // remove identityIds from token
+        val removeIdentityId: Reads[JsObject] = (__ \ 'identityId).json.prune
+        val futureTokensWithoutId: Future[Seq[JsObject]] = futureTokens.map(_.map(_.transform(removeIdentityId).get))
+
+        // update identity
+        futureTokensWithoutId.flatMap { tokens =>
+          val query2 = Json.obj("_id" -> id)
+          val set = Json.obj("$set" -> Json.obj("tokens" -> tokens))
+
+          identityCollection.update(query2, set).map(_.updatedExisting)
+        }
     }
 
     val allResults: Future[Seq[Boolean]] = identityCollection.find(Json.obj()).cursor[JsObject].collect[Seq]().flatMap {
@@ -132,7 +152,7 @@ object DbAdminUtilities {
         Future.sequence(res)
     }
 
-    allResults.map(_.forall(b=>b))
+    allResults.map(_.forall(b => b))
   }
 
   def migrations: Map[Int, Future[Boolean]] = Map(0 -> migrateTokens)

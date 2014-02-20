@@ -1,5 +1,3 @@
-package test
-
 import play.api.test._
 import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.Helpers._
@@ -28,26 +26,16 @@ class ControllerSpec extends Specification {
 
   sequential
 
-  "Controllers" should {
+  "Controller" should {
 
-    // fill db on startup
-    val globalSettings = Some(new GlobalSettings() {
-      override def onStart(app: play.api.Application) {
-        DbAdminUtilities.loadFixtures()
-      }
-    })
-
-    val additionalConfig = Map("mongodb.db" -> dbName,
-      "mongo.init.loadOnStart" -> "false",
-      "embed.mongo.enabled" -> "false"
-    )
+    val additionalConfig = Map("mongodb.db" -> dbName)
 
     // valid users in the inital Data: login;password;identityId;token
     //    BMeSfHXQ;password;N2HKgBdxxnWBGxlYY7Dn;viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ
     //    2VqTftqh;password;g9PWZY7xKNbeCO6LPNnx;hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo
 
     // Use the same FakeApplication for all tests, so the mongoConnection does not break
-    lazy val app = FakeApplication(additionalConfiguration = additionalConfig, withGlobal = globalSettings)
+    lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
     step(play.api.Play.start(app))
 
     val login = randomString(8)

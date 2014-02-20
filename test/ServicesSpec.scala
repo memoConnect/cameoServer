@@ -19,10 +19,14 @@ class ServicesSpec extends Specification {
 
     val additionalConfig = Map("mongodb.db" -> dbName ,
       "mongo.init.loadOnStart" -> "false",
-      "embed.mongo.enabled" -> "false"
+      "embed.mongo.enabled" -> "false",
+        "mongo.migrate.global" -> "false"
     )
 
-    lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
+    val withoutPlugins = Seq("play.modules.reactivemongo.ReactiveMongoPlugin",
+      "info.schleichardt.play.embed.mongo.EmbedMongoPlugin")
+
+    lazy val app = FakeApplication(additionalConfiguration = additionalConfig, withoutPlugins = withoutPlugins)
     step(play.api.Play.start(app))
 
     "Check valid phoneNumbers " in  {

@@ -48,7 +48,6 @@ object JsonHelper {
   lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
-  lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
   lazy val fileChunkCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileChunks")
   lazy val fileMetaCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileMeta")
 

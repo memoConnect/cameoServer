@@ -9,6 +9,7 @@ import models.{ MongoId, Identity, Account, Token }
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.ResultHelper._
 import play.api.Logger
+import helper.AuthAction
 
 /**
  * User: Björn Reimer
@@ -52,17 +53,15 @@ object TokenController extends ExtendedController {
                     // check loginNames and passwords match
                     if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginName)) {
                       // everything is ok
-                      val token = Token.create(identityId)
-                      Token.col.insert(token)
+                      val token = Token.create
+                      identity.addToken(token)
                       resOK(token.toJson)
-                    }
-                    else {
+                    } else {
                       Unauthorized(resKO("Invalid password/loginName"))
                     }
                   }
                 }
-              }
-              else {
+              } else {
                 Future.successful(Unauthorized(resKO("Invalid password/loginName")))
               }
             }
@@ -76,28 +75,17 @@ object TokenController extends ExtendedController {
       Ok("")
   }
 
-  def deleteToken(token: String) = Action.async {
+  def deleteToken(token: String) = AuthAction.async {
     request =>
-      Token.col.remove[JsValue](Json.obj("_id" -> new MongoId(token))).map {
+      request.identity.deleteToken(new MongoId(token)).map {
         lastError =>
-          if (lastError.updated > 0) {
-            resOK(Json.obj("deletedToken" -> token))
-          }
-          else if (lastError.ok) {
-            NotFound(resKO("Token not found"))
-          }
-          else {
-            InternalServerError(resKO(lastError.stringify))
+          if (lastError.updatedExisting) {
+            resOK("deleted")
+          } else {
+            resNotFound("token")
           }
       }
 
   }
 
-  def getToken(token: String) = Action.async {
-    request =>
-      Token.find(new MongoId(token)).map {
-        case None    => NotFound(resKO("token not found"))
-        case Some(t) => resOK(t.toJson)
-      }
-  }
 }
