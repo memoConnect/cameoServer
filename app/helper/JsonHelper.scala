@@ -36,21 +36,21 @@ object JsonHelper {
     val col = mongoDB.collection[JSONCollection]("identities")
     col.indexesManager.ensure(Index(Seq("cameoId" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("contacts._id" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(Seq("tokens._id" -> IndexType.Ascending)))
     col
   }
+  lazy val verificationCollection: JSONCollection = {
+    // TODO: create ttl index to expire verification secrets
+    val col = mongoDB.collection[JSONCollection]("verifications")
+    col
+  }
+  lazy val globalStateCollection: JSONCollection = mongoDB.collection[JSONCollection]("globalState")
   lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
   lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
   lazy val fileChunkCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileChunks")
   lazy val fileMetaCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileMeta")
-
-
-  lazy val verificationCollection: JSONCollection = {
-    // TODO: create ttl index to expire verification secrets
-    val col = mongoDB.collection[JSONCollection]("verifications")
-    col
-  }
 
   val emptyObj = __.json.put(Json.obj())
 

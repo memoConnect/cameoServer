@@ -30,7 +30,7 @@ case class Identity(id: MongoId,
                     contacts: Seq[Contact],
                     conversations: Seq[MongoId],
                     assets: Seq[FileMeta],
-                    tokens: Seq[MongoId],
+                    tokens: Seq[Token],
                     friendRequests: Seq[MongoId],
                     created: Date,
                     lastUpdated: Date,
@@ -127,7 +127,7 @@ object Identity extends Model[Identity] {
     Reads.pure[Seq[Contact]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Seq[FileMeta]](Seq()) and
-    Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Seq[Token]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
