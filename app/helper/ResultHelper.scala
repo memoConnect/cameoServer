@@ -3,11 +3,12 @@ package helper
 import play.api.mvc.{ Action, SimpleResult, Results }
 import play.api.mvc.Results._
 import play.api.libs.json._
-import helper.MongoHelper._
+import helper.JsonHelper._
 import constants.Notifications._
 import play.api.libs.json.JsObject
 import scala.concurrent.Future
 import traits.Model
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -22,33 +23,44 @@ object ResultHelper {
   // OK
   def resOK(): SimpleResult = Ok(Json.obj("res" -> "OK"))
 
-  def resOK(data: JsValue, notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resOK(data: JsValue): SimpleResult =
     Ok(Json.obj("res" -> "OK") ++
-      Json.obj("data" -> data) ++
-      addMessagesOrEmpty(notifications))
+      Json.obj("data" -> data))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
 
-  def resOKSeq(data: Seq[JsValue], notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resOK(data: Seq[JsValue]): SimpleResult =
     Ok(Json.obj("res" -> "OK") ++
-      Json.obj("data" -> data) ++
-      addMessagesOrEmpty(notifications))
+      Json.obj("data" -> data))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
 
   // OK but could not fullfill request
-  def resKOData(data: JsValue, notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resKO(data: JsValue): SimpleResult =
     Status(232)(Json.obj("res" -> "KO")
-      ++ Json.obj("data" -> data) ++
-      addMessagesOrEmpty(notifications))
+      ++ Json.obj("data" -> data))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
+
+  def resKO(): SimpleResult =
+    Status(232)(Json.obj("res" -> "KO"))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
 
   def resKO(notifications: Seq[UserNotification] = Seq()): SimpleResult =
-    Status(232)(Json.obj("res" -> "KO") ++
-      addMessagesOrEmpty(notifications))
-
-  // Bad Request
-  def resBadRequestError(error: String, notifications: Seq[UserNotification] = Seq()): SimpleResult =
-    BadRequest(
+    Status(232)(
       Json.obj("res" -> "KO") ++
-        Json.obj("error" -> error) ++
         addMessagesOrEmpty(notifications))
 
+  // Bad Request
+  def resBadRequest(error: String): SimpleResult = {
+    BadRequest(
+      Json.obj("res" -> "KO") ++
+        Json.obj("error" -> error))
+  //        ++
+  //        addMessagesOrEmpty(notifications))
+
+  }
   def resBadRequest(notifications: Seq[UserNotification] = Seq()): SimpleResult =
     BadRequest(
       Json.obj("res" -> "KO") ++
@@ -58,20 +70,20 @@ object ResultHelper {
   def resNotFound(what: String, notifications: Seq[UserNotification] = Seq()): SimpleResult = {
     NotFound(
       Json.obj("res" -> "KO") ++
-        Json.obj("error" -> (what + "not found")) ++
+        Json.obj("error" -> (what + " not found")) ++
         addMessagesOrEmpty(notifications)
     )
   }
 
   // Not Authorized
-  def resUnauthorized(notifications: Seq[UserNotification] = Seq()): SimpleResult = {
-    Unauthorized(
-      Json.obj("res" -> "KO") ++
-        addMessagesOrEmpty(notifications)
+  def resUnauthorized(): SimpleResult = {
+    Unauthorized(""
+    //      Json.obj("res" -> "KO") ++
+    //        addMessagesOrEmpty(notifications)
     )
   }
 
-  def resUnauthorizedError(error: String, notifications: Seq[UserNotification] = Seq()): SimpleResult = {
+  def resUnauthorized(error: String)(implicit notifications: Seq[UserNotification] = Seq()): SimpleResult = {
     Unauthorized(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error) ++
@@ -104,29 +116,13 @@ object ResultHelper {
   def errorNotify(text: String): Seq[UserNotification] =
     Seq(new UserNotification(USER_MESSAGE_LEVEL_ERROR, text))
 
-  def validate[T](js: JsValue, reads: Reads[T])(action: ((T => SimpleResult))): SimpleResult = {
-    js.validate(reads).map {
-      action
-    }.recoverTotal {
-      error => resBadRequestError(JsError.toFlatJson(error).toString())
-    }
-  }
-
-  def validateFuture[T](js: JsValue, reads: Reads[T])(action: ((T => Future[SimpleResult]))): Future[SimpleResult] = {
-    js.validate(reads).map {
-      action
-    }.recoverTotal {
-      error => Future.successful(resBadRequestError(JsError.toFlatJson(error).toString()))
-    }
-  }
-
   /**
    * depreciated
    */
 
   def resOK(data: String): SimpleResult = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
-  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
+  //  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
 
   def resKO(data: JsValue,
             error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error) ++ Json.obj("data" -> data)

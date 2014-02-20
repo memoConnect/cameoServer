@@ -12,7 +12,7 @@ import helper.IdHelper
 import play.api.Play
 import reactivemongo.core.commands.LastError
 import play.api.Play.current
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer
@@ -94,12 +94,6 @@ object Account extends Model[Account] {
   }
 }
 
-case class IdentityUpdate(phoneNumber: Option[String],
-                          email: Option[String])
-
-object IdentityUpdate {
-  implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
-}
 case class AccountReservation(loginName: String,
                               id: MongoId,
                               created: Date) {

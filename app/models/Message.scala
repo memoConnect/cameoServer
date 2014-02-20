@@ -7,7 +7,7 @@ import helper.IdHelper
 import play.api.libs.functional.syntax._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import helper.MongoHelper._
+import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 
 /**
@@ -19,7 +19,7 @@ case class Message(id: MongoId,
                    messageBody: String,
                    fromIdentityId: MongoId,
                    messageStatus: Seq[MessageStatus],
-                   assets: Seq[Asset],
+                   assets: Seq[FileMeta],
                    created: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
@@ -43,7 +43,7 @@ object Message extends Model[Message] {
     (__ \ 'messageBody).read[String] and
     Reads.pure[MongoId](fromIdentityId) and
     Reads.pure[Seq[MessageStatus]](Seq()) and
-    Reads.pure[Seq[Asset]](Seq()) and
+    Reads.pure[Seq[FileMeta]](Seq()) and
     Reads.pure[Date](new Date))(Message.apply _)
 
   def outputWrites = Writes[Message] {
@@ -64,7 +64,10 @@ object Message extends Model[Message] {
       case None     => None
       case Some(js) => Some((js \ "messages")(0).as[Message])
     }
+  }
 
+  def findConversation(id: MongoId): Future[Option[Conversation]] = {
+    Conversation.col.find(messageQuery(id)).one[Conversation]
   }
 
   // gets the position of a message in a conversation

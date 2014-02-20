@@ -12,7 +12,8 @@ import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
-import helper.MongoHelper._
+import helper.JsonHelper._
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -65,6 +66,31 @@ case class Conversation(id: MongoId,
     Conversation.col.update(query, set)
   }
 
+  def deleteRecipient(recipient: MongoId): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$pull" ->
+      Json.obj("recipients" -> recipient))
+    Conversation.col.update(query, set).map { _.updatedExisting }
+  }
+
+  def hasMemberFuture(recipient: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
+    if (this.recipients.contains(recipient)) {
+      action
+    }
+    else {
+      Future(resUnauthorized("identity is not a member of the conversation"))
+    }
+  }
+
+  def hasMember(recipient: MongoId)(action: SimpleResult):SimpleResult  = {
+    if (this.recipients.contains(recipient)) {
+      action
+    }
+    else {
+      resUnauthorized("identity is not a member of the conversation")
+    }
+  }
+
   def addMessage(message: Message): Future[LastError] = {
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$push" ->
@@ -75,6 +101,10 @@ case class Conversation(id: MongoId,
 
     Conversation.col.update(query, set)
     //TODO: update lastUpdated
+  }
+
+  def getMessage(messageId: MongoId): Option[Message] = {
+    this.messages.find(_.id.equals(messageId))
   }
 }
 
@@ -98,6 +128,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         Json.obj("messages" -> OutputLimits.applyLimits(c.messages.map(_.toJson), offset, limit)) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
+        toJsonOrEmpty("subject", c.subject) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
@@ -107,10 +138,11 @@ object Conversation extends Model[Conversation] {
       Json.obj("id" -> c.id.toJson) ++
         addLastUpdated(c.lastUpdated) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
+        toJsonOrEmpty("subject", c.subject) ++
         Json.obj("lastMessage" -> {
           c.messages.lastOption match {
             case Some(m) => m.messageBody
-            case None    => Json.obj()
+            case None    => ""
           }
         })
   }
@@ -119,15 +151,4 @@ object Conversation extends Model[Conversation] {
     val id = IdHelper.generateConversationId()
     new Conversation(id, None, Seq(), Seq(), new Date, new Date)
   }
-
-  //  def hasMember(conversation: Conversation, user: String): Boolean = {
-  //    conversation.recipients.exists(r => {
-  //      Logger.debug("COMPARE: " + user + " | " + Recipient.toJson(r).toString())
-  //      if (r.messageType.equals("otherUser")) {
-  //        r.sendTo.equals(user)
-  //      } else {
-  //        r.name.equals(user)
-  //      }
-  //    })
-  //  }
 }

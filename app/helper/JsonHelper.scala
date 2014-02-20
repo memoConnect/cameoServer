@@ -15,13 +15,15 @@ import play.modules.reactivemongo.json.BSONFormats
 import models.VerifiedString
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
+import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
 
 /**
  * User: Björn Reimer
  * Date: 6/12/13
  * Time: 7:10 PM
  */
-object MongoHelper {
+object JsonHelper {
 
   val mongoDB = ReactiveMongoPlugin.db
 
@@ -30,11 +32,19 @@ object MongoHelper {
     col.indexesManager.ensure(Index(Seq("messages._id" -> IndexType.Ascending)))
     col
   }
+  lazy val identityCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("identities")
+    col.indexesManager.ensure(Index(Seq("cameoId" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(Seq("contacts._id" -> IndexType.Ascending)))
+    col
+  }
   lazy val accountCollection: JSONCollection = mongoDB.collection[JSONCollection]("accounts")
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
-  lazy val identityCollection: JSONCollection = mongoDB.collection[JSONCollection]("identities")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purl")
   lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
+  lazy val fileChunkCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileChunks")
+  lazy val fileMetaCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileMeta")
+
 
   lazy val verificationCollection: JSONCollection = {
     // TODO: create ttl index to expire verification secrets
@@ -71,6 +81,42 @@ object MongoHelper {
       js.transform(fromMongoDates andThen fromMongoId).map {
         obj: JsValue => obj.as[T](reads)
       }
+  }
+
+  def createMongoReadsWithEvolutions[T](reads: Reads[T], evolutions: Map[Int, Reads[JsObject]], latestVersion: Int, col: JSONCollection): Reads[T] = Reads {
+    js =>
+      try {
+        js.transform(fromMongoDates andThen fromMongoId).map {
+          obj: JsValue => obj.as[T](reads)
+        }
+      }
+      catch {
+        case JsResultException(e) =>
+          // get document version, none == Version 0
+          val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
+          val readsWithEvolution = getEvolutions(currentDocVersion, evolutions, latestVersion)
+          val newJs: JsObject = js.transform(readsWithEvolution andThen fromMongoDates andThen fromMongoId).get
+
+          // TODO: update in db
+          //            col.save(newJs).map {
+          //              lastError => if (!lastError.updatedExisting) {
+          //                Logger.error("Error applying DB evolution to " + js)
+          //              }
+          //            }
+
+          JsSuccess(newJs.as[T](reads))
+        case _ => JsError()
+      }
+
+  }
+
+  def getEvolutions(fromVersion: Int, evolutions: Map[Int, Reads[JsObject]], wantedVersion: Int): Reads[JsObject] = {
+    fromVersion match {
+      case i if i == wantedVersion => __.json.pickBranch
+      case i if i < wantedVersion => {
+        evolutions(i) andThen getEvolutions(i + 1, evolutions, wantedVersion)
+      }
+    }
   }
 
   def createMongoWrites[T](writes: Writes[T]): Writes[T] = Writes {
@@ -113,12 +159,12 @@ object MongoHelper {
     }
   }
 
-  def getNewValueVerifiedString(old: Option[VerifiedString], newValue: String): Option[VerifiedString] = {
-    if (old.isDefined && old.get.value.equals(newValue)) {
+  def getNewValueVerifiedString(old: Option[VerifiedString], newValue: VerifiedString): Option[VerifiedString] = {
+    if (old.isDefined && old.get.value.equals(newValue.value)) {
       None
     }
     else {
-      Some(VerifiedString.create(newValue))
+      Some(newValue)
     }
   }
 
@@ -133,6 +179,17 @@ object MongoHelper {
 
   def toBson(json: JsValue): Option[BSONDocument] = {
     BSONFormats.toBSON(json).asOpt.map(_.asInstanceOf[BSONDocument])
+  }
+
+  val hashPassword: Reads[String] = Reads[String] {
+    js =>
+      js.asOpt[String] match {
+        case None => JsError("No password")
+        case Some(pass) => JsSuccess({
+          val hashed = BCrypt.hashpw(pass, BCrypt.gensalt())
+          hashed
+        })
+      }
   }
 
 }

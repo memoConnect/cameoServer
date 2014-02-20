@@ -9,7 +9,7 @@ import play.api.Play.current
 import com.amazonaws.{ AmazonServiceException, AmazonClientException }
 import models.MailMessage
 import play.api.Play.current
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer
@@ -22,7 +22,6 @@ class SendMailActor extends Actor {
   def receive = {
     case (mail: MailMessage) => {
 
-      // add footer to the mail
       Logger.debug("SendMailActor: Sending email to " + mail.to + " from " + mail.from + " with subject \'" + mail.subject + "\'")
 
       val credentials = new BasicAWSCredentials(Play.configuration.getString("aws.accessKey").getOrElse(""),

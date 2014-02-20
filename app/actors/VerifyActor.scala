@@ -15,6 +15,7 @@ import play.api.Play.current
 class VerifyActor extends Actor {
 
   def receive = {
+
     case (VERIFY_TYPE_MAIL, identity: Identity) => {
 
       val email = identity.email.map {

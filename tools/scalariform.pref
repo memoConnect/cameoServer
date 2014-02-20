@@ -1,7 +1,7 @@
 alignParameters=true
 alignSingleLineCaseStatements=true
-alignSingleLineCaseStatements.maxArrowIndent=50
-compactControlReadability=true
+alignSingleLineCaseStatements.maxArrowIndent=100
+compactControlReadability=false
 compactStringConcatenation=false
 doubleIndentClassDeclaration=true
 formatXml=false

@@ -8,9 +8,14 @@ import ExecutionContext.Implicits.global
 import helper.ResultHelper._
 import helper.AuthAction
 import scala.Some
-import play.api.libs.json.{ Json, Format, JsError }
+import play.api.libs.json._
 import scala.Some
-import helper.MongoHelper._
+import helper.JsonHelper._
+import scala.Some
+
+import play.api.libs.json._
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
 
 /**
  * User: Björn Reimer
@@ -24,52 +29,57 @@ object IdentityController extends ExtendedController {
     val mongoId = new MongoId(id)
 
     Identity.find(mongoId).map {
-      case None           => NotFound(resKO("Identity not found"))
+      case None           => resNotFound("identity")
       case Some(identity) => resOK(identity.toJson)
     }
   }
 
-  def getIdentityByToken() = AuthAction.async {
+  def getIdentityByToken = AuthAction.async {
     request =>
 
       val mongoId = request.identity.id
 
       Identity.find(mongoId).map {
-        case None           => NotFound(resKO("Identity not found"))
+        case None           => resNotFound("identity")
         case Some(identity) => resOK(identity.toJson)
       }
   }
 
-  case class IdentityUpdate(phoneNumber: Option[String],
-                            email: Option[String],
-                            displayName: Option[String])
-
-  object IdentityUpdate {
-    implicit val format: Format[IdentityUpdate] = Json.format[IdentityUpdate]
-  }
-
   def updateIdentity() = AuthAction.async(parse.tolerantJson) {
     request =>
-      request.body.validate[IdentityUpdate].map {
-        update =>
+      validateFuture[IdentityUpdate](request.body, IdentityUpdate.reads) {
+        identityUpdate =>
           {
-
-            val newMail = update.email.flatMap { getNewValueVerifiedString(request.identity.email, _) }
-            val newPhoneNumber = update.phoneNumber.flatMap { getNewValueVerifiedString(request.identity.phoneNumber, _) }
-            val newDisplayName = update.displayName.flatMap { getNewValueString(request.identity.displayName, _) }
-
-            request.identity.update(email = newMail, phoneNumber = newPhoneNumber, displayName = newDisplayName).flatMap {
+            request.identity.update(identityUpdate).flatMap {
               lastError =>
                 {
                   Identity.find(request.identity.id).map {
-                    case None    => NotFound(resKO("no identity"))
+                    case None    => resNotFound("identity")
                     case Some(i) => resOK(i.toJson)
                   }
                 }
 
             }
           }
-      }.recoverTotal(e => Future(BadRequest(resKO(JsError.toFlatJson(e)))))
+      }
   }
 
+  def search() = Action.async(parse.tolerantJson) {
+
+    request =>
+
+      case class VerifyRequest(cameoId: String)
+
+      def reads: Reads[VerifyRequest] =
+        (__ \ 'cameoId).read[String](minLength[String](4)).map {
+          l => VerifyRequest(l)
+        }
+
+      validateFuture(request.body, reads) {
+        vr =>
+          Identity.matchCameoId(vr.cameoId).map {
+            list => resOK(list.map { i => i.toSummaryJson })
+          }
+      }
+  }
 }

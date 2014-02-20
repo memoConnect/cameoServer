@@ -12,7 +12,7 @@ import reactivemongo.core.commands._
 import play.modules.reactivemongo.json.BSONFormats._
 import reactivemongo.bson._
 import java.util.Date
-import helper.MongoHelper._
+import helper.JsonHelper._
 import play.api.libs.functional.syntax._
 import reactivemongo.core.commands.Group
 import reactivemongo.core.commands.Sort
@@ -42,37 +42,42 @@ import play.api.Play.current
 object MessageController extends ExtendedController {
 
   /**
-   * Helper
-   */
-
-  /**
    * Actions
    */
 
   def createMessage(id: String) = AuthAction.async(parse.tolerantJson) {
     request =>
-      request.body.validate[Message](Message.createReads(request.identity.id)).map {
+      validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
           {
-            Conversation.find(new MongoId(id)).map {
-              case None => NotFound(resKO("invalid id"))
+            Conversation.find(new MongoId(id)).flatMap {
+              case None => Future(resNotFound("conversation"))
               case Some(conversation) => {
-                conversation.addMessage(message)
-                // initiate new actor for this message
-                val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
-                sendMessageActor ! (message, conversation.recipients)
-                resOK(message.toJson)
+                // only members can add message to conversation
+                conversation.hasMemberFuture(request.identity.id) {
+                  conversation.addMessage(message)
+                  // initiate new actor for each request
+                  val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
+                  sendMessageActor ! (message, conversation.recipients)
+                  Future(resOK(message.toJson))
+                }
               }
             }
           }
-      }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
+      }
   }
 
   def getMessage(id: String) = AuthAction.async {
     (request) =>
-      Message.find(new MongoId(id)).map {
-        case None    => NotFound(resKO("message not found"))
-        case Some(m) => resOK(m.toJson)
+      Message.findConversation(new MongoId(id)).map {
+        case None => resNotFound("message")
+        case Some(c) =>
+          c.hasMember(request.identity.id) {
+            c.getMessage(new MongoId(id)) match {
+              case None    => resServerError("unable to get message from conversation")
+              case Some(m) => resOK(m.toJson)
+            }
+          }
       }
   }
 
@@ -120,7 +125,7 @@ object MessageController extends ExtendedController {
 
       implicit val dateReads: Reads[Date] = Reads.IsoDateReads
 
-      request.body.validate[FilterRules].map {
+      validateFuture[FilterRules](request.body, FilterRules.reads) {
         fr =>
           {
             def collectIdentities(ids: Option[Seq[String]], groups: Option[Seq[String]]): Seq[MongoId] = {
@@ -203,10 +208,11 @@ object MessageController extends ExtendedController {
               mongoDB.command(aggregationCommand).map {
                 res =>
                   val messages: Seq[JsValue] = res.force.toList.map(Json.toJson(_))
-                  resOKSeq(messages.map(js => (js \ "messages").as[Message].toJson))
+                  resOK(messages.map(js => (js \ "messages").as[Message].toJson))
               }
             }
           }
-      }.recoverTotal(error => Future.successful(BadRequest(resKO(JsError.toFlatJson(error)))))
+      }
   }
 }
+

@@ -3,7 +3,7 @@ package models
 import java.util.Date
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

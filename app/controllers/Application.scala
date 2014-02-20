@@ -3,11 +3,11 @@ package controllers
 import play.api.mvc._
 import services.Authentication._
 import play.api.libs.concurrent.Execution.Implicits._
-import helper.MongoHelper._
+import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.FileWriter
 import play.api.libs.json.JsObject
-import services.DbAdminUtilities
+import helper.DbAdminUtilities
 
 object Application extends Controller {
 
@@ -20,17 +20,17 @@ object Application extends Controller {
       Ok(views.html.index())
   }
 
-  //  def dumpDb() = Action {
-  //
-  //    DbAdminUtilities.dumpDb()
-  //    Ok("dumped")
-  //
-  //  }
-  //
-  //  def loadFixtures = Action {
-  //    DbAdminUtilities.loadFixtures()
-  //    Ok("loaded")
-  //  }
+  def dumpDb() = Action {
+
+    DbAdminUtilities.dumpDb()
+    Ok("dumped")
+
+  }
+
+  def loadFixtures = Action {
+    DbAdminUtilities.loadFixtures()
+    Ok("loaded")
+  }
 
   def staticAssets(path: String, file: String, foo: String) =
     controllers.Assets.at(path, file)

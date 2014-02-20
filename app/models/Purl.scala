@@ -7,7 +7,7 @@ import helper.IdHelper
 import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

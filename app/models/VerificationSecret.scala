@@ -1,11 +1,11 @@
 package models
 
 import play.api.libs.json._
-import helper.{ MongoHelper, IdHelper }
+import helper.{ JsonHelper, IdHelper }
 import java.util.Date
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import helper.MongoHelper._
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer

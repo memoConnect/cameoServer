@@ -84,7 +84,8 @@ Account Management
           "loginName": "testtest",
           "password": "password",
           "email": "mail",
-          "phoneNumber": "12335"
+          "phoneNumber": "12335",
+          "cameoId":"testtest",
           "reservationSecret":"VaXdx3xAAzk3cTXvdDlC"
         }
 
@@ -104,13 +105,18 @@ Account Management
         }
 
 
-## Manage Accounts [/account/{loginName}{?token}]
+## Get Account details [/account/{loginName}]
 
 ### GET
 
 + Parameters
     + loginName
-    + token  ... Authentification token
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
 
 + Response 200
 
@@ -131,7 +137,11 @@ Account Management
 
 + Parameters
     + loginName
-    + token  ... Authentification token
+    
++ Request
+    + Headers
+    
+            Authorization: {token}
 
 + Response 200
 
@@ -142,21 +152,22 @@ Account Management
           }
         }
 
-## Verification [/verify{?token}]
+## Verification [/verify]
 
 Send a verification mail/sms. Both parameters in the JSON are optional.
 
 ### POST
 
-+ Parameters
-    + token  ... Authentification token
-
 + Request
-
-        {
-          "verifyPhoneNumber": true,
-          "verifyEmail": true
-        }
+    + Headers
+    
+            Authorization: {token}
+    + Body
+    
+            {
+              "verifyPhoneNumber": true,
+              "verifyEmail": true
+            }
 
 + Response 200
 
@@ -179,13 +190,17 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
             "data": "verified"
         }
 
-## Identities [/identity/{id}{?token}]
+## Get an identity [/identity/{id}]
 
 ### GET
 
 + Parameters
     + id ... Identity Id
-    + token  ... Authentification token
+    
++ Request
+    + Headers
+    
+            Authorization: {token}
 
 + Response 200
 
@@ -198,26 +213,56 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
             "email": "mail",
             "phoneNumber": "12335",
             "preferredMessageType": "default",
+            "cameoId": "testtest",
+            "created": "22.01.2014 16:34:54",
+            "lastUpdated": "22.01.2014 16:34:54"
+          }
+        }
+        
+        
+## Manage your identity [/identity]
+
+### GET
+Get your identity
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "ZVtXkxMmPj4WtLYea8ci",
+            "userKey": "89lKqFI4VYz1SKsesc1ZK8O9KNHADpPkRfNSQy6J",
+            "contacts": [],
+            "email": "mail",
+            "phoneNumber": "12335",
+            "preferredMessageType": "default",
+            "cameoId": "testtest",
             "created": "22.01.2014 16:34:54",
             "lastUpdated": "22.01.2014 16:34:54"
           }
         }
 
-## Edit identity [/identity{?token}]
 
 ### PUT
-Edit the identity of the user. Only those values contained in the json will be modified.
-
-+ Parameters
-    + token  ... Authentification token
+Edit your identity. All values are optional. Only values contained in the json will be modified.
 
 + Request
+    + Headers
+    
+            Authorization: {token}
+    
+    + Body
 
-        {
-          "phoneNumber": "+49123456789",
-          "email": "mail",
-          "displayName": "newNick"
-        }
+            {
+              "phoneNumber": "+49123456789",
+              "email": "mail",
+              "displayName": "newNick"
+            }
 
 + Response 200
 
@@ -242,22 +287,48 @@ Edit the identity of the user. Only those values contained in the json will be m
         }
 
 
-
-# Group Messanging
-Sending and reading messages
-
-## Start a new Conversation [/conversation{?token}]
+## Search for cameoIds [/identity/search]
 
 ### POST
-
-+ Parameters
-    + token  ... Authentification token
+Returns all existing cameoIds that contain the string
 
 + Request
 
         {
-            "subject":"Test Conversation 1 (optional)"
+            "cameoId":"test"
         }
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data": [
+                {
+                    "id":"vCXqmtXycssTuENaa3rh",
+                    "cameoId":"oOqn9Nj3lDQeMGLFdHM5",
+                    "displayName":"NoName"
+                }
+            ]
+        }
+
+
+# Group Messanging
+Sending and reading messages
+
+## Start a new Conversation [/conversation]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+    
+    + Body
+    
+            {
+                "subject":"Test Conversation 1 (optional)"
+            }
 
 + Response 200
 
@@ -273,15 +344,20 @@ Sending and reading messages
           }
         }
 
-## Manage Conversations [/conversation/{id}{?token,offset,limit}]
+## Get Conversation [/conversation/{id}{?offset,limit}]
 
 ### GET
 
 + Parameters
     + id ... Conversation id
-    + token  ... Authentification token
     + offset (optional) ... First message to be returned
     + limit  (optional)... Max number of messages returned
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
 
 + Response 200
 
@@ -380,23 +456,56 @@ Sending and reading messages
           }
         }
 
-## Add new Recipient to Conversation [/conversation/{id}/recipient{?token}]
+
+## Get Conversation summary [/conversation/{id}/summary]
+
+### GET
+
++ Parameters
+    + id ... Conversation id
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "rQHQZHv4ARDXRmnEzJ92",
+            "lastUpdated": "13.02.2014 15:19:23",
+            "numberOfMessages": 100,
+            "lastMessage": "PjSYoF7Kc5 NpoOVkhlm0hO5VcqD9Pk1wayVoH7Hk9rx63UW"
+          }
+        }
+
+
+
+## Add new Recipient to Conversation [/conversation/{id}/recipient]
 
 ### POST
 
 + Parameters
     + id ... Conversation id
-    + token  ... Authentification token
+
 
 + Request
+    + Headers
 
-        {
-          "recipients": [
-            "s29FpU4TFhxXOdRGfzLk",
-            "V8SXRiE4o1lfN2WmGf0S",
-            "j07EKjJiGOXdfx2wqs0N"
-          ]
-        }
+            Authorization: {token}
+
+    + Body
+
+            {
+              "recipients": [
+                "s29FpU4TFhxXOdRGfzLk",
+                "V8SXRiE4o1lfN2WmGf0S",
+                "j07EKjJiGOXdfx2wqs0N"
+              ]
+            }
 
 + Response 200
 
@@ -405,20 +514,44 @@ Sending and reading messages
           "data": "updated"
         }
 
+## Delete Recipient from conversation [/conversation/{id}/recipient/{recipientId}]
 
-## Add message to conversation [/conversation/{id}/message{?token}]
+### DELETE
+
++ Parameters
+    + id ... Conversation id
+    + recipientId ... Recipient to be deleted
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+         {
+           "res": "OK",
+         }
+
+
+## Add message to conversation [/conversation/{id}/message]
 
 ### POST
 
 + Parameters
     + id ... Conversation id
-    + token  ... Authentification token
+
 
 + Request
+    + Headers
 
-        {
-            "messageBody": "text"
-        }
+            Authorization: {token}
+    + Body
+    
+            {
+                "messageBody": "text"
+            }
 
 + Response 200
 
@@ -434,13 +567,18 @@ Sending and reading messages
         }
 
 
-## Get single Message [/message/{id}{?token}]
+## Get single Message [/message/{id}]
 
 ### GET
 
 + Parameters
     + id ... Message id
-    + token  ... Authentification token
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
 
 + Response 200
 
@@ -474,27 +612,29 @@ Sending and reading messages
 # Group Contacts
 Manage your Contacts
 
-## Add Contact [/contact{?token}]
+## Add Contact [/contact]
 
 ### POST
 
-+ Parameters
-    + token  ... Authentification token
 
 + Request
+    + Headers
 
-        {
-          "identity": {
-            "displayName": "Ulrich",
-            "email": "c@mail.de",
-            "phoneNumber": "+491234567890",
-            "preferredMessageType": "sms/mail/default"
-          },
-          "groups": [
-            "friends",
-            "job"
-          ]
-        }
+            Authorization: {token}
+    + Body
+    
+            {
+              "identity": {
+                "displayName": "Ulrich",
+                "email": "c@mail.de",
+                "phoneNumber": "+491234567890",
+                "preferredMessageType": "sms/mail/default"
+              },
+              "groups": [
+                "friends",
+                "job"
+              ]
+            }
 
 + Response 200
 
@@ -521,14 +661,19 @@ Manage your Contacts
         }
 
 
-## Get all contacts [/contacts{?token,offset,limit}]
+## Get all contacts [/contacts{?offset,limit}]
 
 ### GET
 
 + Parameters
-    + token  ... Authentification token
     + offset (optional) ... First contact to be returned
     + limit  (optional)... Max number of contacts returned
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
 
 + Response 200
 
@@ -575,13 +720,18 @@ Manage your Contacts
           ]
         }
 
-## Get single Contact [/contact/{id}{?token}]
+## Single Contact [/contact/{id}]
 
 ### GET
 
 + Parameters
     + id ... Contact id
-    + token  ... Authentification token
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
 
 + Response 200
 
@@ -607,13 +757,58 @@ Manage your Contacts
             }
           }
         }
+        
+        
+### DELETE
 
-## Get all contact groups [/contact-groups{?token}]
++ Parameters
+    + id ... Contact id
+    
++ Request
+    + Headers
+
+            Authorization: {token}
+            
++ Response 200
+
+        {
+          "res": "OK"
+        }
+
+
+### PUT
+Edit a contact. All values are optional. Only values contained in the json will be modified.
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
+    + Body
+
+            {
+              "groups": ["group1","group2"]
+              "phoneNumber": "+49123456789",
+              "email": "mail",
+              "displayName": "newNick"
+            }
+
++ Response 200
+
+        {
+          "res": "OK"
+        }
+
+
+## Get all contact groups [/contact-groups]
 
 ### GET
 
-+ Parameters
-    + token  ... Authentification token
+
++ Request
+    + Headers
+
+            Authorization: {token}
 
 + Response 200
 
@@ -625,15 +820,19 @@ Manage your Contacts
           ]
         }
 
-## Get all contacts from a group [/contact-group/{groupName}{?token,offset,limit}]
+## Get all contacts from a group [/contact-group/{groupName}{?offset,limit}]
 
 ### GET
 
 + Parameters
     + groupName ... Name of the group
-    + token  ... Authentification token
     + offset (optional) ... First contact to be returned
     + limit  (optional)... Max number of contacts returned
+
++ Request
+    + Headers
+
+            Authorization: {token}
 
 + Response 200
 
@@ -678,6 +877,82 @@ Manage your Contacts
               }
             }
           ]
+        }
+        
+## Get Frienship Requests [/friendRequests]
+
+### GET
+Returns all Friendship Requests for one identity
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+            "res": "OK"
+            "data": {
+                [
+                    {
+                        "id":"NyGAvBnLeR3mLEYdofgf",
+                        "cameoId":"ovkTHfPA1XKx9lmQJ5cR",
+                        "displayName":"NoName"
+                    }
+                    {
+                        "id":"NyGAvBnLeR3mLEYdofgf",
+                        "cameoId": "test",
+                        "displayName":"NoName"
+                    }
+                ]
+            }
+
+## Send Friendship Request [/friendRequest]
+
+### POST
+Send a Friendship Request to an other identity. Either the identityID or the cameoId can be used as identifier.
+
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    + Body
+    
+            {
+              "identityId":"adfaasdv46abghart",
+              "cameoId":"test"
+            }
+ 
++ Response 200
+
+        {
+            "res":"OK"
+        }
+
+
+## Answer Friendship Request  [/friendRequest/answer]
+
+### POST
+Accept or Reject FriendshipRequests
+
++ Request
+    + Headers
+
+            Authorization: {token}
+            
+    + Body
+    
+            {
+              "identityId":"adfaasdv46abghart",
+              "type": "accept || reject"
+            }
+
++ Response 200
+
+        {
+            "res": "OK"
         }
 
 # Group Services
@@ -734,4 +1009,6 @@ check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]
         {
             "res": "KO"
         }
+        
+        
 
