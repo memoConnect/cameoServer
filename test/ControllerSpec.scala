@@ -34,6 +34,10 @@ class ControllerSpec extends Specification {
     //    BMeSfHXQ;password;N2HKgBdxxnWBGxlYY7Dn;viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ
     //    2VqTftqh;password;g9PWZY7xKNbeCO6LPNnx;hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo
 
+    // test user on dev.cameo.io
+    // r1Zhpq8e;password;NyGAvBnLeR3mLEYdofgf;lFFkssj7gE4uTGSZlPlolp82Ozp3fWnOkQEFYO6k
+
+
     // Use the same FakeApplication for all tests, so the mongoConnection does not break
     lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
     step(play.api.Play.start(app))
