@@ -2,7 +2,7 @@ package models
 
 import play.modules.reactivemongo.json.collection.JSONCollection
 import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.libs.json.{Reads, Json, Format}
+import play.api.libs.json.{ Reads, Json, Format }
 import play.api.Play.current
 import traits.Model
 import helper.JsonHelper._
@@ -15,30 +15,27 @@ import play.api.libs.json.Reads._
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 
-
 /**
  * User: Björn Reimer
  * Date: 1/15/14
  * Time: 11:59 AM
  */
 case class FileChunk(
-                      id: MongoId,
-                      chunk: String
-                      ) {
-  def toJson: JsObject= Json.obj("chunk" -> chunk)
+    id: MongoId,
+    chunk: String) {
+  def toJson: JsObject = Json.obj("chunk" -> chunk)
 }
 
-object FileChunk extends Model[FileChunk]{
+object FileChunk extends Model[FileChunk] {
 
   // mongo collection
   def col = fileChunkCollection
 
-  implicit val mongoFormat: Format[FileChunk] = createMongoFormat(Json.reads[FileChunk],Json.writes[FileChunk])
+  implicit val mongoFormat: Format[FileChunk] = createMongoFormat(Json.reads[FileChunk], Json.writes[FileChunk])
 
-  val createReads : Reads[FileChunk] = (
+  val createReads: Reads[FileChunk] = (
     Reads.pure[MongoId](IdHelper.generateChunkId) and
-      (__ \ 'chunk).read[String]
-    )(FileChunk.apply _)
-
+    (__ \ 'chunk).read[String]
+  )(FileChunk.apply _)
 
 }

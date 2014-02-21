@@ -74,8 +74,7 @@ object ContactController extends ExtendedController {
               if (contact.contactType.equals(CONTACT_TYPE_INTERNAL) &&
                 (contactUpdate.email.isDefined || contactUpdate.phoneNumber.isDefined || contactUpdate.displayName.isDefined)) {
                 resUnauthorized("cannot change contact details of another cameo user")
-              }
-              else {
+              } else {
                 contact.update(contactUpdate)
                 resOK()
               }
@@ -166,8 +165,7 @@ object ContactController extends ExtendedController {
             lastError =>
               if (lastError.updatedExisting) {
                 resOK()
-              }
-              else {
+              } else {
                 resServerError("could not update")
               }
           }
@@ -202,12 +200,12 @@ object ContactController extends ExtendedController {
           request.identity.friendRequests.find(_.id.equals(afr.identityId)) match {
             case None => Future(resBadRequest("no friendRequest from this identityId"))
             case Some(o) => afr.answerType match {
-              case FRIEND_REQUEST_REJECT => request.identity.removeFriendRequest(new MongoId(afr.identityId)).map {
+              case FRIEND_REQUEST_REJECT => request.identity.deleteFriendRequest(new MongoId(afr.identityId)).map {
                 lastError => if (lastError.updatedExisting) resOK() else resServerError("unable to delete")
               }
               case FRIEND_REQUEST_ACCEPT =>
                 // add contact to both identites
-                request.identity.removeFriendRequest(new MongoId(afr.identityId))
+                request.identity.deleteFriendRequest(new MongoId(afr.identityId))
                 Identity.find(afr.identityId).flatMap {
                   case None => Future(resNotFound("other identity"))
                   case Some(otherIdentity) =>

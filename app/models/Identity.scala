@@ -9,6 +9,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import helper.IdHelper
 import ExecutionContext.Implicits.global
 import constants.Messaging._
+import constants.Contacts._
 import reactivemongo.core.commands.LastError
 import helper.JsonHelper._
 import play.api.Logger
@@ -30,7 +31,7 @@ case class Identity(id: MongoId,
                     contacts: Seq[Contact],
                     conversations: Seq[MongoId],
                     assets: Seq[FileMeta],
-                    tokens: Seq[MongoId],
+                    tokens: Seq[Token],
                     friendRequests: Seq[MongoId],
                     created: Date,
                     lastUpdated: Date,
@@ -65,8 +66,13 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
-  def addToken(tokenId: MongoId): Future[LastError] = {
-    val set = Json.obj("$push" -> Json.obj("tokens" -> tokenId))
+  def addToken(token: Token): Future[LastError] = {
+    val set = Json.obj("$addToSet" -> Json.obj("tokens" -> token))
+    Identity.col.update(query, set)
+  }
+
+  def deleteToken(tokenId: MongoId): Future[LastError] = {
+    val set = Json.obj("$pull" -> Json.obj("$elemMatch" -> Json.obj("tokens" -> tokenId)))
     Identity.col.update(query, set)
   }
 
@@ -75,7 +81,7 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
-  def removeFriendRequest(friendRequestId: MongoId): Future[LastError] = {
+  def deleteFriendRequest(friendRequestId: MongoId): Future[LastError] = {
     val set = Json.obj("$pull" -> Json.obj("friendRequests" -> friendRequestId))
     Identity.col.update(query, set)
   }
@@ -127,7 +133,7 @@ object Identity extends Model[Identity] {
     Reads.pure[Seq[Contact]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Seq[FileMeta]](Seq()) and
-    Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Seq[Token]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
@@ -144,6 +150,7 @@ object Identity extends Model[Identity] {
         }) ++
         maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
+        Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
   }
@@ -173,6 +180,11 @@ object Identity extends Model[Identity] {
       new Date,
       new Date,
       docVersion)
+  }
+
+  def findToken(tokenId: MongoId): Future[Option[Identity]] = {
+    val query = Json.obj("tokens" -> Json.obj("$elemMatch" -> Json.obj("_id" -> tokenId)))
+    col.find(query).one[Identity]
   }
 
   def findCameoId(cameoId: String): Future[Option[Identity]] = {
