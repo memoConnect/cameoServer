@@ -152,11 +152,15 @@ object DbAdminUtilities {
         val res = futureTokensWithoutId.flatMap { tokens =>
           val query2 = Json.obj("_id" -> id)
           val set = Json.obj("$set" -> Json.obj("tokens" -> tokens))
-
-          identityCollection.update(query2, set).map(_.updatedExisting)
+          if(tokens.length > 0)
+            identityCollection.update(query2, set).map(_.updatedExisting)
+          else
+            Future(true)
         }
 
-        Await.result(res, 5 minutes)
+        val res = Await.result(res, 5 minutes)
+        Logger.info("Migrated identity: " + id)
+        res
     }
 
     // find all identity
