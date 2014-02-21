@@ -21,7 +21,7 @@ case class Token(id: MongoId,
   def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
 }
 
-object Token  {
+object Token {
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 

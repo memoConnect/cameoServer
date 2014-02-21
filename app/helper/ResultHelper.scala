@@ -57,8 +57,8 @@ object ResultHelper {
     BadRequest(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error))
-  //        ++
-  //        addMessagesOrEmpty(notifications))
+    //        ++
+    //        addMessagesOrEmpty(notifications))
 
   }
   def resBadRequest(notifications: Seq[UserNotification] = Seq()): SimpleResult =
@@ -101,8 +101,7 @@ object ResultHelper {
   def addMessagesOrEmpty(messages: Seq[UserNotification]): JsObject = {
     if (messages.isEmpty) {
       Json.obj()
-    }
-    else {
+    } else {
       Json.obj("messages" -> Json.toJson(messages))
     }
   }

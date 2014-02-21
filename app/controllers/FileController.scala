@@ -4,13 +4,13 @@ import traits.ExtendedController
 import scala.util.Random
 import reactivemongo.bson.BSONObjectID
 import play.api.libs.json.{ JsError, JsObject, Json }
-import models.{ChunkMeta, FileChunk, FileMeta}
+import models.{ ChunkMeta, FileChunk, FileMeta }
 import helper.{ General, IdHelper, AuthAction }
 import helper.ResultHelper._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import play.api.mvc.{ Request, Action }
 import play.api.Logger
- import ExecutionContext.Implicits.global
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -36,7 +36,7 @@ object FileController extends ExtendedController {
           chunkIndex.isEmpty ||
           General.safeStringToInt(maxChunks.get).isEmpty ||
           General.safeStringToInt(fileSize.get).isEmpty ||
-        General.safeStringToInt(chunkIndex.get).isEmpty
+          General.safeStringToInt(chunkIndex.get).isEmpty
       }
 
       headerInvalid match {
@@ -55,9 +55,9 @@ object FileController extends ExtendedController {
 
               futureResult.map {
                 case (false, false) => resServerError("could not save chunk and metadata")
-                case (true, false) => resServerError("could not update metadata")
-                case (false, true) => resServerError("could not save chunk")
-                case (true, true)  => resOK(fileMeta.toJson)
+                case (true, false)  => resServerError("could not update metadata")
+                case (false, true)  => resServerError("could not save chunk")
+                case (true, true)   => resOK(fileMeta.toJson)
               }
           }
         }
@@ -70,8 +70,8 @@ object FileController extends ExtendedController {
         val chunkIndex = request.headers.get("X-Index")
 
         val headerInvalid = {
-            chunkIndex.isEmpty ||
-          General.safeStringToInt(chunkIndex.get).isEmpty
+          chunkIndex.isEmpty ||
+            General.safeStringToInt(chunkIndex.get).isEmpty
         }
 
         headerInvalid match {
@@ -92,9 +92,9 @@ object FileController extends ExtendedController {
 
                     futureResult.map {
                       case (false, false) => resServerError("could not save chunk and metadata")
-                      case (true, false) => resServerError("could not update metadata")
-                      case (false, true) => resServerError("could not save chunk")
-                      case (true, true)  => resOK()
+                      case (true, false)  => resServerError("could not update metadata")
+                      case (false, true)  => resServerError("could not save chunk")
+                      case (true, true)   => resOK()
                     }
                   }
                 }
@@ -124,7 +124,7 @@ object FileController extends ExtendedController {
             case None => Future(resNotFound("chunk index"))
             case Some(meta) =>
               FileChunk.find(meta.chunkId).map {
-                case None => resServerError("unable to retrieve chunk")
+                case None        => resServerError("unable to retrieve chunk")
                 case Some(chunk) => resOK(chunk.toJson)
               }
           }

@@ -62,8 +62,9 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
 
       // get global state from db
       val state: Future[GlobalState] = globalStateCollection.find(Json.obj()).one[GlobalState].flatMap {
-        case None    => val newState = new GlobalState(0, false)
-                        globalStateCollection.insert(newState).map(lastError => newState)
+        case None =>
+          val newState = new GlobalState(0, false)
+          globalStateCollection.insert(newState).map(lastError => newState)
         case Some(s) => Future(s)
       }
 

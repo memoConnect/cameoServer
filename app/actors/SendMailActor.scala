@@ -12,7 +12,7 @@ import play.api.Play.current
 import helper.JsonHelper._
 import constants.Messaging._
 import com.amazonaws.services.simpleemail.model.Message
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import models.MailMessage
 import models.Message
 import com.amazonaws.services.simpleemail.model
@@ -104,5 +104,4 @@ class SendMailActor extends Actor {
       }
   }
 }
-
 

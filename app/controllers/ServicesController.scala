@@ -39,8 +39,7 @@ object ServicesController extends ExtendedController {
               "status" -> "ok",
               "phoneNumber" -> phoneUtil.format(number, PhoneNumberFormat.E164))
             resOK(resultJson)
-          }
-          catch {
+          } catch {
             case e: Exception => {
               Logger.error("phoneNumber parse error: " + phoneNumber)
               BadRequest(resKO(e.getMessage + " > " + phoneNumber))

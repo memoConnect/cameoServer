@@ -74,8 +74,7 @@ object ContactController extends ExtendedController {
               if (contact.contactType.equals(CONTACT_TYPE_INTERNAL) &&
                 (contactUpdate.email.isDefined || contactUpdate.phoneNumber.isDefined || contactUpdate.displayName.isDefined)) {
                 resUnauthorized("cannot change contact details of another cameo user")
-              }
-              else {
+              } else {
                 contact.update(contactUpdate)
                 resOK()
               }
@@ -166,8 +165,7 @@ object ContactController extends ExtendedController {
             lastError =>
               if (lastError.updatedExisting) {
                 resOK()
-              }
-              else {
+              } else {
                 resServerError("could not update")
               }
           }

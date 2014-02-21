@@ -70,8 +70,7 @@ object ConversationController extends ExtendedController {
                         lastError =>
                           if (lastError.ok) {
                             resOK("updated")
-                          }
-                          else {
+                          } else {
                             resServerError("update failed")
                           }
                       }

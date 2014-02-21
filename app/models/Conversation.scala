@@ -76,17 +76,15 @@ case class Conversation(id: MongoId,
   def hasMemberFuture(recipient: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
     if (this.recipients.contains(recipient)) {
       action
-    }
-    else {
+    } else {
       Future(resUnauthorized("identity is not a member of the conversation"))
     }
   }
 
-  def hasMember(recipient: MongoId)(action: SimpleResult):SimpleResult  = {
+  def hasMember(recipient: MongoId)(action: SimpleResult): SimpleResult = {
     if (this.recipients.contains(recipient)) {
       action
-    }
-    else {
+    } else {
       resUnauthorized("identity is not a member of the conversation")
     }
   }

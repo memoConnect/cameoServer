@@ -5,7 +5,7 @@ import helper.JsonHelper._
 import traits.Model
 import java.util.Date
 import helper.IdHelper
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands.LastError
 import ExecutionContext.Implicits.global
 import play.api.Logger
@@ -38,16 +38,16 @@ object FileMeta extends Model[FileMeta] {
   def col = fileMetaCollection
 
   implicit val mongoFormat: Format[FileMeta] = createMongoFormat[FileMeta](Json.reads[FileMeta], Json.writes[FileMeta])
-  
+
   val outputWrites: Writes[FileMeta] = Writes {
     fm =>
       Json.obj("id" -> fm.id.toJson) ++
-      Json.obj("chunks" -> fm.chunks.map(_.toJson)) ++
-      Json.obj("fileName" -> fm.fileName) ++
-      Json.obj("maxChunks" -> fm.maxChunks) ++
-      Json.obj("fileSize" -> fm.fileSize) ++
-      Json.obj("fileType" -> fm.fileType) ++
-      addCreated(fm.created)
+        Json.obj("chunks" -> fm.chunks.map(_.toJson)) ++
+        Json.obj("fileName" -> fm.fileName) ++
+        Json.obj("maxChunks" -> fm.maxChunks) ++
+        Json.obj("fileSize" -> fm.fileSize) ++
+        Json.obj("fileType" -> fm.fileType) ++
+        addCreated(fm.created)
   }
 
   def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String): FileMeta = {
@@ -71,5 +71,4 @@ case class ChunkMeta(index: Int, chunkId: MongoId) {
 object ChunkMeta {
   implicit val mongoFormat: Format[ChunkMeta] = Json.format[ChunkMeta]
 }
-
 

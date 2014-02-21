@@ -80,8 +80,7 @@ object AccountController extends ExtendedController {
                                 {
                                   if (lastError.ok) {
                                     account2.toJsonWithIdentities.map { resOK(_) }
-                                  }
-                                  else {
+                                  } else {
                                     Future(resServerError("MongoError: " + lastError))
                                   }
                                 }
@@ -137,8 +136,7 @@ object AccountController extends ExtendedController {
                 }
               }
             }
-          }
-          else {
+          } else {
             Future(resBadRequest("invalid login name"))
           }
       }
@@ -150,11 +148,9 @@ object AccountController extends ExtendedController {
         lastError =>
           if (lastError.updated > 0) {
             resOK(Json.obj("deleted Account" -> loginName))
-          }
-          else if (lastError.ok) {
+          } else if (lastError.ok) {
             resNotFound("account")
-          }
-          else {
+          } else {
             resServerError(lastError.stringify)
           }
       }

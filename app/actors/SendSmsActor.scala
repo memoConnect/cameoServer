@@ -46,15 +46,13 @@ class SendSmsActor extends Actor {
                       val s = "SMS Send. Id: " + (report \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
                         (report \ "network").asOpt[String].getOrElse("none")
                       new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, s)
-                    }
-                    else {
+                    } else {
                       val s = "Error sending SMS message. Response: " + jsResponse.toString
                       new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
                     }
                   }
               }
-            }
-            else {
+            } else {
               val s = "Error connecting to Nexmo: " + nexmoResponse.statusText
               Seq(new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s))
             }
@@ -76,26 +74,24 @@ class SendSmsActor extends Actor {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
         // TODO update status of single message
         //message.updateStatus(Seq(ms))
-      }
-      else {
+      } else {
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
         val to: String = toIdentity.phoneNumber.get.toString
         val body: String = message.messageBody
-        
+
         // create purl 
         val purl = Purl.create(message.id, toIdentity.id)
         Purl.col.insert(purl)
 
         // add footer to sms
         val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" + purl.id
-        
+
         // cut message, so it will fit in the sms with the footer.
         val bodyWithFooter: String = {
           if (footer.length + body.length > 160) {
             body.substring(0, 160 - footer.length) + footer
-          }
-          else {
+          } else {
             body + footer
           }
         }
@@ -107,8 +103,7 @@ class SendSmsActor extends Actor {
             {
               if (statusMessage.status.equals(MESSAGE_STATUS_SEND)) {
                 // WOO
-              }
-              else {
+              } else {
                 // try again
                 sendSmsActor ! (message, fromIdentity, toIdentity, tryCount + 1)
               }
@@ -119,11 +114,10 @@ class SendSmsActor extends Actor {
     case (sms: SmsMessage, tryCount: Int) => {
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         Logger.error("Max try count of message reached: " + sms)
-      }
-      else {
+      } else {
         sendSms(sms)
       }
-    }    
+    }
   }
 
 }

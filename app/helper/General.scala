@@ -12,12 +12,12 @@ object General {
 
   def safeStringToInt(str: String): Option[Int] =
     try {
-    Some(str.toInt)
-  } catch {
-    case e: NumberFormatException =>
-      Logger.debug("NOT a number: " + str)
+      Some(str.toInt)
+    } catch {
+      case e: NumberFormatException =>
+        Logger.debug("NOT a number: " + str)
 
-      None
-  }
+        None
+    }
 
 }

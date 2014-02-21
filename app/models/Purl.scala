@@ -17,8 +17,7 @@ import helper.JsonHelper._
 
 case class Purl(id: MongoId,
                 messageId: MongoId,
-                identityId: MongoId) 
-{
+                identityId: MongoId) {
   def toJson: JsObject = Json.toJson(this)(Purl.outputWrites).as[JsObject]
 
 }
@@ -26,7 +25,7 @@ case class Purl(id: MongoId,
 object Purl extends Model[Purl] {
 
   implicit val col = purlCollection
-  
+
   implicit val mongoFormat: Format[Purl] = createMongoFormat(Json.reads[Purl], Json.writes[Purl])
 
   // Input/output format for the API
@@ -35,13 +34,13 @@ object Purl extends Model[Purl] {
   def outputWrites: Writes[Purl] = Writes {
     purl =>
       Json.obj("conversationId" -> purl.messageId.toJson) ++
-      Json.obj("identityId" -> purl.identityId.toJson) ++
-        Json.obj("id" -> purl.id.toJson) 
+        Json.obj("identityId" -> purl.identityId.toJson) ++
+        Json.obj("id" -> purl.id.toJson)
   }
-  
+
   def create(messageId: MongoId, identityId: MongoId): Purl = {
     new Purl(IdHelper.generatePurl(),
       messageId,
-    identityId)
-  }  
+      identityId)
+  }
 }

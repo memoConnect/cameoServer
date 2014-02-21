@@ -1,6 +1,6 @@
 package models
 
-import play.api.libs.json.{Json, Format}
+import play.api.libs.json.{ Json, Format }
 
 /**
  * User: Björn Reimer
@@ -9,7 +9,7 @@ import play.api.libs.json.{Json, Format}
  */
 
 case class GlobalState(dbVersion: Int,
-                        migrating: Boolean)
+                       migrating: Boolean)
 
 object GlobalState {
 

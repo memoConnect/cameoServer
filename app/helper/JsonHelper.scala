@@ -88,8 +88,7 @@ object JsonHelper {
         js.transform(fromMongoDates andThen fromMongoId).map {
           obj: JsValue => obj.as[T](reads)
         }
-      }
-      catch {
+      } catch {
         case JsResultException(e) =>
           // get document version, none == Version 0
           val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
@@ -161,8 +160,7 @@ object JsonHelper {
   def getNewValueVerifiedString(old: Option[VerifiedString], newValue: VerifiedString): Option[VerifiedString] = {
     if (old.isDefined && old.get.value.equals(newValue.value)) {
       None
-    }
-    else {
+    } else {
       Some(newValue)
     }
   }
@@ -170,8 +168,7 @@ object JsonHelper {
   def getNewValueString(old: Option[String], newValue: String): Option[String] = {
     if (old.isDefined && old.get.equals(newValue)) {
       None
-    }
-    else {
+    } else {
       Some(newValue)
     }
   }
