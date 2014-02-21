@@ -5,7 +5,7 @@ import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
 import play.api.libs.json.{ Reads, Json, JsObject }
-import scala.concurrent.{ Future, ExecutionContext }
+import scala.concurrent.{Await, Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 import play.api.Logger
 import scala.io.Source
@@ -17,6 +17,7 @@ import play.api.libs.functional.syntax._
 import java.util.Date
 import traits.Model
 import play.api.libs.json.Reads._
+import scala.concurrent.duration._
 
 /**
  * User: Björn Reimer
@@ -133,7 +134,7 @@ object DbAdminUtilities {
   def migrateTokens: Future[Boolean] = {
     Logger.debug("migrating tokens")
 
-    val addTokensToIdentity: (JsObject => Future[Boolean]) = {
+    val addTokensToIdentity: (JsObject => Boolean) = {
       js =>
         // get identityId
         val id = (js \ "_id").as[MongoId]
@@ -148,22 +149,24 @@ object DbAdminUtilities {
         val futureTokensWithoutId: Future[Seq[JsObject]] = futureTokens.map(_.map(_.transform(removeIdentityId).get))
 
         // update identity
-        futureTokensWithoutId.flatMap { tokens =>
+        val res = futureTokensWithoutId.flatMap { tokens =>
           val query2 = Json.obj("_id" -> id)
           val set = Json.obj("$set" -> Json.obj("tokens" -> tokens))
 
           identityCollection.update(query2, set).map(_.updatedExisting)
         }
+
+        Await.result(res, 5 minutes)
     }
 
     // find all identity
-    val allResults: Future[Seq[Future[Boolean]]] = identityCollection.find(Json.obj()).cursor[JsObject].collect[Seq]().map {
+    val allResults: Future[Seq[Boolean]] = identityCollection.find(Json.obj()).cursor[JsObject].collect[Stream]().map {
       // search for all their tokens and them to the identity
       _.seq.map(addTokensToIdentity)
     }
 
     // get last result
-    allResults.flatMap(seq => seq.last)
+    allResults.map(seq => seq.last)
   }
 
   def migrations: Map[Int, Future[Boolean]] = Map(0 -> migrateTokens)
