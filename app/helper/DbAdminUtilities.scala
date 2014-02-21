@@ -4,13 +4,13 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
-import play.api.libs.json.{Reads, Json, JsObject}
+import play.api.libs.json.{ Reads, Json, JsObject }
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Logger
 import scala.io.Source
 import reactivemongo.core.commands.LastError
-import models.{ MongoId, Token }
+import models.{ GlobalState, MongoId, Token }
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
@@ -28,7 +28,16 @@ object DbAdminUtilities {
   def dumpDb() = {
     val path = "fixtures/dump"
 
-    val collections: Seq[JSONCollection] = Seq(conversationCollection, accountCollection, reservedAccountCollection, identityCollection, purlCollection)
+    val collections: Seq[JSONCollection] = Seq(
+      conversationCollection,
+      accountCollection,
+      reservedAccountCollection,
+      identityCollection,
+      purlCollection,
+      globalStateCollection,
+      fileChunkCollection,
+      fileMetaCollection
+    )
 
     collections.map {
       col =>
@@ -64,6 +73,8 @@ object DbAdminUtilities {
             case ("accounts")      => accountCollection
             case ("identities")    => identityCollection
             case ("tokens")        => tokenCollection
+            case ("purls")         => purlCollection
+            case ("globalState")   => globalStateCollection
             case _                 => throw new IllegalArgumentException("No matching collection for this file: " + file.getName)
           }
 
@@ -112,8 +123,8 @@ object DbAdminUtilities {
 
     res.map {
       res =>
-        val set2 = Json.obj("$set" -> Json.obj("migrating" -> false))
-        globalStateCollection.update(query, set).map { _.updatedExisting }
+        val set2 = Json.obj("$set" -> new GlobalState(latestDbVersion, false))
+        globalStateCollection.update(query, set2).map { _.updatedExisting }
         res
     }
   }
@@ -121,7 +132,6 @@ object DbAdminUtilities {
   // todo find out how to do this with iteratees...
   def migrateTokens: Future[Boolean] = {
     Logger.debug("migrating tokens")
-
 
     val addTokensToIdentity: (JsObject => Future[Boolean]) = {
       js =>

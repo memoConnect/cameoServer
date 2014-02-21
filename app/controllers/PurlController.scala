@@ -26,12 +26,9 @@ object PurlController extends ExtendedController {
   def getPurl(id: String, offset: Int = 0, limit: Int = 0) = Action.async {
     request =>
 
-      /*
-       * Some Helper funktions
-       */
       def getPurlWithToken(purl: Purl, token: String): Future[SimpleResult] = {
         // check if token exists
-        Identity.findToken(new MongoId(id)).flatMap {
+        Identity.findToken(new MongoId(token)).flatMap {
           case None => Future(resNotFound("token"))
           case Some(identity) =>
             // check if the identityId match
@@ -75,7 +72,7 @@ object PurlController extends ExtendedController {
                     val res: JsObject =
                       Json.obj("conversation" -> conversation.toJson(offset, limit)) ++
                         Json.obj("identity" -> identity.toJson) ++
-                        Json.obj("token" -> token.id)
+                        Json.obj("token" -> token.id.toJson)
 
                     resOK(res)
                 }
@@ -83,7 +80,6 @@ object PurlController extends ExtendedController {
         }
       }
 
-      // does the purl exist?
       Purl.find(id).flatMap {
         case None => Future(resNotFound("purl"))
         case Some(purl) =>

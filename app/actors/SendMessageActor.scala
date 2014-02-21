@@ -47,7 +47,7 @@ class SendMessageActor extends Actor {
                         case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, 0)
                         case MESSAGE_TYPE_DEFAULT =>
                           // if recipient has a mail, send mail (for now, only for external users
-                          if (!toIdentity.accountId.isDefined) {
+                          if (!toIdentity.accountId.isDefined || true) {
                             if (toIdentity.email.isDefined) {
                               sendMailActor ! (message, fromIdentity, toIdentity, 0)
                             } else if (toIdentity.phoneNumber.isDefined) {
