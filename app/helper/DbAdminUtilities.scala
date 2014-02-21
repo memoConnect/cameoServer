@@ -136,7 +136,7 @@ object DbAdminUtilities {
       val id = (js \ "_id").as[MongoId]
 
       // find all tokens with this identityId
-      lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
+      val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
       val query = Json.obj("identityId" -> id)
       val futureTokens: Future[Seq[JsObject]] = tokenCollection.find(query).cursor[JsObject].collect[Seq]()
 
@@ -155,30 +155,12 @@ object DbAdminUtilities {
       }
 
       val lastRes = Await.result(res, 5 minutes)
+      Logger.debug("Migrated: " + id)
       lastRes
   }
 
-  // todo find out how to do this with iteratees...
-  def migrateTokens: Future[Boolean] = {
-    Logger.debug("migrating tokens")
-
-    // find all identity
-    val allResults: Future[Seq[Boolean]] = identityCollection.find(Json.obj()).cursor[JsObject].collect[Stream]().map {
-      // search for all their tokens and them to the identity
-      _.seq.map(addTokensToIdentity)
-    }
-
-    // get last result
-    allResults.map(all => {
-      Logger.debug("finished token migration, evaluating if everything went ok")
-      val ress = all.forall(b => b)
-      Logger.debug("finished evaluating. result: " + ress)
-      ress
-    }
-    )
-  }
-
   def migrateTokensWithIteratee: Future[Boolean] = {
+    Logger.info("migrating tokens")
 
     val enumerator = identityCollection.find(Json.obj()).cursor[JsObject].enumerate()
 
