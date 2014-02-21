@@ -5,13 +5,13 @@ import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
 import play.api.libs.json.{ Reads, Json, JsObject }
-import scala.concurrent.{Await, Future, ExecutionContext}
+import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Logger
 import scala.io.Source
 import reactivemongo.core.commands.LastError
 import models.{ GlobalState, MongoId, Token }
-import play.api.libs.iteratee.Iteratee
+import play.api.libs.iteratee.{Done, Input, Step, Iteratee}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
@@ -130,48 +130,46 @@ object DbAdminUtilities {
     }
   }
 
-  // todo find out how to do this with iteratees...
-  def migrateTokens: Future[Boolean] = {
-    Logger.debug("migrating tokens")
+  val addTokensToIdentity: (JsObject => Boolean) = {
+    js =>
+    // get identityId
+      val id = (js \ "_id").as[MongoId]
 
-    val addTokensToIdentity: (JsObject => Boolean) = {
-      js =>
-        // get identityId
-        val id = (js \ "_id").as[MongoId]
+      // find all tokens with this identityId
+      val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
+      val query = Json.obj("identityId" -> id)
+      val futureTokens: Future[Seq[JsObject]] = tokenCollection.find(query).cursor[JsObject].collect[Seq]()
 
-        // find all tokens with this identityId
-        lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
-        val query = Json.obj("identityId" -> id)
-        val futureTokens: Future[Seq[JsObject]] = tokenCollection.find(query).cursor[JsObject].collect[Seq]()
+      // remove identityIds from token
+      val removeIdentityId: Reads[JsObject] = (__ \ 'identityId).json.prune
+      val futureTokensWithoutId: Future[Seq[JsObject]] = futureTokens.map(_.map(_.transform(removeIdentityId).get))
 
-        // remove identityIds from token
-        val removeIdentityId: Reads[JsObject] = (__ \ 'identityId).json.prune
-        val futureTokensWithoutId: Future[Seq[JsObject]] = futureTokens.map(_.map(_.transform(removeIdentityId).get))
+      // update identity
+      val res = futureTokensWithoutId.flatMap { tokens =>
+        val query2 = Json.obj("_id" -> id)
+        val set = Json.obj("$set" -> Json.obj("tokens" -> tokens))
+        if (tokens.length > 0)
+          identityCollection.update(query2, set).map(_.updatedExisting)
+        else
+          Future(true)
+      }
 
-        // update identity
-        val res = futureTokensWithoutId.flatMap { tokens =>
-          val query2 = Json.obj("_id" -> id)
-          val set = Json.obj("$set" -> Json.obj("tokens" -> tokens))
-          if(tokens.length > 0)
-            identityCollection.update(query2, set).map(_.updatedExisting)
-          else
-            Future(true)
-        }
-
-        val lastRes = Await.result(res, 5 minutes)
-        Logger.info("Migrated identity: " + id)
-        lastRes
-    }
-
-    // find all identity
-    val allResults: Future[Seq[Boolean]] = identityCollection.find(Json.obj()).cursor[JsObject].collect[Stream]().map {
-      // search for all their tokens and them to the identity
-      _.seq.map(addTokensToIdentity)
-    }
-
-    // get last result
-    allResults.map(seq => seq.last)
+      val lastRes = Await.result(res, 5 minutes)
+      Logger.debug("Migrated: " + id)
+      lastRes
   }
 
-  def migrations: Map[Int, Future[Boolean]] = Map(0 -> migrateTokens)
+  def migrateTokensWithIteratee: Future[Boolean] = {
+    Logger.info("migrating tokens")
+
+    val enumerator = identityCollection.find(Json.obj()).cursor[JsObject].enumerate()
+
+    val iteratee: Iteratee[JsObject, Boolean] = Iteratee.fold(true) {
+      (result, js) => addTokensToIdentity(js) && result
+    }
+
+    enumerator.run(iteratee)
+  }
+
+  def migrations: Map[Int, Future[Boolean]] = Map(0 -> migrateTokensWithIteratee)
 }
