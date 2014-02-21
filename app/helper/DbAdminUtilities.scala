@@ -5,7 +5,7 @@ import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
 import play.api.libs.json.{ Reads, Json, JsObject }
-import scala.concurrent.{Await, Future, ExecutionContext}
+import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Logger
 import scala.io.Source
@@ -152,14 +152,14 @@ object DbAdminUtilities {
         val res = futureTokensWithoutId.flatMap { tokens =>
           val query2 = Json.obj("_id" -> id)
           val set = Json.obj("$set" -> Json.obj("tokens" -> tokens))
-          if(tokens.length > 0)
+          if (tokens.length > 0)
             identityCollection.update(query2, set).map(_.updatedExisting)
           else
             Future(true)
         }
 
         val lastRes = Await.result(res, 5 minutes)
-        Logger.info("Migrated identity: " + id)
+        Logger.info("Migrated identity: " + lastRes + ":" + id)
         lastRes
     }
 
@@ -170,7 +170,13 @@ object DbAdminUtilities {
     }
 
     // get last result
-    allResults.map(seq => seq.last)
+    allResults.map(all => {
+      Logger.debug("finished token migration, evaluating if everything went ok")
+      val ress = all.forall(b => b)
+      Logger.debug("finished evaluating. result: " + ress)
+      ress
+    }
+    )
   }
 
   def migrations: Map[Int, Future[Boolean]] = Map(0 -> migrateTokens)
