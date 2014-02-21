@@ -157,13 +157,13 @@ object DbAdminUtilities {
     }
 
     // find all identity
-    val allResults: Future[Stream[Future[Boolean]]] = identityCollection.find(Json.obj()).cursor[JsObject].collect[Stream]().map {
+    val allResults: Future[Seq[Future[Boolean]]] = identityCollection.find(Json.obj()).cursor[JsObject].collect[Seq]().map {
       // search for all their tokens and them to the identity
-      _.map(addTokensToIdentity)
+      _.seq.map(addTokensToIdentity)
     }
 
     // get last result
-    allResults.flatMap(stream => stream.last)
+    allResults.flatMap(seq => seq.last)
   }
 
   def migrations: Map[Int, Future[Boolean]] = Map(0 -> migrateTokens)
