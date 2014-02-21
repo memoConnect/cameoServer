@@ -26,18 +26,9 @@ object PurlController extends ExtendedController {
   def getPurl(id: String, offset: Int = 0, limit: Int = 0) = Action.async {
     request =>
 
-      // does the purl exist?
-      Purl.find(id).flatMap {
-        case None => Future(resNotFound("purl"))
-        case Some(purl) =>
-
-          // check if we have an authentication header
-          request.headers.get("Authorization") match {
-            case None        => getPurlWithoutToken(purl)
-            case Some(token) => getPurlWithToken(purl, token)
-          }
-      }
-
+      /*
+       * Some Helper funktions
+       */
       def getPurlWithToken(purl: Purl, token: String): Future[SimpleResult] = {
         // check if token exists
         Identity.findToken(new MongoId(id)).flatMap {
@@ -90,6 +81,18 @@ object PurlController extends ExtendedController {
                 }
             }
         }
+      }
+
+      // does the purl exist?
+      Purl.find(id).flatMap {
+        case None => Future(resNotFound("purl"))
+        case Some(purl) =>
+
+          // check if we have an authentication header
+          request.headers.get("Authorization") match {
+            case None        => getPurlWithoutToken(purl)
+            case Some(token) => getPurlWithToken(purl, token)
+          }
       }
   }
 }

@@ -1094,6 +1094,8 @@ class ControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
+      Logger.debug("JSON: " + contentAsJson(res))
+
       (data \ "id").asOpt[String] must beSome
       fileId = (data \ "id").as[String]
       (data \ "chunks")(0).asOpt[Int] must beSome

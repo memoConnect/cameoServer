@@ -47,6 +47,7 @@ Account Management
 
 ## Check Username [/account/check]
 
+
 ### POST
 
 + Request (application/json)
@@ -608,6 +609,125 @@ Sending and reading messages
             "created": "22.01.2014 16:34:55"
           }
         }
+
+# Group Files
+Handle file up and download
+
+## Upload new file [/file]
+
+### POST
+
++ Request
+    + Headers
+
+            X-File-Name: FileName
+            X-Max-Chunks: Total number of chunks
+            X-File-Size: FileSize in Bytes
+            X-File-Type: FileType
+            X-Index: Chunk index
+
+    + Body
+
+            {
+                "chunk":"some blob"
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "q06ga9DepomdWCdLzuDX",
+            "chunks": [
+              0
+            ],
+            "fileName": "some_name",
+            "maxChunks": 10,
+            "fileSize": 1234567,
+            "fileType": "some_type",
+            "created": "21.02.2014 12:20:28"
+          }
+        }
+
+## Chunk upload [/file/{id}]
+
++ Parameters
+    + id ... fileId
+
+### POST
+Add chunk to file
+
++ Request
+    + Headers
+
+            X-Index: Chunk index
+
+
+    + Body
+
+             {
+                 "chunk":"some blob"
+             }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "q06ga9DepomdWCdLzuDX",
+            "chunks": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "fileName": "some_name",
+            "maxChunks": 10,
+            "fileSize": 1234567,
+            "fileType": "some_type",
+            "created": "21.02.2014 12:20:28"
+          }
+        }
+
+### GET
+Get meta-information of a file
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "q06ga9DepomdWCdLzuDX",
+            "chunks": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "fileName": "some_name",
+            "maxChunks": 10,
+            "fileSize": 1234567,
+            "fileType": "some_type",
+            "created": "21.02.2014 12:20:28"
+          }
+        }
+
+## Download chunk [/file/{id}/{chunkIndex}]
+Download chunks of a file
+
++ Parameters
+    + id ... fileId
+    + chunkIndex ... index of the chunk to download
+
+### GET
+
++ Response 200
+
+        {
+            "chunk":"some blob"
+        }
+
+
 
 # Group Contacts
 Manage your Contacts
