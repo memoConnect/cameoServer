@@ -96,7 +96,7 @@ object DbAdminUtilities {
     }
   }
 
-  val latestDbVersion = 2
+  val latestDbVersion = 1
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
