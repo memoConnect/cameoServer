@@ -158,9 +158,9 @@ object DbAdminUtilities {
             Future(true)
         }
 
-        val res = Await.result(res, 5 minutes)
+        val lastRes = Await.result(res, 5 minutes)
         Logger.info("Migrated identity: " + id)
-        res
+        lastRes
     }
 
     // find all identity
