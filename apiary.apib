@@ -727,6 +727,22 @@ Download chunks of a file
             "chunk":"some blob"
         }
 
+# Group Purl
+
+## Use a purl [/purl/{secret}]
+
++ Parameters
+    + secret ... The secret in the purl
+
+### GET
+
++ Response 200
+
+        {
+            "conversation":"conversation object",
+            "identity":"identity object",
+            "token":"temporary token for external users"
+        }
 
 
 # Group Contacts
