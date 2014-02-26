@@ -47,6 +47,11 @@ if [ "$2" == "client" ];then
     cd ..
 else
     git pull
+    if [ -d ../cameoSecrets ]
+        cd ../cameoSecrets
+        git pull
+        cd -
+    fi
 fi
 
 ./compile.sh
