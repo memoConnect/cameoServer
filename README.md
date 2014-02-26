@@ -52,14 +52,15 @@ Using Typesafe Console (dev only)
 
     ./sbt atmos:run
 
-App: http://localhost:9000/
+App: <http://localhost:9000/>
 
-Console: http://localhost:9900/
+Console: <http://localhost:9900/>
 
 Test to get some actors working, using testdata in dev mode:
 
     curl -X POST -H "Content-Type: application/json" -H "Authorization:viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ" -d '{"messageBody": "text"}' http://localhost:9000/api/v1/conversation/OM9QeJ4RfJcdscyo52g4/message
 
+More doku about it here at [Typesafe](http://typesafe.com/platform/runtime/console)
 
 LICENSE
 ================
