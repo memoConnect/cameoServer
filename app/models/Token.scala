@@ -21,9 +21,15 @@ case class Token(id: MongoId,
   def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
 }
 
-object Token {
+object Token extends Model[Token] {
+
+  val col = Identity.col
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
+
+  def docVersion = 0
+
+  def evolutions = Map()
 
   def outputWrites = Writes[Token] {
     t =>

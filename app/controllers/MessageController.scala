@@ -33,6 +33,7 @@ import play.api.libs.concurrent.Akka
 import akka.actor.Props
 import actors.SendMessageActor
 import play.api.Play.current
+import play.modules.reactivemongo.ReactiveMongoPlugin
 
 /**
  * User: Björn Reimer
@@ -121,6 +122,7 @@ object MessageController extends ExtendedController {
 
       // set default limit
       val limit = if (varLimit < 1) 150 else varLimit
+      val mongoDB = ReactiveMongoPlugin.db
 
       implicit val dateReads: Reads[Date] = Reads.IsoDateReads
 

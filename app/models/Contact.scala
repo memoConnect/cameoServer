@@ -59,6 +59,7 @@ case class Contact(id: MongoId,
 
       Identity.find(this.identityId).map {
         case Some(identity) => identity.update(identityUpdate)
+        case None =>
       }
     }
   }
@@ -67,7 +68,9 @@ case class Contact(id: MongoId,
 
 object Contact extends Model[Contact] {
 
-  implicit def col = identityCollection
+  val col = Identity.col
+
+  implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
   def createReads(identityId: MongoId, contactType: String): Reads[Contact] = (
     Reads.pure[MongoId](IdHelper.generateContactId()) and
@@ -89,6 +92,10 @@ object Contact extends Model[Contact] {
     new Contact(IdHelper.generateContactId(), groups, identityId, contactType, docVersion)
   }
 
+  /*
+   * Evolutions
+   */
+
   val evolutionAddContactType: Reads[JsObject] = Reads[JsObject] {
     js =>
       val addType = __.json.update((__ \ 'contactType).json.put(JsString(CONTACT_TYPE_INTERNAL)))
@@ -96,13 +103,8 @@ object Contact extends Model[Contact] {
       js.transform(addType andThen addVersion)
   }
 
-  val evolutions: Map[Int, Reads[JsObject]] = Map(0 -> evolutionAddContactType)
-
   val docVersion = 1
-  val mongoReads: Reads[Contact] = createMongoReadsWithEvolutions(Json.reads[Contact], evolutions, docVersion, col)
-  val mongoWrites: Writes[Contact] = createMongoWrites(Json.writes[Contact])
-
-  implicit val mongoFormat: Format[Contact] = Format(mongoReads, mongoWrites)
+  val evolutions = Map(0 -> evolutionAddContactType)
 }
 
 case class ContactUpdate(groups: Option[Seq[String]],

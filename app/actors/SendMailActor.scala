@@ -48,9 +48,11 @@ class SendMailActor extends Actor {
       new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, "Mail send. Id: " + result.getMessageId)
     } catch {
       case ce: AmazonClientException => {
+        Logger.error("ACE", ce)
         new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "Error sending Mail, Could not connect to Amazon")
       }
       case se: AmazonServiceException => {
+        Logger.error("ACE", se)
         new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "Error sending Mail, Could not connect to Amazon")
       }
     }

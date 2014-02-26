@@ -8,6 +8,7 @@ import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import helper.JsonHelper._
+import helper.MongoCollections._
 
 /**
  * User: Björn Reimer
@@ -18,6 +19,7 @@ import helper.JsonHelper._
 case class Purl(id: MongoId,
                 messageId: MongoId,
                 identityId: MongoId) {
+
   def toJson: JsObject = Json.toJson(this)(Purl.outputWrites).as[JsObject]
 
 }
@@ -27,6 +29,10 @@ object Purl extends Model[Purl] {
   implicit val col = purlCollection
 
   implicit val mongoFormat: Format[Purl] = createMongoFormat(Json.reads[Purl], Json.writes[Purl])
+
+  def docVersion = 0
+
+  def evolutions = Map()
 
   // Input/output format for the API
   def createReads = Json.reads[Purl]

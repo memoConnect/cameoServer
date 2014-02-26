@@ -13,6 +13,7 @@ import play.api.Play
 import reactivemongo.core.commands.LastError
 import play.api.Play.current
 import helper.JsonHelper._
+import helper.MongoCollections._
 
 /**
  * User: Björn Reimer
@@ -49,8 +50,11 @@ object Account extends Model[Account] {
 
   implicit def col = accountCollection
 
-  col.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
+
+  def docVersion = 0
+
+  def evolutions = Map()
 
   def createReads: Reads[Account] = {
     val id = IdHelper.generateAccountId()
@@ -92,6 +96,7 @@ object Account extends Model[Account] {
       }
     }
   }
+
 }
 
 case class AccountReservation(loginName: String,
@@ -107,8 +112,12 @@ case class AccountReservation(loginName: String,
 object AccountReservation extends Model[AccountReservation] {
 
   implicit val col = reservedAccountCollection
-  implicit val mongoFormat: Format[AccountReservation] = createMongoFormat(Json.reads[AccountReservation],
-    Json.writes[AccountReservation])
+
+  implicit val mongoFormat: Format[AccountReservation] = createMongoFormat(Json.reads[AccountReservation], Json.writes[AccountReservation])
+
+  def docVersion: Int = 0
+
+  def evolutions: Map[Int, Reads[JsObject]] = Map()
 
   def reserve(loginName: String): Future[AccountReservation] = {
     val res = new AccountReservation(loginName, IdHelper.generateReservationSecret(), new Date)
