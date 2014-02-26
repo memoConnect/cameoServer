@@ -3,6 +3,8 @@ package models
 import traits.Model
 import play.api.libs.json.{Format, JsObject, Writes, Json}
 import helper.JsonHelper._
+import scala.concurrent.{ExecutionContext, Future}
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -14,6 +16,12 @@ case class Recipient(identityId: MongoId, encryptedKey: Option[String]) {
 
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 
+  def toJsonWithIdentity: Future[JsObject] = {
+    Identity.find(this.identityId).map {
+      case None    => Json.obj()
+      case Some(i) => Json.obj("identity" -> i.toSummaryJson) ++ this.toJson
+    }
+  }
 }
 
 object Recipient extends Model[Recipient] {
@@ -29,7 +37,6 @@ object Recipient extends Model[Recipient] {
     r =>
       Json.obj("identityId" -> r.identityId.toJson) ++
       toJsonOrEmpty("encryptedKey", r.encryptedKey)
-
   }
 
   def create(identityId: MongoId): Recipient = {
@@ -39,6 +46,9 @@ object Recipient extends Model[Recipient] {
   def create(identityId: String): Recipient = {
     new Recipient(new MongoId(identityId), None)
   }
+
+
+
 }
 
 case class RecipientUpdate(encryptedKey: String)

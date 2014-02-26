@@ -39,7 +39,7 @@ object ConversationController extends ExtendedController {
       Conversation.find(new MongoId(id)).flatMap {
         case None => Future.successful(resNotFound("conversation"))
         case Some(c) => c.hasMemberFuture(request.identity.id) {
-          c.toJsonWithDisplayNamesResult(offset, limit)
+          c.toJsonWithIdentitiesResult(offset, limit)
         }
       }
   }
@@ -124,19 +124,17 @@ object ConversationController extends ExtendedController {
 
   def updateRecipient(id: String, rid: String) = AuthAction.async(parse.tolerantJson) {
     request =>
-
       validateFuture(request.body, RecipientUpdate.format) {
         ru =>
-
-        Conversation.find(id).flatMap {
-          case None => Future(resNotFound("conversation"))
-          case Some(c) => c.hasMemberFuture(request.identity.id){
-//            c.updateRecipient(new MongoId(rid), RecipientUpdate.format)
-
-
-            Future(Ok(""))
+          Conversation.find(id).flatMap {
+            case None => Future(resNotFound("conversation"))
+            case Some(c) => c.hasMemberFuture(request.identity.id) {
+              c.updateRecipient(Recipient.create(rid), ru).map {
+                case false => resServerError("could not update")
+                case true => resOK("updated")
+              }
+            }
           }
-        }
       }
   }
 }

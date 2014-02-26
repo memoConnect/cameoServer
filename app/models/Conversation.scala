@@ -27,8 +27,7 @@ case class Conversation(id: MongoId,
                         recipients: Seq[Recipient],
                         messages: Seq[Message],
                         created: Date,
-                        lastUpdated: Date
-                         ) {
+                        lastUpdated: Date) {
 
   def toJson(offset: Int = 0, limit: Int = 0): JsObject = Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject]
 
@@ -36,28 +35,16 @@ case class Conversation(id: MongoId,
 
   def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
 
-  def toJsonWithDisplayNames(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
-    // get identity of each recipient
-    val recipients: Seq[Future[JsObject]] = this.recipients.map {
-      r =>
-        Identity.find(r.identityId).map {
-          case None    => Json.obj()
-          case Some(i) => i.toSummaryJson
-        }
-    }
+  def toJsonWithIdentities(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
+    val recipients: Seq[Future[JsObject]] = this.recipients.map { _.toJsonWithIdentity }
 
     Future.sequence(recipients).map {
-      r =>
-        {
-          this.toJson(offset, limit) ++ Json.obj("recipients" -> r)
-        }
+      r => this.toJson(offset, limit) ++ Json.obj("recipients" -> r)
     }
   }
 
-  def toJsonWithDisplayNamesResult(offset: Int = 0, limit: Int = 0): Future[SimpleResult] = {
-    this.toJsonWithDisplayNames(offset, limit).map {
-      js => resOK(js)
-    }
+  def toJsonWithIdentitiesResult(offset: Int = 0, limit: Int = 0): Future[SimpleResult] = {
+    this.toJsonWithIdentities(offset, limit).map { resOK(_) }
   }
 
   val query = Json.obj("_id" -> this.id)
@@ -75,10 +62,11 @@ case class Conversation(id: MongoId,
     Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
-//  def updateRecipient(recipient: Recipient, recipientUpdate: RecipientUpdate): Future[Boolean] = {
-//    val set = Json.obj("$set")
-//
-//  }
+  def updateRecipient(recipient: Recipient, recipientUpdate: RecipientUpdate): Future[Boolean] = {
+    val queryRecipient = query ++ Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> recipient.identityId)))
+    val set = Json.obj("$set" -> Json.obj("recipients.$.encryptedKey" -> recipientUpdate.encryptedKey))
+    Conversation.col.update(queryRecipient, set).map { _.updatedExisting }
+  }
 
   def hasMemberFuture(identityId: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
     if (this.recipients.filter(_.identityId.equals(identityId)).isDefinedAt(0)) {
@@ -120,7 +108,6 @@ object Conversation extends Model[Conversation] {
 
   def docVersion = 0
 
-
   def createReads = (
     Reads.pure[MongoId](IdHelper.generateConversationId()) and
     (__ \ 'subject).readNullable[String] and
@@ -128,7 +115,7 @@ object Conversation extends Model[Conversation] {
     Reads.pure[Seq[Message]](Seq()) and
     Reads.pure[Date](new Date) and
     Reads.pure[Date](new Date)
-    )(Conversation.apply _)
+  )(Conversation.apply _)
 
   def outputWrites(offset: Int, limit: Int) = Writes[Conversation] {
     c =>
