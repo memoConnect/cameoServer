@@ -1,5 +1,3 @@
-package test
-
 import play.api.test._
 import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.Helpers._
@@ -28,26 +26,20 @@ class ControllerSpec extends Specification {
 
   sequential
 
-  "Controllers" should {
+  "Controller" should {
 
-    // fill db on startup
-    val globalSettings = Some(new GlobalSettings() {
-      override def onStart(app: play.api.Application) {
-        DbAdminUtilities.loadFixtures()
-      }
-    })
-
-    val additionalConfig = Map("mongodb.db" -> dbName,
-      "mongo.init.loadOnStart" -> "false",
-      "embed.mongo.enabled" -> "false"
-    )
+    val additionalConfig = Map("mongodb.db" -> dbName)
 
     // valid users in the inital Data: login;password;identityId;token
     //    BMeSfHXQ;password;N2HKgBdxxnWBGxlYY7Dn;viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ
     //    2VqTftqh;password;g9PWZY7xKNbeCO6LPNnx;hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo
 
+    // test user on dev.cameo.io
+    // r1Zhpq8e;password;NyGAvBnLeR3mLEYdofgf;lFFkssj7gE4uTGSZlPlolp82Ozp3fWnOkQEFYO6k
+
+
     // Use the same FakeApplication for all tests, so the mongoConnection does not break
-    lazy val app = FakeApplication(additionalConfiguration = additionalConfig, withGlobal = globalSettings)
+    lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
     step(play.api.Play.start(app))
 
     val login = randomString(8)
@@ -63,7 +55,7 @@ class ControllerSpec extends Specification {
     var identityOf10thContact = ""
     var idOf10thContact = ""
     var contactId = ""
-    val newContactMail = "new@mail.foo"
+    val newContactMail = "test@bjrm.de"
     val newContactTel = "+4561233"
     val newContactName = "foobar"
     val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
@@ -72,6 +64,13 @@ class ControllerSpec extends Specification {
     val identityExisting2 = "N2HKgBdxxnWBGxlYY7Dn"
     val validRecipients = Seq("6iOuCefN12ma0wF7QxR5", "dKeg67XtSNBCFMq8WQor")
     val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
+    val purlExtern = "MSaKlj4hJP"
+    val purlExtern2 = "PkFWPuCiBB"
+    val purlExtern3 = "agirsrEN3j"
+    val purlExternIdentitityId = "GhEWGfy3Jqx8BRP1pITO"
+    val purlIntern = "V3Ml6hzqX8"
+    val purlIntern2 = "u02iLiIeQu"
+    val purlConversationId = "OM9QeJ4RfJcdscyo52g4"
 
     val token2 = "hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo"
     val token3 = "viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ"
@@ -1225,6 +1224,113 @@ class ControllerSpec extends Specification {
 
       status(res) must equalTo(NOT_FOUND)
     }
+
+    var purlExternToken = ""
+
+    "get purl object for external user" in {
+
+      val path = basePath + "/purl/" + purlExtern
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "conversation").asOpt[JsObject] must beSome
+      val conversation = (data \ "conversation").as[JsObject]
+      (data \ "identity").asOpt[JsObject] must beSome
+      val identity = (data \ "identity").as[JsObject]
+      (data \ "token").asOpt[String] must beSome
+      purlExternToken = (data \ "token").as[String]
+
+      (conversation \ "id").asOpt[String] must beSome(purlConversationId)
+      (identity \ "id").asOpt[String] must beSome(purlExternIdentitityId)
+    }
+
+    "get purl object for external user with token" in {
+
+      val path = basePath + "/purl/" + purlExtern
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(purlExternToken))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "conversation").asOpt[JsObject] must beSome
+      val conversation = (data \ "conversation").as[JsObject]
+      (conversation \ "id").asOpt[String] must beSome(purlConversationId)
+      (data \ "identity").asOpt[JsObject] must beSome
+      val identity = (data \ "identity").as[JsObject]
+      (identity \ "id").asOpt[String] must beSome(purlExternIdentitityId)
+      (data \ "token").asOpt[String] must beNone
+    }
+
+    "refuse to return purl object for external user with wrong token" in {
+      val path = basePath + "/purl/" + purlExtern
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    "get purl object of internal user with token" in {
+
+      val path = basePath + "/purl/" + purlIntern
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "conversation").asOpt[JsObject] must beSome
+      val conversation = (data \ "conversation").as[JsObject]
+      (conversation \ "id").asOpt[String] must beSome(purlConversationId)
+
+      (data \ "identity").asOpt[JsObject] must beSome
+      val identity = (data \ "identity").as[JsObject]
+      (identity \ "id").asOpt[String] must beSome(identityExisting2)
+
+      (data \ "token").asOpt[String] must beNone
+    }
+
+    "refuse to get purl object of internal user with wrong token" in {
+
+      val path = basePath + "/purl/" + purlIntern
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+
+    }
+
+    "refuse to get purl object of internal user with token of other member of the conversation" in {
+
+      val path = basePath + "/purl/" + purlIntern
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(purlExternToken))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    "refuse to get purl object of internal user without token" in {
+
+      val path = basePath + "/purl/" + purlIntern
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
 
     "drop the test database" in {
       ReactiveMongoPlugin.db.drop()(ExecutionContext.Implicits.global)

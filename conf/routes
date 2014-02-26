@@ -36,7 +36,6 @@ POST           /api/v1/message/filter/count                   controllers.Messag
 
 # TOKENS
 GET            /api/v1/token                                  controllers.TokenController.createToken
-#GET            /api/vi/:token                                 controllers.TokenController.getToken(token)
 DELETE         /api/v1/token/:token                           controllers.TokenController.deleteToken(token: String)
 
 # CONTACTS
@@ -64,7 +63,7 @@ POST           /api/v1/verify                                 controllers.Verifi
 GET            /api/v1/verify/:id                             controllers.VerificationController.verifyMessage(id)
 
 # PURLS
-#GET            /api/v1/purl/:purl                       controllers.PurlController.getPurl(purl: String, offset: Int ?= 0, limit: Int ?= 0, token: String ?= "")
+GET            /api/v1/purl/:id                               controllers.PurlController.getPurl(id: String, offset: Int ?= 0, limit: Int ?= 0)
 
 # Services
 POST           /api/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber

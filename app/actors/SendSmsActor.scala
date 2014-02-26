@@ -17,9 +17,9 @@ import helper.JsonHelper._
  * Date: 6/12/13
  * Time: 8:01 PM
  */
-class SendSMSActor extends Actor {
+class SendSmsActor extends Actor {
 
-  def sendSMS(sms: SmsMessage): Future[MessageStatus] = {
+  def sendSms(sms: SmsMessage): Future[MessageStatus] = {
 
     Logger.debug("SendSMSActor: To: " + sms.to + " Content: " + sms.body)
 
@@ -46,15 +46,13 @@ class SendSMSActor extends Actor {
                       val s = "SMS Send. Id: " + (report \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
                         (report \ "network").asOpt[String].getOrElse("none")
                       new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, s)
-                    }
-                    else {
+                    } else {
                       val s = "Error sending SMS message. Response: " + jsResponse.toString
                       new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
                     }
                   }
               }
-            }
-            else {
+            } else {
               val s = "Error connecting to Nexmo: " + nexmoResponse.statusText
               Seq(new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s))
             }
@@ -69,48 +67,45 @@ class SendSMSActor extends Actor {
 
   def receive = {
     // send message to recipient
-    case (message: Message, fromIdentity: Identity, identity: Identity, tryCount: Int) =>
+    case (message: Message, fromIdentity: Identity, toIdentity: Identity, tryCount: Int) =>
 
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
-        val ms = new MessageStatus(identity.id, MESSAGE_STATUS_ERROR, "max try count reached")
+        val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
         // TODO update status of single message
         //message.updateStatus(Seq(ms))
-      }
-      else if (identity.phoneNumber.isEmpty) {
-        // Do something else (send mail maybe
-      }
-      else {
-
+      } else {
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
-        val to: String = identity.phoneNumber.get.toString
+        val to: String = toIdentity.phoneNumber.get.toString
         val body: String = message.messageBody
 
+        // create purl 
+        val purl = Purl.create(message.id, toIdentity.id)
+        Purl.col.insert(purl)
+
         // add footer to sms
-        val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/"
-        //+  Purl.createPurl(message.conversationId.get, recipient)
+        val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" + purl.id
+
         // cut message, so it will fit in the sms with the footer.
         val bodyWithFooter: String = {
           if (footer.length + body.length > 160) {
             body.substring(0, 160 - footer.length) + footer
-          }
-          else {
+          } else {
             body + footer
           }
         }
 
-        val sms = new SmsMessage(from, to, body)
+        val sms = new SmsMessage(from, to, bodyWithFooter)
 
-        sendSMS(sms).map {
+        sendSms(sms).map {
           statusMessage =>
             {
               if (statusMessage.status.equals(MESSAGE_STATUS_SEND)) {
                 // WOO
-              }
-              else {
+              } else {
                 // try again
-                sendSmsActor ! (message, fromIdentity, identity, tryCount + 1)
+                sendSmsActor ! (message, fromIdentity, toIdentity, tryCount + 1)
               }
             }
         }
@@ -119,33 +114,10 @@ class SendSMSActor extends Actor {
     case (sms: SmsMessage, tryCount: Int) => {
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         Logger.error("Max try count of message reached: " + sms)
-      }
-      else {
-        sendSMS(sms)
+      } else {
+        sendSms(sms)
       }
     }
-
-    // notify user of new message
-    //    case (user: User, message: Message) => {
-    //
-    //      val from = message.from
-    //      val to = user.phonenumber.getOrElse("none")
-    //      val body = message.messageBody
-    //
-    //      // add footer to sms
-    //      val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" +
-    //        Purl.createPurl(message.conversationId.get, user)
-    //      // cut message, so it will fit in the sms with the footer.
-    //      val bodyWithFooter: String = {
-    //        if (footer.length + body.length > 160) {
-    //          body.substring(0, 160 - footer.length) + footer
-    //        } else {
-    //          body + footer
-    //        }
-    //      }
-    //
-    //      sendSMS(from, to, bodyWithFooter)
-    //    }
   }
 
 }

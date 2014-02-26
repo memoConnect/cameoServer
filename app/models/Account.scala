@@ -132,8 +132,7 @@ object AccountReservation extends Model[AccountReservation] {
         if ((((new Date).getTime - ar.created.getTime) / (1000 * 60)) <
           Play.configuration.getInt("loginName.reservation.timeout").get) {
           Future(Some(ar.id.id))
-        }
-        else {
+        } else {
           // delete reservation
           deleteReserved(loginName).map {
             lastError => None

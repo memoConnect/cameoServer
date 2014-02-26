@@ -50,8 +50,7 @@ object VerificationController extends Controller with ExtendedController {
                 val identityUpdate = IdentityUpdate.create(email = Some(i.email.get.copy(isVerified = true)))
                 i.update(identityUpdate)
                 resOK("verified")
-              }
-              else {
+              } else {
                 Unauthorized(resKO("mail has changed"))
               }
             }
@@ -62,8 +61,7 @@ object VerificationController extends Controller with ExtendedController {
                 val identityUpdate = IdentityUpdate.create(phoneNumber = Some(i.phoneNumber.get.copy(isVerified = true)))
                 i.update(identityUpdate)
                 resOK("verified")
-              }
-              else {
+              } else {
                 Unauthorized(resKO("phonenumber has changed"))
               }
             }

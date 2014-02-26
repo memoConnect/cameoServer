@@ -17,7 +17,7 @@ object Messaging {
   val MESSAGE_STATUS_CONFIRMED = "confirmed"
   val MESSAGE_STATUS_ERROR = "error"
 
-  val MESSAGE_MAX_TRY_COUNT = 10
+  val MESSAGE_MAX_TRY_COUNT = 0
 
   val IDENTITY_DEFAULT_DISPLAY_NAME = "NoName"
 

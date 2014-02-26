@@ -98,8 +98,7 @@ object MessageController extends ExtendedController {
           case Some(s) => {
             try {
               JsSuccess(new Date(s.toLong * 1000))
-            }
-            catch {
+            } catch {
               case e: NumberFormatException => JsError()
             }
           }
@@ -147,8 +146,7 @@ object MessageController extends ExtendedController {
             def createMatch(ids: Seq[MongoId], matchFunction: (MongoId => JsObject)): Match = {
               if (ids.size < 1) {
                 Match(toBson(Json.obj()).get)
-              }
-              else {
+              } else {
                 val matchJson = Json.obj("$or" -> ids.map(matchFunction))
                 Match(toBson(matchJson).get)
               }
@@ -187,15 +185,13 @@ object MessageController extends ExtendedController {
 
                   if (result.isEmpty) {
                     resOK("0")
-                  }
-                  else {
+                  } else {
                     val count = (Json.toJson(result.get) \ "count").as[Int]
                     resOK(count.toString)
                   }
               }
 
-            }
-            else {
+            } else {
               val pipeline = basePipeline ++
                 Seq(
                   Sort(Seq(Ascending("messages.created"))),
