@@ -47,7 +47,7 @@ if [ "$2" == "client" ];then
     cd ..
 else
     git pull
-    if [ -d ../cameoSecrets ]
+    if [ -d ../cameoSecrets ];then
         echo "updating cameoSecrets"
         cd ../cameoSecrets
         git pull
