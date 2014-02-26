@@ -59,6 +59,7 @@ case class Contact(id: MongoId,
 
       Identity.find(this.identityId).map {
         case Some(identity) => identity.update(identityUpdate)
+        case None =>
       }
     }
   }

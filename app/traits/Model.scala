@@ -66,7 +66,7 @@ trait Model[A] {
           //            }
 
           JsSuccess(newJs.as[T](reads))
-        case _ => JsError()
+        case _: Throwable => JsError()
       }
   }
 
