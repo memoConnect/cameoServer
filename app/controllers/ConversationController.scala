@@ -1,12 +1,14 @@
 package controllers
 
 import traits.ExtendedController
-import models.{ Identity, MongoId, Conversation }
+import models._
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.AuthAction
 import play.api.libs.json._
 import helper.ResultHelper._
+import scala.Some
+import play.api.libs.json.JsObject
 import scala.Some
 
 /**
@@ -23,7 +25,7 @@ object ConversationController extends ExtendedController {
           c =>
             {
               // add creator of conversation to recipients
-              val withCreator = c.copy(recipients = c.recipients :+ request.identity.id)
+              val withCreator = c.copy(recipients = c.recipients :+ Recipient.create(request.identity.id))
               Conversation.col.insert(withCreator)
               request.identity.addConversation(withCreator.id)
               resOK(withCreator.toJson)
@@ -37,7 +39,7 @@ object ConversationController extends ExtendedController {
       Conversation.find(new MongoId(id)).flatMap {
         case None => Future.successful(resNotFound("conversation"))
         case Some(c) => c.hasMemberFuture(request.identity.id) {
-          c.toJsonWithDisplayNamesResult(offset, limit)
+          c.toJsonWithIdentitiesResult(offset, limit)
         }
       }
   }
@@ -66,7 +68,7 @@ object ConversationController extends ExtendedController {
                     case false => Future(resBadRequest("at least one recipientId is invalid"))
                     case true => {
 
-                      c.addRecipients(recipientIds.map(new MongoId(_))).map {
+                      c.addRecipients(recipientIds.map(Recipient.create)).map {
                         lastError =>
                           if (lastError.ok) {
                             resOK("updated")
@@ -88,7 +90,7 @@ object ConversationController extends ExtendedController {
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))
         case Some(c) => c.hasMemberFuture(request.identity.id) {
-          c.deleteRecipient(new MongoId(rid)).map {
+          c.deleteRecipient(Recipient.create(new MongoId(rid))).map {
             case false => resNotFound("recipient")
             case true  => resOK()
           }
@@ -118,5 +120,37 @@ object ConversationController extends ExtendedController {
       }
 
       Future.sequence(list).map { resOK(_) }
+  }
+
+  def updateRecipient(id: String, rid: String) = AuthAction.async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, RecipientUpdate.format) {
+        ru =>
+          Conversation.find(id).flatMap {
+            case None => Future(resNotFound("conversation"))
+            case Some(c) => c.hasMemberFuture(request.identity.id) {
+              c.updateRecipient(Recipient.create(rid), ru).map {
+                case false => resServerError("could not update")
+                case true => resOK("updated")
+              }
+            }
+          }
+      }
+  }
+
+  def updateConversation(id: String) = AuthAction.async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, ConversationUpdate.format) {
+        cu =>
+          Conversation.find(id).flatMap {
+            case None => Future(resNotFound("conversation"))
+            case Some(c) => c.hasMemberFuture(request.identity.id) {
+              c.update(cu).map {
+                case false => resServerError("could not update")
+                case true => resOK("updated")
+              }
+            }
+          }
+      }
   }
 }

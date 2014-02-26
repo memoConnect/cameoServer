@@ -79,7 +79,7 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
         case _ => Future(false)
       }
 
-      Await.result(res, 1 hour)
+      Await.result(res, 6 hours)
     }
 
   }
