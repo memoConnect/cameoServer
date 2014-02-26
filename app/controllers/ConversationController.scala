@@ -137,4 +137,20 @@ object ConversationController extends ExtendedController {
           }
       }
   }
+
+  def updateConversation(id: String) = AuthAction.async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, ConversationUpdate.format) {
+        cu =>
+          Conversation.find(id).flatMap {
+            case None => Future(resNotFound("conversation"))
+            case Some(c) => c.hasMemberFuture(request.identity.id) {
+              c.update(cu).map {
+                case false => resServerError("could not update")
+                case true => resOK("updated")
+              }
+            }
+          }
+      }
+  }
 }

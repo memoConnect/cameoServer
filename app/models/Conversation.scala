@@ -49,6 +49,11 @@ case class Conversation(id: MongoId,
 
   val query = Json.obj("_id" -> this.id)
 
+  def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
+    val set = Json.obj("$set" -> toJsonOrEmpty("subject", conversationUpdate.subject))
+    Conversation.col.update(query, set).map { _.ok }
+  }
+
   def addRecipients(recipients: Seq[Recipient]): Future[LastError] = {
     val set = Json.obj("$push" ->
       Json.obj("recipients" ->
@@ -148,4 +153,10 @@ object Conversation extends Model[Conversation] {
   }
 
   def evolutions = Map()
+}
+
+case class ConversationUpdate(subject: Option[String])
+
+object ConversationUpdate {
+  implicit val format: Format[ConversationUpdate] = Json.format[ConversationUpdate]
 }

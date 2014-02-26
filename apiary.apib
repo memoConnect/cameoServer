@@ -466,6 +466,32 @@ Sending and reading messages
         }
 
 
+## Edit Conversation [/conversation/{id}]
+
+### PUT
+
++ Parameters
+    + id ... Conversation id
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+                {
+                    "subject":"new subject"
+                }
+
++ Response 200
+
+                {
+                    "res":"OK",
+                    "data":"updated"
+                }
+
 ## Get Conversation summary [/conversation/{id}/summary]
 
 ### GET

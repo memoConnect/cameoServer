@@ -430,6 +430,43 @@ class ControllerSpec extends Specification {
       (data \ "subject").asOpt[String] must beNone
     }
 
+    val newSubject = "moep"
+
+    "Edit subject of an conversation" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val json = Json.obj("subject" -> newSubject)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "Check if subject has changed" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "subject").asOpt[String] must beSome(newSubject)
+    }
+
+    "Refuse non-member to edit subject of an conversation" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val json = Json.obj("subject" -> newSubject)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token3)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
 
@@ -450,7 +487,6 @@ class ControllerSpec extends Specification {
       m.length must beEqualTo(100)
       (data \ "created").asOpt[String] must beSome
       (data \ "lastUpdated").asOpt[String] must beSome
-      (data \ "subject").asOpt[String] must beSome("some 1337 subject hqDBv")
     }
 
     "get conversation summary" in {
