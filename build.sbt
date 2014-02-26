@@ -18,6 +18,4 @@ libraryDependencies ++= Seq(
 
 play.Project.playScalaSettings
 
-
-
-
+com.typesafe.sbt.SbtAtmosPlay.atmosPlaySettings
