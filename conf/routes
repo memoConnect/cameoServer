@@ -23,7 +23,7 @@ POST           /api/v1/identity/search                        controllers.Identi
 # CONVERSATIONS
 POST           /api/v1/conversation                           controllers.ConversationController.createConversation()
 GET            /api/v1/conversation/:id                       controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0)
-POST           /api/v1/conversation/:id                       controllers.ConversationController.updateConversation(id)
+PUT           /api/v1/conversation/:id                       controllers.ConversationController.updateConversation(id)
 POST           /api/v1/conversation/:id/recipient             controllers.ConversationController.addRecipients(id)
 DELETE         /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.deleteRecipient(id, rid)
 POST           /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.updateRecipient(id, rid)

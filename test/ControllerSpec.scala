@@ -437,7 +437,7 @@ class ControllerSpec extends Specification {
 
       val json = Json.obj("subject" -> newSubject)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -461,7 +461,7 @@ class ControllerSpec extends Specification {
 
       val json = Json.obj("subject" -> newSubject)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token3)).withJsonBody(json)
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(token3)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(UNAUTHORIZED)
