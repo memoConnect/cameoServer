@@ -30,7 +30,7 @@ trait Model[A] {
 
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
 
-  def mongoFormat: Format[A]
+  implicit def mongoFormat: Format[A]
 
   def evolutions: Map[Int, Reads[JsObject]]
 

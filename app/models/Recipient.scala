@@ -1,7 +1,7 @@
 package models
 
 import traits.Model
-import play.api.libs.json.{Writes, Json}
+import play.api.libs.json.{Format, JsObject, Writes, Json}
 import helper.JsonHelper._
 
 /**
@@ -10,7 +10,9 @@ import helper.JsonHelper._
  * Time: 2:02 PM
  */
 
-case class Recipient(id: MongoId, encryptedKey: Option[String]) {
+case class Recipient(identityId: MongoId, encryptedKey: Option[String]) {
+
+  def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 
 }
 
@@ -18,21 +20,29 @@ object Recipient extends Model[Recipient] {
 
   def col = Conversation.col
 
-  implicit val mongoFormat = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
+  implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
   def docVersion = 0
   def evolutions = Map()
 
   def outputWrites: Writes[Recipient] = Writes[Recipient] {
     r =>
-      Json.obj("id" -> r.id.toJson) ++
-      toJs
-    "id"
+      Json.obj("identityId" -> r.identityId.toJson) ++
+      toJsonOrEmpty("encryptedKey", r.encryptedKey)
 
   }
 
+  def create(identityId: MongoId): Recipient = {
+    new Recipient(identityId, None)
+  }
 
+  def create(identityId: String): Recipient = {
+    new Recipient(new MongoId(identityId), None)
+  }
+}
 
+case class RecipientUpdate(encryptedKey: String)
 
-
+object RecipientUpdate {
+  implicit val format = Json.format[RecipientUpdate]
 }

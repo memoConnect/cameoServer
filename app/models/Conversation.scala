@@ -24,10 +24,11 @@ import play.api.Logger
 
 case class Conversation(id: MongoId,
                         subject: Option[String],
-                        recipients: Seq[MongoId],
+                        recipients: Seq[Recipient],
                         messages: Seq[Message],
                         created: Date,
-                        lastUpdated: Date) {
+                        lastUpdated: Date
+                         ) {
 
   def toJson(offset: Int = 0, limit: Int = 0): JsObject = Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject]
 
@@ -38,8 +39,8 @@ case class Conversation(id: MongoId,
   def toJsonWithDisplayNames(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
     // get identity of each recipient
     val recipients: Seq[Future[JsObject]] = this.recipients.map {
-      id =>
-        Identity.find(id).map {
+      r =>
+        Identity.find(r.identityId).map {
           case None    => Json.obj()
           case Some(i) => i.toSummaryJson
         }
@@ -59,31 +60,36 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def addRecipients(recipients: Seq[MongoId]): Future[LastError] = {
-    val query = Json.obj("_id" -> this.id)
+  val query = Json.obj("_id" -> this.id)
+
+  def addRecipients(recipients: Seq[Recipient]): Future[LastError] = {
     val set = Json.obj("$push" ->
       Json.obj("recipients" ->
         Json.obj("$each" -> recipients)))
     Conversation.col.update(query, set)
   }
 
-  def deleteRecipient(recipient: MongoId): Future[Boolean] = {
-    val query = Json.obj("_id" -> this.id)
+  def deleteRecipient(recipient: Recipient): Future[Boolean] = {
     val set = Json.obj("$pull" ->
       Json.obj("recipients" -> recipient))
     Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
-  def hasMemberFuture(recipient: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
-    if (this.recipients.contains(recipient)) {
+//  def updateRecipient(recipient: Recipient, recipientUpdate: RecipientUpdate): Future[Boolean] = {
+//    val set = Json.obj("$set")
+//
+//  }
+
+  def hasMemberFuture(identityId: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
+    if (this.recipients.filter(_.identityId.equals(identityId)).isDefinedAt(0)) {
       action
     } else {
       Future(resUnauthorized("identity is not a member of the conversation"))
     }
   }
 
-  def hasMember(recipient: MongoId)(action: SimpleResult): SimpleResult = {
-    if (this.recipients.contains(recipient)) {
+  def hasMember(identityId: MongoId)(action: SimpleResult): SimpleResult = {
+    if (this.recipients.filter(_.identityId.equals(identityId)).isDefinedAt(0)) {
       action
     } else {
       resUnauthorized("identity is not a member of the conversation")
@@ -91,7 +97,6 @@ case class Conversation(id: MongoId,
   }
 
   def addMessage(message: Message): Future[LastError] = {
-    val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$push" ->
       Json.obj("messages" -> Json.obj(
         "$each" -> Seq(message),
@@ -115,15 +120,15 @@ object Conversation extends Model[Conversation] {
 
   def docVersion = 0
 
-  def evolutions = Map()
 
   def createReads = (
     Reads.pure[MongoId](IdHelper.generateConversationId()) and
     (__ \ 'subject).readNullable[String] and
-    ((__ \ 'recipients).read[Seq[MongoId]] or Reads.pure[Seq[MongoId]](Seq())) and
+    Reads.pure[Seq[Recipient]](Seq()) and
     Reads.pure[Seq[Message]](Seq()) and
     Reads.pure[Date](new Date) and
-    Reads.pure[Date](new Date))(Conversation.apply _)
+    Reads.pure[Date](new Date)
+    )(Conversation.apply _)
 
   def outputWrites(offset: Int, limit: Int) = Writes[Conversation] {
     c =>
@@ -154,4 +159,6 @@ object Conversation extends Model[Conversation] {
     val id = IdHelper.generateConversationId()
     new Conversation(id, None, Seq(), Seq(), new Date, new Date)
   }
+
+  def evolutions = Map()
 }

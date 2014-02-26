@@ -374,7 +374,9 @@ class ControllerSpec extends Specification {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      (data \ "recipients")(0).asOpt[String] must beSome(identityExisting)
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      val recipient = (data \ "recipients")(0).as[JsObject]
+      (recipient \ "identityId").asOpt[String] must beSome(identityExisting)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[String] must beSome
       (data \ "lastUpdated").asOpt[String] must beSome
@@ -393,7 +395,9 @@ class ControllerSpec extends Specification {
 
       (data \ "id").asOpt[String] must beSome
       cidNew = (data \ "id").as[String]
-      (data \ "recipients")(0).asOpt[String] must beSome(identityExisting)
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      val recipient = (data \ "recipients")(0).as[JsObject]
+      (recipient \ "identityId").asOpt[String] must beSome(identityExisting)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[String] must beSome
       (data \ "lastUpdated").asOpt[String] must beSome
