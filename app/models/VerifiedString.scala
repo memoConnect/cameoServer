@@ -4,6 +4,7 @@ import java.util.Date
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.JsonHelper._
+import traits.Model
 
 /**
  * User: Björn Reimer
@@ -20,9 +21,14 @@ case class VerifiedString(isVerified: Boolean,
   def toJson: JsObject = Json.toJson(this)(VerifiedString.outputWrites).as[JsObject]
 }
 
-object VerifiedString {
+object VerifiedString extends Model[VerifiedString] {
+
+  val col = Identity.col
 
   implicit val mongoFormat: Format[VerifiedString] = createMongoFormat(Json.reads[VerifiedString], Json.writes[VerifiedString])
+
+  def docVersion = 0
+  def evolutions = Map()
 
   val createReads: Reads[VerifiedString] = (
     Reads.pure[Boolean](false) and

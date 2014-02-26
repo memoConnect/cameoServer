@@ -2,6 +2,7 @@ package models
 
 import play.api.libs.json.{ JsObject, Writes, Format, Json }
 import helper.JsonHelper._
+import traits.Model
 
 /**
  * User: Björn Reimer
@@ -17,9 +18,14 @@ case class MessageStatus(identityId: MongoId,
   }
 }
 
-object MessageStatus {
+object MessageStatus extends Model[MessageStatus] {
+
+  def col = Message.col
 
   implicit val mongoFormat: Format[MessageStatus] = createMongoFormat(Json.reads[MessageStatus], Json.writes[MessageStatus])
+
+  def docVersion = 0
+  def evolutions = Map()
 
   val outputWrites: Writes[MessageStatus] = Writes {
     ms =>

@@ -75,7 +75,7 @@ object AccountController extends ExtendedController {
                             Identity.col.insert(identity)
                             val account2 = account.copy(identities = Seq(identity.id))
 
-                            accountCollection.insert(account2).flatMap {
+                            Account.col.insert(account2).flatMap {
                               lastError =>
                                 {
                                   if (lastError.ok) {

@@ -6,6 +6,8 @@ import java.util.Date
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import helper.JsonHelper._
+import traits.Model
+import helper.MongoCollections._
 
 /**
  * User: Björn Reimer
@@ -19,11 +21,15 @@ case class VerificationSecret(id: MongoId,
                               valueToBeVerified: String,
                               created: Date)
 
-object VerificationSecret {
+object VerificationSecret extends Model[VerificationSecret] {
 
   implicit val mongoFormat: Format[VerificationSecret] = createMongoFormat(Json.reads[VerificationSecret], Json.writes[VerificationSecret])
 
   implicit def col = verificationCollection
+
+  def docVersion = 0
+
+  def evolutions = Map()
 
   def create(identityId: MongoId, valueToBeVerified: String, verificationType: String): VerificationSecret = {
     new VerificationSecret(
@@ -33,10 +39,4 @@ object VerificationSecret {
       valueToBeVerified,
       new Date)
   }
-
-  def find(id: MongoId): Future[Option[VerificationSecret]] = {
-    val query = Json.obj("_id" -> id)
-    col.find(query).one[VerificationSecret]
-  }
-
 }

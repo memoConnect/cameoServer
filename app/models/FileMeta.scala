@@ -9,6 +9,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands.LastError
 import ExecutionContext.Implicits.global
 import play.api.Logger
+import helper.MongoCollections._
 
 /**
  * User: Björn Reimer
@@ -38,6 +39,10 @@ object FileMeta extends Model[FileMeta] {
   def col = fileMetaCollection
 
   implicit val mongoFormat: Format[FileMeta] = createMongoFormat[FileMeta](Json.reads[FileMeta], Json.writes[FileMeta])
+
+  def docVersion = 0
+
+  def evolutions = Map()
 
   val outputWrites: Writes[FileMeta] = Writes {
     fm =>

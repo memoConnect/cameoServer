@@ -14,6 +14,7 @@ import traits.Model
 import play.api.libs.json.Reads._
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
+import helper.MongoCollections._
 
 /**
  * User: Björn Reimer
@@ -32,6 +33,10 @@ object FileChunk extends Model[FileChunk] {
   def col = fileChunkCollection
 
   implicit val mongoFormat: Format[FileChunk] = createMongoFormat(Json.reads[FileChunk], Json.writes[FileChunk])
+
+  def docVersion = 0
+
+  def evolutions = Map()
 
   val createReads: Reads[FileChunk] = (
     Reads.pure[MongoId](IdHelper.generateChunkId) and

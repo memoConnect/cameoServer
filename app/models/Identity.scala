@@ -13,6 +13,7 @@ import constants.Contacts._
 import reactivemongo.core.commands.LastError
 import helper.JsonHelper._
 import play.api.Logger
+import helper.MongoCollections._
 
 /**
  * User: Björn Reimer
@@ -114,12 +115,8 @@ case class Identity(id: MongoId,
 object Identity extends Model[Identity] {
 
   implicit def col = identityCollection
-  val docVersion = 2
 
-  val mongoReads = createMongoReadsWithEvolutions(Json.reads[Identity], IdentityEvolutions.evolutions, docVersion, col)
-  val mongoWrites = createMongoWrites(Json.writes[Identity])
-
-  implicit val mongoFormat: Format[Identity] = Format(mongoReads, mongoWrites)
+  implicit val mongoFormat: Format[Identity] = createMongoFormat(Json.reads[Identity], Json.writes[Identity])
 
   def createReads: Reads[Identity] = (
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
@@ -196,6 +193,9 @@ object Identity extends Model[Identity] {
     val query = Json.obj("cameoId" -> Json.obj("$regex" -> cameoId))
     col.find(query).cursor[Identity].collect[Seq](1000, stopOnError = true)
   }
+
+  def docVersion = 2
+  def evolutions = Map(0 -> IdentityEvolutions.evolutionAddCameoId, 1 -> IdentityEvolutions.evolutionAddFriedRequest)
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],
@@ -234,8 +234,6 @@ object IdentityEvolutions {
         js.transform(addFriendRequest andThen addVersion)
       }
   }
-
-  val evolutions: Map[Int, Reads[JsObject]] = Map(0 -> evolutionAddCameoId, 1 -> evolutionAddFriedRequest)
 
   // not used anymore
   val evolutionVerifiedMail: Reads[JsObject] = Reads {

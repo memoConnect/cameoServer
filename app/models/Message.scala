@@ -34,9 +34,11 @@ case class Message(id: MongoId,
 
 object Message extends Model[Message] {
 
-  def col: JSONCollection = conversationCollection
-
+  val col = Conversation.col
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
+
+  def docVersion = 0
+  def evolutions = Map()
 
   def createReads(fromIdentityId: MongoId) = (
     Reads.pure[MongoId](IdHelper.generateMessageId()) and
@@ -69,17 +71,5 @@ object Message extends Model[Message] {
   def findConversation(id: MongoId): Future[Option[Conversation]] = {
     Conversation.col.find(messageQuery(id)).one[Conversation]
   }
-
-  // gets the position of a message in a conversation
-  //  def getMessagePosition(conversationId: String, messageId: String): Future[Int] ={
-  //
-  //    val query = Json.obj("conversationId" -> conversationId)
-  //
-  //    conversationCollection.find(query).one[Conversation].map{
-  //      case None => -1
-  //      case Some(c) => c.messages.indexWhere(m => {m.messageId.equals(messageId)})
-  //    }
-  //
-  //  }
 }
 

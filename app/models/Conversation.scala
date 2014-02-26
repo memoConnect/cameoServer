@@ -13,6 +13,7 @@ import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
 import helper.JsonHelper._
+import helper.MongoCollections._
 import play.api.Logger
 
 /**
@@ -111,6 +112,10 @@ object Conversation extends Model[Conversation] {
   def col: JSONCollection = conversationCollection
 
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
+
+  def docVersion = 0
+
+  def evolutions = Map()
 
   def createReads = (
     Reads.pure[MongoId](IdHelper.generateConversationId()) and

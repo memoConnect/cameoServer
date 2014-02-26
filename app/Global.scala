@@ -20,6 +20,7 @@ import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Play.current
 import helper.JsonHelper._
+import helper.MongoCollections._
 
 object Global extends GlobalSettings with DynamicEmbedMongoPort {
 

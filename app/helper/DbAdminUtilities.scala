@@ -11,13 +11,14 @@ import play.api.Logger
 import scala.io.Source
 import reactivemongo.core.commands.LastError
 import models.{ GlobalState, MongoId, Token }
-import play.api.libs.iteratee.{Done, Input, Step, Iteratee}
+import play.api.libs.iteratee.{ Done, Input, Step, Iteratee }
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
 import traits.Model
 import play.api.libs.json.Reads._
 import scala.concurrent.duration._
+import helper.MongoCollections._
 
 /**
  * User: Björn Reimer
@@ -132,7 +133,7 @@ object DbAdminUtilities {
 
   val addTokensToIdentity: (JsObject => Boolean) = {
     js =>
-    // get identityId
+      // get identityId
       val id = (js \ "_id").as[MongoId]
 
       // find all tokens with this identityId
