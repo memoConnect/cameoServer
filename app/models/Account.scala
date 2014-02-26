@@ -48,7 +48,7 @@ case class Account(id: MongoId,
 
 object Account extends Model[Account] {
 
-  implicit def col = accountCollection
+  def col = accountCollection
 
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
 

@@ -1,7 +1,11 @@
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsObject
 import play.api.test._
 import play.api.libs.json.{ JsArray, Json, JsObject }
+import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
+import scala.Some
 import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
@@ -374,7 +378,9 @@ class ControllerSpec extends Specification {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      (data \ "recipients")(0).asOpt[String] must beSome(identityExisting)
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      val recipient = (data \ "recipients")(0).as[JsObject]
+      (recipient \ "identityId").asOpt[String] must beSome(identityExisting)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[String] must beSome
       (data \ "lastUpdated").asOpt[String] must beSome
@@ -393,7 +399,9 @@ class ControllerSpec extends Specification {
 
       (data \ "id").asOpt[String] must beSome
       cidNew = (data \ "id").as[String]
-      (data \ "recipients")(0).asOpt[String] must beSome(identityExisting)
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      val recipient = (data \ "recipients")(0).as[JsObject]
+      (recipient \ "identityId").asOpt[String] must beSome(identityExisting)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[String] must beSome
       (data \ "lastUpdated").asOpt[String] must beSome
@@ -414,8 +422,8 @@ class ControllerSpec extends Specification {
       (data \ "id").asOpt[String] must beSome
       (data \ "recipients")(0).asOpt[JsObject] must beSome
       val r: JsObject = (data \ "recipients")(0).as[JsObject]
-      (r \ "id").asOpt[String] must beSome(identityExisting)
-      (r \ "displayName").asOpt[String] must beSome("new")
+      (r \ "identityId").asOpt[String] must beSome(identityExisting)
+      (r \ "identity" \ "displayName").asOpt[String] must beSome("new")
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[String] must beSome
       (data \ "lastUpdated").asOpt[String] must beSome
@@ -435,8 +443,8 @@ class ControllerSpec extends Specification {
       (data \ "id").asOpt[String] must beSome
       (data \ "recipients")(0).asOpt[JsObject] must beSome
       val r: JsObject = (data \ "recipients")(0).as[JsObject]
-      (r \ "id").asOpt[String] must beSome(identityExisting)
-      (r \ "displayName").asOpt[String] must beSome("new")
+      (r \ "identityId").asOpt[String] must beSome(identityExisting)
+      (r \ "identity" \ "displayName").asOpt[String] must beSome("new")
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
       m.length must beEqualTo(100)
@@ -512,8 +520,8 @@ class ControllerSpec extends Specification {
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       val recipients = (data \ "recipients").as[Seq[JsObject]]
 
-      recipients.count(r => (r \ "id").as[String] == validRecipients(0)) must beEqualTo(1)
-      recipients.count(r => (r \ "id").as[String] == validRecipients(1)) must beEqualTo(1)
+      recipients.count(r => (r \ "identityId").as[String] == validRecipients(0)) must beEqualTo(1)
+      recipients.count(r => (r \ "identityId").as[String] == validRecipients(1)) must beEqualTo(1)
     }
 
     "refuse to add non-existing recipients" in {
@@ -568,7 +576,7 @@ class ControllerSpec extends Specification {
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       val recipients = (data \ "recipients").as[Seq[JsObject]]
 
-      recipients.count(r => (r \ "id").as[String] == recipientMemberOfConversation) must beEqualTo(0)
+      recipients.count(r => (r \ "identityId").as[String] == recipientMemberOfConversation) must beEqualTo(0)
     }
 
     var messageId = ""
@@ -628,6 +636,50 @@ class ControllerSpec extends Specification {
       val path = basePath + "/message/" + messageId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    val encryptedKey = "foobarbaz!"
+
+    "add encrypted key to recipient in conversation" in {
+
+      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(0)
+
+      val json = Json.obj("encryptedKey" -> encryptedKey)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "return the encrypted key" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      val recipients = (data \ "recipients").as[Seq[JsObject]]
+
+      val recipient0 = recipients.filter(r => (r \ "identityId").as[String] == validRecipients(0))(0)
+      (recipient0 \ "encryptedKey").asOpt[String] must beSome(encryptedKey)
+
+      val recipient1 = recipients.filter(r => (r \ "identityId").as[String] == validRecipients(1))(0)
+      (recipient1 \ "encryptedKey").asOpt[String] must beNone
+    }
+
+    "refuse non-members to add encrypted keys to recipient" in {
+
+      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(0)
+
+      val json = Json.obj("encryptedKey" -> encryptedKey)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token3)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(UNAUTHORIZED)

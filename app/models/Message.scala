@@ -60,6 +60,7 @@ object Message extends Model[Message] {
   def messageQuery(id: MongoId): JsObject = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
   override def find(id: MongoId): Future[Option[Message]] = {
+
     val projection = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
     Conversation.col.find(messageQuery(id), projection).one[JsValue].map {

@@ -19,6 +19,7 @@ object MongoCollections {
   lazy val conversationCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("conversations")
     col.indexesManager.ensure(Index(Seq("messages._id" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(Seq("recipients.identityId._id" -> IndexType.Ascending)))
     col
   }
   lazy val identityCollection: JSONCollection = {
@@ -41,8 +42,6 @@ object MongoCollections {
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purls")
   lazy val fileChunkCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileChunks")
-
   lazy val fileMetaCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileMeta")
   lazy val globalStateCollection: JSONCollection = mongoDB.collection[JSONCollection]("globalState")
-
 }
