@@ -36,7 +36,7 @@ case class Account(id: MongoId,
       iId =>
         Identity.find(iId).map {
           case None    => Json.obj()
-          case Some(i) => i.toJson
+          case Some(i) => i.toPrivateJson
         }
     }
 

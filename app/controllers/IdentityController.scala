@@ -24,13 +24,12 @@ import play.api.libs.json.Reads._
  */
 object IdentityController extends ExtendedController {
 
-  def getIdentityById(id: String) = AuthAction.async {
-
+  def getIdentityById(id: String) = Action.async {
     val mongoId = new MongoId(id)
 
     Identity.find(mongoId).map {
       case None           => resNotFound("identity")
-      case Some(identity) => resOK(identity.toJson)
+      case Some(identity) => resOK(identity.toPublicJson)
     }
   }
 
@@ -41,7 +40,7 @@ object IdentityController extends ExtendedController {
 
       Identity.find(mongoId).map {
         case None           => resNotFound("identity")
-        case Some(identity) => resOK(identity.toJson)
+        case Some(identity) => resOK(identity.toPrivateJson)
       }
   }
 
@@ -50,14 +49,10 @@ object IdentityController extends ExtendedController {
       validateFuture[IdentityUpdate](request.body, IdentityUpdate.reads) {
         identityUpdate =>
           {
-            request.identity.update(identityUpdate).flatMap {
-              lastError =>
-                {
-                  Identity.find(request.identity.id).map {
-                    case None    => resNotFound("identity")
-                    case Some(i) => resOK(i.toJson)
-                  }
-                }
+            request.identity.update(identityUpdate).map {
+              case false => resServerError("nothing updated")
+              case true => resOK("updated")
+
 
             }
           }
@@ -78,7 +73,7 @@ object IdentityController extends ExtendedController {
       validateFuture(request.body, reads) {
         vr =>
           Identity.matchCameoId(vr.cameoId).map {
-            list => resOK(list.map { i => i.toSummaryJson })
+            list => resOK(list.map { i => i.toPublicSummaryJson })
           }
       }
   }

@@ -32,7 +32,7 @@ case class Contact(id: MongoId,
       case None => Json.obj()
       case Some(identity) =>
         Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
-          Json.obj("identity" -> identity.toJson)
+          Json.obj("identity" -> identity.toPublicJson)
     }
 
   def toJsonWithIdentityResult: Future[SimpleResult] = {

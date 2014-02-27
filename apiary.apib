@@ -191,32 +191,28 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
             "data": "verified"
         }
 
-## Get an identity [/identity/{id}]
+## Get public information of identity [/identity/{id}]
 
 ### GET
 
 + Parameters
     + id ... Identity Id
-    
-+ Request
-    + Headers
-    
-            Authorization: {token}
+
 
 + Response 200
 
         {
           "res": "OK",
           "data": {
-            "id": "ZVtXkxMmPj4WtLYea8ci",
-            "userKey": "89lKqFI4VYz1SKsesc1ZK8O9KNHADpPkRfNSQy6J",
-            "contacts": [],
-            "email": "mail",
-            "phoneNumber": "12335",
-            "preferredMessageType": "default",
-            "cameoId": "testtest",
-            "created": "22.01.2014 16:34:54",
-            "lastUpdated": "22.01.2014 16:34:54"
+             "id": "ZVtXkxMmPj4WtLYea8ci"
+             "cameoId": "testtest",
+             "publicKeys": [
+               {
+                 "id": "4TXpnSAa6IPNGdbLX7Mh",
+                 "name": "some Name",
+                 "key": "theKey"
+               }
+             ]
           }
         }
         

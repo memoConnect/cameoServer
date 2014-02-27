@@ -139,7 +139,7 @@ object ContactController extends ExtendedController {
         id =>
           Identity.find(id).map {
             case None    => Json.obj()
-            case Some(i) => i.toSummaryJson
+            case Some(i) => i.toPublicSummaryJson
           }
       }
 

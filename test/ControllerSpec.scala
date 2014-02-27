@@ -241,7 +241,7 @@ class ControllerSpec extends Specification {
     }
 
     "Automatically create an identity for a new account" in {
-      val path = basePath + "/identity/" + identityId
+      val path = basePath + "/identity"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
@@ -274,17 +274,28 @@ class ControllerSpec extends Specification {
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
     }
 
+    val newPhone = "12345"
+    val newMail = "asdfasdf"
+    val newName = "new"
+
     "Edit an identity" in {
 
       val path = basePath + "/identity"
 
-      val newPhone = "12345"
-      val newMail = "asdfasdf"
-      val newName = "new"
-
       val json = Json.obj("phoneNumber" -> newPhone, "email" -> newMail, "displayName" -> newName)
 
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+    }
+
+    "check if identity was edited" in {
+
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -296,6 +307,7 @@ class ControllerSpec extends Specification {
       (data \ "email" \ "value").asOpt[String] must beSome(newMail)
       (data \ "email" \ "isVerified").asOpt[Boolean] must beSome(false)
       (data \ "displayName").asOpt[String] must beSome(newName)
+
     }
 
     "Search for an CameoId" in {

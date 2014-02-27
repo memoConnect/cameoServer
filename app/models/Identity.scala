@@ -39,9 +39,11 @@ case class Identity(id: MongoId,
                     lastUpdated: Date,
                     docVersion: Int) {
 
-  def toJson: JsObject = Json.toJson(this)(Identity.outputWrites).as[JsObject]
+  def toPrivateJson: JsObject = Json.toJson(this)(Identity.privateWrites).as[JsObject]
 
-  def toSummaryJson: JsObject = Json.toJson(this)(Identity.summaryWrites).as[JsObject]
+  def toPublicSummaryJson: JsObject = Json.toJson(this)(Identity.publicSummaryWrites).as[JsObject]
+
+  def toPublicJson: JsObject = Json.toJson(this)(Identity.publicWrites).as[JsObject]
 
   private val query = Json.obj("_id" -> this.id)
 
@@ -108,7 +110,7 @@ case class Identity(id: MongoId,
     Identity.col.update(publicKeyQuery, set).map { _.updatedExisting }
   }
 
-  def update(update: IdentityUpdate): Future[LastError] = {
+  def update(update: IdentityUpdate): Future[Boolean] = {
 
     val newMail = update.email.flatMap { getNewValueVerifiedString(this.email, _) }
     val newPhoneNumber = update.phoneNumber.flatMap { getNewValueVerifiedString(this.phoneNumber, _) }
@@ -121,7 +123,7 @@ case class Identity(id: MongoId,
     }
     val set = Json.obj("$set" -> setValues)
 
-    Identity.col.update(query, set)
+    Identity.col.update(query, set).map{_.updatedExisting}
   }
 
   def getGroup(groupName: String): Seq[Contact] = {
@@ -158,7 +160,7 @@ object Identity extends Model[Identity] {
     Reads.pure[Date](new Date()) and
     Reads.pure[Int](docVersion))(Identity.apply _)
 
-  def outputWrites: Writes[Identity] = Writes {
+  def privateWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         toJsonOrEmpty("displayName", i.displayName) ++
@@ -173,11 +175,21 @@ object Identity extends Model[Identity] {
         addLastUpdated(i.lastUpdated)
   }
 
-  def summaryWrites: Writes[Identity] = Writes {
+  def publicWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
+        maybeEmpty("email", i.email.map { _.toJson }) ++
+        maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
+        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) ++
+        Json.obj("publicKeys" -> i.publicKeys.map( pk => pk.key))
+  }
+
+  def publicSummaryWrites: Writes[Identity] = Writes {
+    i =>
+      Json.obj("id" -> i.id.toJson) ++
+        Json.obj("cameoId" -> i.cameoId) ++
+        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) 
   }
 
   def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String]): Identity = {
