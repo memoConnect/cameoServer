@@ -35,6 +35,8 @@ object ResultHelper {
   //      ++
   //      addMessagesOrEmpty(notifications))
 
+  def resOK(data: String): SimpleResult = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
+
   // OK but could not fullfill request
   def resKO(data: JsValue): SimpleResult =
     Status(232)(Json.obj("res" -> "KO")
@@ -114,20 +116,6 @@ object ResultHelper {
 
   def errorNotify(text: String): Seq[UserNotification] =
     Seq(new UserNotification(USER_MESSAGE_LEVEL_ERROR, text))
-
-  /**
-   * depreciated
-   */
-
-  def resOK(data: String): SimpleResult = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
-
-  //  def resKO(error: JsValue) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
-
-  def resKO(data: JsValue,
-            error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error) ++ Json.obj("data" -> data)
-
-  def resKO(error: String) = Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
-
 }
 
 // a message directly to the frontend

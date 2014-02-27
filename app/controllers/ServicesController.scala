@@ -42,7 +42,7 @@ object ServicesController extends ExtendedController {
           } catch {
             case e: Exception => {
               Logger.error("phoneNumber parse error: " + phoneNumber)
-              BadRequest(resKO(e.getMessage + " > " + phoneNumber))
+              resBadRequest(e.getMessage + " > " + phoneNumber)
             }
           }
         case None => resBadRequest("no phoneNumber")
@@ -59,9 +59,9 @@ object ServicesController extends ExtendedController {
         case Some(emailAddress) =>
           """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$""".r.unapplySeq(emailAddress).isDefined match {
             case true  => resOK()
-            case false => BadRequest(resKO("emailAddress invalid: " + emailAddress))
+            case false => resBadRequest("emailAddress invalid: " + emailAddress)
           }
-        case None => BadRequest(resKO("missing emailAddress"))
+        case None => resBadRequest("missing emailAddress")
       }
   }
 }

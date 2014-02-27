@@ -34,6 +34,7 @@ case class Identity(id: MongoId,
                     assets: Seq[FileMeta],
                     tokens: Seq[Token],
                     friendRequests: Seq[MongoId],
+                    publicKeys: Seq[PublicKey],
                     created: Date,
                     lastUpdated: Date,
                     docVersion: Int) {
@@ -132,6 +133,7 @@ object Identity extends Model[Identity] {
     Reads.pure[Seq[FileMeta]](Seq()) and
     Reads.pure[Seq[Token]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Seq[PublicKey]](Seq()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Int](docVersion))(Identity.apply _)
@@ -142,9 +144,7 @@ object Identity extends Model[Identity] {
         toJsonOrEmpty("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        maybeEmpty("email", i.email.map {
-          _.toJson
-        }) ++
+        maybeEmpty("email", i.email.map { _.toJson }) ++
         maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
@@ -174,6 +174,7 @@ object Identity extends Model[Identity] {
       Seq(),
       Seq(),
       Seq(),
+      Seq(),
       new Date,
       new Date,
       docVersion)
@@ -194,8 +195,12 @@ object Identity extends Model[Identity] {
     col.find(query).cursor[Identity].collect[Seq](1000, stopOnError = true)
   }
 
-  def docVersion = 2
-  def evolutions = Map(0 -> IdentityEvolutions.evolutionAddCameoId, 1 -> IdentityEvolutions.evolutionAddFriedRequest)
+  def docVersion = 3
+  def evolutions = Map(
+    0 -> IdentityEvolutions.addCameoId,
+    1 -> IdentityEvolutions.addFriedRequest,
+    2 -> IdentityEvolutions.addPublicKeys
+  )
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],
@@ -217,7 +222,7 @@ object IdentityUpdate {
 
 object IdentityEvolutions {
 
-  val evolutionAddCameoId: Reads[JsObject] = Reads {
+  val addCameoId: Reads[JsObject] = Reads {
     js =>
       {
         val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
@@ -226,7 +231,7 @@ object IdentityEvolutions {
       }
   }
 
-  val evolutionAddFriedRequest: Reads[JsObject] = Reads {
+  val addFriedRequest: Reads[JsObject] = Reads {
     js =>
       {
         val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
@@ -235,23 +240,12 @@ object IdentityEvolutions {
       }
   }
 
-  // not used anymore
-  val evolutionVerifiedMail: Reads[JsObject] = Reads {
-    // convert mail and phoneNumber to verified string
+  val addPublicKeys: Reads[JsObject] = Reads {
     js =>
       {
-        val convertMail: Reads[JsObject] = (js \ "email").asOpt[String] match {
-          case None => __.json.pickBranch
-          case Some(email) =>
-            __.json.update((__ \ 'email).json.put(Json.toJson(VerifiedString.create(email))))
-        }
-        val convertPhoneNumber: Reads[JsObject] = (js \ "phoneNumber").asOpt[String] match {
-          case None => __.json.pickBranch
-          case Some(tel) =>
-            __.json.update((__ \ 'phoneNumber).json.put(Json.toJson(VerifiedString.create(tel))))
-        }
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-        js.transform(convertMail andThen convertPhoneNumber andThen addVersion)
+        val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'publicKeys).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+        js.transform(addFriendRequest andThen addVersion)
       }
   }
 }

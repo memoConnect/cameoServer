@@ -37,18 +37,18 @@ object TokenController extends ExtendedController {
       {
         request.headers.get("Authorization") match {
           case None => {
-            Future.successful(BadRequest(resKO("No Authorization field in header")))
+            Future.successful(resBadRequest("No Authorization field in header"))
           }
           case Some(basicAuth) => {
             val (loginName, password) = decodeBasicAuth(basicAuth)
             //find account and get first identity
             Account.findByLoginName(loginName).flatMap {
-              case None => Future(Unauthorized(resKO("Invalid password/loginName")))
+              case None => Future(resUnauthorized("Invalid password/loginName"))
               case Some(account) => if (account.identities.nonEmpty) {
                 val identityId = account.identities(0)
 
                 Identity.find(identityId).map {
-                  case None => NotFound(resKO("Identity not found"))
+                  case None => resNotFound("identity")
                   case Some(identity) => {
                     // check loginNames and passwords match
                     if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginName)) {
@@ -57,12 +57,12 @@ object TokenController extends ExtendedController {
                       identity.addToken(token)
                       resOK(token.toJson)
                     } else {
-                      Unauthorized(resKO("Invalid password/loginName"))
+                      resUnauthorized("Invalid password/loginName")
                     }
                   }
                 }
               } else {
-                Future.successful(Unauthorized(resKO("Invalid password/loginName")))
+                Future.successful(resUnauthorized("Invalid password/loginName"))
               }
             }
           }
