@@ -1219,7 +1219,7 @@ class ControllerSpec extends Specification {
 
       val path = basePath + "/identity"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -1268,7 +1268,7 @@ class ControllerSpec extends Specification {
     "check if public key was edited" in {
       val path = basePath + "/identity"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -1302,7 +1302,7 @@ class ControllerSpec extends Specification {
     "check if key was deleted" in {
       val path = basePath + "/identity"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
       val res = route(req).get
 
       status(res) must equalTo(OK)

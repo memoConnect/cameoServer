@@ -93,11 +93,9 @@ object Contact extends Model[Contact] {
   }
 
   override def save(js: JsObject): Future[LastError] = {
-
     val id: MongoId = (js \ "_id").as[MongoId]
     val query = arrayQuery("contacts", id)
-    val set = Json.obj("$set" -> js)
-
+    val set = Json.obj("$set" -> Json.obj("contacts.$" -> js))
     col.update(query, set)
   }
 

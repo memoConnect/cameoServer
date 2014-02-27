@@ -112,6 +112,6 @@ object JsonHelper {
       }
   }
 
-  def arrayQuery(arrayName: String,id: MongoId): JsObject = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
+  def arrayQuery(arrayName: String,id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
 }

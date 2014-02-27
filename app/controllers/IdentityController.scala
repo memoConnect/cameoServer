@@ -103,7 +103,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def deletePublicKey(id: String) = AuthAction.async(parse.tolerantJson) {
+  def deletePublicKey(id: String) = AuthAction.async {
     request =>
       request.identity.deletePublicKey(new MongoId(id)).map {
         case false => resServerError("unable to delete")

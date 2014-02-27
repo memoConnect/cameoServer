@@ -147,6 +147,10 @@ object Conversation extends Model[Conversation] {
         })
   }
 
+  def findByMessageId(id: MongoId): Future[Option[Conversation]] = {
+    col.find(arrayQuery("messages", id)).one[Conversation]
+  }
+
   def create: Conversation = {
     val id = IdHelper.generateConversationId()
     new Conversation(id, None, Seq(), Seq(), new Date, new Date)

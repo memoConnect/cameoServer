@@ -6,12 +6,13 @@ import java.text.SimpleDateFormat
 import org.mindrot.jbcrypt.BCrypt
 import java.util.{ TimeZone, Date }
 import play.modules.reactivemongo.json.collection.JSONCollection
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import models.MongoId
 import play.api.Logger
 import helper.JsonHelper._
 import reactivemongo.core.commands.LastError
+import scala.concurrent.duration._
 
 /**
  * User: Björn Reimer
@@ -58,19 +59,26 @@ trait Model[A] {
       } catch {
         // try to apply evolutions
         case JsResultException(e) =>
-          // get document version, none == Version 0
           val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
           val readsWithEvolution = getEvolutions(currentDocVersion)
-          val newJs: JsObject = js.transform(readsWithEvolution andThen fromMongoDates andThen fromMongoId).get
 
-          save(newJs).map {
-            lastError => lastError.ok match {
-              case false => Logger.error("Error applying DB evolution to " + js)
-              case true => Logger.info("Evolution saved to DB" + js)
-            }
+          js.transform(readsWithEvolution).flatMap {
+            newJs =>
+              // save to db and try to serialise after evolutions
+              val futureRes: Future[Boolean] = save(newJs).map { _.ok }
+              val res = Await.result(futureRes, 10 minutes)
+              res match {
+                case false =>
+                  Logger.error("Error saving DB evolution: " + newJs); JsError()
+                case true =>
+                  newJs.asOpt[T](fromMongoDates andThen fromMongoId andThen reads) match {
+                    case None =>
+                      Logger.error("Error reading Json after evolution"); JsError()
+                    case Some(o) => JsSuccess(o)
+                  }
+              }
           }
 
-          JsSuccess(newJs.as[T](reads))
         case _: Throwable => JsError()
       }
   }

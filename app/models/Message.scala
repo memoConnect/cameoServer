@@ -70,7 +70,7 @@ object Message extends Model[Message] {
   override def save(js: JsObject): Future[LastError] = {
     val id: MongoId = (js \ "_id").as[MongoId]
     val query =arrayQuery("messages",id)
-    val set = Json.obj("$set" -> js)
+    val set = Json.obj("$set" -> Json.obj("messages.$" -> js))
     col.update(query, set)
   }
 

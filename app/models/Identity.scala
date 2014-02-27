@@ -94,17 +94,18 @@ case class Identity(id: MongoId,
   }
 
   def deletePublicKey(id: MongoId): Future[Boolean] = {
-    val set = Json.obj("$pull" -> Json.obj("$elemMatch" -> Json.obj("publicKeys" -> Json.obj("_id" -> id))))
+    val set = Json.obj("$pull" -> Json.obj("publicKeys" -> Json.obj("_id" -> id)))
     Identity.col.update(query, set).map { _.updatedExisting }
   }
 
   def editPublicKey(id: MongoId, update: PublicKeyUpdate): Future[Boolean] = {
     val setValues = {
-      toJsonOrEmpty("name", update.name) ++
-        toJsonOrEmpty("key", update.key)
+      toJsonOrEmpty("publicKeys.$.name", update.name) ++
+        toJsonOrEmpty("publicKeys.$.key", update.key)
     }
-    val set = Json.obj("$set" -> Json.obj("$elemMatch" -> Json.obj("publicKeys" -> setValues)))
-    Identity.col.update(query, set).map { _.updatedExisting }
+    val publicKeyQuery = query ++ arrayQuery("publicKeys", id)
+    val set = Json.obj("$set" -> setValues)
+    Identity.col.update(publicKeyQuery, set).map { _.updatedExisting }
   }
 
   def update(update: IdentityUpdate): Future[LastError] = {
@@ -166,7 +167,7 @@ object Identity extends Model[Identity] {
         maybeEmpty("email", i.email.map { _.toJson }) ++
         maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
-        Json.obj("publicKeys" -> i.publicKeys) ++
+        Json.obj("publicKeys" -> i.publicKeys.map {_.toJson}) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)

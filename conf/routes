@@ -16,7 +16,7 @@ PUT            /api/v1/identity                               controllers.Identi
 POST           /api/v1/identity/search                        controllers.IdentityController.search()
 POST           /api/v1/identity/publicKey                     controllers.IdentityController.addPublicKey()
 PUT            /api/v1/identity/publicKey/:id                 controllers.IdentityController.editPublicKey(id)
-POST           /api/v1/identity/publicKey/:id                 controllers.IdentityController.deletePublicKey(id)
+DELETE         /api/v1/identity/publicKey/:id                 controllers.IdentityController.deletePublicKey(id)
 
 
 # CONVERSATIONS
