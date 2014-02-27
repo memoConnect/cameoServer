@@ -9,6 +9,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -25,9 +26,8 @@ case class Message(id: MongoId,
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
 
   def updateStatus(messageStatus: Seq[MessageStatus]) = {
-
     val update = Json.obj("$set" -> Json.obj("messages.$.messageStatus" -> messageStatus))
-    Conversation.col.update(Message.messageQuery(this.id), update)
+    Conversation.col.update(arrayQuery("messages", this.id), update)
   }
 
 }
@@ -57,20 +57,25 @@ object Message extends Model[Message] {
         addCreated(m.created)
   }
 
-  def messageQuery(id: MongoId): JsObject = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
-
   override def find(id: MongoId): Future[Option[Message]] = {
 
     val projection = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
-    Conversation.col.find(messageQuery(id), projection).one[JsValue].map {
+    Conversation.col.find(arrayQuery("messages",id), projection).one[JsValue].map {
       case None     => None
       case Some(js) => Some((js \ "messages")(0).as[Message])
     }
   }
 
+  override def save(js: JsObject): Future[LastError] = {
+    val id: MongoId = (js \ "_id").as[MongoId]
+    val query =arrayQuery("messages",id)
+    val set = Json.obj("$set" -> Json.obj("messages.$" -> js))
+    col.update(query, set)
+  }
+
   def findConversation(id: MongoId): Future[Option[Conversation]] = {
-    Conversation.col.find(messageQuery(id)).one[Conversation]
+    Conversation.col.find(arrayQuery("messages",id)).one[Conversation]
   }
 }
 

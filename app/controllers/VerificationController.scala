@@ -37,11 +37,11 @@ object VerificationController extends Controller with ExtendedController {
   def verifyMessage(id: String) = Action.async {
 
     VerificationSecret.find(new MongoId(id)).flatMap {
-      case None => Future(Unauthorized(resKO("invalid authorisation secret")))
+      case None => Future(resUnauthorized("invalid authorisation secret"))
       case Some(vs) => {
         // set verified boolean to true
         Identity.find(vs.identityId).map {
-          case None => Unauthorized(resKO("identity not found"))
+          case None => resUnauthorized("identity not found")
           case Some(i) => vs.verificationType match {
             case VERIFY_TYPE_MAIL => {
               if (i.email.map {
@@ -51,7 +51,7 @@ object VerificationController extends Controller with ExtendedController {
                 i.update(identityUpdate)
                 resOK("verified")
               } else {
-                Unauthorized(resKO("mail has changed"))
+                resUnauthorized("mail has changed")
               }
             }
             case VERIFY_TYPE_PHONENUMBER => {
@@ -62,7 +62,7 @@ object VerificationController extends Controller with ExtendedController {
                 i.update(identityUpdate)
                 resOK("verified")
               } else {
-                Unauthorized(resKO("phonenumber has changed"))
+                resUnauthorized("phonenumber has changed")
               }
             }
           }

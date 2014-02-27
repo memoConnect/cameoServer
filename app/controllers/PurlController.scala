@@ -36,7 +36,7 @@ object PurlController extends ExtendedController {
               case false => Future(resUnauthorized("This purl belongs to a different identity"))
               case true => {
                 // get conversation
-                Conversation.col.find(Message.messageQuery(purl.messageId)).one[Conversation].map {
+                Conversation.findByMessageId(purl.messageId).map {
                   case None => resNotFound("conversation")
                   case Some(conversation) =>
                     // return result
@@ -65,7 +65,7 @@ object PurlController extends ExtendedController {
                   t
                 }
                 //get conversation
-                Conversation.col.find(Message.messageQuery(purl.messageId)).one[Conversation].map {
+                Conversation.findByMessageId(purl.messageId).map {
                   case None => resNotFound("conversation")
                   case Some(conversation) =>
                     // return result

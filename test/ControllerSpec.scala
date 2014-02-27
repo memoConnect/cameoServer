@@ -1168,6 +1168,159 @@ class ControllerSpec extends Specification {
     val chunks: Seq[String] = {
       Seq.fill(10)(MockupFactory.randomString(256))
     }
+
+    val pubKey = "asdfasdfasdf"
+    val pubKeyName= "moep"
+    var pubKeyId = ""
+    val newPubKey = "woops"
+    val newPubKeyName= "poem"
+
+    val pubKey2 = "asdfasdfasdf2"
+    val pubKeyName2= "moep2"
+    var pubKeyId2 = ""
+
+    "add public key to identity" in {
+      val path = basePath + "/identity/publicKey"
+
+      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      pubKeyId = (data \ "id").as[String]
+      (data \ "name").asOpt[String] must beSome(pubKeyName)
+      (data \ "key").asOpt[String] must beSome(pubKey)
+    }
+
+    "add another public key to identity" in {
+      val path = basePath + "/identity/publicKey"
+
+      val json = Json.obj("name" -> pubKeyName2, "key" -> pubKey2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      pubKeyId2 = (data \ "id").as[String]
+      (data \ "name").asOpt[String] must beSome(pubKeyName2)
+      (data \ "key").asOpt[String] must beSome(pubKey2)
+    }
+
+    "check if identity contains both added public keys" in {
+
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+
+      pubKeys.length must beEqualTo(2)
+
+      val key1: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)).get
+      (key1 \ "id").asOpt[String] must beSome(pubKeyId)
+      (key1 \ "name").asOpt[String] must beSome(pubKeyName)
+      (key1 \ "key").asOpt[String] must beSome(pubKey)
+
+      val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
+      (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
+      (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
+      (key2 \ "key").asOpt[String] must beSome(pubKey2)
+    }
+
+    "edit name of public key" in {
+
+      val path = basePath + "/identity/publicKey/" + pubKeyId
+
+      val json = Json.obj("name" -> newPubKeyName)
+
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "edit public key" in {
+
+      val path = basePath + "/identity/publicKey/" + pubKeyId
+
+      val json = Json.obj("key" -> newPubKey)
+
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(token2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "check if public key was edited" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+
+      pubKeys.length must beEqualTo(2)
+
+      val key1: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)).get
+      (key1 \ "id").asOpt[String] must beSome(pubKeyId)
+      (key1 \ "name").asOpt[String] must beSome(newPubKeyName)
+      (key1 \ "key").asOpt[String] must beSome(newPubKey)
+
+      val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
+      (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
+      (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
+      (key2 \ "key").asOpt[String] must beSome(pubKey2)
+    }
+
+    "delete a public key" in {
+      val path = basePath + "/identity/publicKey/" + pubKeyId
+
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "check if key was deleted" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+
+      pubKeys.length must beEqualTo(1)
+
+      pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)) must beNone
+
+      val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
+      (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
+      (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
+      (key2 \ "key").asOpt[String] must beSome(pubKey2)
+    }
+
     val fileName = "some_name.pdf"
     val fileType = "some_type"
     val fileSize = 1234567

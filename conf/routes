@@ -1,8 +1,3 @@
-# Routes
-# This file defines all application routes (Higher priority routes first)
-# ~~~~
-
-
 ##
 ##   API
 ##
@@ -19,11 +14,15 @@ GET            /api/v1/identity/:id                           controllers.Identi
 GET            /api/v1/identity                               controllers.IdentityController.getIdentityByToken()
 PUT            /api/v1/identity                               controllers.IdentityController.updateIdentity()
 POST           /api/v1/identity/search                        controllers.IdentityController.search()
+POST           /api/v1/identity/publicKey                     controllers.IdentityController.addPublicKey()
+PUT            /api/v1/identity/publicKey/:id                 controllers.IdentityController.editPublicKey(id)
+DELETE         /api/v1/identity/publicKey/:id                 controllers.IdentityController.deletePublicKey(id)
+
 
 # CONVERSATIONS
 POST           /api/v1/conversation                           controllers.ConversationController.createConversation()
 GET            /api/v1/conversation/:id                       controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0)
-PUT           /api/v1/conversation/:id                       controllers.ConversationController.updateConversation(id)
+PUT            /api/v1/conversation/:id                       controllers.ConversationController.updateConversation(id)
 POST           /api/v1/conversation/:id/recipient             controllers.ConversationController.addRecipients(id)
 DELETE         /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.deleteRecipient(id, rid)
 POST           /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.updateRecipient(id, rid)
@@ -54,7 +53,7 @@ GET            /api/v1/friendRequests                         controllers.Contac
 POST           /api/v1/friendRequest                          controllers.ContactController.sendFriendRequest
 POST           /api/v1/friendRequest/answer                   controllers.ContactController.answerFriendRequest
 
-## FILES
+# FILES
 POST           /api/v1/file                                   controllers.FileController.uploadFile
 POST           /api/v1/file/:id                               controllers.FileController.uploadFileChunks(id)
 GET            /api/v1/file/:id                               controllers.FileController.getFile(id)
@@ -78,19 +77,17 @@ OPTIONS        /api/v1/*foo                                   controllers.TokenC
 GET            /api/v1/dumpDb                                 controllers.Application.dumpDb()
 GET            /api/v1/loadDb                                 controllers.Application.loadFixtures()
 
-##
-##   WebClient
-##
-
 # Redirect for Shorturls
 GET            /p/:id                                         controllers.ShortUrlController.redirect(urlType = "p", id: String)
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
-# WEBCLENT
+
+##
+##   WebClient
+##
 GET            /app/                                          controllers.Assets.at(path="/public/app", file="index.html")
 GET            /app                                           controllers.Assets.at(path="/public/app", file="index.html")
 GET            /app/*file                                     controllers.Assets.at(path="/public/app", file)
 
-
-# Redirect everything else to /app
+# Redirect / to /app
 GET            /                                              controllers.Application.redirect(url = "/app/")

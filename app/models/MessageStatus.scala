@@ -3,6 +3,8 @@ package models
 import play.api.libs.json.{ JsObject, Writes, Format, Json }
 import helper.JsonHelper._
 import traits.Model
+import scala.concurrent.Future
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -33,5 +35,4 @@ object MessageStatus extends Model[MessageStatus] {
         Json.obj("status" -> ms.status) ++
         Json.obj("message" -> ms.message)
   }
-
 }

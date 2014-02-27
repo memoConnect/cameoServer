@@ -236,15 +236,28 @@ Get your identity
         {
           "res": "OK",
           "data": {
-            "id": "ZVtXkxMmPj4WtLYea8ci",
-            "userKey": "89lKqFI4VYz1SKsesc1ZK8O9KNHADpPkRfNSQy6J",
-            "contacts": [],
-            "email": "mail",
-            "phoneNumber": "12335",
+            "id": "N2HKgBdxxnWBGxlYY7Dn",
+            "userKey": "whEGDKfdkIt7Ex6YDWVhjeE53hO8u2aXXyTDvzru",
+            "cameoId": "kfhgtS400HpC4NPP4jHJ",
+            "email": {
+              "value": "dbfill@bjrm.de",
+              "isVerified": false
+            },
+            "phoneNumber": {
+              "value": "+491744560277",
+              "isVerified": false
+            },
             "preferredMessageType": "default",
-            "cameoId": "testtest",
-            "created": "22.01.2014 16:34:54",
-            "lastUpdated": "22.01.2014 16:34:54"
+            "publicKeys": [
+              {
+                "id": "4TXpnSAa6IPNGdbLX7Mh",
+                "name": "some Name",
+                "key": "theKey"
+              }
+            ],
+            "userType": "internal",
+            "created": "13.02.2014 15:19:12",
+            "lastUpdated": "13.02.2014 15:19:12"
           }
         }
 
@@ -286,6 +299,81 @@ Edit your identity. All values are optional. Only values contained in the json w
             "lastUpdated": "06.02.2014 15:51:46"
           }
         }
+
+
+## Add public key to identity [/identity/publicKey]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "name":"some Name",
+                "key":"theKey"
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "4TXpnSAa6IPNGdbLX7Mh",
+            "name": "some Name",
+            "key": "theKey"
+          }
+        }
+
+
+## Manage public keys [/identity/publicKey/{id}]
+
++   Parameters
+    + id ... Id of the public key
+
+
+### PUT
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "name":"new Name (optional)",
+                "key":"new key (optional)"
+            }
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data":"updated"
+        }
+
+
+### DELETE
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data":"deleted"
+        }
+
 
 
 ## Search for cameoIds [/identity/search]
@@ -549,7 +637,7 @@ Sending and reading messages
           "data": "updated"
         }
 
-## Delete Recipient from conversation [/conversation/{id}/recipient/{recipientId}]
+## Recipients in the conversation conversation [/conversation/{id}/recipient/{recipientId}]
 
 ### DELETE
 
@@ -568,8 +656,6 @@ Sending and reading messages
          {
            "res": "OK",
          }
-
-## Add encryptedKey to recipient [/conversation/{id}/recipient{recipientId}]
 
 ### PUT
 
