@@ -14,6 +14,10 @@ GET            /api/v1/identity/:id                           controllers.Identi
 GET            /api/v1/identity                               controllers.IdentityController.getIdentityByToken()
 PUT            /api/v1/identity                               controllers.IdentityController.updateIdentity()
 POST           /api/v1/identity/search                        controllers.IdentityController.search()
+POST           /api/v1/identity/publicKey                     controllers.IdentityController.addPublicKey()
+PUT            /api/v1/identity/publicKey/:id                 controllers.IdentityController.editPublicKey()
+POST           /api/v1/identity/publicKey/:id                 controllers.IdentityController.deletePublicKey()
+
 
 # CONVERSATIONS
 POST           /api/v1/conversation                           controllers.ConversationController.createConversation()

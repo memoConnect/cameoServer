@@ -82,4 +82,33 @@ object IdentityController extends ExtendedController {
           }
       }
   }
+
+  def addPublicKey() = AuthAction.async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, PublicKey.createReads) {
+        publicKey => request.identity.addPublicKey(publicKey).map {
+          case false => resServerError("unable to add")
+          case true => resOK(publicKey.toJson)
+        }
+      }
+  }
+
+  def editPublicKey(id: String) = AuthAction.async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, PublicKeyUpdate.format) {
+        pku => request.identity.editPublicKey(new MongoId(id), pku).map {
+          case false => resServerError("not updated")
+          case true => resOK("updated")
+        }
+      }
+  }
+
+  def deletePublicKey(id: String) = AuthAction.async(parse.tolerantJson) {
+    request =>
+      request.identity.deletePublicKey(new MongoId(id)).map {
+        case false => resServerError("unable to delete")
+        case true => resOK("deleted")
+      }
+  }
+
 }

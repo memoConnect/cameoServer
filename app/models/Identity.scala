@@ -88,6 +88,25 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
+  def addPublicKey(publicKey: PublicKey): Future[Boolean] = {
+    val set = Json.obj("$addToSet" -> Json.obj("publicKeys" -> publicKey))
+    Identity.col.update(query, set).map { _.ok }
+  }
+
+  def deletePublicKey(id: MongoId): Future[Boolean] = {
+    val set = Json.obj("$pull" -> Json.obj("$elemMatch" -> Json.obj("publicKeys" -> Json.obj("_id" -> id))))
+    Identity.col.update(query, set).map { _.updatedExisting }
+  }
+
+  def editPublicKey(id: MongoId, update: PublicKeyUpdate): Future[Boolean] = {
+    val setValues = {
+      toJsonOrEmpty("name", update.name) ++
+        toJsonOrEmpty("key", update.key)
+    }
+    val set = Json.obj("$set" -> Json.obj("$elemMatch" -> Json.obj("publicKeys" -> setValues)))
+    Identity.col.update(query, set).map { _.updatedExisting }
+  }
+
   def update(update: IdentityUpdate): Future[LastError] = {
 
     val newMail = update.email.flatMap { getNewValueVerifiedString(this.email, _) }
