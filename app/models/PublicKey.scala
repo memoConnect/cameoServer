@@ -8,7 +8,9 @@ import play.api.libs.json.Reads._
 import helper.IdHelper
 import play.api.libs.functional.syntax._
 import helper.JsonHelper._
-
+import scala.concurrent.{ExecutionContext, Future}
+import reactivemongo.core.commands.LastError
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -39,12 +41,19 @@ object PublicKey extends Model[PublicKey] {
     pk =>
       Json.obj("id" -> pk.id.toJson) ++
       toJsonOrEmpty("name", pk.name) ++
-      Json.obj("id" -> pk.key)
+      Json.obj("key" -> pk.key)
   }
 
   def evolutions = Map()
 
   def docVersion = 0
+
+  override def save(js: JsObject): Future[LastError] = {
+    val id: MongoId = (js \ "_id").as[MongoId]
+    val query =arrayQuery("publicKey",id)
+    val set = Json.obj("$set" -> js)
+    col.update(query, set)
+  }
 
 }
 

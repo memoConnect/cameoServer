@@ -5,6 +5,7 @@ import play.api.libs.json.{Format, JsObject, Writes, Json}
 import helper.JsonHelper._
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -47,6 +48,12 @@ object Recipient extends Model[Recipient] {
     new Recipient(new MongoId(identityId), None)
   }
 
+  override def save(js: JsObject): Future[LastError] = {
+    val id: MongoId = (js \ "_id").as[MongoId]
+    val query =arrayQuery("recipients",id)
+    val set = Json.obj("$set" -> js)
+    col.update(query, set)
+  }
 
 
 }

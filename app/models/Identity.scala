@@ -166,6 +166,7 @@ object Identity extends Model[Identity] {
         maybeEmpty("email", i.email.map { _.toJson }) ++
         maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
+        Json.obj("publicKeys" -> i.publicKeys) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)

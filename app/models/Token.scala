@@ -9,6 +9,7 @@ import reactivemongo.api.indexes.{ IndexType, Index }
 import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.IdHelper
 import helper.JsonHelper._
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -41,6 +42,13 @@ object Token extends Model[Token] {
     new Token(
       IdHelper.generateAccessToken(),
       new Date)
+  }
+
+  override def save(js: JsObject): Future[LastError] = {
+    val id: MongoId = (js \ "_id").as[MongoId]
+    val query =arrayQuery("token",id)
+    val set = Json.obj("$set" -> js)
+    col.update(query, set)
   }
 
 }

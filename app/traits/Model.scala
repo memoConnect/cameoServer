@@ -11,6 +11,7 @@ import ExecutionContext.Implicits.global
 import models.MongoId
 import play.api.Logger
 import helper.JsonHelper._
+import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer
@@ -36,6 +37,10 @@ trait Model[A] {
 
   def docVersion: Int
 
+  def save(js: JsObject): Future[LastError] = {
+    col.save(js)
+  }
+
   /*
    * Helper functions
    */
@@ -58,12 +63,12 @@ trait Model[A] {
           val readsWithEvolution = getEvolutions(currentDocVersion)
           val newJs: JsObject = js.transform(readsWithEvolution andThen fromMongoDates andThen fromMongoId).get
 
-          // TODO: update in db
-          //            col.save(newJs).map {
-          //              lastError => if (!lastError.updatedExisting) {
-          //                Logger.error("Error applying DB evolution to " + js)
-          //              }
-          //            }
+          save(newJs).map {
+            lastError => lastError.ok match {
+              case false => Logger.error("Error applying DB evolution to " + js)
+              case true => Logger.info("Evolution saved to DB" + js)
+            }
+          }
 
           JsSuccess(newJs.as[T](reads))
         case _: Throwable => JsError()

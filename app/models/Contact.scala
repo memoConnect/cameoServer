@@ -44,7 +44,7 @@ case class Contact(id: MongoId,
 
     // edit groups
     if (contactUpdate.groups.isDefined) {
-      val query = Json.obj("contacts" -> Json.obj("$elemMatch" -> Json.obj("_id" -> this.id)))
+      val query = arrayQuery("contacts", this.id)
       val newGroups = maybeEmpty("contacts.$.groups", contactUpdate.groups.map(Json.toJson(_)))
       val set = Json.obj("$set" -> newGroups)
 
@@ -91,6 +91,16 @@ object Contact extends Model[Contact] {
   def create(identityId: MongoId, contactType: String, groups: Seq[String] = Seq()): Contact = {
     new Contact(IdHelper.generateContactId(), groups, identityId, contactType, docVersion)
   }
+
+  override def save(js: JsObject): Future[LastError] = {
+
+    val id: MongoId = (js \ "_id").as[MongoId]
+    val query = arrayQuery("contacts", id)
+    val set = Json.obj("$set" -> js)
+
+    col.update(query, set)
+  }
+
 
   /*
    * Evolutions
