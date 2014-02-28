@@ -223,9 +223,20 @@ object Identity extends Model[Identity] {
     col.find(query).one[Identity]
   }
 
-  def matchCameoId(cameoId: String): Future[Seq[Identity]] = {
-    val query = Json.obj("cameoId" -> Json.obj("$regex" -> cameoId))
-    col.find(query).cursor[Identity].collect[Seq](1000, stopOnError = true)
+  def search(cameoId: Option[String], displayName: Option[String]): Future[Seq[Identity]] = {
+
+    def toQueryOrEmpty(key: String, field: Option[String]) : Seq[JsObject] = {
+      field match {
+        case None => Seq()
+        case Some(f) => Seq(Json.obj(key -> Json.obj("$regex" -> f)))
+      }
+    }
+
+    val query = Json.obj("$or" -> (toQueryOrEmpty("cameoId", cameoId) ++ toQueryOrEmpty("displayName", displayName)))
+
+    Logger.debug("SEARCH: " + query)
+
+    col.find(query).cursor[Identity].collect[Seq]()
   }
 
   def docVersion = 3

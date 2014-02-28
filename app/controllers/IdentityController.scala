@@ -51,8 +51,7 @@ object IdentityController extends ExtendedController {
           {
             request.identity.update(identityUpdate).map {
               case false => resServerError("nothing updated")
-              case true => resOK("updated")
-
+              case true  => resOK("updated")
 
             }
           }
@@ -63,38 +62,51 @@ object IdentityController extends ExtendedController {
 
     request =>
 
-      case class VerifyRequest(cameoId: String)
+      case class VerifyRequest(search: String, fields: Seq[String])
 
-      def reads: Reads[VerifyRequest] =
-        (__ \ 'cameoId).read[String](minLength[String](4)).map {
-          l => VerifyRequest(l)
-        }
+      def reads: Reads[VerifyRequest] = (
+        (__ \ 'search).read[String](minLength[String](4)) and
+        (__ \ 'fields).read[Seq[String]]
+      )(VerifyRequest.apply _)
 
       validateFuture(request.body, reads) {
         vr =>
-          Identity.matchCameoId(vr.cameoId).map {
-            list => resOK(list.map { i => i.toPublicSummaryJson })
+          // there needs to be at least one field
+          vr.fields.isEmpty match {
+            case true => Future(resBadRequest("at least one element in fields required"))
+            case false => {
+
+              val cameoId = if (vr.fields.contains("cameoId")) Some(vr.search) else None
+              val displayName = if (vr.fields.contains("displayName")) Some(vr.search) else None
+
+              Identity.search(cameoId, displayName).map {
+                list => resOK(list.map { i => i.toPublicSummaryJson })
+              }
+            }
           }
+
       }
   }
 
   def addPublicKey() = AuthAction.async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, PublicKey.createReads) {
-        publicKey => request.identity.addPublicKey(publicKey).map {
-          case false => resServerError("unable to add")
-          case true => resOK(publicKey.toJson)
-        }
+        publicKey =>
+          request.identity.addPublicKey(publicKey).map {
+            case false => resServerError("unable to add")
+            case true  => resOK(publicKey.toJson)
+          }
       }
   }
 
   def editPublicKey(id: String) = AuthAction.async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, PublicKeyUpdate.format) {
-        pku => request.identity.editPublicKey(new MongoId(id), pku).map {
-          case false => resServerError("not updated")
-          case true => resOK("updated")
-        }
+        pku =>
+          request.identity.editPublicKey(new MongoId(id), pku).map {
+            case false => resServerError("not updated")
+            case true  => resOK("updated")
+          }
       }
   }
 
@@ -102,7 +114,7 @@ object IdentityController extends ExtendedController {
     request =>
       request.identity.deletePublicKey(new MongoId(id)).map {
         case false => resServerError("unable to delete")
-        case true => resOK("deleted")
+        case true  => resOK("deleted")
       }
   }
 

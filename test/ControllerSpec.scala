@@ -276,7 +276,7 @@ class ControllerSpec extends Specification {
 
     val newPhone = "12345"
     val newMail = "asdfasdf"
-    val newName = "new"
+    val newName = "newNameasdfasdf"
 
     "Edit an identity" in {
 
@@ -314,7 +314,7 @@ class ControllerSpec extends Specification {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("cameoId" -> login)
+      val json = Json.obj("search" -> login, "fields" -> Seq("cameoId"))
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -333,7 +333,7 @@ class ControllerSpec extends Specification {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("cameoId" -> login.substring(0, 4))
+      val json = Json.obj("search" -> login.substring(0, 4), "fields" -> Seq("cameoId"))
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -352,7 +352,7 @@ class ControllerSpec extends Specification {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("cameoId" -> "abc")
+      val json = Json.obj("search" -> "abc", "fields" -> Seq("cameoId"))
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -364,7 +364,7 @@ class ControllerSpec extends Specification {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("cameoId" -> "abcabc")
+      val json = Json.obj("search" -> "moep", "fields" -> Seq("cameoId"))
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -375,6 +375,96 @@ class ControllerSpec extends Specification {
 
       data.length must beEqualTo(0)
     }
+
+    "Search for a DisplayName" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("search" -> newName, "fields" -> Seq("displayName"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      (data(0) \ "id").asOpt[String] must beSome(identityExisting)
+
+      data.length must beEqualTo(1)
+    }
+
+    "Search for DisplayName with substring" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("search" -> newName.substring(2,6), "fields" -> Seq("displayName"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      (data(0) \ "id").asOpt[String] must beSome(identityExisting)
+
+      data.length must beEqualTo(1)
+    }
+
+    "Find nothing for non-existing DisplayNames" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("search" -> "moep", "fields" -> Seq("displayName"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
+
+      data.length must beEqualTo(0)
+    }
+
+    "Search for DisplayName or CameoId 1 " in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("search" -> newName.substring(2,6), "fields" -> Seq("displayName","cameoId"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      (data(0) \ "id").asOpt[String] must beSome(identityExisting)
+
+      data.length must beEqualTo(1)
+    }
+
+    "Search for DisplayName or CameoId 2 " in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("search" -> login.substring(0, 4), "fields" -> Seq("cameoId","displayName"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      (data(0) \ "cameoId").asOpt[String] must beSome(login)
+      (data(0) \ "id").asOpt[String] must beSome(identityId)
+
+      data.length must beEqualTo(1)
+    }
+
 
     "Create a new conversation with subject" in {
       val path = basePath + "/conversation"
@@ -435,7 +525,7 @@ class ControllerSpec extends Specification {
       (data \ "recipients")(0).asOpt[JsObject] must beSome
       val r: JsObject = (data \ "recipients")(0).as[JsObject]
       (r \ "identityId").asOpt[String] must beSome(identityExisting)
-      (r \ "identity" \ "displayName").asOpt[String] must beSome("new")
+      (r \ "identity" \ "displayName").asOpt[String] must beSome(newName)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[String] must beSome
       (data \ "lastUpdated").asOpt[String] must beSome
@@ -493,7 +583,7 @@ class ControllerSpec extends Specification {
       (data \ "recipients")(0).asOpt[JsObject] must beSome
       val r: JsObject = (data \ "recipients")(0).as[JsObject]
       (r \ "identityId").asOpt[String] must beSome(identityExisting)
-      (r \ "identity" \ "displayName").asOpt[String] must beSome("new")
+      (r \ "identity" \ "displayName").asOpt[String] must beSome(newName)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
       m.length must beEqualTo(100)
