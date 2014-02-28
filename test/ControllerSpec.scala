@@ -619,7 +619,7 @@ class ControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.length must beEqualTo(12)
+      data.length must beEqualTo(13)
 
       // the list should consist of conversation summaries
       data.map {

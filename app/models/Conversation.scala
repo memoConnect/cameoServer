@@ -151,6 +151,12 @@ object Conversation extends Model[Conversation] {
     col.find(arrayQuery("messages", id)).one[Conversation]
   }
 
+  def findByIdentityId(id: MongoId): Future[Seq[Conversation]] ={
+    val query = Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> id)))
+    col.find(query).cursor[Conversation].collect[Seq]()
+    // TODO: Reimplement this with to return summaries only using the aggregation framework
+  }
+
   def create: Conversation = {
     val id = IdHelper.generateConversationId()
     new Conversation(id, None, Seq(), Seq(), new Date, new Date)

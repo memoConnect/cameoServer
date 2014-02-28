@@ -30,7 +30,6 @@ case class Identity(id: MongoId,
                     preferredMessageType: String, // "mail" or "sms"
                     userKey: String,
                     contacts: Seq[Contact],
-                    conversations: Seq[MongoId],
                     assets: Seq[FileMeta],
                     tokens: Seq[Token],
                     friendRequests: Seq[MongoId],
@@ -58,11 +57,6 @@ case class Identity(id: MongoId,
     val set = Json.obj("$pull" ->
       Json.obj("contacts" -> Json.obj("_id" -> contactId)))
     Identity.col.update(query, set).map { _.updatedExisting }
-  }
-
-  def addConversation(conversationId: MongoId): Future[LastError] = {
-    val set = Json.obj("$addToSet" -> Json.obj("conversations" -> conversationId))
-    Identity.col.update(query, set)
   }
 
   def addAsset(assetId: MongoId): Future[LastError] = {
@@ -151,7 +145,6 @@ object Identity extends Model[Identity] {
     ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and
-    Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Seq[FileMeta]](Seq()) and
     Reads.pure[Seq[Token]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
@@ -207,7 +200,6 @@ object Identity extends Model[Identity] {
       Seq(),
       Seq(),
       Seq(),
-      Seq(),
       new Date,
       new Date,
       docVersion)
@@ -239,11 +231,12 @@ object Identity extends Model[Identity] {
     col.find(query).cursor[Identity].collect[Seq]()
   }
 
-  def docVersion = 3
+  def docVersion = 4
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
     1 -> IdentityEvolutions.addFriedRequest,
-    2 -> IdentityEvolutions.addPublicKeys
+    2 -> IdentityEvolutions.addPublicKeys,
+    3 -> IdentityEvolutions.removeConversations
   )
 }
 
@@ -265,6 +258,8 @@ object IdentityUpdate {
 }
 
 object IdentityEvolutions {
+
+
 
   val addCameoId: Reads[JsObject] = Reads {
     js =>
@@ -291,5 +286,14 @@ object IdentityEvolutions {
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
         js.transform(addFriendRequest andThen addVersion)
       }
+  }
+
+  val removeConversations: Reads[JsObject] = Reads {
+    js =>
+    {
+      val removeConversations: Reads[JsObject] = (__ \ 'conversations).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
+      js.transform(removeConversations andThen addVersion)
+    }
   }
 }
