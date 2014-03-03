@@ -226,8 +226,6 @@ object Identity extends Model[Identity] {
 
     val query = Json.obj("$or" -> (toQueryOrEmpty("cameoId", cameoId) ++ toQueryOrEmpty("displayName", displayName)))
 
-    Logger.debug("SEARCH: " + query)
-
     col.find(query).cursor[Identity].collect[Seq]()
   }
 

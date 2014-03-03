@@ -604,7 +604,7 @@ class ControllerSpec extends Specification {
       (data \ "id").asOpt[String] must beSome
       (data \ "numberOfMessages").asOpt[Int] must beSome(100)
       (data \ "lastUpdated").asOpt[String] must beSome
-      (data \ "lastMessage").asOpt[String] must beSome
+      (data \ "lastMessage").asOpt[JsObject] must beSome
       (data \ "subject").asOpt[String] must beSome
 
     }
@@ -627,7 +627,7 @@ class ControllerSpec extends Specification {
           (c \ "id").asOpt[String] must beSome
           (c \ "numberOfMessages").asOpt[Int] must beSome
           (c \ "lastUpdated").asOpt[String] must beSome
-          (c \ "lastMessage").asOpt[String] must beSome
+          (c \ "lastMessage").asOpt[JsObject] must beSome
       }
       // check if it contains ids
       data.count(c => (c \ "id").asOpt[String] == Some(cidNew)) must beEqualTo(1)
