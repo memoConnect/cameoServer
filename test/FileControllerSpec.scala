@@ -38,7 +38,7 @@ class FileControllerSpec extends Specification {
           ("X-File-Size", fileSize.toString),
           ("X-File-Type", fileType),
           ("X-Index", "0")) :+
-          tokenHeader(token2)
+          tokenHeader(tokenExisting2)
 
         val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
         val res = route(req).get
@@ -67,7 +67,7 @@ class FileControllerSpec extends Specification {
 
             val header: Seq[(String, String)] = Seq(
               ("X-Index", (i + 1).toString)) :+
-              tokenHeader(token2)
+              tokenHeader(tokenExisting2)
 
             val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
             val res = route(req).get
@@ -83,7 +83,7 @@ class FileControllerSpec extends Specification {
 
         val header: Seq[(String, String)] = Seq(
           ("X-Index", "2")) :+
-          tokenHeader(token)
+          tokenHeader(tokenExisting2)
 
         val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
         val res = route(req).get
@@ -95,7 +95,7 @@ class FileControllerSpec extends Specification {
 
         val path = basePath + "/file/" + fileId
 
-        val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
         val res = route(req).get
 
         status(res) must equalTo(OK)
@@ -120,7 +120,7 @@ class FileControllerSpec extends Specification {
           case (chunk, i) => {
             val path = basePath + "/file/" + fileId + "/" + i
 
-            val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+            val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
             val res = route(req).get
 
             status(res) must equalTo(OK)
@@ -137,7 +137,7 @@ class FileControllerSpec extends Specification {
           case (chunk, i) => {
             val path = basePath + "/file/" + fileId + "/15"
 
-            val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+            val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
             val res = route(req).get
 
             status(res) must equalTo(NOT_FOUND)
@@ -150,7 +150,7 @@ class FileControllerSpec extends Specification {
           case (chunk, i) => {
             val path = basePath + "/file/" + fileId + "/d"
 
-            val req = FakeRequest(GET, path).withHeaders(tokenHeader(token2))
+            val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
             val res = route(req).get
 
             status(res) must equalTo(BAD_REQUEST)
@@ -161,7 +161,7 @@ class FileControllerSpec extends Specification {
       "refuse to return non existing FileMeta" in {
         val path = basePath + "/file/0"
 
-        val req = FakeRequest(GET, path).withHeaders(tokenHeader(token3))
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
         val res = route(req).get
 
         status(res) must equalTo(NOT_FOUND)

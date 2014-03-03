@@ -32,6 +32,28 @@ class ConversationControllerSpec extends Specification {
 
     step(play.api.Play.start(app))
 
+    "Get an existing conversation with messages" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      val r: JsObject = (data \ "recipients")(0).as[JsObject]
+      (r \ "identityId").asOpt[String] must beSome(identityExisting)
+      (r \ "identity" \ "displayName").asOpt[String] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
+      m.length must beEqualTo(100)
+      (data \ "created").asOpt[String] must beSome
+      (data \ "lastUpdated").asOpt[String] must beSome
+    }
+
     "Create a new conversation with subject" in {
       val path = basePath + "/conversation"
 
@@ -98,40 +120,6 @@ class ConversationControllerSpec extends Specification {
       (data \ "subject").asOpt[String] must beNone
     }
 
-    "Edit subject of an conversation" in {
-      val path = basePath + "/conversation/" + cidExisting
-
-      val json = Json.obj("subject" -> newSubject)
-
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(OK)
-    }
-
-    "Check if subject has changed" in {
-      val path = basePath + "/conversation/" + cidExisting
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "subject").asOpt[String] must beSome(newSubject)
-    }
-
-    "Refuse non-member to edit subject of an conversation" in {
-      val path = basePath + "/conversation/" + cidExisting
-
-      val json = Json.obj("subject" -> newSubject)
-
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(UNAUTHORIZED)
-    }
 
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
@@ -197,6 +185,42 @@ class ConversationControllerSpec extends Specification {
       data.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew))) must beTrue
       data.exists(c => (c \ "id").asOpt[String].equals(Some(cidExisting))) must beTrue
     }
+
+    "Edit subject of an conversation" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val json = Json.obj("subject" -> newSubject)
+
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "Check if subject has changed" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "subject").asOpt[String] must beSome(newSubject)
+    }
+
+    "Refuse non-member to edit subject of an conversation" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val json = Json.obj("subject" -> newSubject)
+
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
 
     "add recipient to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/recipient"
@@ -270,7 +294,7 @@ class ConversationControllerSpec extends Specification {
 
     "delete recipient from conversation" in {
 
-      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(0)
+      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
 
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -280,7 +304,7 @@ class ConversationControllerSpec extends Specification {
 
     "refuse non-members to delete recipient from conversation" in {
 
-      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(0)
+      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
 
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
@@ -301,13 +325,10 @@ class ConversationControllerSpec extends Specification {
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       val recipients = (data \ "recipients").as[Seq[JsObject]]
 
-      Logger.debug("740:" + recipients)
-
       recipients.length must beEqualTo(3)
 
-      recipients.exists(r => (r \ "identityId").as[String].equals(recipientMemberOfConversation)) must beFalse
+      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beFalse
     }
-
 
     "add encrypted key to recipient in conversation" in {
 
@@ -315,7 +336,7 @@ class ConversationControllerSpec extends Specification {
 
       val json = Json.obj("encryptedKey" -> encryptedKey)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -332,11 +353,9 @@ class ConversationControllerSpec extends Specification {
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       val recipients = (data \ "recipients").as[Seq[JsObject]]
 
-      val recipient0 = recipients.filter(r => (r \ "identityId").as[String].equals(validRecipients(0)))(0)
+      val recipient0 = recipients.find(r => (r \ "identityId").as[String].equals(validRecipients(0))).get
       (recipient0 \ "encryptedKey").asOpt[String] must beSome(encryptedKey)
 
-      val recipient1 = recipients.filter(r => (r \ "identityId").as[String].equals(validRecipients(1)))(0)
-      (recipient1 \ "encryptedKey").asOpt[String] must beNone
     }
 
     "refuse non-members to add encrypted keys to recipient" in {
@@ -345,12 +364,11 @@ class ConversationControllerSpec extends Specification {
 
       val json = Json.obj("encryptedKey" -> encryptedKey)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(UNAUTHORIZED)
     }
-
 
     step(play.api.Play.stop())
   }

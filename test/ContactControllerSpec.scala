@@ -398,7 +398,7 @@ class ContactControllerSpec extends Specification {
       status(res) must equalTo(NOT_FOUND)
     }
 
-    "get friendRequests" in {
+    "get friendRequest" in {
       val path = basePath + "/friendRequests"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
@@ -411,15 +411,14 @@ class ContactControllerSpec extends Specification {
       data.length must beEqualTo(1)
 
       (data(0) \ "id").asOpt[String] must beSome(identityExisting)
-//      (data(1) \ "id").asOpt[String] must beSome(identityExisting2)
     }
 
     "reject FriendRequest" in {
-      val path = basePath + "/friendRequest/answer"
 
+      val path = basePath + "/friendRequest/answer"
       val json = Json.obj("answerType" -> "reject", "identityId" -> identityExisting)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(identityExisting2)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -428,7 +427,7 @@ class ContactControllerSpec extends Specification {
     "check if friendRequest is gone" in {
       val path = basePath + "/friendRequests"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -438,7 +437,7 @@ class ContactControllerSpec extends Specification {
       data.length must beEqualTo(0)
     }
 
-    "send antoher FriendRequest" in {
+    "send another FriendRequest" in {
       val path = basePath + "/friendRequest"
 
       val json = Json.obj("identityId" -> identityExisting2)
@@ -452,7 +451,7 @@ class ContactControllerSpec extends Specification {
     "accept FriendRequest" in {
       val path = basePath + "/friendRequest/answer"
 
-      val json = Json.obj("answerType" -> "accept", "identityId" -> identityExisting2)
+      val json = Json.obj("answerType" -> "accept", "identityId" -> identityExisting)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
@@ -490,7 +489,7 @@ class ContactControllerSpec extends Specification {
     "check if friendRequest is gone" in {
       val path = basePath + "/friendRequests"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -499,8 +498,6 @@ class ContactControllerSpec extends Specification {
 
       data.length must beEqualTo(0)
     }
-
-
 
     step(play.api.Play.stop())
   }

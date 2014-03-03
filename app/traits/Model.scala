@@ -23,6 +23,8 @@ import scala.concurrent.duration._
 
 trait Model[A] {
 
+  def name = "default"
+
   def col: JSONCollection
 
   def find(id: MongoId): Future[Option[A]] = {
@@ -39,6 +41,7 @@ trait Model[A] {
   def docVersion: Int
 
   def save(js: JsObject): Future[LastError] = {
+    Logger.debug("saving to " + col.name)
     col.save(js)
   }
 
@@ -54,11 +57,12 @@ trait Model[A] {
     js =>
       try {
         js.transform(fromMongoDates andThen fromMongoId).map {
-          obj: JsValue => obj.as[T](reads)
-        }
+          obj: JsValue => obj.as[T](reads) }
       } catch {
         // try to apply evolutions
         case JsResultException(e) =>
+          Logger.debug("Running evolution on: " + name)
+
           val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
           val readsWithEvolution = getEvolutions(currentDocVersion)
 
@@ -74,12 +78,11 @@ trait Model[A] {
                   newJs.asOpt[T](fromMongoDates andThen fromMongoId andThen reads) match {
                     case None =>
                       Logger.error("Error reading Json after evolution"); JsError()
-                    case Some(o) => JsSuccess(o)
+                    case Some(o) =>
+                      JsSuccess(o)
                   }
               }
           }
-
-        case _: Throwable => JsError()
       }
   }
 

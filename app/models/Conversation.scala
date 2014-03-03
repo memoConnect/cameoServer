@@ -70,7 +70,7 @@ case class Conversation(id: MongoId,
   def updateRecipient(recipient: Recipient, recipientUpdate: RecipientUpdate): Future[Boolean] = {
     val queryRecipient = query ++ Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> recipient.identityId)))
     val set = Json.obj("$set" -> Json.obj("recipients.$.encryptedKey" -> recipientUpdate.encryptedKey))
-    Conversation.col.update(queryRecipient, set).map { _.updatedExisting }
+    Conversation.col.update(queryRecipient, set).map { _.ok }
   }
 
   def hasMember(identityId: MongoId): Boolean = {

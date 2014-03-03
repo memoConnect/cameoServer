@@ -19,11 +19,12 @@ class MessageControllerSpec extends Specification {
 
   sequential
 
+  var messageId = ""
+  var messageBody = "wir rocken"
+
   "MessageController" should {
 
     step(play.api.Play.start(app))
-
-    var messageId = ""
 
     "add message to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/message"
@@ -39,7 +40,7 @@ class MessageControllerSpec extends Specification {
 
       (data \ "id").asOpt[String] must beSome
       messageId = (data \ "id").as[String]
-      (data \ "messageBody").asOpt[String] must beSome("wir rocken")
+      (data \ "messageBody").asOpt[String] must beSome(messageBody)
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
       (data \ "fromIdentity").asOpt[String] must beSome
       (data \ "created").asOpt[String] must beSome

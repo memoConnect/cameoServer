@@ -35,10 +35,11 @@ object ConversationController extends ExtendedController {
 
   def getConversation(id: String, offset: Int, limit: Int) = AuthAction.async {
     request =>
-      Conversation.find(new MongoId(id)).flatMap {
+      Conversation.find(id).flatMap {
         case None => Future.successful(resNotFound("conversation"))
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.toJsonWithIdentitiesResult(offset, limit)
+          Future(Ok(""))
+          //c.toJsonWithIdentitiesResult(offset, limit)
         }
       }
   }

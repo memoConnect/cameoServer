@@ -25,6 +25,7 @@ case class Contact(id: MongoId,
                    contactType: String,
                    docVersion: Int) {
 
+
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
   def toJsonWithIdentity: Future[JsObject] =
@@ -67,6 +68,8 @@ case class Contact(id: MongoId,
 }
 
 object Contact extends Model[Contact] {
+
+  override def name = "contact"
 
   val col = Identity.col
 
