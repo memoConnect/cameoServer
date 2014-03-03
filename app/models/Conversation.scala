@@ -141,8 +141,8 @@ object Conversation extends Model[Conversation] {
         toJsonOrEmpty("subject", c.subject) ++
         Json.obj("lastMessage" -> {
           c.messages.lastOption match {
-            case Some(m) => m.messageBody
-            case None    => ""
+            case Some(m) => m.toJson
+            case None    => Json.obj()
           }
         })
   }
