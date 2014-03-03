@@ -55,7 +55,7 @@ object MessageController extends ExtendedController {
               case None => Future(resNotFound("conversation"))
               case Some(conversation) => {
                 // only members can add message to conversation
-                conversation.hasMemberFuture(request.identity.id) {
+                conversation.hasMemberFutureResult(request.identity.id) {
                   conversation.addMessage(message)
                   // initiate new actor for each request
                   val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
@@ -73,7 +73,7 @@ object MessageController extends ExtendedController {
       Message.findConversation(new MongoId(id)).map {
         case None => resNotFound("message")
         case Some(c) =>
-          c.hasMember(request.identity.id) {
+          c.hasMemberResult(request.identity.id) {
             c.getMessage(new MongoId(id)) match {
               case None    => resServerError("unable to get message from conversation")
               case Some(m) => resOK(m.toJson)

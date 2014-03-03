@@ -37,7 +37,7 @@ object ConversationController extends ExtendedController {
     request =>
       Conversation.find(new MongoId(id)).flatMap {
         case None => Future.successful(resNotFound("conversation"))
-        case Some(c) => c.hasMemberFuture(request.identity.id) {
+        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.toJsonWithIdentitiesResult(offset, limit)
         }
       }
@@ -50,32 +50,31 @@ object ConversationController extends ExtendedController {
         case None => Future.successful(resNotFound("conversation"))
         case Some(c) => {
 
-          c.hasMemberFuture(request.identity.id) {
+          c.hasMemberFutureResult(request.identity.id) {
 
             validateFuture[Seq[String]](request.body \ "recipients", Reads.seq[String]) {
               recipientIds =>
                 {
-                  // check if all recipients exist
-                  val maybeIdentities = Future.sequence(recipientIds.map({
-                    id => Identity.find(id)
-                  }))
-                  val futureResult: Future[Boolean] = maybeIdentities.map {
-                    i => i.forall(_.isDefined)
-                  }
-                  futureResult.flatMap {
-
-                    case false => Future(resBadRequest("at least one recipientId is invalid"))
-                    case true => {
-
-                      c.addRecipients(recipientIds.map(Recipient.create)).map {
-                        lastError =>
-                          if (lastError.ok) {
-                            resOK("updated")
-                          } else {
-                            resServerError("update failed")
-                          }
+                  // check if one of the identities is already a member of this conversation
+                  recipientIds.forall(id => ! c.hasMember(new MongoId(id))) match {
+                    case false => Future(resKO("At least one identity is already a member of this conversation"))
+                    case true =>
+                      // check if all recipients exist
+                      val maybeIdentities = Future.sequence(recipientIds.map({
+                        id => Identity.find(id)
+                      }))
+                      val futureResult: Future[Boolean] = maybeIdentities.map {
+                        i => i.forall(_.isDefined)
                       }
-                    }
+                      futureResult.flatMap {
+                        case false => Future(resBadRequest("At least one idenityId is invalid"))
+                        case true => {
+                          c.addRecipients(recipientIds.map(Recipient.create)).map {
+                            case true  => resOK("updated")
+                            case false => resServerError("update failed")
+                          }
+                        }
+                      }
                   }
                 }
             }
@@ -88,7 +87,7 @@ object ConversationController extends ExtendedController {
     request =>
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))
-        case Some(c) => c.hasMemberFuture(request.identity.id) {
+        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.deleteRecipient(Recipient.create(new MongoId(rid))).map {
             case false => resNotFound("recipient")
             case true  => resOK()
@@ -101,7 +100,7 @@ object ConversationController extends ExtendedController {
     request =>
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))
-        case Some(c) => c.hasMemberFuture(request.identity.id) {
+        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           Future(resOK(c.toSummaryJson))
         }
       }
@@ -120,10 +119,10 @@ object ConversationController extends ExtendedController {
         ru =>
           Conversation.find(id).flatMap {
             case None => Future(resNotFound("conversation"))
-            case Some(c) => c.hasMemberFuture(request.identity.id) {
+            case Some(c) => c.hasMemberFutureResult(request.identity.id) {
               c.updateRecipient(Recipient.create(rid), ru).map {
                 case false => resServerError("could not update")
-                case true => resOK("updated")
+                case true  => resOK("updated")
               }
             }
           }
@@ -136,10 +135,10 @@ object ConversationController extends ExtendedController {
         cu =>
           Conversation.find(id).flatMap {
             case None => Future(resNotFound("conversation"))
-            case Some(c) => c.hasMemberFuture(request.identity.id) {
+            case Some(c) => c.hasMemberFutureResult(request.identity.id) {
               c.update(cu).map {
                 case false => resServerError("could not update")
-                case true => resOK("updated")
+                case true  => resOK("updated")
               }
             }
           }

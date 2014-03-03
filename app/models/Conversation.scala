@@ -54,11 +54,11 @@ case class Conversation(id: MongoId,
     Conversation.col.update(query, set).map { _.ok }
   }
 
-  def addRecipients(recipients: Seq[Recipient]): Future[LastError] = {
-    val set = Json.obj("$push" ->
+  def addRecipients(recipients: Seq[Recipient]): Future[Boolean] = {
+    val set = Json.obj("$addToSet" ->
       Json.obj("recipients" ->
         Json.obj("$each" -> recipients)))
-    Conversation.col.update(query, set)
+    Conversation.col.update(query, set).map{_.updatedExisting}
   }
 
   def deleteRecipient(recipient: Recipient): Future[Boolean] = {
@@ -73,16 +73,20 @@ case class Conversation(id: MongoId,
     Conversation.col.update(queryRecipient, set).map { _.updatedExisting }
   }
 
-  def hasMemberFuture(identityId: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
-    if (this.recipients.filter(_.identityId.equals(identityId)).isDefinedAt(0)) {
+  def hasMember(identityId: MongoId): Boolean = {
+    this.recipients.exists(_.identityId.equals(identityId))
+  }
+
+  def hasMemberFutureResult(identityId: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
+    if (this.hasMember(identityId)) {
       action
     } else {
       Future(resUnauthorized("identity is not a member of the conversation"))
     }
   }
 
-  def hasMember(identityId: MongoId)(action: SimpleResult): SimpleResult = {
-    if (this.recipients.filter(_.identityId.equals(identityId)).isDefinedAt(0)) {
+  def hasMemberResult(identityId: MongoId)(action: SimpleResult): SimpleResult = {
+    if (this.hasMember(identityId)) {
       action
     } else {
       resUnauthorized("identity is not a member of the conversation")
