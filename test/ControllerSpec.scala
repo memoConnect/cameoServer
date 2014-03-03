@@ -645,6 +645,19 @@ class ControllerSpec extends Specification {
       status(res) must equalTo(OK)
     }
 
+    "refuse to add dupblicate recipient to conversation" in {
+      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+
+      val json = Json.obj("recipients" -> Seq(validRecipients(0)))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(token2))
+      val res = route(req).get
+
+      Logger.debug("RES" + contentAsString(res))
+
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
     "conversation should contain new recipients" in {
       val path = basePath + "/conversation/" + cidExisting
 

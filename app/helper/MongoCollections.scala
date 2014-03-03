@@ -19,13 +19,14 @@ object MongoCollections {
   lazy val conversationCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("conversations")
     col.indexesManager.ensure(Index(Seq("messages._id" -> IndexType.Ascending)))
-    col.indexesManager.ensure(Index(Seq("recipients.identityId._id" -> IndexType.Ascending)))
+//    col.indexesManager.ensure(Index(Seq("recipients.identityId" -> IndexType.Ascending, "_id" -> IndexType.Ascending), unique = true, sparse = true))
     col
   }
   lazy val identityCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("identities")
     col.indexesManager.ensure(Index(Seq("cameoId" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("contacts._id" -> IndexType.Ascending)))
+//    col.indexesManager.ensure(Index(Seq("contacts.identityId" -> IndexType.Ascending, "_id" -> IndexType.Ascending), unique = true, sparse = true))
     col.indexesManager.ensure(Index(Seq("tokens._id" -> IndexType.Ascending)))
     col
   }

@@ -213,9 +213,9 @@ object ContactController extends ExtendedController {
                       le1 <- otherIdentity.addContact(Contact.create(request.identity.id, CONTACT_TYPE_INTERNAL))
                       le2 <- request.identity.addContact(Contact.create(otherIdentity.id, CONTACT_TYPE_INTERNAL))
                     } yield {
-                      le1.updatedExisting && le2.updatedExisting match {
+                      le1 && le2 match {
                         case true  => resOK("added contacts")
-                        case false => resServerError("error adding contacts")
+                        case false => resKO("duplicate entries")
                       }
                     }
                 }
