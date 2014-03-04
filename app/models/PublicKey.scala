@@ -5,7 +5,7 @@ import traits.Model
 import play.api.libs.json._
 import traits.Model
 import play.api.libs.json.Reads._
-import helper.IdHelper
+import helper.{MongoCollections, IdHelper}
 import play.api.libs.functional.syntax._
 import helper.JsonHelper._
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,7 +27,7 @@ case class PublicKey(id: MongoId,
 
 object PublicKey extends Model[PublicKey] {
 
-  val col = Identity.col
+  val col = MongoCollections.identityCollection
 
   implicit val mongoFormat: Format[PublicKey] = createMongoFormat(Json.reads[PublicKey], Json.writes[PublicKey])
 

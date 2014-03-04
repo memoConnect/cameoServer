@@ -2,7 +2,7 @@ package models
 
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import helper.IdHelper
+import helper.{MongoCollections, IdHelper}
 import traits.Model
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
@@ -71,7 +71,7 @@ object Contact extends Model[Contact] {
 
   override def name = "contact"
 
-  val col = Identity.col
+  val col = MongoCollections.identityCollection
 
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 

@@ -52,19 +52,16 @@ object MessageController extends ExtendedController {
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
           {
-            Logger.debug("######################1")
             Conversation.find(id).flatMap {
               case None => Future(resNotFound("conversation"))
               case Some(conversation) => {
-                Logger.debug("######################2")
                 // only members can add message to conversation
                 conversation.hasMemberFutureResult(request.identity.id) {
-                  Logger.debug("######################3")
-                  //conversation.addMessage(message)
+                  conversation.addMessage(message)
                   // initiate new actor for each request
-//                  val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
-//                  sendMessageActor ! (message, conversation.recipients)
-                  Future(resOK(request.body))
+                  val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
+                  sendMessageActor ! (message, conversation.recipients)
+                  Future(resOK(message.toJson))
                 }
               }
             }

@@ -61,8 +61,6 @@ trait Model[A] {
       } catch {
         // try to apply evolutions
         case JsResultException(e) =>
-          Logger.debug("Running evolution on: " + name)
-
           val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
           val readsWithEvolution = getEvolutions(currentDocVersion)
 
