@@ -23,8 +23,6 @@ import scala.concurrent.duration._
 
 trait Model[A] {
 
-  def name = "default"
-
   def col: JSONCollection
 
   def find(id: MongoId): Future[Option[A]] = {
@@ -41,7 +39,6 @@ trait Model[A] {
   def docVersion: Int
 
   def save(js: JsObject): Future[LastError] = {
-    Logger.debug("saving to " + col.name)
     col.save(js)
   }
 

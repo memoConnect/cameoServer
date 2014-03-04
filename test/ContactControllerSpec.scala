@@ -116,6 +116,19 @@ class ContactControllerSpec extends Specification {
 
     }
 
+    "refuse to add internal contact that already exists" in {
+      val path = basePath + "/contact"
+
+      val json = Json.obj("groups" -> Seq("group3", "group1"), "identityId" -> identityExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(232)
+
+
+    }
+
     "refuse to add internal contact with invalid identity" in {
       val path = basePath + "/contact"
 
@@ -124,7 +137,7 @@ class ContactControllerSpec extends Specification {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
-      status(res) must equalTo(BAD_REQUEST)
+      status(res) must equalTo(NOT_FOUND)
     }
 
     "get the new internal contact" in {
@@ -398,7 +411,18 @@ class ContactControllerSpec extends Specification {
       status(res) must equalTo(NOT_FOUND)
     }
 
-    "get friendRequest" in {
+    "send another FriendRequest" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> identityExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "get friendRequest and check that there is only one" in {
       val path = basePath + "/friendRequests"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))

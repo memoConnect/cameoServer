@@ -23,42 +23,52 @@ object ContactController extends ExtendedController {
 
   def addContact() = AuthAction.async(parse.tolerantJson) {
     request =>
-      val jsBody: JsValue = request.body
 
-      // check if an identity id is given
-      val (contactType, maybeIdentity): (String, Future[Option[(Identity)]]) = (jsBody \ "identityId").asOpt[String] match {
-        case Some(id) => {
-          // check if identity exists
-          (CONTACT_TYPE_INTERNAL, Identity.find(id))
-        }
-        case None => {
-          // if not check if there is a valid identity object
-          val i = (jsBody \ "identity").validate[Identity](Identity.createReads).map {
-            identity =>
-              {
-                Identity.col.insert(identity).map {
-                  lastError => Some(identity)
-                }
-              }
-          }.recoverTotal(e => Future(None))
-          (CONTACT_TYPE_EXTERNAL, i)
-        }
-
-      }
-
-      // read contact and add identity id
-      maybeIdentity.flatMap {
-        case None => Future(resBadRequest("invalid identity"))
-        case Some(identity) => {
-          validateFuture(jsBody, Contact.createReads(identity.id, contactType)) {
-            contact =>
-              {
-                request.identity.addContact(contact)
-                contact.toJsonWithIdentity.map(js => resOK(js))
-              }
+      def addExternalContact(js: JsObject): Future[SimpleResult] = {
+        validateFuture(js, Identity.createReads) { identity =>
+          Identity.col.insert(identity).flatMap { error =>
+            error.ok match {
+              case false => Future(resServerError("could not save new identity"))
+              case true  => createContact(identity.id, CONTACT_TYPE_EXTERNAL)
+            }
           }
         }
       }
+
+      def addInternalContact(identityId: String): Future[SimpleResult] = {
+        // check if the user already has this contact
+        request.identity.contacts.exists(_.identityId.toString.equals(identityId)) match {
+          case true => Future(resKO("identity is already in address book"))
+          case false =>
+            // check if identity exists
+            Identity.find(new MongoId(identityId)).flatMap {
+              case None => Future(resNotFound("identity"))
+              case Some(i) =>
+                createContact(i.id, CONTACT_TYPE_INTERNAL)
+            }
+        }
+      }
+
+      def createContact(identityId: MongoId, contactType: String): Future[SimpleResult] = {
+        validateFuture(request.body, Contact.createReads(identityId, contactType)) {
+          contact =>
+            {
+              request.identity.addContact(contact)
+              contact.toJsonWithIdentity.map(js => resOK(js))
+            }
+        }
+      }
+
+      // check if the contact is internal or external
+      (request.body \ "identityId").asOpt[String] match {
+        case Some(id) => addInternalContact(id)
+        case None =>
+          (request.body \ "identity").asOpt[JsObject] match {
+            case None     => Future(resBadRequest("no identityId or identity object"))
+            case Some(js) => addExternalContact(js)
+          }
+      }
+
   }
 
   def editContact(contactId: String) = AuthAction(parse.tolerantJson) {

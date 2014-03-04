@@ -69,8 +69,6 @@ case class Contact(id: MongoId,
 
 object Contact extends Model[Contact] {
 
-  override def name = "contact"
-
   val col = MongoCollections.identityCollection
 
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
