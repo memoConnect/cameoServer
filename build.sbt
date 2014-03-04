@@ -16,6 +16,8 @@ libraryDependencies ++= Seq(
   "com.googlecode.libphonenumber" % "libphonenumber" % "5.9"
 )
 
+parallelExecution in Test := false
+
 play.Project.playScalaSettings
 
 com.typesafe.sbt.SbtAtmosPlay.atmosPlaySettings

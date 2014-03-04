@@ -13,7 +13,6 @@ import helper.ResultHelper._
  * Time: 6:53 PM
  */
 
-//TODO: clean this up
 trait ExtendedController extends Controller with MongoController {
 
   def validate[T](js: JsValue, reads: Reads[T])(action: ((T => SimpleResult))): SimpleResult = {

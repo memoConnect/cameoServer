@@ -3,7 +3,7 @@ package models
 import java.util.Date
 import traits.{ Model }
 import play.api.libs.json._
-import helper.IdHelper
+import helper.{MongoCollections, IdHelper}
 import play.api.libs.functional.syntax._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
@@ -34,7 +34,7 @@ case class Message(id: MongoId,
 
 object Message extends Model[Message] {
 
-  val col = Conversation.col
+  val col = MongoCollections.conversationCollection
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
   def docVersion = 0

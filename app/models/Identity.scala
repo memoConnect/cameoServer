@@ -14,6 +14,7 @@ import reactivemongo.core.commands.LastError
 import helper.JsonHelper._
 import play.api.Logger
 import helper.MongoCollections._
+import reactivemongo.core.errors.DatabaseException
 
 /**
  * User: Björn Reimer
@@ -46,10 +47,14 @@ case class Identity(id: MongoId,
 
   private val query = Json.obj("_id" -> this.id)
 
-  def addContact(contact: Contact): Future[LastError] = {
-    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
-    //    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
-    Identity.col.update(query, set)
+  def addContact(contact: Contact): Future[Boolean] = {
+    try {
+      val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
+      //    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
+      Identity.col.update(query, set).map { _.updatedExisting }
+    } catch {
+      case e: DatabaseException => Future(false)
+    }
   }
 
   def deleteContact(contactId: MongoId): Future[Boolean] = {
@@ -117,7 +122,7 @@ case class Identity(id: MongoId,
     }
     val set = Json.obj("$set" -> setValues)
 
-    Identity.col.update(query, set).map{_.updatedExisting}
+    Identity.col.update(query, set).map { _.updatedExisting }
   }
 
   def getGroup(groupName: String): Seq[Contact] = {
@@ -162,7 +167,7 @@ object Identity extends Model[Identity] {
         maybeEmpty("email", i.email.map { _.toJson }) ++
         maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
-        Json.obj("publicKeys" -> i.publicKeys.map {_.toJson}) ++
+        Json.obj("publicKeys" -> i.publicKeys.map { _.toJson }) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
@@ -175,14 +180,14 @@ object Identity extends Model[Identity] {
         maybeEmpty("email", i.email.map { _.toJson }) ++
         maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) ++
-        Json.obj("publicKeys" -> i.publicKeys.map( pk => pk.key))
+        Json.obj("publicKeys" -> i.publicKeys.map(pk => pk.key))
   }
 
   def publicSummaryWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) 
+        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
   }
 
   def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String]): Identity = {
@@ -217,9 +222,9 @@ object Identity extends Model[Identity] {
 
   def search(cameoId: Option[String], displayName: Option[String]): Future[Seq[Identity]] = {
 
-    def toQueryOrEmpty(key: String, field: Option[String]) : Seq[JsObject] = {
+    def toQueryOrEmpty(key: String, field: Option[String]): Seq[JsObject] = {
       field match {
-        case None => Seq()
+        case None    => Seq()
         case Some(f) => Seq(Json.obj(key -> Json.obj("$regex" -> f)))
       }
     }
@@ -257,8 +262,6 @@ object IdentityUpdate {
 
 object IdentityEvolutions {
 
-
-
   val addCameoId: Reads[JsObject] = Reads {
     js =>
       {
@@ -288,10 +291,10 @@ object IdentityEvolutions {
 
   val removeConversations: Reads[JsObject] = Reads {
     js =>
-    {
-      val removeConversations: Reads[JsObject] = (__ \ 'conversations).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
-      js.transform(removeConversations andThen addVersion)
-    }
+      {
+        val removeConversations: Reads[JsObject] = (__ \ 'conversations).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
+        js.transform(removeConversations andThen addVersion)
+      }
   }
 }

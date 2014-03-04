@@ -25,7 +25,7 @@ GET            /api/v1/conversation/:id                       controllers.Conver
 PUT            /api/v1/conversation/:id                       controllers.ConversationController.updateConversation(id)
 POST           /api/v1/conversation/:id/recipient             controllers.ConversationController.addRecipients(id)
 DELETE         /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.deleteRecipient(id, rid)
-POST           /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.updateRecipient(id, rid)
+PUT            /api/v1/conversation/:id/recipient/:rid        controllers.ConversationController.updateRecipient(id, rid)
 GET            /api/v1/conversation/:id/summary               controllers.ConversationController.getConversationSummary(id: String)
 GET            /api/v1/conversations                          controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0)
 

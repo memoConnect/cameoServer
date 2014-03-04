@@ -19,7 +19,7 @@ object MongoCollections {
   lazy val conversationCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("conversations")
     col.indexesManager.ensure(Index(Seq("messages._id" -> IndexType.Ascending)))
-    col.indexesManager.ensure(Index(Seq("recipients.identityId._id" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(Seq("recipients.identityId" -> IndexType.Ascending)))
     col
   }
   lazy val identityCollection: JSONCollection = {

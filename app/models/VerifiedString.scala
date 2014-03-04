@@ -5,6 +5,7 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.JsonHelper._
 import traits.Model
+import helper.MongoCollections
 
 /**
  * User: Björn Reimer
@@ -23,7 +24,7 @@ case class VerifiedString(isVerified: Boolean,
 
 object VerifiedString extends Model[VerifiedString] {
 
-  val col = Identity.col
+  val col = MongoCollections.identityCollection
 
   implicit val mongoFormat: Format[VerifiedString] = createMongoFormat(Json.reads[VerifiedString], Json.writes[VerifiedString])
 

@@ -23,42 +23,52 @@ object ContactController extends ExtendedController {
 
   def addContact() = AuthAction.async(parse.tolerantJson) {
     request =>
-      val jsBody: JsValue = request.body
 
-      // check if an identity id is given
-      val (contactType, maybeIdentity): (String, Future[Option[(Identity)]]) = (jsBody \ "identityId").asOpt[String] match {
-        case Some(id) => {
-          // check if identity exists
-          (CONTACT_TYPE_INTERNAL, Identity.find(id))
-        }
-        case None => {
-          // if not check if there is a valid identity object
-          val i = (jsBody \ "identity").validate[Identity](Identity.createReads).map {
-            identity =>
-              {
-                Identity.col.insert(identity).map {
-                  lastError => Some(identity)
-                }
-              }
-          }.recoverTotal(e => Future(None))
-          (CONTACT_TYPE_EXTERNAL, i)
-        }
-
-      }
-
-      // read contact and add identity id
-      maybeIdentity.flatMap {
-        case None => Future(resBadRequest("invalid identity"))
-        case Some(identity) => {
-          validateFuture(jsBody, Contact.createReads(identity.id, contactType)) {
-            contact =>
-              {
-                request.identity.addContact(contact)
-                contact.toJsonWithIdentity.map(js => resOK(js))
-              }
+      def addExternalContact(js: JsObject): Future[SimpleResult] = {
+        validateFuture(js, Identity.createReads) { identity =>
+          Identity.col.insert(identity).flatMap { error =>
+            error.ok match {
+              case false => Future(resServerError("could not save new identity"))
+              case true  => createContact(identity.id, CONTACT_TYPE_EXTERNAL)
+            }
           }
         }
       }
+
+      def addInternalContact(identityId: String): Future[SimpleResult] = {
+        // check if the user already has this contact
+        request.identity.contacts.exists(_.identityId.toString.equals(identityId)) match {
+          case true => Future(resKO("identity is already in address book"))
+          case false =>
+            // check if identity exists
+            Identity.find(new MongoId(identityId)).flatMap {
+              case None => Future(resNotFound("identity"))
+              case Some(i) =>
+                createContact(i.id, CONTACT_TYPE_INTERNAL)
+            }
+        }
+      }
+
+      def createContact(identityId: MongoId, contactType: String): Future[SimpleResult] = {
+        validateFuture(request.body, Contact.createReads(identityId, contactType)) {
+          contact =>
+            {
+              request.identity.addContact(contact)
+              contact.toJsonWithIdentity.map(js => resOK(js))
+            }
+        }
+      }
+
+      // check if the contact is internal or external
+      (request.body \ "identityId").asOpt[String] match {
+        case Some(id) => addInternalContact(id)
+        case None =>
+          (request.body \ "identity").asOpt[JsObject] match {
+            case None     => Future(resBadRequest("no identityId or identity object"))
+            case Some(js) => addExternalContact(js)
+          }
+      }
+
   }
 
   def editContact(contactId: String) = AuthAction(parse.tolerantJson) {
@@ -158,17 +168,29 @@ object ContactController extends ExtendedController {
   def sendFriendRequest = AuthAction.async(parse.tolerantJson) {
     request =>
       def executeFriendRequest(receiver: MongoId): Future[SimpleResult] = {
-        // check if identityId exists
-        Identity.find(receiver).flatMap {
-          case None => Future(resNotFound("identity"))
-          case Some(other) => other.addFriendRequest(request.identity.id).map {
-            lastError =>
-              if (lastError.updatedExisting) {
-                resOK()
-              } else {
-                resServerError("could not update")
-              }
+        // check if the other identity is already in contact
+        request.identity.contacts.exists(c => {
+          if (c.identityId.equals(receiver)) {
+            Logger.debug("CONTACT:" + c.identityId.toJson + " COMPARE: " + receiver.toJson)
+            true
+          } else {
+            false
           }
+        }) match {
+          case true => Future(resKO("identity is already in address book"))
+          case false =>
+            // check if identityId exists
+            Identity.find(receiver).flatMap {
+              case None => Future(resNotFound("identity"))
+              case Some(other) => other.addFriendRequest(request.identity.id).map {
+                lastError =>
+                  if (lastError.updatedExisting) {
+                    resOK()
+                  } else {
+                    resServerError("could not update")
+                  }
+              }
+            }
         }
       }
 
@@ -176,7 +198,7 @@ object ContactController extends ExtendedController {
         sfr =>
           (sfr.identityId, sfr.cameoId) match {
             case (None, None)            => Future(resBadRequest("either identityId or cameoId required"))
-            case (Some(i), Some(c))      => Future(resBadRequest("only one identityId or cameoId allowed"))
+            case (Some(i), Some(c))      => Future(resBadRequest("only identityId or cameoId allowed"))
             case (Some(i: String), None) => executeFriendRequest(new MongoId(i))
             case (None, Some(c: String)) => {
               // search for cameoId and get identityId
@@ -213,9 +235,9 @@ object ContactController extends ExtendedController {
                       le1 <- otherIdentity.addContact(Contact.create(request.identity.id, CONTACT_TYPE_INTERNAL))
                       le2 <- request.identity.addContact(Contact.create(otherIdentity.id, CONTACT_TYPE_INTERNAL))
                     } yield {
-                      le1.updatedExisting && le2.updatedExisting match {
+                      le1 && le2 match {
                         case true  => resOK("added contacts")
-                        case false => resServerError("error adding contacts")
+                        case false => resKO("duplicate entries")
                       }
                     }
                 }

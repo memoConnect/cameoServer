@@ -181,12 +181,14 @@ object DbAdminUtilities {
       js => {
         val id = (js \ "_id").as[MongoId]
 
+        Logger.debug("Starting Migration of Recipients in Conversation: " + id)
+
         val identityIds: Seq[JsObject] = (js \ "recipients").as[Seq[JsObject]]
 
         val res = identityIds.length match {
           case i if i == 0 => Future(true)
           case _ =>
-            val newRecipients = identityIds.map {
+            val newRecipients = identityIds.distinct.map {
               id => Json.obj("identityId" -> id)
             }
             val query = Json.obj("_id" -> id)
@@ -197,7 +199,7 @@ object DbAdminUtilities {
         }
 
         val lastRes = Await.result(res, 5 minutes)
-        Logger.debug("Migrated Recipient: " + id)
+        Logger.debug("Migrated Recipients in Conversation: " + id)
         lastRes
       }
 
