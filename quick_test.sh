@@ -1,9 +1,4 @@
 #!/bin/bash
-
-export SBT_OPTS="-Dsbt.log.noformat=true"
-
-./sbt clean compile
-
 for spec in $(ls test); do
     if [ -f "test/$spec" ] ; then
         specName=${spec%.*}
@@ -11,3 +6,6 @@ for spec in $(ls test); do
         ./sbt "test-only ${specName} html junitxml console"
     fi
 done
+
+
+

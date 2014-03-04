@@ -5,10 +5,11 @@ import play.api.mvc.Results._
 import play.api.libs.json._
 import helper.JsonHelper._
 import constants.Notifications._
-import play.api.libs.json.JsObject
 import scala.concurrent.Future
 import traits.Model
 import play.api.Logger
+import play.api.libs.json.JsObject
+import play.api.mvc.SimpleResult
 
 /**
  * User: Björn Reimer
@@ -46,6 +47,12 @@ object ResultHelper {
 
   def resKO(): SimpleResult =
     Status(232)(Json.obj("res" -> "KO"))
+  //      ++
+  //      addMessagesOrEmpty(notifications))
+
+  def resKO(error: String): SimpleResult =
+    Status(232)(Json.obj("res" -> "KO")
+      ++ Json.obj("error" -> error))
   //      ++
   //      addMessagesOrEmpty(notifications))
 

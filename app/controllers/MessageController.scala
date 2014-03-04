@@ -34,6 +34,7 @@ import akka.actor.Props
 import actors.SendMessageActor
 import play.api.Play.current
 import play.modules.reactivemongo.ReactiveMongoPlugin
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -51,11 +52,11 @@ object MessageController extends ExtendedController {
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
           {
-            Conversation.find(new MongoId(id)).flatMap {
+            Conversation.find(id).flatMap {
               case None => Future(resNotFound("conversation"))
               case Some(conversation) => {
                 // only members can add message to conversation
-                conversation.hasMemberFuture(request.identity.id) {
+                conversation.hasMemberFutureResult(request.identity.id) {
                   conversation.addMessage(message)
                   // initiate new actor for each request
                   val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
@@ -68,12 +69,13 @@ object MessageController extends ExtendedController {
       }
   }
 
+
   def getMessage(id: String) = AuthAction.async {
     (request) =>
       Message.findConversation(new MongoId(id)).map {
         case None => resNotFound("message")
         case Some(c) =>
-          c.hasMember(request.identity.id) {
+          c.hasMemberResult(request.identity.id) {
             c.getMessage(new MongoId(id)) match {
               case None    => resServerError("unable to get message from conversation")
               case Some(m) => resOK(m.toJson)

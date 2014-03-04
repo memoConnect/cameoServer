@@ -2,7 +2,7 @@ package models
 
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import helper.IdHelper
+import helper.{MongoCollections, IdHelper}
 import traits.Model
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
@@ -24,6 +24,7 @@ case class Contact(id: MongoId,
                    identityId: MongoId,
                    contactType: String,
                    docVersion: Int) {
+
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
@@ -68,7 +69,7 @@ case class Contact(id: MongoId,
 
 object Contact extends Model[Contact] {
 
-  val col = Identity.col
+  val col = MongoCollections.identityCollection
 
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 

@@ -1,11 +1,12 @@
 package models
 
 import traits.Model
-import play.api.libs.json.{Format, JsObject, Writes, Json}
+import play.api.libs.json.{ Format, JsObject, Writes, Json }
 import helper.JsonHelper._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
+import helper.MongoCollections
 
 /**
  * User: Björn Reimer
@@ -13,7 +14,8 @@ import reactivemongo.core.commands.LastError
  * Time: 2:02 PM
  */
 
-case class Recipient(identityId: MongoId, encryptedKey: Option[String]) {
+case class Recipient(identityId: MongoId,
+                     encryptedKey: Option[String]) {
 
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 
@@ -27,7 +29,7 @@ case class Recipient(identityId: MongoId, encryptedKey: Option[String]) {
 
 object Recipient extends Model[Recipient] {
 
-  def col = Conversation.col
+  def col = MongoCollections.conversationCollection
 
   implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
@@ -37,7 +39,7 @@ object Recipient extends Model[Recipient] {
   def outputWrites: Writes[Recipient] = Writes[Recipient] {
     r =>
       Json.obj("identityId" -> r.identityId.toJson) ++
-      toJsonOrEmpty("encryptedKey", r.encryptedKey)
+        toJsonOrEmpty("encryptedKey", r.encryptedKey)
   }
 
   def create(identityId: MongoId): Recipient = {
@@ -50,11 +52,10 @@ object Recipient extends Model[Recipient] {
 
   override def save(js: JsObject): Future[LastError] = {
     val id: MongoId = (js \ "_id").as[MongoId]
-    val query =arrayQuery("recipients",id)
+    val query = arrayQuery("recipients", id)
     val set = Json.obj("$set" -> Json.obj("recipients.$" -> js))
     col.update(query, set)
   }
-
 
 }
 

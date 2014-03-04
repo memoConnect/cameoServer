@@ -54,11 +54,11 @@ case class Conversation(id: MongoId,
     Conversation.col.update(query, set).map { _.ok }
   }
 
-  def addRecipients(recipients: Seq[Recipient]): Future[LastError] = {
-    val set = Json.obj("$push" ->
+  def addRecipients(recipients: Seq[Recipient]): Future[Boolean] = {
+    val set = Json.obj("$addToSet" ->
       Json.obj("recipients" ->
         Json.obj("$each" -> recipients)))
-    Conversation.col.update(query, set)
+    Conversation.col.update(query, set).map{_.updatedExisting}
   }
 
   def deleteRecipient(recipient: Recipient): Future[Boolean] = {
@@ -70,19 +70,23 @@ case class Conversation(id: MongoId,
   def updateRecipient(recipient: Recipient, recipientUpdate: RecipientUpdate): Future[Boolean] = {
     val queryRecipient = query ++ Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> recipient.identityId)))
     val set = Json.obj("$set" -> Json.obj("recipients.$.encryptedKey" -> recipientUpdate.encryptedKey))
-    Conversation.col.update(queryRecipient, set).map { _.updatedExisting }
+    Conversation.col.update(queryRecipient, set).map { _.ok }
   }
 
-  def hasMemberFuture(identityId: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
-    if (this.recipients.filter(_.identityId.equals(identityId)).isDefinedAt(0)) {
+  def hasMember(identityId: MongoId): Boolean = {
+    this.recipients.exists(_.identityId.equals(identityId))
+  }
+
+  def hasMemberFutureResult(identityId: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
+    if (this.hasMember(identityId)) {
       action
     } else {
       Future(resUnauthorized("identity is not a member of the conversation"))
     }
   }
 
-  def hasMember(identityId: MongoId)(action: SimpleResult): SimpleResult = {
-    if (this.recipients.filter(_.identityId.equals(identityId)).isDefinedAt(0)) {
+  def hasMemberResult(identityId: MongoId)(action: SimpleResult): SimpleResult = {
+    if (this.hasMember(identityId)) {
       action
     } else {
       resUnauthorized("identity is not a member of the conversation")
@@ -154,7 +158,7 @@ object Conversation extends Model[Conversation] {
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] ={
     val query = Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> id)))
     col.find(query).cursor[Conversation].collect[Seq]()
-    // TODO: Reimplement this with to return summaries only using the aggregation framework
+    // TODO: Reimplement this and return conversation summaries using the aggregation framework
   }
 
   def create: Conversation = {

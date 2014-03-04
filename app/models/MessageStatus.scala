@@ -5,6 +5,7 @@ import helper.JsonHelper._
 import traits.Model
 import scala.concurrent.Future
 import reactivemongo.core.commands.LastError
+import helper.MongoCollections
 
 /**
  * User: Björn Reimer
@@ -22,7 +23,7 @@ case class MessageStatus(identityId: MongoId,
 
 object MessageStatus extends Model[MessageStatus] {
 
-  def col = Message.col
+  def col = MongoCollections.conversationCollection
 
   implicit val mongoFormat: Format[MessageStatus] = createMongoFormat(Json.reads[MessageStatus], Json.writes[MessageStatus])
 

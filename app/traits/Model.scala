@@ -54,8 +54,7 @@ trait Model[A] {
     js =>
       try {
         js.transform(fromMongoDates andThen fromMongoId).map {
-          obj: JsValue => obj.as[T](reads)
-        }
+          obj: JsValue => obj.as[T](reads) }
       } catch {
         // try to apply evolutions
         case JsResultException(e) =>
@@ -74,12 +73,11 @@ trait Model[A] {
                   newJs.asOpt[T](fromMongoDates andThen fromMongoId andThen reads) match {
                     case None =>
                       Logger.error("Error reading Json after evolution"); JsError()
-                    case Some(o) => JsSuccess(o)
+                    case Some(o) =>
+                      JsSuccess(o)
                   }
               }
           }
-
-        case _: Throwable => JsError()
       }
   }
 
