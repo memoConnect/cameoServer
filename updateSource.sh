@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -X
 
 if [ -z "${1}" ]; then
     echo "no branch selected, using current branch"
@@ -13,8 +13,11 @@ git checkout ${_branch}
 git pull
 
 echo "update cameoJSClient"
+if [ ! -d "./public" ];then
+    git clone git@github.com:memoConnect/cameoJSClient.git public
+fi
+
 cd public
 git checkout ${_branch}
 git pull
 cd ..
-
