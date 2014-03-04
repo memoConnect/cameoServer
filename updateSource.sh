@@ -1,4 +1,4 @@
-#!/bin/bash -X
+#!/bin/bash
 
 if [ -z "${1}" ]; then
     echo "no branch selected, using current branch"

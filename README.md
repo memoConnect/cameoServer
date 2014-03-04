@@ -42,15 +42,17 @@ cameo Server offers a API. API docs can be found [here](http://docs.cameo.apiary
 Getting started
 ================
 
-1. get the source
-1. go into the project root folder
-1. call ./sbt
-1. after play started start the app with "run"
+1. git clone git@github.com:memoConnect/cameoServer.git
+1. cd cameoServer
+1. ./cleanRun.sh
+1. open in browser http://localhost:9000
 
 Using Typesafe Console (dev only)
 =================================
 
-    ./sbt atmos:run
+1. git clone git@github.com:memoConnect/cameoServer.git (or pull if you have already a clone on your disk)
+1. cd cameoServer
+1. ./cleanRun.sh console
 
 App: <http://localhost:9000/>
 
