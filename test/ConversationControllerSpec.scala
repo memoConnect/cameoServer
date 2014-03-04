@@ -156,7 +156,7 @@ class ConversationControllerSpec extends Specification {
       (data \ "id").asOpt[String] must beSome
       (data \ "numberOfMessages").asOpt[Int] must beSome(100)
       (data \ "lastUpdated").asOpt[String] must beSome
-      (data \ "lastMessage").asOpt[String] must beSome
+      (data \ "lastMessage").asOpt[JsObject] must beSome
       (data \ "subject").asOpt[String] must beSome
 
     }
@@ -179,7 +179,7 @@ class ConversationControllerSpec extends Specification {
           (c \ "id").asOpt[String] must beSome
           (c \ "numberOfMessages").asOpt[Int] must beSome
           (c \ "lastUpdated").asOpt[String] must beSome
-          (c \ "lastMessage").asOpt[String] must beSome
+          (c \ "lastMessage").asOpt[JsObject] must beSome
       }
       // check if it contains ids
       data.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew))) must beTrue

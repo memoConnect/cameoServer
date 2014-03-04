@@ -22,7 +22,8 @@ class ContactControllerSpec extends Specification {
 
   var identityOf10thContact = ""
   var idOf10thContact = ""
-  var contactId = ""
+  var internalContactId = ""
+  var externalContactId = ""
   val newContactMail = "test@bjrm.de"
   val newContactTel = "+4561233"
   val newContactName = "foobar"
@@ -108,12 +109,11 @@ class ContactControllerSpec extends Specification {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      contactId = (data \ "id").as[String]
+      internalContactId = (data \ "id").as[String]
       (data \ "groups")(0).asOpt[String] must beSome("group3")
       (data \ "groups")(1).asOpt[String] must beSome("group1")
       (data \ "identityId").asOpt[String] must beSome(identityExisting2)
       (data \ "contactType").asOpt[String] must beSome("internal")
-
     }
 
     "refuse to add internal contact that already exists" in {
@@ -142,7 +142,7 @@ class ContactControllerSpec extends Specification {
 
     "get the new internal contact" in {
 
-      val path = basePath + "/contact/" + contactId
+      val path = basePath + "/contact/" + internalContactId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -156,7 +156,7 @@ class ContactControllerSpec extends Specification {
 
     "edit groups of internal contact" in {
 
-      val path = basePath + "/contact/" + contactId
+      val path = basePath + "/contact/" + internalContactId
 
       val newGroups = Seq("group1", "group4")
       val json = Json.obj("groups" -> newGroups)
@@ -168,7 +168,7 @@ class ContactControllerSpec extends Specification {
     }
 
     "refuse to edit mail of internal contact" in {
-      val path = basePath + "/contact/" + contactId
+      val path = basePath + "/contact/" + internalContactId
 
       val newMail = "new@mail.de"
       val json = Json.obj("email" -> newMail)
@@ -180,7 +180,7 @@ class ContactControllerSpec extends Specification {
     }
 
     "refuse to edit phoneNumber of internal contact" in {
-      val path = basePath + "/contact/" + contactId
+      val path = basePath + "/contact/" + internalContactId
 
       val newPhone = "+142536"
       val json = Json.obj("phoneNumber" -> newPhone)
@@ -192,7 +192,7 @@ class ContactControllerSpec extends Specification {
     }
 
     "refuse to edit DisplayName of internal contact" in {
-      val path = basePath + "/contact/" + contactId
+      val path = basePath + "/contact/" + internalContactId
 
       val newName = "fail"
       val json = Json.obj("displayName" -> newName)
@@ -220,7 +220,7 @@ class ContactControllerSpec extends Specification {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      contactId = (data \ "id").as[String]
+      externalContactId = (data \ "id").as[String]
       (data \ "groups")(0).asOpt[String] must beSome("group1")
       (data \ "groups")(1).asOpt[String] must beSome("group2")
       (data \ "contactType").asOpt[String] must beSome("external")
@@ -232,7 +232,7 @@ class ContactControllerSpec extends Specification {
 
     "get the new external contact" in {
 
-      val path = basePath + "/contact/" + contactId
+      val path = basePath + "/contact/" + externalContactId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -241,7 +241,7 @@ class ContactControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "id").asOpt[String] must beSome(contactId)
+      (data \ "id").asOpt[String] must beSome(externalContactId)
       (data \ "groups")(0).asOpt[String] must beSome("group1")
       (data \ "groups")(1).asOpt[String] must beSome("group2")
       (data \ "contactType").asOpt[String] must beSome("external")
@@ -252,7 +252,7 @@ class ContactControllerSpec extends Specification {
 
     "edit groups of external contact" in {
 
-      val path = basePath + "/contact/" + contactId
+      val path = basePath + "/contact/" + externalContactId
 
       val newGroups = Seq("group1", "group3")
       val json = Json.obj("groups" -> newGroups)
@@ -264,7 +264,7 @@ class ContactControllerSpec extends Specification {
     }
 
     "edit details of new contact" in {
-      val path = basePath + "/contact/" + contactId
+      val path = basePath + "/contact/" + externalContactId
 
       val json = Json.obj("email" -> newContactMail, "phoneNumber" -> newContactTel, "displayName" -> newContactName)
 
@@ -331,7 +331,7 @@ class ContactControllerSpec extends Specification {
 
       data.length must beEqualTo(1)
 
-      (data(0) \ "id").asOpt[String] must beSome(contactId)
+      (data(0) \ "id").asOpt[String] must beSome(externalContactId)
       (data(0) \ "groups")(0).asOpt[String] must beSome("group1")
       (data(0) \ "groups")(1).asOpt[String] must beSome("group3")
       (data(0) \ "contactType").asOpt[String] must beSome("external")
@@ -341,7 +341,7 @@ class ContactControllerSpec extends Specification {
     }
 
     "delete Contact" in {
-      val path = basePath + "/contact/" + idOf10thContact
+      val path = basePath + "/contact/" + internalContactId
 
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -350,7 +350,7 @@ class ContactControllerSpec extends Specification {
     }
 
     "check deletion" in {
-      val path = basePath + "/contact/" + idOf10thContact
+      val path = basePath + "/contact/" + internalContactId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -521,6 +521,17 @@ class ContactControllerSpec extends Specification {
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
       data.length must beEqualTo(0)
+    }
+
+    "refuse to send friend request to identity that is already in contacts" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> identityExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(232)
     }
 
     step(play.api.Play.stop())

@@ -168,17 +168,29 @@ object ContactController extends ExtendedController {
   def sendFriendRequest = AuthAction.async(parse.tolerantJson) {
     request =>
       def executeFriendRequest(receiver: MongoId): Future[SimpleResult] = {
-        // check if identityId exists
-        Identity.find(receiver).flatMap {
-          case None => Future(resNotFound("identity"))
-          case Some(other) => other.addFriendRequest(request.identity.id).map {
-            lastError =>
-              if (lastError.updatedExisting) {
-                resOK()
-              } else {
-                resServerError("could not update")
-              }
+        // check if the other identity is already in contact
+        request.identity.contacts.exists(c => {
+          if (c.identityId.equals(receiver)) {
+            Logger.debug("CONTACT:" + c.identityId.toJson + " COMPARE: " + receiver.toJson)
+            true
+          } else {
+            false
           }
+        }) match {
+          case true => Future(resKO("identity is already in address book"))
+          case false =>
+            // check if identityId exists
+            Identity.find(receiver).flatMap {
+              case None => Future(resNotFound("identity"))
+              case Some(other) => other.addFriendRequest(request.identity.id).map {
+                lastError =>
+                  if (lastError.updatedExisting) {
+                    resOK()
+                  } else {
+                    resServerError("could not update")
+                  }
+              }
+            }
         }
       }
 
@@ -186,7 +198,7 @@ object ContactController extends ExtendedController {
         sfr =>
           (sfr.identityId, sfr.cameoId) match {
             case (None, None)            => Future(resBadRequest("either identityId or cameoId required"))
-            case (Some(i), Some(c))      => Future(resBadRequest("only one identityId or cameoId allowed"))
+            case (Some(i), Some(c))      => Future(resBadRequest("only identityId or cameoId allowed"))
             case (Some(i: String), None) => executeFriendRequest(new MongoId(i))
             case (None, Some(c: String)) => {
               // search for cameoId and get identityId
