@@ -37,7 +37,7 @@ object VerificationController extends Controller with ExtendedController {
   def verifyMessage(id: String) = Action.async {
 
     VerificationSecret.find(new MongoId(id)).flatMap {
-      case None => Future(resUnauthorized("invalid authorisation secret"))
+      case None => Future(resNotFound("verification secret"))
       case Some(vs) => {
         // set verified boolean to true
         Identity.find(vs.identityId).map {

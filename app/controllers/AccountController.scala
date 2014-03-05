@@ -96,7 +96,7 @@ object AccountController extends ExtendedController {
       }
   }
 
-  def getAccount(loginName: String) = Action.async {
+  def getAccount(loginName: String) = AuthAction.async {
     request =>
       Account.findByLoginName(loginName).flatMap {
         case None          => Future(resNotFound("account"))

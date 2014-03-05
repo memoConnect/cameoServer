@@ -64,7 +64,7 @@ object FileController extends ExtendedController {
       }
   }
 
-  def uploadFileChunks(id: String) = Action.async(parse.tolerantJson(512 * 1024)) {
+  def uploadFileChunks(id: String) = AuthAction.async(parse.tolerantJson(512 * 1024)) {
     request =>
       {
         val chunkIndex = request.headers.get("X-Index")
@@ -114,21 +114,27 @@ object FileController extends ExtendedController {
       }
   }
 
-  def getFileChunk(id: String, chunkIndex: Int) = AuthAction.async {
+  def getFileChunk(id: String, chunkIndex: String) = AuthAction.async {
     request =>
-      // check if file exists
-      FileMeta.find(id).flatMap {
-        case None => Future(resNotFound("file"))
-        case Some(fileMeta) => {
-          fileMeta.chunks.find(_.index == chunkIndex) match {
-            case None => Future(resNotFound("chunk index"))
-            case Some(meta) =>
-              FileChunk.find(meta.chunkId).map {
-                case None        => resServerError("unable to retrieve chunk")
-                case Some(chunk) => resOK(chunk.toJson)
-              }
+      try {
+        val index = chunkIndex.toInt
+
+        // check if file exists
+        FileMeta.find(id).flatMap {
+          case None => Future(resNotFound("file"))
+          case Some(fileMeta) => {
+            fileMeta.chunks.find(_.index == index) match {
+              case None => Future(resNotFound("chunk index"))
+              case Some(meta) =>
+                FileChunk.find(meta.chunkId).map {
+                  case None        => resServerError("unable to retrieve chunk")
+                  case Some(chunk) => resOK(chunk.toJson)
+                }
+            }
           }
         }
+      } catch {
+        case e: NumberFormatException => Future(resBadRequest("index is not a number"))
       }
   }
 }

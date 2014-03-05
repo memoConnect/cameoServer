@@ -26,6 +26,12 @@ object MockupFactory {
     Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
   }
 
+  def randomLengthString(max: Int) = {
+    val n = random.nextInt(max)
+    val nonZero = if (n == 0) 1 else n
+    randomString(nonZero)
+  }
+
   def tokenHeader(token: String): (String, String) = ("Authorization", token)
 
 

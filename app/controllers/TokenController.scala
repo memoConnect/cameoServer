@@ -22,11 +22,12 @@ object TokenController extends ExtendedController {
    * Helper
    */
   // decode username and password
-  def decodeBasicAuth(auth: String) = {
+  def decodeBasicAuth(auth: String): (String, String) = {
     val baStr = auth.replaceFirst("Basic ", "").replace(" ", "")
-    val Array(user, pass) = new String(new sun.misc.BASE64Decoder().decodeBuffer(baStr), "UTF-8").split(":")
-    (user, pass)
-
+    new String(new sun.misc.BASE64Decoder().decodeBuffer(baStr), "UTF-8").split(":") match {
+      case Array(user: String, pass: String) => (user, pass)
+      case _ => ("","")
+    }
   }
 
   /**
@@ -39,7 +40,11 @@ object TokenController extends ExtendedController {
           case None => {
             Future.successful(resBadRequest("No Authorization field in header"))
           }
-          case Some(basicAuth) => {
+          case Some(basicAuth) if !basicAuth.contains("Basic") => {
+            Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
+          }
+          case Some(basicAuth)  =>
+          {
             val (loginName, password) = decodeBasicAuth(basicAuth)
             //find account and get first identity
             Account.findByLoginName(loginName).flatMap {
@@ -75,17 +80,21 @@ object TokenController extends ExtendedController {
       Ok("")
   }
 
-  def deleteToken(token: String) = AuthAction.async {
-    request =>
-      request.identity.deleteToken(new MongoId(token)).map {
-        lastError =>
-          if (lastError.updatedExisting) {
-            resOK("deleted")
-          } else {
-            resNotFound("token")
-          }
-      }
-
-  }
+//  def deleteToken(token: String) = AuthAction.async {
+//    request =>
+//      // check if token exists
+//      request.identity
+//
+//
+//      request.identity.deleteToken(new MongoId(token)).map {
+//        lastError =>
+//          if (lastError.updatedExisting) {
+//            resOK("deleted")
+//          } else {
+//            resNotFound("token")
+//          }
+//      }
+//
+//  }
 
 }
