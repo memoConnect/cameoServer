@@ -144,11 +144,10 @@ object Conversation extends Model[Conversation] {
         Json.obj("numberOfMessages" -> c.messages.length) ++
         toJsonOrEmpty("subject", c.subject) ++
         Json.obj("messages" -> {
-          val lastMessage = c.messages.lastOption match {
-            case Some(m) => m.toJson
-            case None    => Json.obj()
+          c.messages.lastOption match {
+            case Some(m) => Seq(m.toJson)
+            case None    => Seq()
           }
-          Seq(lastMessage)
         })
   }
 

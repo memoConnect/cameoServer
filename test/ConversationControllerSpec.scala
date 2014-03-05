@@ -180,7 +180,7 @@ class ConversationControllerSpec extends Specification {
           (c \ "id").asOpt[String] must beSome
           (c \ "numberOfMessages").asOpt[Int] must beSome
           (c \ "lastUpdated").asOpt[String] must beSome
-          (c \ "messages")(0).asOpt[JsObject] must beSome
+          (c \ "messages").asOpt[JsArray] must beSome
       }
       // check if it contains ids
       data.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew))) must beTrue
