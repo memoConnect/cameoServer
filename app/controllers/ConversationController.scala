@@ -4,7 +4,7 @@ import traits.ExtendedController
 import models._
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import helper.AuthAction
+import helper.{OutputLimits, AuthAction}
 import play.api.libs.json._
 import helper.ResultHelper._
 import scala.Some
@@ -109,7 +109,8 @@ object ConversationController extends ExtendedController {
   def getConversations(offset: Int, limit: Int) = AuthAction.async {
     request =>
       Conversation.findByIdentityId(request.identity.id).map { list =>
-        resOK(list.map(_.toSummaryJson))
+        val limited = OutputLimits.applyLimits(list, offset, limit)
+        resOK(limited.map(_.toSummaryJson))
       }
   }
 
