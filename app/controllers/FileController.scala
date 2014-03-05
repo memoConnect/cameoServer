@@ -116,25 +116,24 @@ object FileController extends ExtendedController {
 
   def getFileChunk(id: String, chunkIndex: String) = AuthAction.async {
     request =>
-      try {
-        val index = chunkIndex.toInt
+      General.safeStringToInt(chunkIndex) match {
+        case None => Future(resBadRequest("chunkIndex is not a number"))
+        case Some(i) =>
 
-        // check if file exists
-        FileMeta.find(id).flatMap {
-          case None => Future(resNotFound("file"))
-          case Some(fileMeta) => {
-            fileMeta.chunks.find(_.index == index) match {
-              case None => Future(resNotFound("chunk index"))
-              case Some(meta) =>
-                FileChunk.find(meta.chunkId).map {
-                  case None        => resServerError("unable to retrieve chunk")
-                  case Some(chunk) => resOK(chunk.toJson)
-                }
+          // check if file exists
+          FileMeta.find(id).flatMap {
+            case None => Future(resNotFound("file"))
+            case Some(fileMeta) => {
+              fileMeta.chunks.find(_.index == i) match {
+                case None => Future(resNotFound("chunk index"))
+                case Some(meta) =>
+                  FileChunk.find(meta.chunkId).map {
+                    case None        => resServerError("unable to retrieve chunk")
+                    case Some(chunk) => resOK(chunk.toJson)
+                  }
+              }
             }
           }
-        }
-      } catch {
-        case e: NumberFormatException => Future(resBadRequest("index is not a number"))
       }
   }
 }
