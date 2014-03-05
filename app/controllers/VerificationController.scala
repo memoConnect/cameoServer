@@ -11,6 +11,11 @@ import constants.Verification._
 import models.{ IdentityUpdate, Identity, VerificationSecret, MongoId }
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
+import actors.VerifyActor
+import play.api.libs.concurrent.Akka
+import akka.actor.Props
+import play.api.Play.current
+
 
 object VerificationController extends Controller with ExtendedController {
   def sendVerifyMessage() = AuthAction(parse.tolerantJson) {
@@ -24,11 +29,14 @@ object VerificationController extends Controller with ExtendedController {
       // TODO: Write tests for this
       validate[VerifyRequest](request.body, reads) {
         vr =>
+
+          lazy val verifyActor = Akka.system.actorOf(Props[VerifyActor])
+
           if (vr.verifyPhoneNumber.getOrElse(false)) {
-            actors.verifyActor ! (VERIFY_TYPE_PHONENUMBER, request.identity)
+            verifyActor ! (VERIFY_TYPE_PHONENUMBER, request.identity)
           }
           if (vr.verifyMail.getOrElse(false)) {
-            actors.verifyActor ! (VERIFY_TYPE_MAIL, request.identity)
+            verifyActor ! (VERIFY_TYPE_MAIL, request.identity)
           }
           resOK()
       }
@@ -37,7 +45,7 @@ object VerificationController extends Controller with ExtendedController {
   def verifyMessage(id: String) = Action.async {
 
     VerificationSecret.find(new MongoId(id)).flatMap {
-      case None => Future(resUnauthorized("invalid authorisation secret"))
+      case None => Future(resNotFound("verification secret"))
       case Some(vs) => {
         // set verified boolean to true
         Identity.find(vs.identityId).map {
@@ -67,10 +75,7 @@ object VerificationController extends Controller with ExtendedController {
             }
           }
         }
-
       }
-
     }
-
   }
 }

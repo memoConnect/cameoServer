@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.Actor
+import akka.actor.{Props, Actor}
 import play.api.{ Play, Logger }
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient
 import com.amazonaws.auth.BasicAWSCredentials
@@ -17,6 +17,7 @@ import models.MailMessage
 import models.Message
 import com.amazonaws.services.simpleemail.model
 import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Akka
 
 /**
  * User: Björn Reimer
@@ -74,8 +75,7 @@ class SendMailActor extends Actor {
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
-        // TODO update status of single message
-        //message.updateStatus(Seq(ms))
+        message.updateSingleStatus(toIdentity.id, ms)
       } else {
         // get identity of sender
         val from: String = Play.configuration.getString("mail.from").get
@@ -98,9 +98,10 @@ class SendMailActor extends Actor {
         val messageStatus = sendMail(mail)
 
         if (messageStatus.status.equals(MESSAGE_STATUS_SEND)) {
-          // WOO
+          message.updateSingleStatus(toIdentity.id, messageStatus)
         } else {
           // try again
+          lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
           sendMailActor ! (message, fromIdentity, toIdentity, tryCount + 1)
         }
       }

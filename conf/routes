@@ -37,7 +37,7 @@ POST           /api/v1/message/filter/count                   controllers.Messag
 
 # TOKENS
 GET            /api/v1/token                                  controllers.TokenController.createToken
-DELETE         /api/v1/token/:token                           controllers.TokenController.deleteToken(token: String)
+#DELETE         /api/v1/token/:token                           controllers.TokenController.deleteToken(token: String)
 
 # CONTACTS
 POST           /api/v1/contact                                controllers.ContactController.addContact
@@ -57,7 +57,7 @@ POST           /api/v1/friendRequest/answer                   controllers.Contac
 POST           /api/v1/file                                   controllers.FileController.uploadFile
 POST           /api/v1/file/:id                               controllers.FileController.uploadFileChunks(id)
 GET            /api/v1/file/:id                               controllers.FileController.getFile(id)
-GET            /api/v1/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex: Int)
+GET            /api/v1/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
 POST           /api/v1/verify                                 controllers.VerificationController.sendVerifyMessage()
@@ -74,8 +74,8 @@ POST           /api/v1/services/checkEmailAddress             controllers.Servic
 OPTIONS        /api/v1/*foo                                   controllers.TokenController.getTokenOptions(foo)
 
 # Utitility functions
-GET            /api/v1/dumpDb                                 controllers.Application.dumpDb()
-GET            /api/v1/loadDb                                 controllers.Application.loadFixtures()
+GET            /api/v1/util/dumpDb                            controllers.Application.dumpDb()
+GET            /api/v1/util/loadDb                            controllers.Application.loadFixtures()
 
 # Redirect for Shorturls
 GET            /p/:id                                         controllers.ShortUrlController.redirect(urlType = "p", id: String)

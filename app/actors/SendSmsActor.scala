@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.Actor
+import akka.actor.{Props, Actor}
 import play.api.{ Play, Logger }
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
@@ -11,6 +11,7 @@ import models._
 import constants.Messaging._
 import play.api.libs.json.JsString
 import helper.JsonHelper._
+import play.api.libs.concurrent.Akka
 
 /**
  * User: Björn Reimer
@@ -72,8 +73,7 @@ class SendSmsActor extends Actor {
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
-        // TODO update status of single message
-        //message.updateStatus(Seq(ms))
+        message.updateSingleStatus(toIdentity.id, ms)
       } else {
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
@@ -102,9 +102,10 @@ class SendSmsActor extends Actor {
           statusMessage =>
             {
               if (statusMessage.status.equals(MESSAGE_STATUS_SEND)) {
-                // WOO
+                message.updateSingleStatus(toIdentity.id, statusMessage)
               } else {
                 // try again
+               lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
                 sendSmsActor ! (message, fromIdentity, toIdentity, tryCount + 1)
               }
             }

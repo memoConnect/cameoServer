@@ -64,13 +64,10 @@ object DbAdminUtilities {
 
           Logger.debug("Loading Fixture: " + file.getName)
 
-          lazy val tokenCollection: JSONCollection = mongoDB.collection[JSONCollection]("tokens")
-
           val col: JSONCollection = file.getName.replace(".json", "") match {
             case ("conversations") => conversationCollection
             case ("accounts")      => accountCollection
             case ("identities")    => identityCollection
-            case ("tokens")        => tokenCollection
             case ("purls")         => purlCollection
             case ("globalState")   => globalStateCollection
             case _                 => throw new IllegalArgumentException("No matching collection for this file: " + file.getName)

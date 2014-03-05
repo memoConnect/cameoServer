@@ -16,7 +16,6 @@ object General {
     } catch {
       case e: NumberFormatException =>
         Logger.debug("NOT a number: " + str)
-
         None
     }
 

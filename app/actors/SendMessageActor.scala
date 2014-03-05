@@ -1,12 +1,15 @@
 package actors
 
-import akka.actor.Actor
+import akka.actor.{ Props, Actor }
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
-import models.{ MessageStatus, Identity, MongoId, Message }
+import models._
 import constants.Messaging._
 import scala.concurrent.Future
 import helper.JsonHelper._
+import play.api.libs.concurrent.Akka
+import play.api.Play.current
+import scala.Some
 
 /**
  * User: Björn Reimer
@@ -17,7 +20,7 @@ class SendMessageActor extends Actor {
 
   def receive = {
 
-    case (message: Message, recipients: Seq[MongoId]) => {
+    case (message: Message, recipients: Seq[Recipient]) => {
 
       Logger.info("SendMessageActor: Processing message with id " + message.id)
 
@@ -30,37 +33,41 @@ class SendMessageActor extends Actor {
         }
         case Some(fromIdentity: Identity) => {
 
+          // create actors
+          lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
+          lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
+
           val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
-            id =>
+            recipient =>
               {
+                Logger.debug("SendMessageActor: Sending to recipient " + recipient.identityId)
+
                 // dont send back to sender
-                if (!id.equals(fromIdentity.id)) {
-                  Identity.find(id).map {
+                if (!recipient.identityId.equals(fromIdentity.id)) {
+                  Identity.find(recipient.identityId).map {
                     case None => {
-                      val error = "Could not find identityID " + id
+                      val error = "Could not find identityID " + recipient.identityId
                       Logger.error(error)
-                      new MessageStatus(id, MESSAGE_STATUS_ERROR, error)
+                      new MessageStatus(recipient.identityId, MESSAGE_STATUS_ERROR, error)
                     }
                     case Some(toIdentity) => {
                       toIdentity.preferredMessageType match {
                         case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)
                         case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, 0)
                         case MESSAGE_TYPE_DEFAULT =>
-                          // if recipient has a mail, send mail (for now, only for external users
-                          if (!toIdentity.accountId.isDefined || true) {
-                            if (toIdentity.email.isDefined) {
-                              sendMailActor ! (message, fromIdentity, toIdentity, 0)
-                            } else if (toIdentity.phoneNumber.isDefined) {
-                              sendSmsActor ! (message, fromIdentity, toIdentity, 0)
-                            }
+                          // if recipient has a mail, send mail
+                          if (toIdentity.email.isDefined) {
+                            sendMailActor ! (message, fromIdentity, toIdentity, 0)
+                          } else if (toIdentity.phoneNumber.isDefined) {
+                            sendSmsActor ! (message, fromIdentity, toIdentity, 0)
                           }
                         // TODO case _ => sendFailActor ! (message, identity)
                       }
-                      new MessageStatus(id, MESSAGE_STATUS_QUEUED, toIdentity.preferredMessageType)
+                      new MessageStatus(recipient.identityId, MESSAGE_STATUS_QUEUED, toIdentity.preferredMessageType)
                     }
                   }
                 } else {
-                  Future.successful(new MessageStatus(id, MESSAGE_STATUS_NONE, "sender"))
+                  Future.successful(new MessageStatus(recipient.identityId, MESSAGE_STATUS_NONE, "sender"))
                 }
               }
           }

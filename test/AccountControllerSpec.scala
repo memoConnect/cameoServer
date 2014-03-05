@@ -180,7 +180,7 @@ class AccountControllerSpec extends Specification {
     "Return a token" in {
       val path = basePath + "/token"
 
-      val auth = new sun.misc.BASE64Encoder().encode((login + ":" + pass).getBytes)
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((login + ":" + pass).getBytes)
 
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
