@@ -1,12 +1,14 @@
 package actors
 
-import akka.actor.Actor
+import akka.actor.{ Props, Actor }
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import models.{ MessageStatus, Identity, MongoId, Message }
 import constants.Messaging._
 import scala.concurrent.Future
 import helper.JsonHelper._
+import play.api.libs.concurrent.Akka
+import play.api.Play.current
 
 /**
  * User: Björn Reimer
@@ -30,6 +32,10 @@ class SendMessageActor extends Actor {
         }
         case Some(fromIdentity: Identity) => {
 
+          // create actors
+          lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
+          lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
+
           val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
             id =>
               {
@@ -47,12 +53,10 @@ class SendMessageActor extends Actor {
                         case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, 0)
                         case MESSAGE_TYPE_DEFAULT =>
                           // if recipient has a mail, send mail (for now, only for external users
-                          if (!toIdentity.accountId.isDefined || true) {
-                            if (toIdentity.email.isDefined) {
-                              sendMailActor ! (message, fromIdentity, toIdentity, 0)
-                            } else if (toIdentity.phoneNumber.isDefined) {
-                              sendSmsActor ! (message, fromIdentity, toIdentity, 0)
-                            }
+                          if (toIdentity.email.isDefined) {
+                            sendMailActor ! (message, fromIdentity, toIdentity, 0)
+                          } else if (toIdentity.phoneNumber.isDefined) {
+                            sendSmsActor ! (message, fromIdentity, toIdentity, 0)
                           }
                         // TODO case _ => sendFailActor ! (message, identity)
                       }

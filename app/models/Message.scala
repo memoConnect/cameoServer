@@ -30,6 +30,15 @@ case class Message(id: MongoId,
     Conversation.col.update(arrayQuery("messages", this.id), update)
   }
 
+  def updateSingleStatus(id: MongoId, status: MessageStatus): Future[Boolean] = {
+    // first remove old status (mongo cant update nested arrays...)
+    val query = arrayQuery("messages", this.id) ++ Json.obj("messages.messageStatus.identityId" -> id)
+
+
+
+  }
+
+
 }
 
 object Message extends Model[Message] {

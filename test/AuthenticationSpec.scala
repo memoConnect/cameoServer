@@ -30,8 +30,6 @@ class AuthenticationSpec extends Specification {
 
     step(play.api.Play.start(app))
 
-
-
     val allRoutes = app.routes.get.documentation.map{r => (r._1, r._2)}
 
     val nonAuthRoutes: Seq[(String, String)] = Seq(
