@@ -31,13 +31,8 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
   override def doFilter(action: EssentialAction): EssentialAction = EssentialAction {
     request =>
       action.apply(request).map(_.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT, OPTIONS",
-        ACCESS_CONTROL_ALLOW_ORIGIN -> "*", ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization, Content-type"))
+        ACCESS_CONTROL_ALLOW_ORIGIN -> "*", ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization, Content-type, X-File-Name, X-Max-Chunks, X-File-Size, X-File-Type, X-Index"))
   }
-
-  //  override def beforeStart(app: play.api.Application) = {
-  //
-
-  //  }
 
   override def onStart(app: play.api.Application) = {
 
