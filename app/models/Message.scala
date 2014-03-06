@@ -25,15 +25,15 @@ case class Message(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
 
-  def updateStatus(messageStatus: Seq[MessageStatus]) = {
+  def updateAllStatus(messageStatus: Seq[MessageStatus]) = {
     val update = Json.obj("$set" -> Json.obj("messages.$.messageStatus" -> messageStatus))
     Conversation.col.update(arrayQuery("messages", this.id), update)
   }
 
-  def updateSingleStatus(id: MongoId, status: MessageStatus): Future[Boolean] = {
+  def updateSingleStatus(status: MessageStatus): Future[Boolean] = {
     // first remove old status (mongo cant update nested arrays...)
     val query = arrayQuery("messages", this.id)
-    val set = Json.obj("$pull" -> Json.obj("messages.$.messageStatus" -> Json.obj("identityId" -> id)))
+    val set = Json.obj("$pull" -> Json.obj("messages.$.messageStatus" -> Json.obj("identityId" -> status.identityId)))
 
     Message.col.update(query, set).flatMap { lastError =>
       lastError.ok match {

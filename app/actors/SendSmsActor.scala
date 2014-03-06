@@ -24,45 +24,46 @@ class SendSmsActor extends Actor {
 
     Logger.debug("SendSMSActor: To: " + sms.to + " Content: " + sms.body)
 
-    val postBody = Json.obj("api_key" -> JsString(Play.configuration.getString("nexmo.key").getOrElse("")),
-      "api_secret" -> JsString(Play.configuration.getString("nexmo.secret").getOrElse("")), "from" -> sms.from,
-      "to" -> sms.to, "text" -> sms.body)
+    val key = Play.configuration.getString("nexmo.key")
+    val secret = Play.configuration.getString("nexmo.secret")
 
-    val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
+    key.isEmpty || secret.isEmpty match {
+      case true => {
+        Logger.warn("No Nexmo credentials")
+        Future(new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "No Credentials"))
+      }
+      case false => {
 
-    response.map {
-      nexmoResponse =>
-        {
-          val messages: Seq[MessageStatus] = {
-            if (nexmoResponse.status < 300) {
+        val postBody = Json.obj("api_key" -> JsString(key.get), "api_secret" -> JsString(secret.get),
+          "from" -> sms.from, "to" -> sms.to, "text" -> sms.body)
 
-              val jsResponse = nexmoResponse.json
+        val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 
-              val messageReports = (jsResponse \ "messages").asOpt[Seq[JsValue]].getOrElse(Seq())
-
-              messageReports.map {
-                report =>
-                  {
-                    if ((report \ "status").asOpt[String].get.equals("0")) {
-                      val s = "SMS Send. Id: " + (report \ "message-id").asOpt[String].getOrElse("none") + " Network:" +
-                        (report \ "network").asOpt[String].getOrElse("none")
-                      new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, s)
-                    } else {
-                      val s = "Error sending SMS message. Response: " + jsResponse.toString
-                      new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
-                    }
+        response.map {
+          nexmoResponse =>
+            {
+              val messageStatus: MessageStatus = {
+                if (nexmoResponse.status < 300) {
+                  val jsResponse = nexmoResponse.json
+                  val messageReport = (jsResponse \ "messages")(0).asOpt[JsValue].get
+                  if ((messageReport \ "status").as[Int] == 0) {
+                    val s = "SMS Send. Id: " + (messageReport \ "message-id").asOpt[String].getOrElse("none") + " Network:" + (messageReport \ "network").asOpt[String].getOrElse("none")
+                    new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, s)
+                  } else {
+                    val s = "Error sending SMS message. Response: " + jsResponse.toString
+                    new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
                   }
+                } else {
+                  val s = "Error connecting to Nexmo: " + nexmoResponse.statusText
+                  new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
+                }
               }
-            } else {
-              val s = "Error connecting to Nexmo: " + nexmoResponse.statusText
-              Seq(new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s))
-            }
-          }
 
-          val message = messages.head
-          Logger.info("SendSMSActor: Sent SMS to " + sms.to + " from " + sms.from + " STATUS: " + message)
-          message
+              Logger.info("SendSMSActor: Sent SMS to " + sms.to + " from " + sms.from + " STATUS: " + messageStatus)
+              messageStatus
+            }
         }
+      }
     }
   }
 
@@ -73,7 +74,7 @@ class SendSmsActor extends Actor {
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
-        message.updateSingleStatus(toIdentity.id, ms)
+        message.updateSingleStatus(ms)
       } else {
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
@@ -99,10 +100,10 @@ class SendSmsActor extends Actor {
         val sms = new SmsMessage(from, to, bodyWithFooter)
 
         sendSms(sms).map {
-          statusMessage =>
+          messageStatus =>
             {
-              if (statusMessage.status.equals(MESSAGE_STATUS_SEND)) {
-                message.updateSingleStatus(toIdentity.id, statusMessage)
+              if (messageStatus.status.equals(MESSAGE_STATUS_SEND)) {
+                message.updateSingleStatus(messageStatus.copy(identityId = toIdentity.id))
               } else {
                 // try again
                 lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
