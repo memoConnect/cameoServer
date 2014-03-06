@@ -1,6 +1,7 @@
-name := "cameoServer"
+import sys.process.stringSeqToProcess
 
-version := "0.5"
+
+name := "cameoServer"
 
 resolvers += "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
 

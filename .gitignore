@@ -24,4 +24,5 @@ server.pid
 target/
 jmeter.log
 conf/secret*
+conf/version*
 /*.tmp
