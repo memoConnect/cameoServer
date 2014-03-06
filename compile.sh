@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "compile the project"
 
-branch=$(git symbolic-ref --short HEAD)
+branch=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 case $branch in
     "dev")
         # get latest successfull build from tag
