@@ -49,37 +49,40 @@ case class Conversation(id: MongoId,
 
   def query = Json.obj("_id" -> this.id)
 
-  def updateLastUpdated(set: JsObject): JsObject = {
+  def setLastUpdated(js: JsObject): JsObject = {
     // check if there already is a $set block
-    set
+    val set: JsValue = (js \ "$set").asOpt[JsValue] match {
+      case None => Json.obj("lastUpdated" -> new Date)
+      case Some(obj: JsObject)  => obj ++ Json.obj("lastUpdated" -> new Date)
+      case Some(ar: JsArray) => ar.append(Json.obj("lastUpdated" -> new Date))
+      case Some(other) => Logger.error("SetLastUpdated: Unable to process: " + js); other
+    }
+    js ++ Json.obj("$set" -> set)
   }
 
 
-
-    Json.obj("$set" -> Json.obj("lastUpdated" -> new Date))
-
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
-    val set = Json.obj("$set" -> (toJsonOrEmpty("subject", conversationUpdate.subject)))
-    Conversation.col.update(query, set).map { _.ok }
+    val set = Json.obj("$set" -> toJsonOrEmpty("subject", conversationUpdate.subject) )
+    Conversation.col.update(query, setLastUpdated(set)).map { _.ok }
   }
 
   def addRecipients(recipients: Seq[Recipient]): Future[Boolean] = {
     val set = Json.obj("$addToSet" ->
       Json.obj("recipients" ->
         Json.obj("$each" -> recipients)))
-    Conversation.col.update(query, set).map { _.updatedExisting }
+    Conversation.col.update(query, setLastUpdated(set)).map { _.updatedExisting }
   }
 
   def deleteRecipient(recipient: Recipient): Future[Boolean] = {
     val set = Json.obj("$pull" ->
       Json.obj("recipients" -> recipient))
-    Conversation.col.update(query, set).map { _.updatedExisting }
+    Conversation.col.update(query, setLastUpdated(set)).map { _.updatedExisting }
   }
 
   def updateRecipient(recipient: Recipient, recipientUpdate: RecipientUpdate): Future[Boolean] = {
     val queryRecipient = query ++ Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> recipient.identityId)))
     val set = Json.obj("$set" -> Json.obj("recipients.$.encryptedKey" -> recipientUpdate.encryptedKey))
-    Conversation.col.update(queryRecipient, set).map { _.ok }
+    Conversation.col.update(queryRecipient, setLastUpdated(set)).map { _.ok }
   }
 
   def hasMember(identityId: MongoId): Boolean = {
@@ -109,8 +112,7 @@ case class Conversation(id: MongoId,
         "$sort" -> Json.obj("created" -> 1),
         "$slice" -> (-1) * (this.messages.length + 2))))
 
-    Conversation.col.update(query, set)
-    //TODO: update lastUpdated
+    Conversation.col.update(query, setLastUpdated(set))
   }
 
   def getMessage(messageId: MongoId): Option[Message] = {

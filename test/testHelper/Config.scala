@@ -24,7 +24,8 @@ object Config {
   // r1Zhpq8e;password;NyGAvBnLeR3mLEYdofgf;lFFkssj7gE4uTGSZlPlolp82Ozp3fWnOkQEFYO6k
 
   // Use the same FakeApplication for all tests, so the mongoConnection does not break
-  val additionalConfig = Map("mongodb.db" -> dbName, "logger.application" -> "ERROR", "logger.play" -> "ERROR")
+  val additionalConfig = Map("mongodb.db" -> dbName)
+  val additionalConfigWithLoggingDisabled = Map("mongodb.db" -> dbName, "logger.application" -> "ERROR", "logger.play" -> "ERROR")
   lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
 
   val cidExisting = "rQHQZHv4ARDXRmnEzJ92"

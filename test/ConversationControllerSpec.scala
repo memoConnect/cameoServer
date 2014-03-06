@@ -1,7 +1,7 @@
 
 import play.api.libs.json.JsArray
 import play.api.test._
-import play.api.libs.json.{JsArray, Json, JsObject}
+import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import scala.Some
@@ -9,7 +9,7 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{StartedApp, MockupFactory}
+import testHelper.{ StartedApp, MockupFactory }
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -27,9 +27,9 @@ class ConversationControllerSpec extends StartedApp {
   val validRecipients = Seq("6iOuCefN12ma0wF7QxR5", "dKeg67XtSNBCFMq8WQor")
   val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
   val encryptedKey = "foobarbaz!"
+  var numberOfConversations = 0
 
   "ConversationController" should {
-
 
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
@@ -119,7 +119,6 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "subject").asOpt[String] must beNone
     }
 
-
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
 
@@ -169,12 +168,16 @@ class ConversationControllerSpec extends StartedApp {
 
       status(res) must equalTo(OK)
 
-      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+      val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      data.length must beGreaterThan(10)
+      (data \ "conversations").asOpt[Seq[JsObject]] must beSome
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+      numberOfConversations = conversations.length
+
+      (data \ "numberOfConversations").asOpt[Int] must beSome(numberOfConversations)
 
       // the list should consist of conversation summaries
-      data.map {
+      conversations.map {
         c =>
           (c \ "id").asOpt[String] must beSome
           (c \ "numberOfMessages").asOpt[Int] must beSome
@@ -182,8 +185,70 @@ class ConversationControllerSpec extends StartedApp {
           (c \ "messages").asOpt[JsArray] must beSome
       }
       // check if it contains ids
-      data.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew))) must beTrue
-      data.exists(c => (c \ "id").asOpt[String].equals(Some(cidExisting))) must beTrue
+      conversations.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew))) must beTrue
+      conversations.exists(c => (c \ "id").asOpt[String].equals(Some(cidExisting))) must beTrue
+    }
+
+    "get conversations with offset" in {
+
+      val offset = MockupFactory.random.nextInt(numberOfConversations)
+
+      val path = basePath + "/conversations?offset=" + offset
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "conversations").asOpt[Seq[JsObject]] must beSome
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      (data \ "numberOfConversations").asOpt[Int] must beSome(numberOfConversations)
+      conversations.length must beEqualTo(numberOfConversations - offset)
+    }
+
+    "get conversations with limit" in {
+
+      val limit = MockupFactory.random.nextInt(numberOfConversations)
+
+      val path = basePath + "/conversations?limit=" + limit
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "conversations").asOpt[Seq[JsObject]] must beSome
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      (data \ "numberOfConversations").asOpt[Int] must beSome(numberOfConversations)
+      conversations.length must beEqualTo(limit)
+    }
+
+    "get conversations with limit and offset" in {
+
+      val offset = MockupFactory.random.nextInt(numberOfConversations)
+      val limit = MockupFactory.random.nextInt(numberOfConversations - offset)
+
+      val path = basePath + "/conversations?limit=" + limit + "&offset=" + offset
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "conversations").asOpt[Seq[JsObject]] must beSome
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      (data \ "numberOfConversations").asOpt[Int] must beSome(numberOfConversations)
+      conversations.length must beEqualTo(limit)
+
     }
 
     "Edit subject of an conversation" in {
@@ -220,7 +285,6 @@ class ConversationControllerSpec extends StartedApp {
 
       status(res) must equalTo(UNAUTHORIZED)
     }
-
 
     "add recipient to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/recipient"
@@ -370,6 +434,6 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(UNAUTHORIZED)
     }
 
-      }
+  }
 
 }
