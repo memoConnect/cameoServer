@@ -120,23 +120,25 @@ object JsonHelper {
 
   def arrayQuery(arrayName: String, id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
-  def verifyMail: Reads[String] = Reads[String] {
+  def verifyMail: Reads[JsString] = Reads[JsString] {
     js =>
       js.validate[String].flatMap {
-        mail => CheckHelper.checkAndCleanEmailAddress(mail) match {
-          case None => JsError("invalid email: " + mail)
-          case Some(checked) => JsSuccess(checked)
-        }
+        mail =>
+          CheckHelper.checkAndCleanEmailAddress(mail) match {
+            case None          => JsError("invalid email: " + mail)
+            case Some(checked) => JsSuccess(JsString(checked))
+          }
       }
   }
 
-  def verifyPhoneNumber: Reads[String] = Reads[String] {
+  def verifyPhoneNumber: Reads[JsString] = Reads[JsString] {
     js =>
       js.validate[String].flatMap {
-        phoneNumber => CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
-          case None => JsError("invalid phoneNumber: " + phoneNumber)
-          case Some(checked) => JsSuccess(checked)
-        }
+        phoneNumber =>
+          CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
+            case None          => JsError("invalid phoneNumber: " + phoneNumber)
+            case Some(checked) => JsSuccess(JsString(checked))
+          }
       }
   }
 }

@@ -41,7 +41,7 @@ class SendMailActor extends Actor {
         new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "No Credentials")
       }
       case false => {
-        val credentials = new BasicAWSCredentials(accessKey.get,secretKey.get)
+        val credentials = new BasicAWSCredentials(accessKey.get, secretKey.get)
         val client = new AmazonSimpleEmailServiceClient(credentials)
         val sendEmailRequest = new SendEmailRequest()
         val dest = new Destination().withToAddresses(mail.to)

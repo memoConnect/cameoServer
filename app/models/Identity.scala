@@ -250,8 +250,8 @@ case class IdentityUpdate(phoneNumber: Option[VerifiedString],
 object IdentityUpdate {
 
   implicit val reads: Reads[IdentityUpdate] = (
-    (__ \ "phoneNumber").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ "email").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+    (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+    (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
     (__ \ "displayName").readNullable[String]
   )(IdentityUpdate.apply _)
 

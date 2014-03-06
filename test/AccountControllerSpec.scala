@@ -1,7 +1,7 @@
 
 import play.api.libs.json.JsArray
 import play.api.test._
-import play.api.libs.json.{JsArray, Json, JsObject}
+import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import scala.Some
@@ -9,7 +9,7 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{StartedApp, MockupFactory}
+import testHelper.{ Config, StartedApp, MockupFactory }
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -25,8 +25,9 @@ class AccountControllerSpec extends StartedApp {
   val login = randomString(8)
   val login2 = randomString(8)
   val pass = randomString(8)
-  val mail = "e@mail.de"
-  val tel = "+491234567890"
+  val mail = validEmails(0)
+  val tel = validPhoneNumbers(0)._1
+  val cleanedTel = validPhoneNumbers(0)._2
   var identityId = ""
   var token = ""
   var regSec = ""
@@ -41,14 +42,15 @@ class AccountControllerSpec extends StartedApp {
       val logins = Seq("asdf", "asdfasdfasdfasdfasdfa", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\")
 
       logins.map {
-        l => {
-          val json = Json.obj("loginName" -> l)
+        l =>
+          {
+            val json = Json.obj("loginName" -> l)
 
-          val req = FakeRequest(POST, path).withJsonBody(json)
-          val res = route(req).get
+            val req = FakeRequest(POST, path).withJsonBody(json)
+            val res = route(req).get
 
-          status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
-        }
+            status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
+          }
       }
     }
 
@@ -112,6 +114,34 @@ class AccountControllerSpec extends StartedApp {
       val res = route(req).get
 
       status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "Refuse to create account with invalid mails" in {
+      val path = basePath + "/account"
+
+      Config.invalidEmails.map { invalid =>
+
+        val json = createUser(login, pass, login, Some(tel), Some(invalid)) ++ Json.obj("reservationSecret" -> regSec)
+
+        val req = FakeRequest(POST, path).withJsonBody(json)
+        val res = route(req).get
+
+        status(res) must equalTo(BAD_REQUEST)
+      }
+    }
+
+    "Refuse to create account with invalid phoneNumbers" in {
+      val path = basePath + "/account"
+
+      Config.invalidPhoneNumbers.map { invalid =>
+
+        val json = createUser(login, pass, login, Some(invalid), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
+
+        val req = FakeRequest(POST, path).withJsonBody(json)
+        val res = route(req).get
+
+        status(res) must equalTo(BAD_REQUEST)
+      }
     }
 
     "Create Account" in {
@@ -208,9 +238,7 @@ class AccountControllerSpec extends StartedApp {
       (data \ "userKey").asOpt[String] must beSome
       (data \ "cameoId").asOpt[String] must beSome(login)
       (data \ "email" \ "value").asOpt[String] must beSome(mail)
-      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(cleanedTel)
     }
-
   }
-
 }

@@ -10,7 +10,6 @@ import play.api.test.FakeApplication
  * Time: 4:41 PM
  */
 
-
 object Config {
 
   val basePath = "/api/v1"
@@ -34,11 +33,20 @@ object Config {
   val identityExisting = "g9PWZY7xKNbeCO6LPNnx"
   val identityExisting2 = "N2HKgBdxxnWBGxlYY7Dn"
 
-
   val tokenExisting = "hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo"
   val tokenExisting2 = "viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ"
 
-  val telExisting= "+49123456789"
-  val emailExisting= "test@cameo.io"
+  val telExisting = "+49123456789"
+  val emailExisting = "test@cameo.io"
 
+  val invalidPhoneNumbers = Seq("abcd", "+4912345123451234512345", "", "+!\"§$%&/()=")
+  val invalidEmails = Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43")
+
+  val validPhoneNumbers: Seq[(String, String)] =
+    Seq(
+      (" 0173-12  34dd5678", "+4917312345678"),
+      ("491234512345", "+491234512345"),
+      (" +17234512345         ", "+17234512345")
+    )
+  val validEmails: Seq[String] = Seq("a-b.c_d@a-b.c_d.co", "123@345.fo", "123@3-4-5.fo")
 }

@@ -1,6 +1,7 @@
 
+import play.api.Logger
 import play.api.test._
-import play.api.libs.json.{Json, JsObject}
+import play.api.libs.json.{ Json, JsObject }
 import play.api.test.Helpers._
 import testHelper.MockupFactory._
 import org.specs2.mutable._
@@ -16,23 +17,24 @@ class IdentityControllerSpec extends StartedApp {
 
   sequential
 
-  val newPhone = "12345"
-  val newMail = "asdfasdf"
+  val newTel = validPhoneNumbers(1)._1
+  val newTelCleaned = validPhoneNumbers(1)._2
+  val newMail = validEmails(1)
   val newName = "newNameasdfasdf"
+
   var cameoId = ""
 
   val pubKey = "asdfasdfasdf"
-  val pubKeyName= "moep"
+  val pubKeyName = "moep"
   var pubKeyId = ""
   val newPubKey = "woops"
-  val newPubKeyName= "poem"
+  val newPubKeyName = "poem"
 
   val pubKey2 = "asdfasdfasdf2"
-  val pubKeyName2= "moep2"
+  val pubKeyName2 = "moep2"
   var pubKeyId2 = ""
 
   "IdentityController" should {
-
 
     "Get the identity behind a token" in {
       val path = basePath + "/identity"
@@ -56,13 +58,12 @@ class IdentityControllerSpec extends StartedApp {
 
       val path = basePath + "/identity"
 
-      val json = Json.obj("phoneNumber" -> newPhone, "email" -> newMail, "displayName" -> newName)
+      val json = Json.obj("phoneNumber" -> newTel, "email" -> newMail, "displayName" -> newName)
 
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
       status(res) must equalTo(OK)
-
     }
 
     "check if identity was edited" in {
@@ -76,12 +77,40 @@ class IdentityControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newPhone)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newTelCleaned)
       (data \ "phoneNumber" \ "isVerified").asOpt[Boolean] must beSome(false)
       (data \ "email" \ "value").asOpt[String] must beSome(newMail)
       (data \ "email" \ "isVerified").asOpt[Boolean] must beSome(false)
       (data \ "displayName").asOpt[String] must beSome(newName)
 
+    }
+
+    "refuse to add invalid email" in {
+      invalidEmails.map { invalid =>
+
+        val path = basePath + "/identity"
+
+        val json = Json.obj("email" -> invalid)
+
+        val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(BAD_REQUEST)
+      }
+    }
+
+    "refuse to add invalid phoneNumber" in {
+      invalidPhoneNumbers.map { invalid =>
+
+        val path = basePath + "/identity"
+
+        val json = Json.obj("phoneNumber" -> invalid)
+
+        val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(BAD_REQUEST)
+      }
     }
 
     "Search for an CameoId" in {
@@ -380,8 +409,6 @@ class IdentityControllerSpec extends StartedApp {
       (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
       (key2 \ "key").asOpt[String] must beSome(pubKey2)
     }
-
-
 
   }
 }

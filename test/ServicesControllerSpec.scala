@@ -8,34 +8,20 @@ import org.specs2.mutable._
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.{FakeApplication, WithApplication, FakeRequest}
 import play.api.test.Helpers._
-import testHelper.StartedApp
+import testHelper.{Config, StartedApp}
+import testHelper.Config._
 
 class ServicesControllerSpec extends StartedApp {
 
   "ServicesController" should {
 
-    val basePath = "/api/v1"
-    val dbName = "cameo_test"
-
-    val additionalConfig = Map("mongodb.db" -> dbName ,
-      "mongo.init.loadOnStart" -> "false",
-      "embed.mongo.enabled" -> "false",
-        "mongo.migrate.global" -> "false"
-    )
-
-    val withoutPlugins = Seq("play.modules.reactivemongo.ReactiveMongoPlugin",
-      "info.schleichardt.play.embed.mongo.EmbedMongoPlugin")
-
 
     "Check valid phoneNumbers " in  {
       val path = basePath + "/services/checkPhoneNumber"
-      Seq(
-        List[String](" 0173-12  34dd5678", "+4917312345678"),
-        List[String]("491234512345", "+491234512345"),
-        List[String](" +17234512345         ", "+17234512345")
-      ) map {
-        phoneNumber =>
-          val json = Json.obj("phoneNumber" -> phoneNumber.apply(0))
+
+      Config.validPhoneNumbers.map {
+        case (unclean, clean) =>
+          val json = Json.obj("phoneNumber" -> unclean)
 
           val req = FakeRequest(POST, path).withJsonBody(json)
           val res = route(req).get
@@ -47,13 +33,13 @@ class ServicesControllerSpec extends StartedApp {
 
           val data = (contentAsJson(res) \ "data").as[JsObject]
           val cleanedPhoneNumber = (data \ "phoneNumber").as[String]
-          cleanedPhoneNumber must beEqualTo(phoneNumber.apply(1))
+          cleanedPhoneNumber must beEqualTo(clean)
       }
     }
 
     "Check invalid phoneNumbers " in  {
       val path = basePath + "/services/checkPhoneNumber"
-      Seq("abcd", "+4912345123451234512345", "", "+!\"§$%&/()=") map {
+      Config.invalidPhoneNumbers.map {
         phoneNumber =>
           val json = Json.obj("phoneNumber" -> phoneNumber)
 
@@ -72,7 +58,7 @@ class ServicesControllerSpec extends StartedApp {
 
     "Check valid email addresses " in  {
       val path = basePath + "/services/checkEmailAddress"
-      Seq("a-b.c_d@a-b.c_d.co", "123@345.fo", "123@3-4-5.fo") map {
+      Config.validEmails.map {
         emailAddress =>
           val json = Json.obj("emailAddress" -> emailAddress)
           val req = FakeRequest(POST, path).withJsonBody(json)
@@ -86,7 +72,7 @@ class ServicesControllerSpec extends StartedApp {
 
     "Check invalid email addresses " in  {
       val path = basePath + "/services/checkEmailAddress"
-      Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43").map {
+      Config.invalidEmails.map {
         emailAddress =>
           val json = Json.obj("emailAddress" -> emailAddress)
           val req = FakeRequest(POST, path).withJsonBody(json)

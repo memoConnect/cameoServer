@@ -52,17 +52,16 @@ case class Conversation(id: MongoId,
   def setLastUpdated(js: JsObject): JsObject = {
     // check if there already is a $set block
     val set: JsValue = (js \ "$set").asOpt[JsValue] match {
-      case None => Json.obj("lastUpdated" -> new Date)
-      case Some(obj: JsObject)  => obj ++ Json.obj("lastUpdated" -> new Date)
-      case Some(ar: JsArray) => ar.append(Json.obj("lastUpdated" -> new Date))
-      case Some(other) => Logger.error("SetLastUpdated: Unable to process: " + js); other
+      case None                => Json.obj("lastUpdated" -> new Date)
+      case Some(obj: JsObject) => obj ++ Json.obj("lastUpdated" -> new Date)
+      case Some(ar: JsArray)   => ar.append(Json.obj("lastUpdated" -> new Date))
+      case Some(other)         => Logger.error("SetLastUpdated: Unable to process: " + js); other
     }
     js ++ Json.obj("$set" -> set)
   }
 
-
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
-    val set = Json.obj("$set" -> toJsonOrEmpty("subject", conversationUpdate.subject) )
+    val set = Json.obj("$set" -> toJsonOrEmpty("subject", conversationUpdate.subject))
     Conversation.col.update(query, setLastUpdated(set)).map { _.ok }
   }
 

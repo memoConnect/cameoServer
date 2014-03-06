@@ -8,7 +8,7 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.FileWriter
 import play.api.libs.json.JsObject
 import helper.DbAdminUtilities
-import play.api.{Logger, Play}
+import play.api.{ Logger, Play }
 
 object Application extends Controller {
 
