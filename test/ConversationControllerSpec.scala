@@ -232,7 +232,7 @@ class ConversationControllerSpec extends StartedApp {
     "get conversations with limit and offset" in {
 
       val offset = MockupFactory.random.nextInt(numberOfConversations)
-      val limit = MockupFactory.random.nextInt(numberOfConversations - offset)
+      val limit = MockupFactory.random.nextInt(numberOfConversations)
 
       val path = basePath + "/conversations?limit=" + limit + "&offset=" + offset
 
@@ -247,8 +247,7 @@ class ConversationControllerSpec extends StartedApp {
       val conversations = (data \ "conversations").as[Seq[JsObject]]
 
       (data \ "numberOfConversations").asOpt[Int] must beSome(numberOfConversations)
-      conversations.length must beEqualTo(limit)
-
+      conversations.length must beEqualTo(Math.min(limit, numberOfConversations-offset))
     }
 
     "Edit subject of an conversation" in {
