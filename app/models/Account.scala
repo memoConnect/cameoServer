@@ -62,8 +62,8 @@ object Account extends Model[Account] {
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       Reads.pure[Seq[MongoId]](Seq()) and
-      (__ \ 'phoneNumber).readNullable[String] and
-      (__ \ 'email).readNullable[String] and
+      (__ \ 'phoneNumber).readNullable[String](verifyPhoneNumber) and
+      (__ \ 'email).readNullable[String](verifyMail) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }

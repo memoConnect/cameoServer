@@ -144,8 +144,8 @@ object Identity extends Model[Identity] {
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
     Reads.pure[Option[MongoId]](None) and
     (__ \ 'displayName).readNullable[String] and
-    (__ \ 'email).readNullable[VerifiedString](VerifiedString.createReads) and
-    (__ \ 'phoneNumber).readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+    (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
     ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId)) and
     ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
@@ -250,8 +250,8 @@ case class IdentityUpdate(phoneNumber: Option[VerifiedString],
 object IdentityUpdate {
 
   implicit val reads: Reads[IdentityUpdate] = (
-    (__ \ "phoneNumber").readNullable[VerifiedString](VerifiedString.createReads) and
-    (__ \ "email").readNullable[VerifiedString](VerifiedString.createReads) and
+    (__ \ "phoneNumber").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+    (__ \ "email").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
     (__ \ "displayName").readNullable[String]
   )(IdentityUpdate.apply _)
 

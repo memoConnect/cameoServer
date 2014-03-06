@@ -17,6 +17,12 @@ import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsSuccess
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsString
+import scala.Some
+import play.api.libs.json.JsNumber
 
 /**
  * User: Björn Reimer
@@ -114,4 +120,23 @@ object JsonHelper {
 
   def arrayQuery(arrayName: String, id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
+  def verifyMail: Reads[String] = Reads[String] {
+    js =>
+      js.validate[String].flatMap {
+        mail => CheckHelper.checkAndCleanEmailAddress(mail) match {
+          case None => JsError("invalid email: " + mail)
+          case Some(checked) => JsSuccess(checked)
+        }
+      }
+  }
+
+  def verifyPhoneNumber: Reads[String] = Reads[String] {
+    js =>
+      js.validate[String].flatMap {
+        phoneNumber => CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
+          case None => JsError("invalid phoneNumber: " + phoneNumber)
+          case Some(checked) => JsSuccess(checked)
+        }
+      }
+  }
 }
