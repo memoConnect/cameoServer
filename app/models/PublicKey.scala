@@ -5,10 +5,10 @@ import traits.Model
 import play.api.libs.json._
 import traits.Model
 import play.api.libs.json.Reads._
-import helper.{MongoCollections, IdHelper}
+import helper.{ MongoCollections, IdHelper }
 import play.api.libs.functional.syntax._
 import helper.JsonHelper._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands.LastError
 import ExecutionContext.Implicits.global
 
@@ -19,7 +19,7 @@ import ExecutionContext.Implicits.global
  */
 case class PublicKey(id: MongoId,
                      name: Option[String],
-                     key: String)    {
+                     key: String) {
 
   def toJson: JsObject = Json.toJson(this)(PublicKey.outputWrites).as[JsObject]
 
@@ -34,14 +34,14 @@ object PublicKey extends Model[PublicKey] {
   def createReads: Reads[PublicKey] = (
     Reads.pure[MongoId](IdHelper.generatePublicKeyId) and
     (__ \ 'name).readNullable[String] and
-      (__ \ 'key).read[String]
-    )(PublicKey.apply _)
+    (__ \ 'key).read[String]
+  )(PublicKey.apply _)
 
   def outputWrites: Writes[PublicKey] = Writes {
     pk =>
       Json.obj("id" -> pk.id.toJson) ++
-      toJsonOrEmpty("name", pk.name) ++
-      Json.obj("key" -> pk.key)
+        toJsonOrEmpty("name", pk.name) ++
+        Json.obj("key" -> pk.key)
   }
 
   def evolutions = Map()
@@ -50,7 +50,7 @@ object PublicKey extends Model[PublicKey] {
 
   override def save(js: JsObject): Future[LastError] = {
     val id: MongoId = (js \ "_id").as[MongoId]
-    val query =arrayQuery("publicKey",id)
+    val query = arrayQuery("publicKey", id)
     val set = Json.obj("$set" -> js)
     col.update(query, set)
   }

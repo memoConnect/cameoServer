@@ -80,7 +80,6 @@ object IdHelper {
     new MongoId(randomString(defaultLength))
   }
 
-
   def generatePublicKeyId: MongoId = {
     new MongoId(randomString(defaultLength))
   }

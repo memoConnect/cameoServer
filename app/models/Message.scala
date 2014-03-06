@@ -3,7 +3,7 @@ package models
 import java.util.Date
 import traits.{ Model }
 import play.api.libs.json._
-import helper.{MongoCollections, IdHelper}
+import helper.{ MongoCollections, IdHelper }
 import play.api.libs.functional.syntax._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
@@ -35,13 +35,13 @@ case class Message(id: MongoId,
     val query = arrayQuery("messages", this.id)
     val set = Json.obj("$pull" -> Json.obj("messages.$.messageStatus" -> Json.obj("identityId" -> id)))
 
-    Message.col.update(query,set).flatMap { lastError =>
+    Message.col.update(query, set).flatMap { lastError =>
       lastError.ok match {
         case false => Future(false)
         case true => {
           // write new message status
           val set2 = Json.obj("$push" -> Json.obj("messages.$.messageStatus" -> status))
-          Message.col.update(query, set2).map{_.ok}
+          Message.col.update(query, set2).map { _.ok }
         }
       }
     }
@@ -77,7 +77,7 @@ object Message extends Model[Message] {
 
     val projection = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
-    Conversation.col.find(arrayQuery("messages",id), projection).one[JsValue].map {
+    Conversation.col.find(arrayQuery("messages", id), projection).one[JsValue].map {
       case None     => None
       case Some(js) => Some((js \ "messages")(0).as[Message])
     }
@@ -85,13 +85,13 @@ object Message extends Model[Message] {
 
   override def save(js: JsObject): Future[LastError] = {
     val id: MongoId = (js \ "_id").as[MongoId]
-    val query =arrayQuery("messages",id)
+    val query = arrayQuery("messages", id)
     val set = Json.obj("$set" -> Json.obj("messages.$" -> js))
     col.update(query, set)
   }
 
   def findConversation(id: MongoId): Future[Option[Conversation]] = {
-    Conversation.col.find(arrayQuery("messages",id)).one[Conversation]
+    Conversation.col.find(arrayQuery("messages", id)).one[Conversation]
   }
 }
 

@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.{Props, Actor}
+import akka.actor.{ Props, Actor }
 import constants.Verification._
 import models.{ SmsMessage, MailMessage, VerificationSecret, Identity }
 import play.api.Play

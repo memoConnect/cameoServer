@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.{Props, Actor}
+import akka.actor.{ Props, Actor }
 import play.api.{ Play, Logger }
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient
 import com.amazonaws.auth.BasicAWSCredentials

@@ -16,7 +16,6 @@ import play.api.libs.concurrent.Akka
 import akka.actor.Props
 import play.api.Play.current
 
-
 object VerificationController extends Controller with ExtendedController {
   def sendVerifyMessage() = AuthAction(parse.tolerantJson) {
     request =>

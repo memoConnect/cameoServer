@@ -58,7 +58,7 @@ case class Conversation(id: MongoId,
     val set = Json.obj("$addToSet" ->
       Json.obj("recipients" ->
         Json.obj("$each" -> recipients)))
-    Conversation.col.update(query, set).map{_.updatedExisting}
+    Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
   def deleteRecipient(recipient: Recipient): Future[Boolean] = {
@@ -155,7 +155,7 @@ object Conversation extends Model[Conversation] {
     col.find(arrayQuery("messages", id)).one[Conversation]
   }
 
-  def findByIdentityId(id: MongoId): Future[Seq[Conversation]] ={
+  def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
     val query = Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> id)))
     col.find(query).cursor[Conversation].collect[Seq]()
     // TODO: Reimplement this and return conversation summaries using the aggregation framework

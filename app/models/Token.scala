@@ -46,7 +46,7 @@ object Token extends Model[Token] {
 
   override def save(js: JsObject): Future[LastError] = {
     val id: MongoId = (js \ "_id").as[MongoId]
-    val query =arrayQuery("tokens",id)
+    val query = arrayQuery("tokens", id)
     val set = Json.obj("$set" -> Json.obj("tokens.$" -> js))
     col.update(query, set)
   }

@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.{Props, Actor}
+import akka.actor.{ Props, Actor }
 import play.api.{ Play, Logger }
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
@@ -105,7 +105,7 @@ class SendSmsActor extends Actor {
                 message.updateSingleStatus(toIdentity.id, statusMessage)
               } else {
                 // try again
-               lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
+                lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
                 sendSmsActor ! (message, fromIdentity, toIdentity, tryCount + 1)
               }
             }

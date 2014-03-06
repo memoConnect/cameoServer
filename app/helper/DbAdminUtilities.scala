@@ -200,7 +200,6 @@ object DbAdminUtilities {
         lastRes
       }
 
-
     val enumerator = conversationCollection.find(Json.obj()).cursor[JsObject].enumerate()
 
     val iteratee: Iteratee[JsObject, Boolean] = Iteratee.fold(true) {

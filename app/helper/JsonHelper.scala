@@ -12,7 +12,7 @@ import java.util.{ Date, TimeZone }
 import reactivemongo.api.indexes.{ IndexType, Index }
 import reactivemongo.bson.BSONDocument
 import play.modules.reactivemongo.json.BSONFormats
-import models.{MongoId, VerifiedString}
+import models.{ MongoId, VerifiedString }
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import org.mindrot.jbcrypt.BCrypt
@@ -112,6 +112,6 @@ object JsonHelper {
       }
   }
 
-  def arrayQuery(arrayName: String,id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
+  def arrayQuery(arrayName: String, id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
 }

@@ -16,11 +16,9 @@ object Config {
   val basePath = "/api/v1"
   val dbName = "cameo_test"
 
-
   // valid users in the inital Data: login;password;identityId;token
   // 2VqTftqh;password;g9PWZY7xKNbeCO6LPNnx;hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo
   // BMeSfHXQ;password;N2HKgBdxxnWBGxlYY7Dn;viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ
-
 
   // test user on dev.cameo.io
   // r1Zhpq8e;password;NyGAvBnLeR3mLEYdofgf;lFFkssj7gE4uTGSZlPlolp82Ozp3fWnOkQEFYO6k

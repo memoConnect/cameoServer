@@ -54,7 +54,8 @@ trait Model[A] {
     js =>
       try {
         js.transform(fromMongoDates andThen fromMongoId).map {
-          obj: JsValue => obj.as[T](reads) }
+          obj: JsValue => obj.as[T](reads)
+        }
       } catch {
         // try to apply evolutions
         case JsResultException(e) =>

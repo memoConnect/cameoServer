@@ -2,7 +2,7 @@ package models
 
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import helper.{MongoCollections, IdHelper}
+import helper.{ MongoCollections, IdHelper }
 import traits.Model
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
@@ -24,7 +24,6 @@ case class Contact(id: MongoId,
                    identityId: MongoId,
                    contactType: String,
                    docVersion: Int) {
-
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
@@ -60,7 +59,7 @@ case class Contact(id: MongoId,
 
       Identity.find(this.identityId).map {
         case Some(identity) => identity.update(identityUpdate)
-        case None =>
+        case None           =>
       }
     }
   }
@@ -99,7 +98,6 @@ object Contact extends Model[Contact] {
     val set = Json.obj("$set" -> Json.obj("contacts.$" -> js))
     col.update(query, set)
   }
-
 
   /*
    * Evolutions

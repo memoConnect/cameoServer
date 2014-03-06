@@ -4,7 +4,7 @@ import traits.ExtendedController
 import models._
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import helper.{OutputLimits, AuthAction}
+import helper.{ OutputLimits, AuthAction }
 import play.api.libs.json._
 import helper.ResultHelper._
 import scala.Some
@@ -56,7 +56,7 @@ object ConversationController extends ExtendedController {
               recipientIds =>
                 {
                   // check if one of the identities is already a member of this conversation
-                  recipientIds.forall(id => ! c.hasMember(new MongoId(id))) match {
+                  recipientIds.forall(id => !c.hasMember(new MongoId(id))) match {
                     case false => Future(resKO("At least one identity is already a member of this conversation"))
                     case true =>
                       // check if all recipients exist
