@@ -5,7 +5,7 @@ import traits.{ ExtendedController }
 import models.{ Conversation, Purl }
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
-import helper.AuthAction
+import helper.{CheckHelper, AuthAction}
 import scala.concurrent.Future
 import helper.ResultHelper._
 import play.api.mvc.Action
@@ -22,45 +22,26 @@ import scala.Some
 
 object ServicesController extends ExtendedController {
 
-  /**
-   * Actions
-   */
   def checkPhoneNumber = Action(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
       (jsBody \ "phoneNumber").asOpt[String] match {
-        case Some(phoneNumber) =>
-          try {
-            val trimmedPhoneNumber = phoneNumber.trim
-            val phoneUtil = PhoneNumberUtil.getInstance()
-            // default country code have to be a property
-            val number = phoneUtil.parseAndKeepRawInput(trimmedPhoneNumber, "DE")
-            val resultJson = Json.obj(
-              "status" -> "ok",
-              "phoneNumber" -> phoneUtil.format(number, PhoneNumberFormat.E164))
-            resOK(resultJson)
-          } catch {
-            case e: Exception => {
-              Logger.error("phoneNumber parse error: " + phoneNumber)
-              resBadRequest(e.getMessage + " > " + phoneNumber)
-            }
-          }
+        case Some(phoneNumber) => CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
+          case None => resBadRequest("invalid phone number")
+          case Some(p) => resOK(Json.obj("phoneNumber" -> p))
+        }
         case None => resBadRequest("no phoneNumber")
       }
   }
 
-  /**
-   * Actions
-   */
   def checkEmailAddress = Action(parse.tolerantJson) {
     request =>
       val jsBody: JsValue = request.body
       (jsBody \ "emailAddress").asOpt[String] match {
-        case Some(emailAddress) =>
-          """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$""".r.unapplySeq(emailAddress).isDefined match {
-            case true  => resOK()
-            case false => resBadRequest("emailAddress invalid: " + emailAddress)
-          }
+        case Some(email) => CheckHelper.checkAndCleanEmailAddress(email) match {
+          case None => resBadRequest("invalid emailAddress")
+          case Some(e) => resOK(Json.obj("email"-> e))
+        }
         case None => resBadRequest("missing emailAddress")
       }
   }

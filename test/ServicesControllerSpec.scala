@@ -10,9 +10,9 @@ import play.api.test.{FakeApplication, WithApplication, FakeRequest}
 import play.api.test.Helpers._
 import testHelper.StartedApp
 
-class ServicesSpec extends StartedApp {
+class ServicesControllerSpec extends StartedApp {
 
-  "Services" should {
+  "ServicesController" should {
 
     val basePath = "/api/v1"
     val dbName = "cameo_test"
