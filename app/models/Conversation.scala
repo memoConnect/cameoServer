@@ -49,19 +49,17 @@ case class Conversation(id: MongoId,
 
   def query = Json.obj("_id" -> this.id)
 
-//  def updateLastUpdated(set: JsObject): JsObject = {
-//    // check if there already is a $set block
-//    (set \ "$set").asOpt[JsObject]
-//
-//
-//  }
+  def updateLastUpdated(set: JsObject): JsObject = {
+    // check if there already is a $set block
+    set
+  }
 
 
 
     Json.obj("$set" -> Json.obj("lastUpdated" -> new Date))
 
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
-    val set = Json.obj("$set" -> (toJsonOrEmpty("subject", conversationUpdate.subject) ++ setLastUpdated))
+    val set = Json.obj("$set" -> (toJsonOrEmpty("subject", conversationUpdate.subject)))
     Conversation.col.update(query, set).map { _.ok }
   }
 
@@ -69,19 +67,19 @@ case class Conversation(id: MongoId,
     val set = Json.obj("$addToSet" ->
       Json.obj("recipients" ->
         Json.obj("$each" -> recipients)))
-    Conversation.col.update(query, set ++ setLastUpdated).map { _.updatedExisting }
+    Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
   def deleteRecipient(recipient: Recipient): Future[Boolean] = {
     val set = Json.obj("$pull" ->
       Json.obj("recipients" -> recipient))
-    Conversation.col.update(query, set ++ setLastUpdated).map { _.updatedExisting }
+    Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
   def updateRecipient(recipient: Recipient, recipientUpdate: RecipientUpdate): Future[Boolean] = {
     val queryRecipient = query ++ Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> recipient.identityId)))
     val set = Json.obj("$set" -> Json.obj("recipients.$.encryptedKey" -> recipientUpdate.encryptedKey))
-    Conversation.col.update(queryRecipient, set ++ setLastUpdated).map { _.ok }
+    Conversation.col.update(queryRecipient, set).map { _.ok }
   }
 
   def hasMember(identityId: MongoId): Boolean = {
