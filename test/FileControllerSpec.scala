@@ -5,17 +5,16 @@ import play.api.test.FakeApplication
 import testHelper.MockupFactory._
 import scala.concurrent.ExecutionContext
 import play.api.GlobalSettings
-import testHelper.MockupFactory
+import testHelper.{StartedApp, MockupFactory}
 import org.specs2.mutable._
 import testHelper.Config._
 
-class FileControllerSpec extends Specification {
+class FileControllerSpec extends StartedApp {
 
   sequential
 
   "FileController" should {
 
-    step(play.api.Play.start(app))
 
     val fileName = "some_name.pdf"
     val fileType = "some_type"
@@ -168,6 +167,5 @@ class FileControllerSpec extends Specification {
       }
     }
 
-    step(play.api.Play.stop())
-  }
+      }
 }

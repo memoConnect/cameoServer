@@ -8,9 +8,9 @@ import org.specs2.mutable._
 import play.api.libs.json.{JsObject, Json}
 import play.api.test.{FakeApplication, WithApplication, FakeRequest}
 import play.api.test.Helpers._
+import testHelper.StartedApp
 
-
-class ServicesSpec extends Specification {
+class ServicesSpec extends StartedApp {
 
   "Services" should {
 
@@ -26,8 +26,6 @@ class ServicesSpec extends Specification {
     val withoutPlugins = Seq("play.modules.reactivemongo.ReactiveMongoPlugin",
       "info.schleichardt.play.embed.mongo.EmbedMongoPlugin")
 
-    lazy val app = FakeApplication(additionalConfiguration = additionalConfig, withoutPlugins = withoutPlugins)
-    step(play.api.Play.start(app))
 
     "Check valid phoneNumbers " in  {
       val path = basePath + "/services/checkPhoneNumber"
@@ -99,8 +97,6 @@ class ServicesSpec extends Specification {
           resStatus aka "result status KO" must beEqualTo("KO")
       }
     }
-
-    step(play.api.Play.stop())
   }
 
 }

@@ -9,7 +9,7 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.MockupFactory
+import testHelper.{StartedApp, MockupFactory}
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -18,7 +18,7 @@ import testHelper.Config._
  * Date: 3/3/14
  * Time: 4:48 PM
  */
-class AccountControllerSpec extends Specification {
+class AccountControllerSpec extends StartedApp {
 
   sequential
 
@@ -33,8 +33,6 @@ class AccountControllerSpec extends Specification {
   var regSec2 = ""
 
   "AccountController" should {
-
-    step(play.api.Play.start(app))
 
     "Refuse invalid Logins" in {
 
@@ -213,7 +211,6 @@ class AccountControllerSpec extends Specification {
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
     }
 
-    step(play.api.Play.stop())
   }
 
 }

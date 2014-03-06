@@ -4,7 +4,16 @@
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date - [%level] - from %logger in %thread %n%message%n%xException%n</pattern>
+            <!--<pattern>%date - %coloredLevel - from %logger in %thread %n%message%n%xException%n</pattern>-->
+            <!--<pattern>%coloredLevel %date - %logger in %thread: %message%n%xException</pattern>-->
+            <pattern>%date - %highlight(%-5level) - %-15.15logger{15} - %msg%n%xException</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>${application.home}/logs/application.log</file>
+        <encoder>
+            <pattern>%date - %highlight(%-5level) - %-15.15logger{15} - %msg%n%xException</pattern>
         </encoder>
     </appender>
 
@@ -18,6 +27,7 @@
 
     <root level="ERROR">
         <appender-ref ref="STDOUT" />
+        <appender-ref ref="FILE" />
     </root>
 
 </configuration>

@@ -6,7 +6,7 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.MockupFactory
+import testHelper.{StartedApp, MockupFactory}
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -15,7 +15,7 @@ import testHelper.Config._
  * Date: 3/3/14
  * Time: 4:48 PM
  */
-class PurlController extends Specification {
+class PurlController extends StartedApp {
 
   sequential
 
@@ -30,7 +30,6 @@ class PurlController extends Specification {
 
   "PurlController" should {
 
-    step(play.api.Play.start(app))
 
     "get purl object for external user" in {
 
@@ -136,6 +135,5 @@ class PurlController extends Specification {
       status(res) must equalTo(UNAUTHORIZED)
     }
 
-    step(play.api.Play.stop())
-  }
+      }
 }

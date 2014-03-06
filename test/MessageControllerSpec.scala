@@ -6,7 +6,7 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.MockupFactory
+import testHelper.{StartedApp, MockupFactory}
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -15,7 +15,7 @@ import testHelper.Config._
  * Date: 3/3/14
  * Time: 4:48 PM
  */
-class MessageControllerSpec extends Specification {
+class MessageControllerSpec extends StartedApp {
 
   sequential
 
@@ -24,7 +24,6 @@ class MessageControllerSpec extends Specification {
 
   "MessageController" should {
 
-    step(play.api.Play.start(app))
 
     "add message to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/message"
@@ -85,6 +84,5 @@ class MessageControllerSpec extends Specification {
 
       status(res) must equalTo(UNAUTHORIZED)
     }
-    step(play.api.Play.stop())
-  }
+      }
 }

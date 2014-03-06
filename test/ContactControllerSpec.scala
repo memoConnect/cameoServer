@@ -7,7 +7,7 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.MockupFactory
+import testHelper.{StartedApp, MockupFactory}
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -16,7 +16,7 @@ import testHelper.Config._
  * Date: 3/3/14
  * Time: 4:48 PM
  */
-class ContactControllerSpec extends Specification {
+class ContactControllerSpec extends StartedApp {
 
   sequential
 
@@ -31,7 +31,6 @@ class ContactControllerSpec extends Specification {
 
   "ContactController" should {
 
-    step(play.api.Play.start(app))
 
     "get all contacts" in {
       val path = basePath + "/contacts"
@@ -534,6 +533,5 @@ class ContactControllerSpec extends Specification {
       status(res) must equalTo(232)
     }
 
-    step(play.api.Play.stop())
-  }
+      }
 }

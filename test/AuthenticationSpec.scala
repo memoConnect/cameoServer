@@ -10,7 +10,7 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.{Play, Logger}
-import testHelper.MockupFactory
+import testHelper.{StartedApp, MockupFactory}
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -19,7 +19,7 @@ import testHelper.Config._
  * Date: 3/3/14
  * Time: 4:48 PM
  */
-class AuthenticationSpec extends Specification {
+class AuthenticationSpec extends StartedApp {
 
   sequential
 
@@ -28,7 +28,6 @@ class AuthenticationSpec extends Specification {
 
   "Authentication" should {
 
-    step(play.api.Play.start(app))
 
     val allRoutes = app.routes.get.documentation.map{r => (r._1, r._2)}
 
@@ -135,7 +134,9 @@ class AuthenticationSpec extends Specification {
       }
     }
 
-    step(play.api.Play.stop())
+    "1is1" in {
+      1===1
+    }
   }
 
 }

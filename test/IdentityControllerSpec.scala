@@ -5,13 +5,14 @@ import play.api.test.Helpers._
 import testHelper.MockupFactory._
 import org.specs2.mutable._
 import testHelper.Config._
+import testHelper.StartedApp
 
 /**
  * User: Björn Reimer
  * Date: 3/3/14
  * Time: 4:48 PM
  */
-class IdentityControllerSpec extends Specification {
+class IdentityControllerSpec extends StartedApp {
 
   sequential
 
@@ -32,7 +33,6 @@ class IdentityControllerSpec extends Specification {
 
   "IdentityController" should {
 
-    step(play.api.Play.start(app))
 
     "Get the identity behind a token" in {
       val path = basePath + "/identity"
@@ -382,7 +382,6 @@ class IdentityControllerSpec extends Specification {
     }
 
 
-    step(play.api.Play.stop())
 
   }
 }

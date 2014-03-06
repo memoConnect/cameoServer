@@ -9,7 +9,7 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.MockupFactory
+import testHelper.{StartedApp, MockupFactory}
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -18,7 +18,7 @@ import testHelper.Config._
  * Date: 3/3/14
  * Time: 4:48 PM
  */
-class ConversationControllerSpec extends Specification {
+class ConversationControllerSpec extends StartedApp {
 
   sequential
 
@@ -30,7 +30,6 @@ class ConversationControllerSpec extends Specification {
 
   "ConversationController" should {
 
-    step(play.api.Play.start(app))
 
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
@@ -172,7 +171,7 @@ class ConversationControllerSpec extends Specification {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.length must beEqualTo(13)
+      data.length must beGreaterThan(10)
 
       // the list should consist of conversation summaries
       data.map {
@@ -371,7 +370,6 @@ class ConversationControllerSpec extends Specification {
       status(res) must equalTo(UNAUTHORIZED)
     }
 
-    step(play.api.Play.stop())
-  }
+      }
 
 }
