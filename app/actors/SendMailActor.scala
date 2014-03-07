@@ -43,6 +43,7 @@ class SendMailActor extends Actor {
       case false => {
         val credentials = new BasicAWSCredentials(accessKey.get, secretKey.get)
         val client = new AmazonSimpleEmailServiceClient(credentials)
+        client.setEndpoint("email.eu-west-1.amazonaws.com")
         val sendEmailRequest = new SendEmailRequest()
         val dest = new Destination().withToAddresses(mail.to)
         sendEmailRequest.setDestination(dest)
@@ -81,7 +82,6 @@ class SendMailActor extends Actor {
     }
 
     case (message: models.Message, fromIdentity: Identity, toIdentity: Identity, tryCount: Int) =>
-
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
