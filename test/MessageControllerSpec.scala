@@ -23,14 +23,14 @@ class MessageControllerSpec extends StartedApp {
   sequential
 
   var messageId = ""
-  var messageBody = "wir rocken"
+  var body = "wir rocken"
 
   "MessageController" should {
 
     "add message to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/message"
 
-      val json = Json.obj("messageBody" -> messageBody)
+      val json = Json.obj("body" -> body)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -41,7 +41,7 @@ class MessageControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       messageId = (data \ "id").as[String]
-      (data \ "messageBody").asOpt[String] must beSome(messageBody)
+      (data \ "body").asOpt[String] must beSome(body)
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
       (data \ "fromIdentity").asOpt[String] must beSome
       (data \ "created").asOpt[String] must beSome
@@ -58,8 +58,7 @@ class MessageControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      messageId = (data \ "id").as[String]
-      (data \ "messageBody").asOpt[String] must beSome(messageBody)
+      (data \ "body").asOpt[String] must beSome(body)
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
       (data \ "fromIdentity").asOpt[String] must beSome
       (data \ "created").asOpt[String] must beSome
@@ -79,7 +78,7 @@ class MessageControllerSpec extends StartedApp {
 
       val message = (data \ "messages")(0).as[JsObject]
       (message \ "id").asOpt[String] must beSome(messageId)
-      (message \ "messageBody").asOpt[String] must beSome(messageBody)
+      (message \ "body").asOpt[String] must beSome(body)
       (message \ "messageStatus").asOpt[Seq[JsObject]] must beSome
       (message \ "fromIdentity").asOpt[String] must beSome(identityExisting)
       (message \ "created").asOpt[String] must beSome
@@ -108,7 +107,7 @@ class MessageControllerSpec extends StartedApp {
 
       val path = basePath + "/conversation/" + cidExisting + "/message"
 
-      val json = Json.obj("messageBody" -> "wir rocken")
+      val json = Json.obj("body" -> "wir rocken")
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
@@ -124,6 +123,52 @@ class MessageControllerSpec extends StartedApp {
       val res = route(req).get
 
       status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    val fileIds = Seq("asdf", "aassddff")
+    var messageId2 = ""
+
+    "send message with fileIds" in {
+      val path = basePath + "/conversation/" + cidExisting + "/message"
+
+      val json = Json.obj("body" -> body , "fileIds" -> fileIds)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      Logger.debug("foo" + data)
+
+      (data \ "id").asOpt[String] must beSome
+      messageId2 = (data \ "id").as[String]
+      (data \ "body").asOpt[String] must beSome(body)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
+      (data \ "fromIdentity").asOpt[String] must beSome
+      (data \ "fileIds")(0).asOpt[String] must beSome(fileIds(0))
+      (data \ "fileIds")(1).asOpt[String] must beSome(fileIds(1))
+      (data \ "created").asOpt[String] must beSome
+    }
+
+    "return fileIds with message" in {
+      val path = basePath + "/message/" + messageId2
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "body").asOpt[String] must beSome(body)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
+      (data \ "fromIdentity").asOpt[String] must beSome
+      (data \ "fileIds")(0).asOpt[String] must beSome(fileIds(0))
+      (data \ "fileIds")(1).asOpt[String] must beSome(fileIds(1))
+      (data \ "created").asOpt[String] must beSome
     }
   }
 }

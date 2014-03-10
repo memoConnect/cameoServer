@@ -17,10 +17,10 @@ import reactivemongo.core.commands.LastError
  * Time: 2:36 PM
  */
 case class Message(id: MongoId,
-                   messageBody: String,
+                   body: String,
                    fromIdentityId: MongoId,
                    messageStatus: Seq[MessageStatus],
-                   assets: Seq[FileMeta],
+                   files: Seq[MongoId],
                    created: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
@@ -53,23 +53,24 @@ object Message extends Model[Message] {
   val col = MongoCollections.conversationCollection
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
-  def docVersion = 0
-  def evolutions = Map()
+  def docVersion = 1
+  def evolutions = Map(0 -> MessageEvolutions.assetsToFiles)
 
   def createReads(fromIdentityId: MongoId) = (
     Reads.pure[MongoId](IdHelper.generateMessageId()) and
-    (__ \ 'messageBody).read[String] and
+    (__ \ 'body).read[String] and
     Reads.pure[MongoId](fromIdentityId) and
     Reads.pure[Seq[MessageStatus]](Seq()) and
-    Reads.pure[Seq[FileMeta]](Seq()) and
+    ((__ \ 'fileIds).read[Seq[MongoId]](Reads.seq(MongoId.createReads)) or Reads.pure[Seq[MongoId]](Seq())) and
     Reads.pure[Date](new Date))(Message.apply _)
 
   def outputWrites = Writes[Message] {
     m =>
       Json.obj("id" -> m.id.toJson) ++
-        Json.obj("messageBody" -> m.messageBody) ++
+        Json.obj("body" -> m.body) ++
         Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
         Json.obj("messageStatus" -> m.messageStatus.map(_.toJson)) ++
+        Json.obj("fileIds" -> m.files.map(_.toJson)) ++
         addCreated(m.created)
   }
 
@@ -93,5 +94,20 @@ object Message extends Model[Message] {
   def findConversation(id: MongoId): Future[Option[Conversation]] = {
     Conversation.col.find(arrayQuery("messages", id)).one[Conversation]
   }
+}
+
+object MessageEvolutions {
+
+  val assetsToFiles: Reads[JsObject] = Reads {
+    js =>
+    {
+      val deleteAsset: Reads[JsObject] = (__ \ 'assets).json.prune
+      val addFiles: Reads[JsObject] = __.json.update((__ \ 'files).json.put(JsArray()))
+      val renameBody: Reads[JsObject]  = __.json.update((__ \ 'body).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+      js.transform(deleteAsset andThen addFiles andThen renameBody andThen addVersion)
+    }
+  }
+
 }
 

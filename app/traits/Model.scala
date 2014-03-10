@@ -73,7 +73,7 @@ trait Model[A] {
                 case true =>
                   newJs.asOpt[T](fromMongoDates andThen fromMongoId andThen reads) match {
                     case None =>
-                      Logger.error("Error reading Json after evolution"); JsError()
+                      Logger.error("Error reading Json after evolution: " + newJs); JsError()
                     case Some(o) =>
                       JsSuccess(o)
                   }

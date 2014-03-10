@@ -33,7 +33,7 @@ object FileController extends ExtendedController {
           fileSize.isEmpty ||
           fileType.isEmpty ||
           General.safeStringToInt(maxChunks.get).isEmpty ||
-          General.safeStringToInt(fileSize.get).isEmpty ||
+          General.safeStringToInt(fileSize.get).isEmpty
       }
 
       headerInvalid match {

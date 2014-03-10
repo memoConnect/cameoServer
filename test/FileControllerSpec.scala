@@ -34,8 +34,7 @@ class FileControllerSpec extends StartedApp {
           ("X-File-Name", fileName),
           ("X-Max-Chunks", chunks.size.toString),
           ("X-File-Size", fileSize.toString),
-          ("X-File-Type", fileType),
-          ("X-Index", "0")) :+
+          ("X-File-Type", fileType)) :+
           tokenHeader(tokenExisting2)
 
         val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
@@ -47,8 +46,7 @@ class FileControllerSpec extends StartedApp {
 
         (data \ "id").asOpt[String] must beSome
         fileId = (data \ "id").as[String]
-        (data \ "chunks")(0).asOpt[Int] must beSome
-        (data \ "chunks")(1).asOpt[Int] must beNone
+        (data \ "chunks")(0).asOpt[Int] must beNone
         (data \ "fileName").asOpt[String] must beSome(fileName)
         (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
         (data \ "fileSize").asOpt[Int] must beSome(fileSize)
@@ -58,13 +56,13 @@ class FileControllerSpec extends StartedApp {
       "upload the other chunks" in {
         val path = basePath + "/file/" + fileId
 
-        chunks.tail.zipWithIndex.map {
+        chunks.zipWithIndex.map {
           case (chunk, i) =>
 
             val json = Json.obj("chunk" -> chunk)
 
             val header: Seq[(String, String)] = Seq(
-              ("X-Index", (i + 1).toString)) :+
+              ("X-Index", i.toString)) :+
               tokenHeader(tokenExisting2)
 
             val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
@@ -165,8 +163,5 @@ class FileControllerSpec extends StartedApp {
         status(res) must equalTo(NOT_FOUND)
       }
     }
-    step(cleanUp())
-
-
   }
 }

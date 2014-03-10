@@ -91,7 +91,7 @@ class SendMailActor extends Actor {
         val from: String = Play.configuration.getString("mail.from").get
         val subject = "[cameo.io] - Message from " + fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
         val to: String = toIdentity.email.get.toString
-        val body: String = message.messageBody
+        val body: String = message.body
 
         // create purl
         val purl = Purl.create(message.id, toIdentity.id)

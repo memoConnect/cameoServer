@@ -79,7 +79,7 @@ class SendSmsActor extends Actor {
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
         val to: String = toIdentity.phoneNumber.get.toString
-        val body: String = message.messageBody
+        val body: String = message.body
 
         // create purl 
         val purl = Purl.create(message.id, toIdentity.id)
