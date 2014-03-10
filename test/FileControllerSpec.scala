@@ -5,7 +5,7 @@ import play.api.test.FakeApplication
 import testHelper.MockupFactory._
 import scala.concurrent.ExecutionContext
 import play.api.GlobalSettings
-import testHelper.{StartedApp, MockupFactory}
+import testHelper.{ StartedApp, MockupFactory }
 import org.specs2.mutable._
 import testHelper.Config._
 
@@ -14,7 +14,6 @@ class FileControllerSpec extends StartedApp {
   sequential
 
   "FileController" should {
-
 
     val fileName = "some_name.pdf"
     val fileType = "some_type"
@@ -166,6 +165,8 @@ class FileControllerSpec extends StartedApp {
         status(res) must equalTo(NOT_FOUND)
       }
     }
+    step(cleanUp())
 
-      }
+
+  }
 }
