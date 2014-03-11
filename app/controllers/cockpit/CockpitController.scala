@@ -15,8 +15,6 @@ import ExecutionContext.Implicits.global
  */
 object CockpitController extends ExtendedController {
 
-
-
   def index = Action {
     Ok(views.html.cockpit.index())
   }
@@ -27,7 +25,7 @@ object CockpitController extends ExtendedController {
 
     def  getList(name: String): Option[Future[CockpitList]] = {
       name match {
-        case "identity" => Some(Identity.getList(0,0))
+        case "identity" => Some(Identity.getList(5,15))
         case _ => None
       }
     }

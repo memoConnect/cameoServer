@@ -12,7 +12,7 @@ case class CockpitListElement(id: String,
                                attributes: Map[String, Option[String]]
                                ) {
 
-  def getTitles = attributes.keySet.toSeq
+  def getTitles = attributes.keySet.toSeq.sorted
 
   def getAttributeList(titles: Seq[String]): Seq[Option[String]] = {
     titles.map { title =>

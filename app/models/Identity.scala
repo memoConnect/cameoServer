@@ -10,12 +10,20 @@ import helper.{ PrintDate, IdHelper }
 import ExecutionContext.Implicits.global
 import constants.Messaging._
 import constants.Contacts._
-import reactivemongo.core.commands.LastError
+import reactivemongo.core.commands._
 import helper.JsonHelper._
 import play.api.Logger
 import helper.MongoCollections._
 import reactivemongo.core.errors.DatabaseException
-import models.cockpit.{CockpitList, CockpitListElement}
+import models.cockpit.{ CockpitList, CockpitListElement }
+import reactivemongo.bson.BSONInteger
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsString
+import scala.Some
+import play.api.libs.json.JsNumber
+import models.cockpit.CockpitList
+import models.cockpit.CockpitListElement
+import play.api.libs.json.JsObject
 
 /**
  * User: Björn Reimer
@@ -242,11 +250,23 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   )
 
   def getList(limit: Int, offset: Int): Future[CockpitList] = {
-    // todo use mongo aggregation framework
-    col.find(Json.obj()).cursor[Identity].collect[Seq]().map { list =>
-      val elements = list.map(toCockpitListElement)
-      val titles = elements.headOption.map{_.getTitles}.getOrElse(Seq())
-      new CockpitList(titles, elements)
+
+    val pipeline: Seq[PipelineOperator] = Seq(
+      Skip(offset),
+      Limit(limit))
+
+    val aggregationCommand = Aggregate(col.name, pipeline)
+
+    mongoDB.command(aggregationCommand).map {
+      res =>
+        {
+          val elements: Seq[CockpitListElement] = res.toSeq.map { bson =>
+            val identity = Json.toJson(bson).as[Identity]
+            toCockpitListElement(identity)
+          }
+          val titles = elements.headOption.map { _.getTitles }.getOrElse(Seq())
+          new CockpitList(titles, elements)
+        }
     }
   }
 
