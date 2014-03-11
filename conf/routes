@@ -81,6 +81,9 @@ GET            /api/v1/util/loadDb                            controllers.Applic
 GET            /p/:id                                         controllers.ShortUrlController.redirect(urlType = "p", id: String)
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
+# Cockpit
+GET            /cockpit                                       controllers.CockpitController.index
+
 
 ##
 ##   WebClient
