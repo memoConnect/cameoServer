@@ -1,6 +1,5 @@
 import sys.process.stringSeqToProcess
 
-
 name := "cameoServer"
 
 resolvers += "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
