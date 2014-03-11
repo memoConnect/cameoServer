@@ -25,7 +25,7 @@ object CockpitController extends ExtendedController {
 
     def  getList(name: String): Option[Future[CockpitList]] = {
       name match {
-        case "identity" => Some(Identity.getList(5,15))
+        case "identity" => Some(Identity.getList(10,0))
         case _ => None
       }
     }
