@@ -1,0 +1,29 @@
+@(list: models.cockpit.CockpitList)
+
+@main("Cockpit list  - " + list.name) {
+
+    <p><strong>Listing of @list.name</strong></p>
+
+    <table class="table table-striped">
+        @*titles*@
+        <thead>
+        <tr>
+        @for(t <- list.titles) {
+            <th>@t</th>
+        }
+        </tr>
+        </thead>
+
+        @*elements*@
+        <tbody>
+        @for(element <- list.elements) {
+            <tr>
+            @for(content <- element) {
+                <td>@content</td>
+            }
+            </tr>
+        }
+        </tbody>
+    </table>
+
+}

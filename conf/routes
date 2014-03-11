@@ -82,9 +82,11 @@ GET            /p/:id                                         controllers.ShortU
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
 # Cockpit
-GET            /cockpit                                       controllers.CockpitController.index
+GET            /cockpit                                       controllers.cockpit.CockpitController.index
+GET            /cockpit/:elementName                          controllers.cockpit.CockpitController.list(elementName)
 ## static stuff Cockpit
 GET            /cockpit/*file                          controllers.Assets.at(path="/public/static", file)
+
 
 ##
 ##   WebClient
