@@ -1,8 +1,12 @@
 package controllers.cockpit
 
-import traits.ExtendedController
+import traits.{ CockpitEditable, ExtendedController }
 import play.api.mvc.Action
 import models.cockpit.CockpitList
+import models.Identity
+import scala.concurrent.{ExecutionContext, Future}
+import play.api.libs.json.{ Json, JsObject }
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -12,17 +16,30 @@ import models.cockpit.CockpitList
 object CockpitController extends ExtendedController {
 
 
+
   def index = Action {
     Ok(views.html.cockpit.index())
   }
 
-  def list(elementName: String) = Action {
+  def list(listName: String) = Action.async {
 
-    val list = new CockpitList(elementName,
-      Seq("title1","title2","title3","title4","title5"),
-      Seq())
+    val context: JsObject = Json.obj("name" -> listName)
 
-    Ok(views.html.cockpit.list(list))
+    def  getList(name: String): Option[Future[CockpitList]] = {
+      name match {
+        case "identity" => Some(Identity.getList(0,0))
+        case _ => None
+      }
+    }
+
+    // check if we can handle this list
+    getList(listName) match {
+      case None => Future(NotFound)
+      case Some(futureList) =>
+        futureList.map { list =>
+          Ok(views.html.cockpit.list(list, context))
+        }
+    }
   }
 
 }

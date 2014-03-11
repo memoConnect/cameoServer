@@ -1,6 +1,7 @@
 package traits
 
-import models.cockpit.CockpitListElement
+import models.cockpit.{CockpitList, CockpitListElement}
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -12,5 +13,5 @@ trait CockpitEditable[A] {
   def toCockpitListElement(obj: A): CockpitListElement
 
   // TODO filter
-  def getList(limit: Int, offset: Int): Seq[CockpitListElement]
+  def getList(limit: Int, offset: Int): Future[CockpitList]
 }

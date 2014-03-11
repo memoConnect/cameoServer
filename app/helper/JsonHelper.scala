@@ -55,15 +55,12 @@ object JsonHelper {
       (__ \ '_id).json.prune
   }
 
-  val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
-  defaultDateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"))
-
   def addCreated(date: Date): JsObject = {
-    Json.obj("created" -> defaultDateFormat.format(date))
+    Json.obj("created" -> PrintDate.toString(date))
   }
 
   def addLastUpdated(date: Date): JsObject = {
-    Json.obj("lastUpdated" -> defaultDateFormat.format(date))
+    Json.obj("lastUpdated" -> PrintDate.toString(date))
   }
 
   def toJsonOrEmpty(key: String, value: Option[String]): JsObject = {

@@ -3,10 +3,10 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.{CockpitEditable, Model}
+import traits.{ CockpitEditable, Model }
 import play.api.libs.json.Reads._
 import scala.concurrent.{ ExecutionContext, Future }
-import helper.IdHelper
+import helper.{ PrintDate, IdHelper }
 import ExecutionContext.Implicits.global
 import constants.Messaging._
 import constants.Contacts._
@@ -15,7 +15,7 @@ import helper.JsonHelper._
 import play.api.Logger
 import helper.MongoCollections._
 import reactivemongo.core.errors.DatabaseException
-import models.cockpit.CockpitListElement
+import models.cockpit.{CockpitList, CockpitListElement}
 
 /**
  * User: Björn Reimer
@@ -241,16 +241,30 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     4 -> IdentityEvolutions.removeAssets
   )
 
-  def getList(limit: Int, offset: Int): Seq[CockpitListElement] = ???
+  def getList(limit: Int, offset: Int): Future[CockpitList] = {
+    // todo use mongo aggregation framework
+    col.find(Json.obj()).cursor[Identity].collect[Seq]().map { list =>
+      val elements = list.map(toCockpitListElement)
+      val titles = elements.headOption.map{_.getTitles}.getOrElse(Seq())
+      new CockpitList(titles, elements)
+    }
+  }
 
   def toCockpitListElement(obj: Identity): CockpitListElement = {
-
     val id = obj.id.id
-//
-//    val attributes = Json.toJson[]
-
-    new CockpitListElement(id, Seq())
-
+    val attributes = Map(
+      "accountId" -> obj.accountId.map { _.toString },
+      "displayName" -> obj.displayName,
+      "email" -> obj.email.map { _.toJson.toString },
+      "phoneNumber" -> obj.phoneNumber.map { _.toJson.toString },
+      "cameoId" -> Some(obj.cameoId),
+      "preferredMessageType" -> Some(obj.preferredMessageType),
+      "userKey" -> Some(obj.userKey),
+      "created" -> Some(PrintDate.toString(obj.created)),
+      "lastUpdated" -> Some(PrintDate.toString(obj.lastUpdated)),
+      "docVersion" -> Some(obj.docVersion.toString)
+    )
+    new CockpitListElement(id, attributes)
   }
 }
 
@@ -311,10 +325,10 @@ object IdentityEvolutions {
 
   val removeAssets: Reads[JsObject] = Reads {
     js =>
-    {
-      val removeAssets: Reads[JsObject] = (__ \ 'assets).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
-      js.transform(removeAssets andThen addVersion)
-    }
+      {
+        val removeAssets: Reads[JsObject] = (__ \ 'assets).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
+        js.transform(removeAssets andThen addVersion)
+      }
   }
 }

@@ -1,8 +1,8 @@
-@(list: models.cockpit.CockpitList)
+@(list: models.cockpit.CockpitList, context: play.api.libs.json.JsObject)
 
-@main("Cockpit list  - " + list.name) {
+@main("Cockpit list") {
 
-    <p><strong>Listing of @list.name</strong></p>
+    <h1>Listing of @(context \ "name").asOpt[String].getOrElse("unknown")</h1>
 
     <table class="table table-striped">
         @*titles*@
@@ -18,7 +18,7 @@
         <tbody>
         @for(element <- list.elements) {
             <tr>
-            @for(content <- element.attributes) {
+            @for(content <- element.getAttributeList(list.titles)) {
                 <td>@content</td>
             }
             </tr>
