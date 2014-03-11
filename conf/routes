@@ -84,6 +84,7 @@ GET            /v/:id                                         controllers.ShortU
 # Cockpit
 GET            /cockpit                                       controllers.cockpit.CockpitController.index
 GET            /cockpit/:elementName                          controllers.cockpit.CockpitController.list(elementName)
+
 ## static stuff Cockpit
 GET            /cockpit/static/*file                          controllers.Assets.at(path="/public/static", file)
 

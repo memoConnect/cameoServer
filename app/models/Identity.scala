@@ -3,7 +3,7 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.Model
+import traits.{CockpitEditable, Model}
 import play.api.libs.json.Reads._
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.IdHelper
@@ -15,6 +15,7 @@ import helper.JsonHelper._
 import play.api.Logger
 import helper.MongoCollections._
 import reactivemongo.core.errors.DatabaseException
+import models.cockpit.CockpitListElement
 
 /**
  * User: Björn Reimer
@@ -31,7 +32,6 @@ case class Identity(id: MongoId,
                     preferredMessageType: String, // "mail" or "sms"
                     userKey: String,
                     contacts: Seq[Contact],
-                    assets: Seq[FileMeta],
                     tokens: Seq[Token],
                     friendRequests: Seq[MongoId],
                     publicKeys: Seq[PublicKey],
@@ -134,7 +134,7 @@ case class Identity(id: MongoId,
   }
 }
 
-object Identity extends Model[Identity] {
+object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   implicit def col = identityCollection
 
@@ -150,7 +150,6 @@ object Identity extends Model[Identity] {
     ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and
-    Reads.pure[Seq[FileMeta]](Seq()) and
     Reads.pure[Seq[Token]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Seq[PublicKey]](Seq()) and
@@ -204,7 +203,6 @@ object Identity extends Model[Identity] {
       Seq(),
       Seq(),
       Seq(),
-      Seq(),
       new Date,
       new Date,
       docVersion)
@@ -234,13 +232,26 @@ object Identity extends Model[Identity] {
     col.find(query).cursor[Identity].collect[Seq]()
   }
 
-  def docVersion = 4
+  def docVersion = 5
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
     1 -> IdentityEvolutions.addFriedRequest,
     2 -> IdentityEvolutions.addPublicKeys,
-    3 -> IdentityEvolutions.removeConversations
+    3 -> IdentityEvolutions.removeConversations,
+    4 -> IdentityEvolutions.removeAssets
   )
+
+  def getList(limit: Int, offset: Int): Seq[CockpitListElement] = ???
+
+  def toCockpitListElement(obj: Identity): CockpitListElement = {
+
+    val id = obj.id.id
+//
+//    val attributes = Json.toJson[]
+
+    new CockpitListElement(id, Seq())
+
+  }
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],
@@ -296,5 +307,14 @@ object IdentityEvolutions {
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
         js.transform(removeConversations andThen addVersion)
       }
+  }
+
+  val removeAssets: Reads[JsObject] = Reads {
+    js =>
+    {
+      val removeAssets: Reads[JsObject] = (__ \ 'assets).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
+      js.transform(removeAssets andThen addVersion)
+    }
   }
 }

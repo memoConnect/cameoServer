@@ -7,4 +7,8 @@ package models.cockpit
  */
 case class CockpitList(name: String,
                        titles: Seq[String],
-                       elements: Seq[Seq[String]])
+                       elements: Seq[CockpitListElement])
+
+case class CockpitListElement(id: String,
+                               attributes: Seq[String]
+                               )

@@ -20,11 +20,7 @@ object CockpitController extends ExtendedController {
 
     val list = new CockpitList(elementName,
       Seq("title1","title2","title3","title4","title5"),
-      Seq(Seq("attr1","attr2","attr3","attr4","attr5"),
-      Seq("attr1","attr2","attr3","attr4","attr5"),
-      Seq("attr1","attr2","attr3","attr4","attr5"),
-      Seq("attr1","attr2","attr3","attr4","attr5"),
-      Seq("attr1","attr2","attr3","attr4","attr5")))
+      Seq())
 
     Ok(views.html.cockpit.list(list))
   }
