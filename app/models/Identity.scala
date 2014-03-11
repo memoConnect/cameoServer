@@ -3,18 +3,28 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.Model
+import traits.{ CockpitEditable, Model }
 import play.api.libs.json.Reads._
 import scala.concurrent.{ ExecutionContext, Future }
-import helper.IdHelper
+import helper.{ PrintDate, IdHelper }
 import ExecutionContext.Implicits.global
 import constants.Messaging._
 import constants.Contacts._
-import reactivemongo.core.commands.LastError
+import reactivemongo.core.commands._
 import helper.JsonHelper._
 import play.api.Logger
 import helper.MongoCollections._
 import reactivemongo.core.errors.DatabaseException
+import models.cockpit.{ CockpitList, CockpitListElement }
+import reactivemongo.bson.BSONInteger
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsString
+import scala.Some
+import play.api.libs.json.JsNumber
+import models.cockpit.CockpitList
+import models.cockpit.CockpitListElement
+import play.api.libs.json.JsObject
+import play.modules.reactivemongo.json.BSONFormats._
 
 /**
  * User: Björn Reimer
@@ -31,7 +41,6 @@ case class Identity(id: MongoId,
                     preferredMessageType: String, // "mail" or "sms"
                     userKey: String,
                     contacts: Seq[Contact],
-                    assets: Seq[FileMeta],
                     tokens: Seq[Token],
                     friendRequests: Seq[MongoId],
                     publicKeys: Seq[PublicKey],
@@ -134,7 +143,7 @@ case class Identity(id: MongoId,
   }
 }
 
-object Identity extends Model[Identity] {
+object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   implicit def col = identityCollection
 
@@ -150,7 +159,6 @@ object Identity extends Model[Identity] {
     ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and
-    Reads.pure[Seq[FileMeta]](Seq()) and
     Reads.pure[Seq[Token]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Seq[PublicKey]](Seq()) and
@@ -204,7 +212,6 @@ object Identity extends Model[Identity] {
       Seq(),
       Seq(),
       Seq(),
-      Seq(),
       new Date,
       new Date,
       docVersion)
@@ -234,13 +241,52 @@ object Identity extends Model[Identity] {
     col.find(query).cursor[Identity].collect[Seq]()
   }
 
-  def docVersion = 4
+  def docVersion = 5
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
     1 -> IdentityEvolutions.addFriedRequest,
     2 -> IdentityEvolutions.addPublicKeys,
-    3 -> IdentityEvolutions.removeConversations
+    3 -> IdentityEvolutions.removeConversations,
+    4 -> IdentityEvolutions.removeAssets
   )
+
+  def getList(limit: Int, offset: Int): Future[CockpitList] = {
+
+    val pipeline: Seq[PipelineOperator] = Seq(
+      Skip(offset),
+      Limit(limit))
+
+    val aggregationCommand = Aggregate(col.name, pipeline)
+
+    mongoDB.command(aggregationCommand).map {
+      res =>
+        {
+          val elements: Seq[CockpitListElement] = res.toSeq.map { bson =>
+            val identity = Json.toJson(bson).as[Identity]
+            toCockpitListElement(identity)
+          }
+          val titles = elements.headOption.map { _.getTitles }.getOrElse(Seq())
+          new CockpitList(titles, elements)
+        }
+    }
+  }
+
+  def toCockpitListElement(obj: Identity): CockpitListElement = {
+    val id = obj.id.id
+    val attributes = Map(
+      "accountId" -> obj.accountId.map { _.toString },
+      "displayName" -> obj.displayName,
+      "email" -> obj.email.map { _.toJson.toString },
+      "phoneNumber" -> obj.phoneNumber.map { _.toJson.toString },
+      "cameoId" -> Some(obj.cameoId),
+      "preferredMessageType" -> Some(obj.preferredMessageType),
+      "userKey" -> Some(obj.userKey),
+      "created" -> Some(PrintDate.toString(obj.created)),
+      "lastUpdated" -> Some(PrintDate.toString(obj.lastUpdated)),
+      "docVersion" -> Some(obj.docVersion.toString)
+    )
+    new CockpitListElement(id, attributes)
+  }
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],
@@ -295,6 +341,15 @@ object IdentityEvolutions {
         val removeConversations: Reads[JsObject] = (__ \ 'conversations).json.prune
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
         js.transform(removeConversations andThen addVersion)
+      }
+  }
+
+  val removeAssets: Reads[JsObject] = Reads {
+    js =>
+      {
+        val removeAssets: Reads[JsObject] = (__ \ 'assets).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
+        js.transform(removeAssets andThen addVersion)
       }
   }
 }

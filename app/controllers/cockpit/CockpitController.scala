@@ -1,8 +1,12 @@
 package controllers.cockpit
 
-import traits.ExtendedController
+import traits.{ CockpitEditable, ExtendedController }
 import play.api.mvc.Action
 import models.cockpit.{CockpitElement, CockpitList}
+import play.api.libs.json.{Json, JsObject}
+import scala.concurrent.{ExecutionContext, Future}
+import models.Identity
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -11,22 +15,29 @@ import models.cockpit.{CockpitElement, CockpitList}
  */
 object CockpitController extends ExtendedController {
 
-
   def index = Action {
     Ok(views.html.cockpit.index())
   }
 
-  def list(elementName: String) = Action {
+  def list(listName: String) = Action.async {
 
-    val list = new CockpitList(elementName,
-      Seq("title1", "title2", "title3", "title4", "title5"),
-      Seq(Seq("attr1", "attr2", "attr3", "attr4", "attr5"),
-        Seq("attr1", "attr2", "attr3", "attr4", "attr5"),
-        Seq("attr1", "attr2", "attr3", "attr4", "attr5"),
-        Seq("attr1", "attr2", "attr3", "attr4", "attr5"),
-        Seq("attr1", "attr2", "attr3", "attr4", "attr5")))
+    val context: JsObject = Json.obj("name" -> listName)
 
-    Ok(views.html.cockpit.list(list))
+    def  getList(name: String): Option[Future[CockpitList]] = {
+      name match {
+        case "identity" => Some(Identity.getList(5,15))
+        case _ => None
+      }
+    }
+
+    // check if we can handle this list
+    getList(listName) match {
+      case None => Future(NotFound)
+      case Some(futureList) =>
+        futureList.map { list =>
+          Ok(views.html.cockpit.list(list, context))
+        }
+    }
   }
 
   def edit(elementName: String, id: String) = Action {
