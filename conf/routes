@@ -83,7 +83,8 @@ GET            /v/:id                                         controllers.ShortU
 
 # Cockpit
 GET            /cockpit                                       controllers.CockpitController.index
-
+## static stuff Cockpit
+GET            /cockpit/*file                          controllers.Assets.at(path="/public/static", file)
 
 ##
 ##   WebClient
