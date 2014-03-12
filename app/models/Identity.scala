@@ -23,6 +23,7 @@ import scala.Some
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
 import play.modules.reactivemongo.json.BSONFormats._
+import reactivemongo.core.commands.Match
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsString
 import scala.Some
@@ -255,27 +256,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     4 -> IdentityEvolutions.removeAssets
   )
 
-  def getList(limit: Int, offset: Int): Future[CockpitList] = {
-
-    val pipeline: Seq[PipelineOperator] = Seq(
-      Skip(offset),
-      Limit(limit))
-
-    val aggregationCommand = Aggregate(col.name, pipeline)
-
-    mongoDB.command(aggregationCommand).map {
-      res =>
-        {
-          val identities = res.toSeq.map { bson =>
-            Json.toJson(bson).as[Identity]
-          }
-          val elements = identities.map(toCockpitListElement)
-          val titles = identities.headOption.map(getTitles).getOrElse(Seq())
-          new CockpitList(titles, elements)
-        }
-    }
-  }
-
   def cockpitListMapping(obj: Identity) = {
     val attributes = Seq(
       //    ("accountId", obj.accountId.map { _.toString }),
@@ -292,8 +272,50 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     val id = obj.id.id
     (attributes, id)
   }
-  
-  def createCockpitElementAndInsert : CockpitListElement = {
+
+  override def cockpitListFilters = Seq(
+    new CockpitListFilter("Email", str => Json.obj("email.value" -> Json.obj("$regex" -> str))),
+    new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber.value" -> Json.obj("$regex" -> str))),
+    new CockpitListFilter("DisplayName", str => Json.obj("displayName" -> Json.obj("$regex" -> str))),
+    new CockpitListFilter("CameoId", str => Json.obj("cameoId" -> Json.obj("$regex" -> str)))
+  )
+
+  def getList(limit: Int, offset: Int, filter: Seq[(String, String)]): Future[CockpitList] = {
+
+    val filterJsons: Seq[JsObject] = filter.map {
+      case (filterName, term) =>
+        // get filter from list
+        cockpitListFilters.find(_.filterName.equals(filterName)) match {
+          case None            => Json.obj()
+          case Some(filterDef) => filterDef.filterFunction(term)
+        }
+    }
+
+    // convert them to Mongo Match
+    val matches = filterJsons.map { js => Match(toBson(js).get) }
+
+    // add limit and offset
+    val pipeline: Seq[PipelineOperator] = matches ++
+      Seq(
+        Skip(offset),
+        Limit(limit))
+
+    val aggregationCommand = Aggregate(col.name, pipeline)
+
+    mongoDB.command(aggregationCommand).map {
+      res =>
+        {
+          val identities = res.toSeq.map { bson =>
+            Json.toJson(bson).as[Identity]
+          }
+          val elements = identities.map(toCockpitListElement)
+          val titles = identities.headOption.map(getTitles).getOrElse(Seq())
+          new CockpitList(titles, elements)
+        }
+    }
+  }
+
+  def createCockpitElementAndInsert: CockpitListElement = {
     val identity = Identity.create(None, IdHelper.generateCameoId, None, None)
     col.insert(identity)
     toCockpitListElement(identity)

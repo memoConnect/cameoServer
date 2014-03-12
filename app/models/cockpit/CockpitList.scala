@@ -24,3 +24,6 @@ case class CockpitListElement(id: String,
 object CockpitListElement {
   implicit val writes: Writes[CockpitListElement] = Json.writes[CockpitListElement]
 }
+
+case class CockpitListFilter(filterName: String, filterFunction: String => JsObject)
+

@@ -1,6 +1,6 @@
 package traits
 
-import models.cockpit.{CockpitElement, CockpitList, CockpitListElement}
+import models.cockpit.{CockpitListFilter,CockpitElement, CockpitList, CockpitListElement}
 import scala.concurrent.{ExecutionContext, Future}
 import reactivemongo.core.commands.LastError
 import ExecutionContext.Implicits.global
@@ -36,7 +36,9 @@ trait CockpitEditable[A] extends Model[A] {
     new CockpitListElement(id, attributes)
   }
 
-  def getList(limit: Int, offset: Int): Future[CockpitList]
+  def getList(limit: Int, offset: Int, filter: Seq[(String, String)]): Future[CockpitList]
+
+  def cockpitListFilters: Seq[CockpitListFilter] = Seq()
 
   def getEdit(id: String): Future[Option[CockpitElement]] = find(id).map {
     maybeObj => maybeObj.map {

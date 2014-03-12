@@ -19,7 +19,7 @@ import helper.ResultHelper._
 object ListController extends ExtendedController {
 
   def allEditables = Seq(
-    new CockpitEditableDefinition("identity", Identity.getList, Identity.delete, Identity.createCockpitElementAndInsert, Identity.getEdit)
+    new CockpitEditableDefinition("identity", Identity.getList, Identity.delete, Identity.createCockpitElementAndInsert)
   )
 
   case class ListOptions(limit: Int,
