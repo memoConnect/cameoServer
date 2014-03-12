@@ -83,6 +83,7 @@ GET            /v/:id                                         controllers.ShortU
 
 # Cockpit API
 POST           /api/cockpit/v1/:elementName                   controllers.cockpit.ListController.list(elementName)
+POST         /api/cockpit/v1/:elementName/new               controllers.cockpit.ListController.create(elementName)
 DELETE         /api/cockpit/v1/:elementName/:id               controllers.cockpit.ListController.delete(elementName, id)
 
 # Cockpit WebClient

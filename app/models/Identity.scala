@@ -278,7 +278,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       ("email", obj.email.map { _.value }),
       ("phoneNumber", obj.phoneNumber.map { _.value }),
       ("cameoId", Some(obj.cameoId))
-//      ("preferredMessageType", Some(obj.preferredMessageType))
+    //      ("preferredMessageType", Some(obj.preferredMessageType))
     //    ("userKey", Some(obj.userKey)),
     //    ("created", Some(PrintDate.toString(obj.created))),
     //    ("lastUpdated", Some(PrintDate.toString(obj.lastUpdated))),
@@ -287,6 +287,13 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     val id = obj.id.id
     (attributes, id)
   }
+  
+  def createCockpitElementAndInsert : CockpitListElement = {
+    val identity = Identity.create(None, IdHelper.generateCameoId, None, None)
+    col.insert(identity)
+    toCockpitListElement(identity)
+  }
+
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],

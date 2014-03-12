@@ -12,7 +12,10 @@ import reactivemongo.core.commands.LastError
 
 case class CockpitEditableDefinition(name: String,
                                      getList: (Int, Int) => Future[CockpitList],
-                                     delete: (String) => Future[LastError])
+                                     delete: (String) => Future[LastError],
+                                     create: CockpitListElement, // ToDo change to edit element
+                                      getEdit: (Sting) => CockpitEdit
+                                      )
 
 trait CockpitEditable[A] {
 
@@ -32,4 +35,5 @@ trait CockpitEditable[A] {
 
   def getList(limit: Int, offset: Int): Future[CockpitList]
 
+  def getEdit(obj: A) : CockpitEdit
 }
