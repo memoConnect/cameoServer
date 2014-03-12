@@ -13,6 +13,7 @@ import play.api.test.FakeApplication
 object Config {
 
   val basePath = "/api/v1"
+  val baseCockpitPath = "/api/cockpit/v1"
   val dbName = "cameo_test"
 
   // valid users in the inital Data: login;password;identityId;token
