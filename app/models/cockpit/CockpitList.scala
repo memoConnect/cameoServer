@@ -8,7 +8,9 @@ import play.api.libs.json.{JsObject, Writes, Json}
  * Time: 11:59 AM
  */
 case class CockpitList(titles: Seq[String],
-                       elements: Seq[CockpitListElement]) {
+                       elements: Seq[CockpitListElement],
+                       availableFilters: Seq[CockpitListFilter]
+                        ) {
   def toJson: JsObject = Json.toJson(this).as[JsObject]
 }
 
@@ -26,4 +28,11 @@ object CockpitListElement {
 }
 
 case class CockpitListFilter(filterName: String, filterFunction: String => JsObject)
+object CockpitListFilter {
+  implicit val writes : Writes[CockpitListFilter] = Writes {
+    clf => Json.obj("filterName" -> clf.filterName)
+  }
+}
+
+
 

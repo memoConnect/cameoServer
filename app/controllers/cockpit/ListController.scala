@@ -19,11 +19,13 @@ import helper.ResultHelper._
 object ListController extends ExtendedController {
 
   def allEditables = Seq(
-    new CockpitEditableDefinition("identity", Identity.getList, Identity.delete, Identity.createCockpitElementAndInsert)
+    new CockpitEditableDefinition("identity", Identity.getList, Identity.delete, Identity.createCockpitElementAndInsert, Identity.getEdit)
   )
 
   case class ListOptions(limit: Int,
-                         offset: Int)
+                         offset: Int,
+                         filter: Option[Map[String, String]]
+                          )
 
   object ListOptions {
     implicit val reads: Reads[ListOptions] = Json.reads[ListOptions]
@@ -36,7 +38,7 @@ object ListController extends ExtendedController {
           {
             allEditables.find(definition => definition.name.equals(elementName)) match {
               case None => Future(resNotFound("elementName"))
-              case Some(definition) => definition.getList(listOptions.limit, listOptions.offset).map { list =>
+              case Some(definition) => definition.getList(listOptions).map { list =>
                 resOK(list.toJson)
               }
             }

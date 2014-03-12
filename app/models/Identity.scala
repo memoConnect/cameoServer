@@ -31,6 +31,7 @@ import play.api.libs.json.JsNumber
 import reactivemongo.core.commands.Limit
 import play.api.libs.json.JsObject
 import reactivemongo.core.commands.Skip
+import controllers.cockpit.ListController.ListOptions
 
 /**
  * User: Björn Reimer
@@ -273,32 +274,34 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     (attributes, id)
   }
 
-  override def cockpitListFilters = Seq(
+  def cockpitListFilters = Seq(
     new CockpitListFilter("Email", str => Json.obj("email.value" -> Json.obj("$regex" -> str))),
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber.value" -> Json.obj("$regex" -> str))),
     new CockpitListFilter("DisplayName", str => Json.obj("displayName" -> Json.obj("$regex" -> str))),
     new CockpitListFilter("CameoId", str => Json.obj("cameoId" -> Json.obj("$regex" -> str)))
   )
 
-  def getList(limit: Int, offset: Int, filter: Seq[(String, String)]): Future[CockpitList] = {
+  def getList(listOptions: ListOptions): Future[CockpitList] = {
 
-    val filterJsons: Seq[JsObject] = filter.map {
+    val filterJsons = listOptions.filter match {
+      case None => Seq()
+      case Some(filters) => filters.map {
       case (filterName, term) =>
         // get filter from list
         cockpitListFilters.find(_.filterName.equals(filterName)) match {
           case None            => Json.obj()
           case Some(filterDef) => filterDef.filterFunction(term)
         }
+    }.toSeq
     }
-
     // convert them to Mongo Match
     val matches = filterJsons.map { js => Match(toBson(js).get) }
 
     // add limit and offset
     val pipeline: Seq[PipelineOperator] = matches ++
       Seq(
-        Skip(offset),
-        Limit(limit))
+        Skip(listOptions.offset),
+        Limit(listOptions.limit))
 
     val aggregationCommand = Aggregate(col.name, pipeline)
 
@@ -310,7 +313,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
           }
           val elements = identities.map(toCockpitListElement)
           val titles = identities.headOption.map(getTitles).getOrElse(Seq())
-          new CockpitList(titles, elements)
+          new CockpitList(titles, elements, cockpitListFilters)
         }
     }
   }

@@ -4,6 +4,7 @@ import models.cockpit.{CockpitListFilter,CockpitElement, CockpitList, CockpitLis
 import scala.concurrent.{ExecutionContext, Future}
 import reactivemongo.core.commands.LastError
 import ExecutionContext.Implicits.global
+import controllers.cockpit.ListController.ListOptions
 
 /**
  * User: Björn Reimer
@@ -12,7 +13,7 @@ import ExecutionContext.Implicits.global
  */
 
 case class CockpitEditableDefinition(name: String,
-                                     getList: (Int, Int) => Future[CockpitList],
+                                     getList: ListOptions => Future[CockpitList],
                                      delete: (String) => Future[LastError],
                                      create: CockpitListElement, // ToDo change to edit element
                                      getEdit: (String) => Future[Option[CockpitElement]]
@@ -36,9 +37,7 @@ trait CockpitEditable[A] extends Model[A] {
     new CockpitListElement(id, attributes)
   }
 
-  def getList(limit: Int, offset: Int, filter: Seq[(String, String)]): Future[CockpitList]
-
-  def cockpitListFilters: Seq[CockpitListFilter] = Seq()
+  def getList(listOptions: ListOptions): Future[CockpitList]
 
   def getEdit(id: String): Future[Option[CockpitElement]] = find(id).map {
     maybeObj => maybeObj.map {
