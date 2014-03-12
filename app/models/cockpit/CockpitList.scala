@@ -17,7 +17,7 @@ object CockpitList {
 }
 
 case class CockpitListElement(id: String,
-                               attributes: Map[String, Option[String]]
+                              attributes: Map[String, Option[String]]
                                )  {
   def toJson: JsObject = Json.toJson(this).as[JsObject]
 }

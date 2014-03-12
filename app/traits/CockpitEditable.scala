@@ -1,8 +1,9 @@
 package traits
 
-import models.cockpit.{ CockpitList, CockpitListElement }
-import scala.concurrent.Future
+import models.cockpit.{CockpitElement, CockpitList, CockpitListElement}
+import scala.concurrent.{ExecutionContext, Future}
 import reactivemongo.core.commands.LastError
+import ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -14,14 +15,16 @@ case class CockpitEditableDefinition(name: String,
                                      getList: (Int, Int) => Future[CockpitList],
                                      delete: (String) => Future[LastError],
                                      create: CockpitListElement, // ToDo change to edit element
-                                      getEdit: (Sting) => CockpitEdit
+                                     getEdit: (String) => Future[Option[CockpitElement]]
                                       )
 
-trait CockpitEditable[A] {
+trait CockpitEditable[A] extends Model[A] {
 
   def cockpitListMapping(obj: A): (Seq[(String, Option[String])], String)
 
-  def getTitles(obj: A): Seq[String] = cockpitListMapping(obj)._1.map { case (key, value) => key }
+  def getTitles(obj: A): Seq[String] = cockpitListMapping(obj)._1.map {
+    case (key, value) => key
+  }
 
   def toCockpitListElement(obj: A): CockpitListElement = {
     val (mapping, id) = cockpitListMapping(obj)
@@ -35,5 +38,11 @@ trait CockpitEditable[A] {
 
   def getList(limit: Int, offset: Int): Future[CockpitList]
 
-  def getEdit(obj: A) : CockpitEdit
+  def getEdit(id: String): Future[Option[CockpitElement]] = find(id).map {
+    maybeObj => maybeObj.map {
+      obj =>
+        val (mapping, id) = cockpitListMapping(obj)
+        new CockpitElement(id, mapping)
+    }
+  }
 }

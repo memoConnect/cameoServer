@@ -15,16 +15,21 @@ import helper.JsonHelper._
 import play.api.Logger
 import helper.MongoCollections._
 import reactivemongo.core.errors.DatabaseException
-import models.cockpit.{ CockpitList, CockpitListElement }
+import models.cockpit._
 import reactivemongo.bson.BSONInteger
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
-import models.cockpit.CockpitList
-import models.cockpit.CockpitListElement
 import play.api.libs.json.JsObject
 import play.modules.reactivemongo.json.BSONFormats._
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsString
+import scala.Some
+import play.api.libs.json.JsNumber
+import reactivemongo.core.commands.Limit
+import play.api.libs.json.JsObject
+import reactivemongo.core.commands.Skip
 
 /**
  * User: Björn Reimer
@@ -293,7 +298,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     col.insert(identity)
     toCockpitListElement(identity)
   }
-
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],
