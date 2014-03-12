@@ -273,21 +273,20 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   def cockpitListMapping(obj: Identity) = {
     val attributes = Seq(
-    ("accountId", obj.accountId.map { _.toString }),
-    ("displayName", obj.displayName),
-    ("email", obj.email.map { _.toJson.toString }),
-    ("phoneNumber", obj.phoneNumber.map { _.toJson.toString }),
-    ("cameoId", Some(obj.cameoId)),
-    ("preferredMessageType", Some(obj.preferredMessageType)),
-    ("userKey", Some(obj.userKey)),
-    ("created", Some(PrintDate.toString(obj.created))),
-    ("lastUpdated", Some(PrintDate.toString(obj.lastUpdated))),
-    ("docVersion", Some(obj.docVersion.toString))
+      //    ("accountId", obj.accountId.map { _.toString }),
+      ("displayName", obj.displayName),
+      ("email", obj.email.map { _.value }),
+      ("phoneNumber", obj.phoneNumber.map { _.value }),
+      ("cameoId", Some(obj.cameoId))
+//      ("preferredMessageType", Some(obj.preferredMessageType))
+    //    ("userKey", Some(obj.userKey)),
+    //    ("created", Some(PrintDate.toString(obj.created))),
+    //    ("lastUpdated", Some(PrintDate.toString(obj.lastUpdated))),
+    //    ("docVersion", Some(obj.docVersion.toString))
     )
     val id = obj.id.id
     (attributes, id)
   }
-
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],

@@ -32,6 +32,13 @@ trait Model[A] {
 
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
 
+  def delete(id: MongoId): Future[LastError] = {
+    val query = Json.obj("_id" -> id)
+    col.remove(query)
+  }
+
+  def delete(id: String): Future[LastError] = delete(new MongoId(id))
+
   implicit def mongoFormat: Format[A]
 
   def evolutions: Map[Int, Reads[JsObject]]

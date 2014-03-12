@@ -10,9 +10,9 @@ import scala.concurrent.Future
  */
 trait CockpitEditable[A] {
 
-  def getTitles(obj: A): Seq[String] = cockpitListMapping(obj)._1.map { case (key, value) => key }
-
   def cockpitListMapping(obj: A): (Seq[(String, Option[String])], String)
+
+  def getTitles(obj: A): Seq[String] = cockpitListMapping(obj)._1.map { case (key, value) => key }
 
   def toCockpitListElement(obj: A): CockpitListElement = {
     val (mapping, id) = cockpitListMapping(obj)                        

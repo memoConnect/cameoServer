@@ -6,7 +6,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import models.cockpit.CockpitList
 import models.Identity
 import org.omg.CosNaming.NamingContextPackage.NotFound
-import traits.ExtendedController
+import traits.{ Model, CockpitEditable, ExtendedController }
 import ExecutionContext.Implicits.global
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -25,9 +25,9 @@ object ListController extends ExtendedController {
     implicit val reads: Reads[ListOptions] = Json.reads[ListOptions]
   }
 
-  def getList(name: String): Option[(Int, Int) => Future[CockpitList]] = {
+  def getList(name: String): Option[CockpitEditable with Model] = {
     name match {
-      case "identity" => Some(Identity.getList)
+      case "identity" => Some(Identity)
       case _          => None
     }
   }
@@ -39,12 +39,26 @@ object ListController extends ExtendedController {
           {
             getList(elementName) match {
               case None => Future(resNotFound("elementName"))
-              case Some(f) =>
-                f(listOptions.limit, listOptions.offset).map { list =>
+              case Some(obj) =>
+                obj.getList(listOptions.limit, listOptions.offset).map { list =>
                   resOK(list.toJson)
                 }
             }
           }
       }
+  }
+
+  def delete(elementName: String, id: String) = Action.async {
+
+    getList(elementName) match {
+      case None => Future(resNotFound("elementName"))
+      case Some(obj) => obj.delete(id).map {
+        _.updatedExisting match {
+          case false => resServerError("could not delete")
+          case true  => resOK("deleted")
+        }
+      }
+    }
+
   }
 }
