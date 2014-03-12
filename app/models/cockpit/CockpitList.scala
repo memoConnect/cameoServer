@@ -18,7 +18,9 @@ object CockpitList {
 
 case class CockpitListElement(id: String,
                                attributes: Map[String, Option[String]]
-                               )
+                               )  {
+  def toJson: JsObject = Json.toJson(this).as[JsObject]
+}
 object CockpitListElement {
   implicit val writes: Writes[CockpitListElement] = Json.writes[CockpitListElement]
 }

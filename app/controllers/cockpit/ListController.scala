@@ -19,7 +19,7 @@ import helper.ResultHelper._
 object ListController extends ExtendedController {
 
   def allEditables = Seq(
-    new CockpitEditableDefinition("identity", Identity.getList, Identity.delete)
+    new CockpitEditableDefinition("identity", Identity.getList, Identity.delete, Identity.createCockpitElementAndInsert, Identity.getEdit)
   )
 
   case class ListOptions(limit: Int,
@@ -34,7 +34,7 @@ object ListController extends ExtendedController {
       validateFuture(request.body, ListOptions.reads) {
         listOptions =>
           {
-            allEditables.find(_.name.equals(elementName)) match {
+            allEditables.find(definition => definition.name.equals(elementName)) match {
               case None => Future(resNotFound("elementName"))
               case Some(definition) => definition.getList(listOptions.limit, listOptions.offset).map { list =>
                 resOK(list.toJson)
@@ -48,11 +48,19 @@ object ListController extends ExtendedController {
     allEditables.find(_.name.equals(elementName)) match {
       case None => Future(resNotFound("elementName"))
       case Some(obj) => obj.delete(id).map {
-        _.updatedExisting match {
+        _.ok match {
           case false => resServerError("could not delete")
           case true  => resOK("deleted")
         }
       }
     }
   }
+
+  def create(elementName: String) = Action {
+    allEditables.find(_.name.equals(elementName)) match {
+      case None      => resNotFound("elementName")
+      case Some(obj) => resOK(obj.create.toJson)
+    }
+  }
 }
+
