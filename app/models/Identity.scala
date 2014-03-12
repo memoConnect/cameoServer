@@ -261,32 +261,33 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     mongoDB.command(aggregationCommand).map {
       res =>
         {
-          val elements: Seq[CockpitListElement] = res.toSeq.map { bson =>
-            val identity = Json.toJson(bson).as[Identity]
-            toCockpitListElement(identity)
+          val identities = res.toSeq.map { bson =>
+            Json.toJson(bson).as[Identity]
           }
-          val titles = elements.headOption.map { _.getTitles }.getOrElse(Seq())
+          val elements = identities.map(toCockpitListElement)
+          val titles = identities.headOption.map(getTitles).getOrElse(Seq())
           new CockpitList(titles, elements)
         }
     }
   }
 
-  def toCockpitListElement(obj: Identity): CockpitListElement = {
-    val id = obj.id.id
-    val attributes = Map(
-      "accountId" -> obj.accountId.map { _.toString },
-      "displayName" -> obj.displayName,
-      "email" -> obj.email.map { _.toJson.toString },
-      "phoneNumber" -> obj.phoneNumber.map { _.toJson.toString },
-      "cameoId" -> Some(obj.cameoId),
-      "preferredMessageType" -> Some(obj.preferredMessageType),
-      "userKey" -> Some(obj.userKey),
-      "created" -> Some(PrintDate.toString(obj.created)),
-      "lastUpdated" -> Some(PrintDate.toString(obj.lastUpdated)),
-      "docVersion" -> Some(obj.docVersion.toString)
+  def cockpitListMapping(obj: Identity) = {
+    val attributes = Seq(
+    ("accountId", obj.accountId.map { _.toString }),
+    ("displayName", obj.displayName),
+    ("email", obj.email.map { _.toJson.toString }),
+    ("phoneNumber", obj.phoneNumber.map { _.toJson.toString }),
+    ("cameoId", Some(obj.cameoId)),
+    ("preferredMessageType", Some(obj.preferredMessageType)),
+    ("userKey", Some(obj.userKey)),
+    ("created", Some(PrintDate.toString(obj.created))),
+    ("lastUpdated", Some(PrintDate.toString(obj.lastUpdated))),
+    ("docVersion", Some(obj.docVersion.toString))
     )
-    new CockpitListElement(id, attributes)
+    val id = obj.id.id
+    (attributes, id)
   }
+
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],

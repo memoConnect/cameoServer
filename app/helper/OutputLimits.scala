@@ -10,7 +10,6 @@ object OutputLimits {
 
   def applyLimits[A](data: Seq[A], offset: Int, limit: Int): Seq[A] = {
 
-    def positiveOrZero(i: Int) = if (i > 0) i else 0
 
     val start = positiveOrZero(math.min(offset, data.size - 1))
     val end = positiveOrZero(
@@ -21,5 +20,8 @@ object OutputLimits {
 
     data.slice(start, end)
   }
+
+  def positiveOrZero(i: Int) = if (i > 0) i else 0
+
 
 }

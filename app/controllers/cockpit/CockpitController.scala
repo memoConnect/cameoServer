@@ -8,6 +8,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import models.Identity
 import ExecutionContext.Implicits.global
 
+
 /**
  * User: Björn Reimer
  * Date: 3/11/14
@@ -16,29 +17,10 @@ import ExecutionContext.Implicits.global
 object CockpitController extends ExtendedController {
 
   def index = Action {
-    Ok(views.html.cockpit.index())
+    Ok("ehh")
   }
 
-  def list(listName: String) = Action.async {
 
-    val context: JsObject = Json.obj("name" -> listName)
-
-    def  getList(name: String): Option[Future[CockpitList]] = {
-      name match {
-        case "identity" => Some(Identity.getList(10,0))
-        case _ => None
-      }
-    }
-
-    // check if we can handle this list
-    getList(listName) match {
-      case None => Future(NotFound)
-      case Some(futureList) =>
-        futureList.map { list =>
-          Ok(views.html.cockpit.list(list, context))
-        }
-    }
-  }
 
   def edit(elementName: String, id: String) = Action {
 
@@ -47,7 +29,7 @@ object CockpitController extends ExtendedController {
       Map("title1" -> "content1", "title2" -> "content2", "title3" -> "content3", "title4" -> "content4", "title5" -> "content5")
     )
 
-    Ok(views.html.cockpit.edit(element))
+    Ok("eh")
   }
 
   def modify() = play.mvc.Results.TODO

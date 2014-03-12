@@ -81,14 +81,13 @@ GET            /api/v1/util/loadDb                            controllers.Applic
 GET            /p/:id                                         controllers.ShortUrlController.redirect(urlType = "p", id: String)
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
-# Cockpit
-GET            /cockpit                                       controllers.cockpit.CockpitController.index
-GET            /cockpit/:elementName                          controllers.cockpit.CockpitController.list(elementName)
-GET            /cockpit/:elementName/edit/:id                 controllers.cockpit.CockpitController.edit(elementName, id)
-POST           /cockpit/modify                                controllers.cockpit.CockpitController.modify()
+# Cockpit API
+POST            /api/cockpit/v1/:elementName                   controllers.cockpit.ListController.list(elementName)
 
-## static stuff Cockpit
-GET            /cockpit/static/*file                          controllers.ExternalAssets.at(path="cockpit", file)
+# Cockpit WebClient
+GET            /cockpit/                                      controllers.Assets.at(path="/public/cockpit", file="index.html")
+GET            /cockpit                                       controllers.Assets.at(path="/public/cockpit", file="index.html")
+GET            /cockpit/*file                                 controllers.Assets.at(path="/public/cockpit", file)
 
 ##
 ##   WebClient
