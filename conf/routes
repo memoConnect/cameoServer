@@ -82,7 +82,8 @@ GET            /p/:id                                         controllers.ShortU
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
 # Cockpit API
-POST            /api/cockpit/v1/:elementName                   controllers.cockpit.ListController.list(elementName)
+POST           /api/cockpit/v1/:elementName                   controllers.cockpit.ListController.list(elementName)
+DELETE         /api/cockpit/v1/:elementName/:id               controllers.cockpit.ListController.delete(elementName, id)
 
 # Cockpit WebClient
 GET            /cockpit/                                      controllers.Assets.at(path="/public/cockpit", file="index.html")

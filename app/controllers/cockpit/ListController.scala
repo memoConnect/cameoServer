@@ -6,7 +6,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import models.cockpit.CockpitList
 import models.Identity
 import org.omg.CosNaming.NamingContextPackage.NotFound
-import traits.{ Model, CockpitEditable, ExtendedController }
+import traits.{ CockpitEditableDefinition, Model, CockpitEditable, ExtendedController }
 import ExecutionContext.Implicits.global
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -18,6 +18,10 @@ import helper.ResultHelper._
  */
 object ListController extends ExtendedController {
 
+  def allEditables = Seq(
+    new CockpitEditableDefinition("identity", Identity.getList, Identity.delete)
+  )
+
   case class ListOptions(limit: Int,
                          offset: Int)
 
@@ -25,32 +29,23 @@ object ListController extends ExtendedController {
     implicit val reads: Reads[ListOptions] = Json.reads[ListOptions]
   }
 
-  def getList(name: String): Option[CockpitEditable with Model] = {
-    name match {
-      case "identity" => Some(Identity)
-      case _          => None
-    }
-  }
-
   def list(elementName: String) = Action.async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, ListOptions.reads) {
         listOptions =>
           {
-            getList(elementName) match {
+            allEditables.find(_.name.equals(elementName)) match {
               case None => Future(resNotFound("elementName"))
-              case Some(obj) =>
-                obj.getList(listOptions.limit, listOptions.offset).map { list =>
-                  resOK(list.toJson)
-                }
+              case Some(definition) => definition.getList(listOptions.limit, listOptions.offset).map { list =>
+                resOK(list.toJson)
+              }
             }
           }
       }
   }
 
   def delete(elementName: String, id: String) = Action.async {
-
-    getList(elementName) match {
+    allEditables.find(_.name.equals(elementName)) match {
       case None => Future(resNotFound("elementName"))
       case Some(obj) => obj.delete(id).map {
         _.updatedExisting match {
@@ -59,6 +54,5 @@ object ListController extends ExtendedController {
         }
       }
     }
-
   }
 }
