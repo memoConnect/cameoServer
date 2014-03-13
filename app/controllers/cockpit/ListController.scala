@@ -8,7 +8,7 @@ import models.Identity
 import org.omg.CosNaming.NamingContextPackage.NotFound
 import traits.{ CockpitEditableDefinition, Model, CockpitEditable, ExtendedController }
 import ExecutionContext.Implicits.global
-import helper.OutputLimits
+import helper.{TwoFactorAuthAction, OutputLimits}
 import helper.ResultHelper._
 
 /**
@@ -22,16 +22,20 @@ object ListController extends ExtendedController {
     new CockpitEditableDefinition("identity", Identity.getList, Identity.delete, Identity.createCockpitElementAndInsert, Identity.getEdit)
   )
 
+  case class SelectedFilters(name: String, term: String)
+
+  object SelectedFilters {
+    implicit val reads: Reads[SelectedFilters] = Json.reads[SelectedFilters]
+  }
+
   case class ListOptions(limit: Int,
                          offset: Int,
-                         filter: Option[Map[String, String]]
-                          )
-
+                         filter: Seq[SelectedFilters])
   object ListOptions {
     implicit val reads: Reads[ListOptions] = Json.reads[ListOptions]
   }
 
-  def list(elementName: String) = Action.async(parse.tolerantJson) {
+  def list(elementName: String) = TwoFactorAuthAction.async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, ListOptions.reads) {
         listOptions =>
@@ -46,7 +50,7 @@ object ListController extends ExtendedController {
       }
   }
 
-  def delete(elementName: String, id: String) = Action.async {
+  def delete(elementName: String, id: String) = TwoFactorAuthAction.async {
     allEditables.find(_.name.equals(elementName)) match {
       case None => Future(resNotFound("elementName"))
       case Some(obj) => obj.delete(id).map {
@@ -58,7 +62,7 @@ object ListController extends ExtendedController {
     }
   }
 
-  def create(elementName: String) = Action {
+  def create(elementName: String) = TwoFactorAuthAction {
     allEditables.find(_.name.equals(elementName)) match {
       case None      => resNotFound("elementName")
       case Some(obj) => resOK(obj.create.toJson)

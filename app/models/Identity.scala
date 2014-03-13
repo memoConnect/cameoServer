@@ -31,7 +31,7 @@ import play.api.libs.json.JsNumber
 import reactivemongo.core.commands.Limit
 import play.api.libs.json.JsObject
 import reactivemongo.core.commands.Skip
-import controllers.cockpit.ListController.ListOptions
+import controllers.cockpit.ListController.{ SelectedFilters, ListOptions }
 
 /**
  * User: Björn Reimer
@@ -275,6 +275,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   def cockpitListFilters = Seq(
+    new CockpitListFilter("ID", str => Json.obj("_id.mongoId" -> Json.obj("$regex" -> str))),
     new CockpitListFilter("Email", str => Json.obj("email.value" -> Json.obj("$regex" -> str))),
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber.value" -> Json.obj("$regex" -> str))),
     new CockpitListFilter("DisplayName", str => Json.obj("displayName" -> Json.obj("$regex" -> str))),
@@ -283,16 +284,13 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   def getList(listOptions: ListOptions): Future[CockpitList] = {
 
-    val filterJsons = listOptions.filter match {
-      case None => Seq()
-      case Some(filters) => filters.map {
-      case (filterName, term) =>
+    val filterJsons = listOptions.filter.map {
+      case SelectedFilters(filterName, term) =>
         // get filter from list
         cockpitListFilters.find(_.filterName.equals(filterName)) match {
           case None            => Json.obj()
           case Some(filterDef) => filterDef.filterFunction(term)
         }
-    }.toSeq
     }
     // convert them to Mongo Match
     val matches = filterJsons.map { js => Match(toBson(js).get) }

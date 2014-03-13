@@ -1,7 +1,7 @@
 package helper
 
 import java.text.SimpleDateFormat
-import java.util.{Date, TimeZone}
+import java.util.{ Date, TimeZone }
 
 /**
  * User: Björn Reimer
@@ -16,7 +16,5 @@ object PrintDate {
   def toString(date: Date) = {
     defaultDateFormat.format(date)
   }
-
-
 
 }

@@ -100,13 +100,13 @@ object MessageEvolutions {
 
   val assetsToFiles: Reads[JsObject] = Reads {
     js =>
-    {
-      val deleteAsset: Reads[JsObject] = (__ \ 'assets).json.prune
-      val addFiles: Reads[JsObject] = __.json.update((__ \ 'files).json.put(JsArray()))
-      val renameBody: Reads[JsObject]  = __.json.update((__ \ 'body).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-      js.transform(deleteAsset andThen addFiles andThen renameBody andThen addVersion)
-    }
+      {
+        val deleteAsset: Reads[JsObject] = (__ \ 'assets).json.prune
+        val addFiles: Reads[JsObject] = __.json.update((__ \ 'files).json.put(JsArray()))
+        val renameBody: Reads[JsObject] = __.json.update((__ \ 'body).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(deleteAsset andThen addFiles andThen renameBody andThen addVersion)
+      }
   }
 
 }

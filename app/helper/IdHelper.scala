@@ -25,7 +25,7 @@ object IdHelper {
   }
 
   def generateAccessToken(): MongoId = {
-    new MongoId(randomString(40))
+    new MongoId(randomString(50))
   }
 
   def generateUserKey(): String = {

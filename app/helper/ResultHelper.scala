@@ -86,18 +86,19 @@ object ResultHelper {
 
   // Not Authorized
   def resUnauthorized(): SimpleResult = {
-    Unauthorized(""
-    //      Json.obj("res" -> "KO") ++
-    //        addMessagesOrEmpty(notifications)
-    )
+    Unauthorized(Json.obj("res" -> "KO"))
   }
 
-  def resUnauthorized(error: String)(implicit notifications: Seq[UserNotification] = Seq()): SimpleResult = {
+  def resUnauthorized(error: String, twoFactorRequired: Boolean = false): SimpleResult = {
+    val add = twoFactorRequired match {
+      case false => Json.obj()
+      case true  => Json.obj("twoFactorRequired" -> true)
+    }
+
     Unauthorized(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error) ++
-        addMessagesOrEmpty(notifications)
-    )
+        add)
   }
 
   // Server Error

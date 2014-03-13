@@ -10,6 +10,7 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.IdHelper
 import helper.JsonHelper._
 import reactivemongo.core.commands.LastError
+import helper.MongoCollections
 
 /**
  * User: Björn Reimer
@@ -24,7 +25,7 @@ case class Token(id: MongoId,
 
 object Token extends Model[Token] {
 
-  val col = Identity.col
+  val col = MongoCollections.identityCollection
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 

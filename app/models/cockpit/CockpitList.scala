@@ -1,6 +1,6 @@
 package models.cockpit
 
-import play.api.libs.json.{JsObject, Writes, Json}
+import play.api.libs.json.{ JsObject, Writes, Json }
 
 /**
  * User: Björn Reimer
@@ -9,8 +9,7 @@ import play.api.libs.json.{JsObject, Writes, Json}
  */
 case class CockpitList(titles: Seq[String],
                        elements: Seq[CockpitListElement],
-                       availableFilters: Seq[CockpitListFilter]
-                        ) {
+                       availableFilters: Seq[CockpitListFilter]) {
   def toJson: JsObject = Json.toJson(this).as[JsObject]
 }
 
@@ -19,8 +18,7 @@ object CockpitList {
 }
 
 case class CockpitListElement(id: String,
-                              attributes: Map[String, Option[String]]
-                               )  {
+                              attributes: Map[String, Option[String]]) {
   def toJson: JsObject = Json.toJson(this).as[JsObject]
 }
 object CockpitListElement {
@@ -29,10 +27,8 @@ object CockpitListElement {
 
 case class CockpitListFilter(filterName: String, filterFunction: String => JsObject)
 object CockpitListFilter {
-  implicit val writes : Writes[CockpitListFilter] = Writes {
+  implicit val writes: Writes[CockpitListFilter] = Writes {
     clf => Json.obj("filterName" -> clf.filterName)
   }
 }
-
-
 

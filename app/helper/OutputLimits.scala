@@ -10,7 +10,6 @@ object OutputLimits {
 
   def applyLimits[A](data: Seq[A], offset: Int, limit: Int): Seq[A] = {
 
-
     val start = positiveOrZero(math.min(offset, data.size - 1))
     val end = positiveOrZero(
       limit match {
@@ -22,6 +21,5 @@ object OutputLimits {
   }
 
   def positiveOrZero(i: Int) = if (i > 0) i else 0
-
 
 }

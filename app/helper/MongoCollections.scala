@@ -39,6 +39,11 @@ object MongoCollections {
     col.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
     col
   }
+  lazy val twoFactorTokenCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("twoFactorTokens")
+    // todo ttl
+    col
+  }
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purls")
   lazy val fileChunkCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileChunks")

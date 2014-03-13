@@ -2,12 +2,12 @@ package controllers.cockpit
 
 import traits.{ CockpitEditable, ExtendedController }
 import play.api.mvc.Action
-import models.cockpit.{CockpitElement, CockpitList}
-import play.api.libs.json.{Json, JsObject}
-import scala.concurrent.{ExecutionContext, Future}
+import models.cockpit.{ CockpitElement, CockpitList }
+import play.api.libs.json.{ Json, JsObject }
+import scala.concurrent.{ ExecutionContext, Future }
 import models.Identity
 import ExecutionContext.Implicits.global
-
+import helper.TwoFactorAuthAction
 
 /**
  * User: Björn Reimer
@@ -16,7 +16,7 @@ import ExecutionContext.Implicits.global
  */
 object CockpitController extends ExtendedController {
 
-  def index = Action {
+  def index = TwoFactorAuthAction {
     Ok("ehh")
   }
 }
