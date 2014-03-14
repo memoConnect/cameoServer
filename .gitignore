@@ -26,3 +26,4 @@ jmeter.log
 conf/secret*
 conf/version*
 /*.tmp
+/mode

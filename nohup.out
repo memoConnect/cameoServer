@@ -142,3 +142,5 @@ ReactiveMongoPlugin stops, closing connections...
 2014-01-28 15:46:31,624 - [INFO] - from application in ForkJoinPool-1-worker-5 
 ReactiveMongo Connections stopped. [Success(Closed)]
 
+bash: ./target/universal/stage/bin/cameoserver: No such file or directory
+bash: ./target/universal/stage/bin/cameoserver: No such file or directory
