@@ -7,7 +7,7 @@ import scala.concurrent.ExecutionContext
 import play.api.GlobalSettings
 import testHelper.{ StartedApp, MockupFactory }
 import org.specs2.mutable._
-import testHelper.Config._
+import testHelper.TestConfig._
 
 class FileControllerSpec extends StartedApp {
 

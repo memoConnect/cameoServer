@@ -3,6 +3,22 @@ package testHelper
 import play.api.test.FakeApplication
 import testHelper.MockupFactory._
 import play.api.test.FakeApplication
+import play.api.{Logger, Play, GlobalSettings}
+import akka.actor.Props
+import actors.SendSmsActor
+import info.schleichardt.play.embed.mongo.DynamicEmbedMongoPort
+import play.api.mvc.EssentialAction
+import play.api.http.HeaderNames._
+import play.api.test.FakeApplication
+import scala.Some
+import scala.concurrent.{Await, Future}
+import helper.MongoCollections._
+import play.api.test.FakeApplication
+import scala.Some
+import play.api.libs.json.{JsValue, Json}
+import helper.DbAdminUtilities
+import models.GlobalState
+import scala.concurrent.duration._
 
 /**
  * User: Björn Reimer
@@ -10,7 +26,7 @@ import play.api.test.FakeApplication
  * Time: 4:41 PM
  */
 
-object Config {
+object TestConfig {
 
   val basePath = "/api/v1"
   val baseCockpitPath = "/api/cockpit/v1"
@@ -26,6 +42,7 @@ object Config {
   // Use the same FakeApplication for all tests, so the mongoConnection does not break
   val additionalConfig = Map("mongodb.db" -> dbName)
   val additionalConfigWithLoggingDisabled = Map("mongodb.db" -> dbName, "logger.application" -> "ERROR", "logger.play" -> "ERROR")
+
   lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
 
   val cidExisting = "rQHQZHv4ARDXRmnEzJ92"

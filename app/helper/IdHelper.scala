@@ -18,10 +18,20 @@ object IdHelper {
     Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
   }
 
+  def randomUpperString(n: Int): String = {
+    def alphabet: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    //TODO check whether random.setSeed is needed
+    Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
+  }
+
   val defaultLength = 20
 
   def generatePurl(): MongoId = {
     new MongoId(randomString(10))
+  }
+
+  def generateTwoFactorSmsKey(): MongoId = {
+    new MongoId(randomUpperString(8))
   }
 
   def generateAccessToken(): MongoId = {

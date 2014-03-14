@@ -8,7 +8,7 @@ import play.api.Play.current
 import play.api.Logger
 import testHelper.{StartedApp, MockupFactory}
 import org.specs2.mutable._
-import testHelper.Config._
+import testHelper.TestConfig._
 
 /**
  * User: Björn Reimer

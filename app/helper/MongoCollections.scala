@@ -44,6 +44,11 @@ object MongoCollections {
     // todo ttl
     col
   }
+  lazy val twoFactorSmsKeyCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("twoFactorSmsKeys")
+    // todo ttl
+    col
+  }
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purls")
   lazy val fileChunkCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileChunks")

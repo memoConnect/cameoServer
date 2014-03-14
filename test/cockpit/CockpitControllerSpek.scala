@@ -3,7 +3,7 @@ package cockpit
 import play.api.libs.json.JsObject
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import testHelper.Config._
+import testHelper.TestConfig._
 import testHelper.MockupFactory._
 import testHelper.StartedApp
 

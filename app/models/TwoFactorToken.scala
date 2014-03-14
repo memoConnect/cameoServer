@@ -5,11 +5,9 @@ import traits.{ Model }
 import play.api.libs.json._
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import reactivemongo.api.indexes.{ IndexType, Index }
+import reactivemongo.api.indexes.Index
 import helper.JsonHelper._
 import helper.{ MongoCollections, IdHelper }
-import reactivemongo.core.commands.LastError
-import org.joda.time.Interval
 
 /**
  * User: Björn Reimer
@@ -29,18 +27,56 @@ object TwoFactorToken extends Model[TwoFactorToken] {
   implicit val mongoFormat: Format[TwoFactorToken] = createMongoFormat(Json.reads[TwoFactorToken], Json.writes[TwoFactorToken])
 
   def docVersion = 0
+
   def evolutions = Map()
+
   def outputWrites = Writes[TwoFactorToken] {
     t =>
       Json.obj("token" -> t.id.toJson) ++
         addCreated(t.created)
   }
 
-//  def create(): TwoFactorToken = {
-//    new TwoFactorToken(
-//      IdHelper.generateAccessToken(),
-//      new Date)
-//  }
+    def create(identityId: MongoId): TwoFactorToken = {
+      new TwoFactorToken(
+        IdHelper.generateAccessToken(),
+        identityId,
+        new Date)
+    }
 
+}
+
+case class TwoFactorSmsKey(id: MongoId,
+                           identityId: MongoId) {
+  def toJson: JsValue = Json.toJson(this)(TwoFactorSmsKey.outputWrites)
+  override def toString: String = this.id.id
+
+  def delete: Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    TwoFactorSmsKey.col.remove(query).map {
+      _.ok
+    }
+  }
+}
+
+object TwoFactorSmsKey extends Model[TwoFactorSmsKey] {
+
+  val col = MongoCollections.twoFactorTokenCollection
+
+  implicit val mongoFormat: Format[TwoFactorSmsKey] = createMongoFormat(Json.reads[TwoFactorSmsKey], Json.writes[TwoFactorSmsKey])
+
+  def docVersion = 0
+
+  def evolutions = Map()
+
+  def outputWrites = Writes[TwoFactorSmsKey] {
+    t =>
+      Json.obj("key" -> t.id.toJson)
+  }
+
+  def create(identityId: MongoId): TwoFactorSmsKey = {
+    val key = new TwoFactorSmsKey(IdHelper.generateTwoFactorSmsKey(), identityId)
+    col.insert(key)
+    key
+  }
 }
 

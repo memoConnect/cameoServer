@@ -9,9 +9,9 @@ import testHelper.MockupFactory._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{ Config, StartedApp, MockupFactory }
+import testHelper.{ TestConfig, StartedApp, MockupFactory }
 import org.specs2.mutable._
-import testHelper.Config._
+import testHelper.TestConfig._
 
 /**
  * User: Björn Reimer
@@ -119,7 +119,7 @@ class AccountControllerSpec extends StartedApp {
     "Refuse to create account with invalid mails" in {
       val path = basePath + "/account"
 
-      Config.invalidEmails.map { invalid =>
+      TestConfig.invalidEmails.map { invalid =>
 
         val json = createUser(login, pass, login, Some(tel), Some(invalid)) ++ Json.obj("reservationSecret" -> regSec)
 
@@ -133,7 +133,7 @@ class AccountControllerSpec extends StartedApp {
     "Refuse to create account with invalid phoneNumbers" in {
       val path = basePath + "/account"
 
-      Config.invalidPhoneNumbers.map { invalid =>
+      TestConfig.invalidPhoneNumbers.map { invalid =>
 
         val json = createUser(login, pass, login, Some(invalid), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
 
