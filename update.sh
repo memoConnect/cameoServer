@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 fileName="UPDATING"
 # check if we are alreade updating
 if [ -e ${fileName} ]; then
@@ -33,6 +35,8 @@ if [ -d ../cameoJSClient ]; then
     cd ../cameoJSClient
     git pull
     ./compile.sh
+    echo -e "\e[33m[cameo - copying client dist to public]\033[0m"
+    cp -r dist/* ../cameoServer/public/
     cd -
 else
     echo -e "\e[33m[cameo - directory cameoJSClient not found]\033[0m"

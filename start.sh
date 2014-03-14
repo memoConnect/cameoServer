@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# stop the app fist ;)
+./stop.sh
+
 # get app mode
 if [ -e "mode" ]; then
     mode=$(cat mode)
@@ -27,4 +30,4 @@ case "$mode" in
       ;;
 esac
 
-nohup bash -c "./target/universal/stage/bin/cameoserver $app_options > /dev/null" & > /dev/null
+nohup bash -c "./target/universal/stage/bin/cameoserver $app_options > /dev/null" &> /dev/null &

@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "compile the project"
+echo -e "\e[33m[cameo - compiling the app]\033[0m"
 
 branch=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 case $branch in
