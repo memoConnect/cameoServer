@@ -27,3 +27,4 @@ conf/secret*
 conf/version*
 /*.tmp
 /mode
+/nohup*
