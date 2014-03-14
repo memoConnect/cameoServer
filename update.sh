@@ -1,69 +1,52 @@
 #!/bin/bash
 
-case "$1" in
-   "prod")
-      echo Running as prod
-      app_options=-Dconfig.file=/opt/cameoSecrets/secret_prod.conf
-      ;;
-   "dev")
-      echo Running as dev
-      app_options=-Dconfig.file=/opt/cameoSecrets/secret_dev.conf
-      ;;
-   "local")
-      echo Running as local
-      ;;
-   *)
-      echo Deployment type is required: "[prod|dev|local]"
-      exit 1
-      ;;
-esac
-
-case "$2" in
-   "server")
-      ;;
-   "client")
-      ;;
-   *)
-      echo Deployment component is required: "[server|client]"
-      exit 1
-      ;;
-esac
-
 fileName="UPDATING"
 # check if we are alreade updating
 if [ -e ${fileName} ]; then
-    echo "already updating, update scheduled"
-    echo $2 > ${fileName}
-    exit 1
+    echo -e "\e[33m[cameo - another update is running, update scheduled]\033[0m"
+    echo "+1" > ${fileName}
+    exit 0
 else
     touch ${fileName}
 fi
 
 ./stop.sh
 
-if [ "$2" == "client" ];then
-    cd public
+# update secrets
+if [ -d ../cameoSecrets ];then
+    echo -e "\e[33m[cameo - updating secrets]\033[0m"
+    cd ../cameoSecrets
     git pull
-    cd ..
+    cd -
 else
+    echo -e "\e[33m[cameo - directory cameoSecrets not found]\033[0m"
+    exit 1
+fi
+
+# update server
+echo -e "\e[33m[cameo - updating server]\033[0m"
+git pull
+
+#update client
+if [ -d ../cameoJSClient ]; then
+    echo -e "\e[33m[cameo - updating client]\033[0m"
+    cd ../cameoJSClient
     git pull
-    if [ -d ../cameoSecrets ];then
-        echo "updating cameoSecrets"
-        cd ../cameoSecrets
-        git pull
-        cd -
-    fi
+    ./compile.sh
+    cd -
+else
+    echo -e "\e[33m[cameo - directory cameoJSClient not found]\033[0m"
+    exit 1
 fi
 
 ./compile.sh
-./start.sh $1
+./start.sh ${mode}
 
 # check if another update is sheduled
-if [ -f ${fileName} ]; then
-    c=$(cat ${fileName})
-    echo "found scheduled update, starting it now"
+if [ -s ${fileName} ]; then
+    echo -e "\e[33m[cameo - found scheduled update, starting it now]\033[0m"
     rm ${fileName}
-    ./update.sh $1 ${c} &
+    ./update.sh
 else
     rm ${fileName}
 fi
