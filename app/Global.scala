@@ -34,12 +34,9 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
 
   override def onStart(app: play.api.Application) = {
 
-    Logger.debug("start")
-
     // load fixtures
     if (Play.configuration.getString("mongo.init.loadOnStart").getOrElse("fail").equalsIgnoreCase("true")) {
 
-      Logger.debug("loading fixtures")
       // only load if there is no data in the DB alread
       val futureRes: Future[Boolean] = conversationCollection.find(Json.obj()).one[JsValue].flatMap {
         case None =>

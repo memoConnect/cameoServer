@@ -18,4 +18,8 @@ object TestHelper {
   }
 
   def getValues(key: String): Seq[JsObject] = values.filter(_._1.equals(key)).map{_._2}
+
+  def clear()  {
+    values = Seq()
+  }
 }

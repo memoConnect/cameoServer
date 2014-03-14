@@ -1,5 +1,5 @@
 import helper.TestHelper
-import play.api.libs.json.JsObject
+import play.api.libs.json.{Json, JsObject}
 import play.api.Logger
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -19,6 +19,9 @@ class TwoFactorControllerSpec extends StartedApp {
   "TwoFactorController" should {
 
     var smsKey = ""
+    var twoFactorToken = ""
+    TestHelper.clear()
+
 
     "Send a new SmsKey to User with valid token" in {
       val path = basePath + "/twoFactorAuth"
@@ -28,9 +31,10 @@ class TwoFactorControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "check if key was received" in {
+    "check if smsKey was received" in {
 
-      Logger.debug("sms" + TestHelper.getValues("sms"))
+      Logger.debug("SMS: " + TestHelper.getValues("sms"))
+
       val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
       sms.size must beEqualTo(1)
 
@@ -38,6 +42,56 @@ class TwoFactorControllerSpec extends StartedApp {
       smsKey = (sms(0) \ "body").as[String]
 
       smsKey.length() must beEqualTo(8)
+    }
+
+    "refuse to return two factor token to other identity" in {
+      val path = basePath + "/twoFactorAuth/confirm"
+
+      val json = Json.obj("key" -> smsKey)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "get two factor token with smsKey" in {
+      val path = basePath + "/twoFactorAuth/confirm"
+
+      val json = Json.obj("key" -> smsKey)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "token").asOpt[String] must beSome
+      twoFactorToken = (data \ "token").as[String]
+      (data \ "created").asOpt[String] must beSome
+    }
+
+    "refuse to return another two factor token with same smsKey" in {
+      val path = basePath + "/twoFactorAuth/confirm"
+
+      val json = Json.obj("key" -> smsKey)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "refuse to return two factor token with invalid smsKey" in {
+      val path = basePath + "/twoFactorAuth/confirm"
+
+      val json = Json.obj("key" -> "moep")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
     }
 
   }
