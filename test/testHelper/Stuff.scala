@@ -1,13 +1,14 @@
 package testHelper
 
 import play.api.libs.json.{Json, JsObject}
+import helper.TestHelper
 
 /**
  * User: Björn Reimer
  * Date: 1/30/14
  * Time: 2:19 PM
  */
-object MockupFactory {
+object Stuff {
 
   def createUser(login: String, password: String, cameoId: String, tel: Option[String] = None, email: Option[String] = None): JsObject = {
     Json.obj(
@@ -33,6 +34,8 @@ object MockupFactory {
   }
 
   def tokenHeader(token: String): (String, String) = ("Authorization", token)
+
+  def twoFactorTokenHeader(token: String): (String, String) = ("X-TwoFactorToken", token)
 
 
 

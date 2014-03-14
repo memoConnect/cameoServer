@@ -1,18 +1,22 @@
 
+import helper.TestHelper
 import play.api.libs.json.JsArray
+import play.api.libs.json.JsObject
 import play.api.test._
 import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import play.core.Router
+import scala.concurrent.Await
 import scala.Some
-import testHelper.MockupFactory._
+import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.{ Play, Logger }
-import testHelper.{ StartedApp, MockupFactory }
+import testHelper.{ StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
+import scala.concurrent.duration._
 
 /**
  * User: Björn Reimer
@@ -103,17 +107,51 @@ class AuthenticationSpec extends StartedApp {
         status(res) must equalTo(UNAUTHORIZED)
       }
 
-        "WITH AUTH - " + r._1 + " " + r._2 + "\t: should work with valid token" in {
-          val method = r._1
-          val path = r._2
+      "WITH AUTH - " + r._1 + " " + r._2 + "\t: should work with valid token" in {
+        val method = r._1
+        val path = r._2
 
-          val json = Json.obj()
+        val json = Json.obj()
 
-          val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-          val res = route(req).get
+        val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
 
-          status(res) must not equalTo (UNAUTHORIZED)
-        }
+        status(res) must not equalTo(UNAUTHORIZED)
+      }
+    }
+
+    var twoFactorToken = ""
+
+    "get two factor auth token" in {
+
+      TestHelper.clear()
+
+      val path1 = basePath + "/twoFactorAuth"
+      val req1 = FakeRequest(GET, path1).withHeaders(tokenHeader(tokenExisting))
+      val res1 = route(req1).get
+
+      status(res1) must equalTo(OK)
+
+      Await.result(res1, Duration.create(15, SECONDS) )
+
+      val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
+
+      val smsKey = (sms(0) \ "body").as[String]
+
+      val path2 = basePath + "/twoFactorAuth/confirm"
+
+      val json = Json.obj("key" -> smsKey)
+
+      val req2 = FakeRequest(POST, path2).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res2 = route(req2).get
+
+      status(res2) must equalTo(OK)
+
+      val data = (contentAsJson(res2) \ "data").as[JsObject]
+
+      (data \ "token").asOpt[String] must beSome
+      twoFactorToken = (data \ "token").as[String]
+      (data \ "created").asOpt[String] must beSome
     }
 
     twoFactorAuthRoutesWithIds.map { r =>
@@ -146,7 +184,61 @@ class AuthenticationSpec extends StartedApp {
         (contentAsJson(res) \ "twoFactorRequired").asOpt[Boolean] must beNone
       }
 
+      "WITH TWO-FACTOR-AUTH - " + r._1 + " " + r._2 + "\t: should not work with normal token only" in {
+        val method = r._1
+        val path = r._2
 
+        val json = Json.obj()
+
+        val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(UNAUTHORIZED)
+
+        (contentAsJson(res) \ "twoFactorRequired").asOpt[Boolean] must beSome
+      }
+
+      "WITH TWO-FACTOR-AUTH - " + r._1 + " " + r._2 + "\t: should not work with normal token and invalid twoFactorToken" in {
+        val method = r._1
+        val path = r._2
+
+        val json = Json.obj()
+
+        val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting), twoFactorTokenHeader("moep"))
+        val res = route(req).get
+
+        status(res) must equalTo(UNAUTHORIZED)
+
+        (contentAsJson(res) \ "twoFactorRequired").asOpt[Boolean] must beSome
+      }
+
+      "WITH TWO-FACTOR-AUTH - " + r._1 + " " + r._2 + "\t: should not work with normal token and twoFactorToken of other user" in {
+        val method = r._1
+        val path = r._2
+
+        val json = Json.obj()
+
+        val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2), twoFactorTokenHeader(twoFactorToken))
+        val res = route(req).get
+
+        status(res) must equalTo(UNAUTHORIZED)
+
+        (contentAsJson(res) \ "twoFactorRequired").asOpt[Boolean] must beSome
+      }
+
+      "WITH TWO-FACTOR-AUTH - " + r._1 + " " + r._2 + "\t: should work with normal token and twoFactorToken of right user" in {
+        val method = r._1
+        val path = r._2
+
+        val json = Json.obj()
+
+        val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting), twoFactorTokenHeader(twoFactorToken))
+        val res = route(req).get
+
+        status(res) must not equalTo(UNAUTHORIZED)
+
+        (contentAsJson(res) \ "twoFactorRequired").asOpt[Boolean] must beNone
+      }
     }
 
     nonAuthRoutesWithIds.map { r =>
@@ -160,7 +252,7 @@ class AuthenticationSpec extends StartedApp {
         val req = FakeRequest(method, path).withJsonBody(json)
         val res = route(req).get
 
-        status(res) must not equalTo (UNAUTHORIZED)
+        status(res) must not equalTo(UNAUTHORIZED)
       }
 
       "NO AUTH - " + r._1 + " " + r._2 + "\t: should work with token" in {
@@ -172,7 +264,7 @@ class AuthenticationSpec extends StartedApp {
         val req = FakeRequest(method, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
         val res = route(req).get
 
-        status(res) must not equalTo (UNAUTHORIZED)
+        status(res) must not equalTo(UNAUTHORIZED)
       }
     }
 

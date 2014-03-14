@@ -4,7 +4,7 @@ import play.api.Logger
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import testHelper.TestConfig._
-import testHelper.MockupFactory._
+import testHelper.Stuff._
 import testHelper.StartedApp
 
 /**
@@ -32,8 +32,6 @@ class TwoFactorControllerSpec extends StartedApp {
     }
 
     "check if smsKey was received" in {
-
-      Logger.debug("SMS: " + TestHelper.getValues("sms"))
 
       val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
       sms.size must beEqualTo(1)

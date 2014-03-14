@@ -5,11 +5,11 @@ import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import scala.Some
-import testHelper.MockupFactory._
+import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{ StartedApp, MockupFactory }
+import testHelper.{ StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
 
@@ -191,7 +191,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with offset" in {
 
-      val offset = MockupFactory.random.nextInt(numberOfConversations)
+      val offset = Stuff.random.nextInt(numberOfConversations)
 
       val path = basePath + "/conversations?offset=" + offset
 
@@ -211,7 +211,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit" in {
 
-      val limit = MockupFactory.random.nextInt(numberOfConversations)
+      val limit = Stuff.random.nextInt(numberOfConversations)
 
       val path = basePath + "/conversations?limit=" + limit
 
@@ -231,8 +231,8 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit and offset" in {
 
-      val offset = MockupFactory.random.nextInt(numberOfConversations)
-      val limit = MockupFactory.random.nextInt(numberOfConversations)
+      val offset = Stuff.random.nextInt(numberOfConversations)
+      val limit = Stuff.random.nextInt(numberOfConversations)
 
       val path = basePath + "/conversations?limit=" + limit + "&offset=" + offset
 

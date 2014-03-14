@@ -1,7 +1,7 @@
 package testHelper
 
 import play.api.test.FakeApplication
-import testHelper.MockupFactory._
+import testHelper.Stuff._
 import play.api.test.FakeApplication
 import play.api.{Logger, Play, GlobalSettings}
 import akka.actor.Props

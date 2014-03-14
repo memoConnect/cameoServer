@@ -1,13 +1,12 @@
 package models
 
 import java.util.Date
-import traits.{ Model }
+import traits.Model
 import play.api.libs.json._
-import scala.concurrent.{ Future, ExecutionContext }
+import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
-import reactivemongo.api.indexes.Index
 import helper.JsonHelper._
-import helper.{ MongoCollections, IdHelper }
+import helper.{MongoCollections, IdHelper}
 
 /**
  * User: Björn Reimer
@@ -36,18 +35,20 @@ object TwoFactorToken extends Model[TwoFactorToken] {
         addCreated(t.created)
   }
 
-    def create(identityId: MongoId): TwoFactorToken = {
-      new TwoFactorToken(
-        IdHelper.generateAccessToken(),
-        identityId,
-        new Date)
-    }
-
+  def createAndInsert(identityId: MongoId): TwoFactorToken = {
+    val newToken = new TwoFactorToken(
+      IdHelper.generateAccessToken(),
+      identityId,
+      new Date)
+    TwoFactorToken.col.insert(newToken)
+    newToken
+  }
 }
 
 case class TwoFactorSmsKey(id: MongoId,
                            identityId: MongoId) {
   def toJson: JsValue = Json.toJson(this)(TwoFactorSmsKey.outputWrites)
+
   override def toString: String = this.id.id
 
   def delete: Future[Boolean] = {
@@ -60,7 +61,7 @@ case class TwoFactorSmsKey(id: MongoId,
 
 object TwoFactorSmsKey extends Model[TwoFactorSmsKey] {
 
-  val col = MongoCollections.twoFactorTokenCollection
+  val col = MongoCollections.twoFactorSmsKeyCollection
 
   implicit val mongoFormat: Format[TwoFactorSmsKey] = createMongoFormat(Json.reads[TwoFactorSmsKey], Json.writes[TwoFactorSmsKey])
 

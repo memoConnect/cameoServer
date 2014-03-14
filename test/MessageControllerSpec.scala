@@ -5,11 +5,11 @@ import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.{ FakeRequest, FakeApplication }
 import play.api.test.Helpers._
 import scala.Some
-import testHelper.MockupFactory._
+import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{ StartedApp, MockupFactory }
+import testHelper.{ StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
 

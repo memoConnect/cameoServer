@@ -35,7 +35,7 @@ object TwoFactorController extends ExtendedController {
         TwoFactorAuth.verifyKey(ck.key, request.identity).map {
           case false => BadRequest("invalid key")
           case true =>
-            val newToken = TwoFactorToken.create(request.identity.id)
+            val newToken = TwoFactorToken.createAndInsert(request.identity.id)
             resOK(newToken.toJson)
         }
       }
