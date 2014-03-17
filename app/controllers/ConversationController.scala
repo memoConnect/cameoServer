@@ -101,7 +101,7 @@ object ConversationController extends ExtendedController {
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          Future(resOK(c.toSummaryJson))
+          c.toSummaryJsonWithRecipientsResult
         }
       }
   }

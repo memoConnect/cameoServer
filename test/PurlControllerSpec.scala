@@ -15,7 +15,7 @@ import testHelper.Config._
  * Date: 3/3/14
  * Time: 4:48 PM
  */
-class PurlController extends StartedApp {
+class PurlControllerSpec extends StartedApp {
 
   sequential
 
@@ -50,6 +50,10 @@ class PurlController extends StartedApp {
       purlExternToken = (data \ "token").as[String]
 
       (conversation \ "id").asOpt[String] must beSome(purlConversationId)
+      (conversation \ "recipients").asOpt[Seq[JsObject]] must beSome
+      val r =  (conversation \ "recipients")(0).as[JsObject]
+      (r \ "identityId").asOpt[String] must beSome
+      (r \ "identity").asOpt[JsObject] must beSome
       (identity \ "id").asOpt[String] must beSome(purlExternIdentitityId)
     }
 
