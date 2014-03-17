@@ -75,6 +75,8 @@ POST           /api/v1/services/checkPhoneNumber              controllers.Servic
 POST           /api/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
 
 # Cockpit API
+GET            /api/cockpit/v1/twoFactorAuth                  controllers.TwoFactorController.initiate()
+POST           /api/cockpit/v1/twoFactorAuth/confirm          controllers.TwoFactorController.confirmKey()
 GET            /api/cockpit/v1/lists                          controllers.cockpit.ListController.getAllLists()
 POST           /api/cockpit/v1/:elementName                   controllers.cockpit.ListController.list(elementName)
 POST           /api/cockpit/v1/:elementName/new               controllers.cockpit.ListController.create(elementName)
