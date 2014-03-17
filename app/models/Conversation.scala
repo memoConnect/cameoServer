@@ -35,6 +35,17 @@ case class Conversation(id: MongoId,
 
   def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
 
+  def toSummaryJsonWithRecipients: Future[JsObject] = {
+    val recipients: Seq[Future[JsObject]] = this.recipients.map { _.toJsonWithIdentity }
+    Future.sequence(recipients).map {
+      r => this.toSummaryJson ++ Json.obj("recipients" -> r)
+    }
+  }
+
+  def toSummaryJsonWithRecipientsResult: Future[SimpleResult] = {
+    this.toSummaryJsonWithRecipients.map { resOK(_) }
+  }
+
   def toJsonWithIdentities(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
     val recipients: Seq[Future[JsObject]] = this.recipients.map { _.toJsonWithIdentity }
 
