@@ -24,6 +24,9 @@ class FileControllerSpec extends StartedApp {
       Seq.fill(10)(MockupFactory.randomString(256))
     }
 
+    val newChunk = MockupFactory.randomString(256)
+    val newChunkIndex = MockupFactory.random.nextInt(chunks.size)
+
     "FileController" should {
       "upload first chunk of file" in {
         val path = basePath + "/file"
@@ -126,6 +129,52 @@ class FileControllerSpec extends StartedApp {
             (data \ "chunk").asOpt[String] must beSome(chunks(i))
           }
         }
+      }
+
+      "overwrite existing chunk" in {
+        val path = basePath + "/file/" + fileId
+
+        val json = Json.obj("chunk" -> newChunk)
+
+        val header: Seq[(String, String)] = Seq(
+          ("X-Index", newChunkIndex.toString)) :+
+          tokenHeader(tokenExisting2)
+
+        val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+      }
+
+      "check if old chunk has been overwritten" in {
+
+        val path = basePath + "/file/" + fileId + "/" + newChunkIndex
+
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "chunk").asOpt[String] must beSome(newChunk)
+      }
+
+      "check that there is only one chunk for each index" in {
+        val path = basePath + "/file/" + fileId
+
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "chunks").asOpt[Seq[Int]] must beSome
+        val returnedChunks: Seq[Int] = (data \ "chunks").as[Seq[Int]].sorted
+
+        returnedChunks.distinct.size must beEqualTo(returnedChunks.size)
+
       }
 
       "refuse to return non existing chunk" in {
