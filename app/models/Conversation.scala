@@ -61,7 +61,7 @@ case class Conversation(id: MongoId,
   }
 
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
-    val set = Json.obj("$set" -> toJsonOrEmpty("subject", conversationUpdate.subject))
+    val set = Json.obj("$set" -> maybeEmptyString("subject", conversationUpdate.subject))
     Conversation.col.update(query, setLastUpdated(set)).map { _.ok }
   }
 
@@ -142,7 +142,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         Json.obj("messages" -> OutputLimits.applyLimits(c.messages.map(_.toJson), offset, limit)) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
-        toJsonOrEmpty("subject", c.subject) ++
+        maybeEmptyString("subject", c.subject) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
@@ -152,7 +152,7 @@ object Conversation extends Model[Conversation] {
       Json.obj("id" -> c.id.toJson) ++
         addLastUpdated(c.lastUpdated) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
-        toJsonOrEmpty("subject", c.subject) ++
+        maybeEmptyString("subject", c.subject) ++
         Json.obj("messages" -> {
           c.messages.lastOption match {
             case Some(m) => Seq(m.toJson)

@@ -101,8 +101,9 @@ case class Identity(id: MongoId,
 
   def editPublicKey(id: MongoId, update: PublicKeyUpdate): Future[Boolean] = {
     val setValues = {
-      toJsonOrEmpty("publicKeys.$.name", update.name) ++
-        toJsonOrEmpty("publicKeys.$.key", update.key)
+      maybeEmptyString("publicKeys.$.name", update.name) ++
+        maybeEmptyString("publicKeys.$.key", update.key) ++
+        maybeEmptyInt("publicKeys.$.keySize", update.keySize)
     }
     val publicKeyQuery = query ++ arrayQuery("publicKeys", id)
     val set = Json.obj("$set" -> setValues)
@@ -116,9 +117,9 @@ case class Identity(id: MongoId,
     val newDisplayName = update.displayName.flatMap { getNewValueString(this.displayName, _) }
 
     val setValues = {
-      maybeEmpty("email", newMail.map { Json.toJson(_) }) ++
-        maybeEmpty("phoneNumber", newPhoneNumber.map { Json.toJson(_) }) ++
-        toJsonOrEmpty("displayName", newDisplayName)
+      maybeEmptyJsValue("email", newMail.map { Json.toJson(_) }) ++
+        maybeEmptyJsValue("phoneNumber", newPhoneNumber.map { Json.toJson(_) }) ++
+        maybeEmptyString("displayName", newDisplayName)
     }
     val set = Json.obj("$set" -> setValues)
 
@@ -161,11 +162,11 @@ object Identity extends Model[Identity] {
   def privateWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
-        toJsonOrEmpty("displayName", i.displayName) ++
+        maybeEmptyString("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        maybeEmpty("email", i.email.map { _.toJson }) ++
-        maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
+        maybeEmptyJsValue("email", i.email.map { _.toJson }) ++
+        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
         Json.obj("publicKeys" -> i.publicKeys.map { _.toJson }) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
@@ -177,8 +178,8 @@ object Identity extends Model[Identity] {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        maybeEmpty("email", i.email.map { _.toJson }) ++
-        maybeEmpty("phoneNumber", i.phoneNumber.map { _.toJson }) ++
+        maybeEmptyJsValue("email", i.email.map { _.toJson }) ++
+        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map { _.toJson }) ++
         Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) ++
         Json.obj("publicKeys" -> i.publicKeys.map(pk => pk.key))
   }

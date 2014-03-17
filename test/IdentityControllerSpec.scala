@@ -27,12 +27,16 @@ class IdentityControllerSpec extends StartedApp {
   val pubKey = "asdfasdfasdf"
   val pubKeyName = "moep"
   var pubKeyId = ""
+  val pubKeySize = 15
   val newPubKey = "woops"
   val newPubKeyName = "poem"
+  val newPubKeySize = 454
 
   val pubKey2 = "asdfasdfasdf2"
   val pubKeyName2 = "moep2"
   var pubKeyId2 = ""
+  val pubKeySize2 = 2048
+
 
   "IdentityController" should {
 
@@ -271,7 +275,7 @@ class IdentityControllerSpec extends StartedApp {
     "add public key to identity" in {
       val path = basePath + "/identity/publicKey"
 
-      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey)
+      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey, "keySize" -> pubKeySize)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -284,12 +288,13 @@ class IdentityControllerSpec extends StartedApp {
       pubKeyId = (data \ "id").as[String]
       (data \ "name").asOpt[String] must beSome(pubKeyName)
       (data \ "key").asOpt[String] must beSome(pubKey)
+      (data \ "keySize").asOpt[Int] must beSome(pubKeySize)
     }
 
     "add another public key to identity" in {
       val path = basePath + "/identity/publicKey"
 
-      val json = Json.obj("name" -> pubKeyName2, "key" -> pubKey2)
+      val json = Json.obj("name" -> pubKeyName2, "key" -> pubKey2, "keySize" -> pubKeySize2)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -302,6 +307,8 @@ class IdentityControllerSpec extends StartedApp {
       pubKeyId2 = (data \ "id").as[String]
       (data \ "name").asOpt[String] must beSome(pubKeyName2)
       (data \ "key").asOpt[String] must beSome(pubKey2)
+      (data \ "keySize").asOpt[Int] must beSome(pubKeySize2)
+
     }
 
     "check if identity contains both added public keys" in {
@@ -323,11 +330,14 @@ class IdentityControllerSpec extends StartedApp {
       (key1 \ "id").asOpt[String] must beSome(pubKeyId)
       (key1 \ "name").asOpt[String] must beSome(pubKeyName)
       (key1 \ "key").asOpt[String] must beSome(pubKey)
+      (key1 \ "keySize").asOpt[Int] must beSome(pubKeySize)
 
       val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
       (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
       (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
       (key2 \ "key").asOpt[String] must beSome(pubKey2)
+      (key2 \ "keySize").asOpt[Int] must beSome(pubKeySize2)
+
     }
 
     "edit name of public key" in {
@@ -346,7 +356,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val path = basePath + "/identity/publicKey/" + pubKeyId
 
-      val json = Json.obj("key" -> newPubKey)
+      val json = Json.obj("key" -> newPubKey, "keySize" -> newPubKeySize)
 
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -372,11 +382,14 @@ class IdentityControllerSpec extends StartedApp {
       (key1 \ "id").asOpt[String] must beSome(pubKeyId)
       (key1 \ "name").asOpt[String] must beSome(newPubKeyName)
       (key1 \ "key").asOpt[String] must beSome(newPubKey)
+      (key1 \ "keySize").asOpt[Int] must beSome(newPubKeySize)
 
       val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
       (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
       (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
       (key2 \ "key").asOpt[String] must beSome(pubKey2)
+      (key2 \ "keySize").asOpt[Int] must beSome(pubKeySize2)
+
     }
 
     "delete a public key" in {
@@ -408,6 +421,8 @@ class IdentityControllerSpec extends StartedApp {
       (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
       (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
       (key2 \ "key").asOpt[String] must beSome(pubKey2)
+      (key2 \ "keySize").asOpt[Int] must beSome(pubKeySize2)
+
     }
 
   }
