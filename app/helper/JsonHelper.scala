@@ -66,21 +66,28 @@ object JsonHelper {
     Json.obj("lastUpdated" -> defaultDateFormat.format(date))
   }
 
-  def toJsonOrEmpty(key: String, value: Option[String]): JsObject = {
+  def maybeEmptyString(key: String, value: Option[String]): JsObject = {
     value match {
       case Some(s) => Json.obj(key -> JsString(s))
       case None    => Json.obj()
     }
   }
 
-  def toJsonArrayOrEmpty(key: String, value: Option[Seq[String]]): JsObject = {
+  def maybeEmptyInt(key: String, value: Option[Int]): JsObject = {
+    value match {
+      case Some(s) => Json.obj(key -> JsNumber(s))
+      case None    => Json.obj()
+    }
+  }
+
+  def maybeEmptySeq(key: String, value: Option[Seq[String]]): JsObject = {
     value match {
       case Some(s) => Json.obj(key -> JsArray(s.map(JsString)))
       case None    => Json.obj()
     }
   }
 
-  def maybeEmpty(key: String, value: Option[JsValue]): JsObject = {
+  def maybeEmptyJsValue(key: String, value: Option[JsValue]): JsObject = {
     value match {
       case Some(s) => Json.obj(key -> s)
       case None    => Json.obj()
