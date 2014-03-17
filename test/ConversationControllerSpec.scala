@@ -211,7 +211,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit" in {
 
-      val limit = MockupFactory.random.nextInt(numberOfConversations)
+      val limit = Math.max(MockupFactory.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit
 
@@ -232,7 +232,7 @@ class ConversationControllerSpec extends StartedApp {
     "get conversations with limit and offset" in {
 
       val offset = MockupFactory.random.nextInt(numberOfConversations)
-      val limit = MockupFactory.random.nextInt(numberOfConversations)
+      val limit = Math.max(MockupFactory.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit + "&offset=" + offset
 
