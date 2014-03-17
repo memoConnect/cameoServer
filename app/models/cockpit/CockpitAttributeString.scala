@@ -11,12 +11,9 @@ case class CockpitAttributeString(name: String,
                                    ) extends CockpitAttribute {
   val attributeType: String = "String"
 
-  val attributesWrites: Writes[CockpitAttributeString] = Writes[CockpitAttributeString] {
-    cockpitAttributeString =>
-      Json.obj(cockpitAttributeString.nameKey -> cockpitAttributeString.name) ++
-        Json.obj(cockpitAttributeString.isEditableKey -> cockpitAttributeString.isEditable) ++
-        Json.obj(cockpitAttributeString.dataKey -> cockpitAttributeString.data)
+  def toJson: JsObject = {
+    Json.obj(nameKey -> name) ++
+      Json.obj(isEditableKey -> isEditable) ++
+      Json.obj(dataKey -> data)
   }
-
-
 }

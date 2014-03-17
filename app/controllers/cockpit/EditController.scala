@@ -16,7 +16,7 @@ object EditController {
   def edit(elementName: String, id: String) = Action.async {
     ListController.allEditables.find(_.name.equals(elementName)) match {
       case None => Future(resNotFound("entity with name: "+elementName))
-      case Some(definition) => definition.getEdit(id).map {
+      case Some(definition) => definition.getEdit(id, elementName).map {
         maybeElement => maybeElement match {
           case Some(element) => resOK(element.toJson)
           case None => resNotFound(elementName+" object with id: "+id)

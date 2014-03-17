@@ -14,12 +14,8 @@ trait CockpitAttribute {
   val dataKey = "attributeData"
 
   implicit val writes: Writes[CockpitAttribute] = Writes[CockpitAttribute] {
-    cockpitAttribute => Json.toJson(this)(attributesWrites).as[JsObject] ++ Json.obj(typeKey -> attributeType)
+    cockpitAttribute => toJson ++ Json.obj(typeKey -> attributeType)
   }
 
-  val attributesWrites: Writes[CockpitAttribute]
-
-  def toJson: JsObject = {
-    Json.toJson(this).as[JsObject]
-  }
+  def toJson: JsObject
 }
