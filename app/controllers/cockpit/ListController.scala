@@ -35,6 +35,11 @@ object ListController extends ExtendedController {
     implicit val reads: Reads[ListOptions] = Json.reads[ListOptions]
   }
 
+  def getAllLists() = TwoFactorAuthAction {
+    val allNames:Seq[String] = allEditables.map{_.name}
+    resOK(Json.toJson(allNames))
+  }
+
   def list(elementName: String) = TwoFactorAuthAction.async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, ListOptions.reads) {
