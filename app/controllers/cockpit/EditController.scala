@@ -13,13 +13,6 @@ import play.api.libs.json.{JsValue, Json, Reads}
 
 object EditController {
 
-
-  case class ElementData()
-
-  object ElementData {
-    implicit val reads: Reads[ElementData] = Json.reads[ElementData]
-  }
-
   def edit(elementName: String, id: String) = Action.async {
     ListController.allEditables.find(_.name.equals(elementName)) match {
       case None => Future(resNotFound("entity with name: "+elementName))

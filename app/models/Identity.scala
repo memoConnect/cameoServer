@@ -274,6 +274,13 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     (attributes, id)
   }
 
+  def cockpitEditMapping(obj: Identity): Seq[CockpitAttribute] = {
+  Seq(
+      CockpitAttributeString(name = "displayName", isEditable = true, data = obj.displayName),
+      CockpitAttributeString(name = "cameoId", isEditable = false, data = Some(obj.cameoId))
+    )
+  }
+
   def cockpitListFilters = Seq(
     new CockpitListFilter("ID", str => Json.obj("_id.mongoId" -> Json.obj("$regex" -> str))),
     new CockpitListFilter("Email", str => Json.obj("email.value" -> Json.obj("$regex" -> str))),
