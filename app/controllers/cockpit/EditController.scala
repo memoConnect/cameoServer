@@ -9,8 +9,16 @@ import scala.Some
 import ExecutionContext.Implicits.global
 import helper.TwoFactorAuthAction
 import controllers.cockpit.ListController.ListOptions
+import play.api.libs.json.{JsValue, Json, Reads}
 
 object EditController {
+
+
+  case class ElementData()
+
+  object ElementData {
+    implicit val reads: Reads[ElementData] = Json.reads[ElementData]
+  }
 
   def edit(elementName: String, id: String) = Action.async {
     ListController.allEditables.find(_.name.equals(elementName)) match {
@@ -24,9 +32,9 @@ object EditController {
     }
   }
 
-  def modify(elementName: String, id: String) = Action.async {
+  /*def modify(elementName: String, id: String) = Action.async {
     request =>
-      validateFuture(request.body, ListOptions.reads) {
+      validateFuture(request.body, ElementData.reads) {
         listOptions =>
         {
           allEditables.find(definition => definition.name.equals(elementName)) match {
@@ -38,5 +46,5 @@ object EditController {
         }
       }
 
-  }
+  }*/
 }

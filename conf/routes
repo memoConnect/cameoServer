@@ -80,7 +80,7 @@ POST           /api/cockpit/v1/:elementName                   controllers.cockpi
 POST           /api/cockpit/v1/:elementName/new               controllers.cockpit.ListController.create(elementName)
 DELETE         /api/cockpit/v1/:elementName/:id               controllers.cockpit.ListController.delete(elementName, id)
 GET            /api/cockpit/v1/:elementName/:id               controllers.cockpit.EditController.edit(elementName, id)
-PUT            /api/cockpit/v1/:elementName/:id               controllers.cockpit.EditController.modify(elementName, id)
+#PUT            /api/cockpit/v1/:elementName/:id               controllers.cockpit.EditController.modify(elementName, id)
 
 # Deal with options
 OPTIONS        /api/v1/*foo                                   controllers.TokenController.getTokenOptions(foo)
