@@ -39,7 +39,7 @@ object Recipient extends Model[Recipient] {
   def outputWrites: Writes[Recipient] = Writes[Recipient] {
     r =>
       Json.obj("identityId" -> r.identityId.toJson) ++
-        toJsonOrEmpty("encryptedKey", r.encryptedKey)
+        maybeEmptyString("encryptedKey", r.encryptedKey)
   }
 
   def create(identityId: MongoId): Recipient = {

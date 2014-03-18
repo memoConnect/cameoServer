@@ -27,9 +27,15 @@ case class FileMeta(id: MongoId,
   def toJson: JsObject = Json.toJson(this)(FileMeta.outputWrites).as[JsObject]
 
   def addChunk(chunkMeta: ChunkMeta): Future[LastError] = {
+
+    //upsert does not work on nested arrays in mongo. we need to get rid of all existing values before inserting
     val query = Json.obj("_id" -> this.id)
-    val set = Json.obj("$addToSet" -> Json.obj("chunks" -> chunkMeta))
-    FileMeta.col.update(query, set)
+    val remove = Json.obj("$pull" -> Json.obj("chunks" -> Json.obj("index" -> chunkMeta.index)))
+    FileMeta.col.update(query, remove).flatMap {
+      lastError =>
+        val add = Json.obj("$push" -> Json.obj("chunks" -> chunkMeta))
+        FileMeta.col.update(query, add)
+    }
   }
 
 }

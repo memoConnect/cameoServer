@@ -45,7 +45,7 @@ case class Contact(id: MongoId,
     // edit groups
     if (contactUpdate.groups.isDefined) {
       val query = arrayQuery("contacts", this.id)
-      val newGroups = maybeEmpty("contacts.$.groups", contactUpdate.groups.map(Json.toJson(_)))
+      val newGroups = maybeEmptyJsValue("contacts.$.groups", contactUpdate.groups.map(Json.toJson(_)))
       val set = Json.obj("$set" -> newGroups)
 
       Contact.col.update(query, set).map {

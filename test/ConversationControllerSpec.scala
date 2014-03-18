@@ -158,6 +158,13 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages")(1).asOpt[JsObject] must beNone
       (data \ "subject").asOpt[String] must beSome
 
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      val recipients = (data \ "recipients").as[Seq[JsObject]]
+
+      (recipients(0) \ "identityId").asOpt[String] must beSome
+      (recipients(0) \ "identity").asOpt[JsObject] must beSome
+      (recipients(0) \ "identity" \ "displayName").asOpt[String] must beSome
+
     }
 
     "get conversations of user" in {
@@ -211,7 +218,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit" in {
 
-      val limit = Stuff.random.nextInt(numberOfConversations)
+      val limit = Math.max(Stuff.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit
 
@@ -232,7 +239,7 @@ class ConversationControllerSpec extends StartedApp {
     "get conversations with limit and offset" in {
 
       val offset = Stuff.random.nextInt(numberOfConversations)
-      val limit = Stuff.random.nextInt(numberOfConversations)
+      val limit = Math.max(Stuff.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit + "&offset=" + offset
 

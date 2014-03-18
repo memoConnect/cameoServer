@@ -36,14 +36,17 @@ object PurlController extends ExtendedController {
               case false => Future(resUnauthorized("This purl belongs to a different identity"))
               case true => {
                 // get conversation
-                Conversation.findByMessageId(purl.messageId).map {
-                  case None => resNotFound("conversation")
+                Conversation.findByMessageId(purl.messageId).flatMap {
+                  case None => Future(resNotFound("conversation"))
                   case Some(conversation) =>
                     // return result
-                    val res: JsObject =
-                      Json.obj("conversation" -> conversation.toJson(offset, limit)) ++
-                        Json.obj("identity" -> identity.toPrivateJson)
-                    resOK(res)
+                    conversation.toJsonWithIdentities(offset, limit).map {
+                      js =>
+                        val res: JsObject =
+                          Json.obj("conversation" -> js) ++
+                            Json.obj("identity" -> identity.toPrivateJson)
+                        resOK(res)
+                    }
                 }
               }
             }
@@ -65,16 +68,19 @@ object PurlController extends ExtendedController {
                   t
                 }
                 //get conversation
-                Conversation.findByMessageId(purl.messageId).map {
-                  case None => resNotFound("conversation")
+                Conversation.findByMessageId(purl.messageId).flatMap {
+                  case None => Future(resNotFound("conversation"))
                   case Some(conversation) =>
                     // return result
-                    val res: JsObject =
-                      Json.obj("conversation" -> conversation.toJson(offset, limit)) ++
-                        Json.obj("identity" -> identity.toPrivateJson) ++
-                        Json.obj("token" -> token.id.toJson)
+                    conversation.toJsonWithIdentities(offset, limit).map {
+                      js =>
+                        val res: JsObject =
+                          Json.obj("conversation" -> js) ++
+                          Json.obj("identity" -> identity.toPrivateJson) ++
+                          Json.obj("token" -> token.id.toJson)
 
-                    resOK(res)
+                        resOK(res)
+                    }
                 }
             }
         }
