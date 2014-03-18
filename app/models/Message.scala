@@ -94,6 +94,10 @@ object Message extends Model[Message] {
   def findConversation(id: MongoId): Future[Option[Conversation]] = {
     Conversation.col.find(arrayQuery("messages", id)).one[Conversation]
   }
+
+  override def createDefault(): Message = {
+    new Message(IdHelper.generateMessageId(), "moep", IdHelper.generateIdentityId(), Seq(), Seq(), new Date)
+  }
 }
 
 object MessageEvolutions {

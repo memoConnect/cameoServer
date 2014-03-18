@@ -58,7 +58,7 @@ object TokenController extends ExtendedController {
                       // check loginNames and passwords match
                       if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginName)) {
                         // everything is ok
-                        val token = Token.create
+                        val token = Token.createDefault
                         identity.addToken(token)
                         resOK(token.toJson)
                       } else {

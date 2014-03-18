@@ -6,7 +6,7 @@ import helper.JsonHelper._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
-import helper.MongoCollections
+import helper.{IdHelper, MongoCollections}
 
 /**
  * User: Björn Reimer
@@ -57,6 +57,9 @@ object Recipient extends Model[Recipient] {
     col.update(query, set)
   }
 
+  override def createDefault(): Recipient = {
+    new Recipient(IdHelper.generateRecipientId(), None)
+  }
 }
 
 case class RecipientUpdate(encryptedKey: String)

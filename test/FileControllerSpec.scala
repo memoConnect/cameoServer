@@ -24,8 +24,8 @@ class FileControllerSpec extends StartedApp {
       Seq.fill(10)(Stuff.randomString(256))
     }
 
-    val newChunk = MockupFactory.randomString(256)
-    val newChunkIndex = MockupFactory.random.nextInt(chunks.size)
+    val newChunk = Stuff.randomString(256)
+    val newChunkIndex = Stuff.random.nextInt(chunks.size)
 
     "FileController" should {
       "upload first chunk of file" in {

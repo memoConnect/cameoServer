@@ -58,6 +58,9 @@ object PublicKey extends Model[PublicKey] {
     col.update(query, set)
   }
 
+  override def createDefault(): PublicKey = {
+    new PublicKey(IdHelper.generatePublicKeyId, None, "", 0, docVersion)
+  }
 }
 
 case class PublicKeyUpdate(name: Option[String], key: Option[String], keySize: Option[Int])

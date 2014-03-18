@@ -50,6 +50,7 @@ class AuthenticationSpec extends StartedApp {
     )
 
     val twoFactorAuthRoutes: Seq[(String, String)] = Seq(
+      (GET, "/api/cockpit/v1/lists"),
       (POST, "/api/cockpit/v1/$elementName<[^/]+>"),
       (POST, "/api/cockpit/v1/$elementName<[^/]+>/new"),
       (DELETE, "/api/cockpit/v1/$elementName<[^/]+>/$id<[^/]+>"),

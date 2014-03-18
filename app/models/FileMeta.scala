@@ -72,6 +72,10 @@ object FileMeta extends Model[FileMeta] {
       new Date
     )
   }
+
+  override def createDefault(): FileMeta = {
+    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", new Date)
+  }
 }
 
 case class ChunkMeta(index: Int, chunkId: MongoId) {

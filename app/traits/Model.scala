@@ -49,6 +49,8 @@ trait Model[A] {
     col.save(js)
   }
 
+  def createDefault(): A
+
   /*
    * Helper functions
    */

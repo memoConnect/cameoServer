@@ -112,6 +112,10 @@ object Contact extends Model[Contact] {
 
   val docVersion = 1
   val evolutions = Map(0 -> evolutionAddContactType)
+
+  override def createDefault(): Contact = {
+    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), CONTACT_TYPE_NONE, docVersion)
+  }
 }
 
 case class ContactUpdate(groups: Option[Seq[String]],

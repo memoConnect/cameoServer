@@ -188,6 +188,10 @@ object Conversation extends Model[Conversation] {
   }
 
   def evolutions = Map()
+
+  def createDefault(): Conversation = {
+    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), new Date, new Date)
+  }
 }
 
 case class ConversationUpdate(subject: Option[String])

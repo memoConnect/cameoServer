@@ -43,4 +43,7 @@ object FileChunk extends Model[FileChunk] {
     (__ \ 'chunk).read[String]
   )(FileChunk.apply _)
 
+  def createDefault(): FileChunk = {
+    new FileChunk(IdHelper.generateChunkId, "moep")
+  }
 }

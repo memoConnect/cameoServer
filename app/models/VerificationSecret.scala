@@ -39,4 +39,8 @@ object VerificationSecret extends Model[VerificationSecret] {
       valueToBeVerified,
       new Date)
   }
+
+  override def createDefault(): VerificationSecret = {
+    VerificationSecret.create(IdHelper.generateIdentityId(), "", "")
+  }
 }

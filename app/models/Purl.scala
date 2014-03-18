@@ -49,4 +49,8 @@ object Purl extends Model[Purl] {
       messageId,
       identityId)
   }
+
+  override def createDefault(): Purl = {
+    new Purl(IdHelper.generatePurl(), IdHelper.generateMessageId(), IdHelper.generateIdentityId())
+  }
 }

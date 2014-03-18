@@ -48,11 +48,13 @@ object VerifiedString extends Model[VerifiedString] {
   }
 
   def createOpt(string: Option[String]): Option[VerifiedString] = {
-
     string match {
       case None    => None
       case Some(s) => Some(new VerifiedString(false, s, new Date))
     }
+  }
 
+  override def createDefault(): VerifiedString = {
+    VerifiedString.create("moep")
   }
 }

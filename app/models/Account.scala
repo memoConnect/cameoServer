@@ -99,6 +99,9 @@ object Account extends Model[Account] {
     }
   }
 
+  def createDefault(): Account = {
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", Seq(), None, None, new Date, new Date)
+  }
 }
 
 case class AccountReservation(loginName: String,
@@ -156,5 +159,9 @@ object AccountReservation extends Model[AccountReservation] {
   def deleteReserved(loginName: String): Future[LastError] = {
     val query = Json.obj("loginName" -> loginName)
     col.remove(query)
+  }
+
+  def createDefault(): AccountReservation = {
+    new AccountReservation(IdHelper.randomString(8),IdHelper.generateMongoId(), new Date)
   }
 }

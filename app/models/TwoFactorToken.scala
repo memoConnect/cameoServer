@@ -35,13 +35,18 @@ object TwoFactorToken extends Model[TwoFactorToken] {
         addCreated(t.created)
   }
 
+  def create(identityId: MongoId): TwoFactorToken = {
+    TwoFactorToken(IdHelper.generateAccessToken(), identityId, new Date)
+  }
+
   def createAndInsert(identityId: MongoId): TwoFactorToken = {
-    val newToken = new TwoFactorToken(
-      IdHelper.generateAccessToken(),
-      identityId,
-      new Date)
+    val newToken = TwoFactorToken.create(identityId)
     TwoFactorToken.col.insert(newToken)
     newToken
+  }
+
+  override def createDefault(): TwoFactorToken = {
+     TwoFactorToken.create(IdHelper.generateIdentityId())
   }
 }
 
@@ -78,6 +83,10 @@ object TwoFactorSmsKey extends Model[TwoFactorSmsKey] {
     val key = new TwoFactorSmsKey(IdHelper.generateTwoFactorSmsKey(), identityId)
     col.insert(key)
     key
+  }
+
+  override def createDefault(): TwoFactorSmsKey = {
+    TwoFactorSmsKey.create(IdHelper.generateIdentityId())
   }
 }
 

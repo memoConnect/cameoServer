@@ -39,7 +39,7 @@ object Token extends Model[Token] {
         addCreated(t.created)
   }
 
-  def create(): Token = {
+  override def createDefault(): Token = {
     new Token(
       IdHelper.generateAccessToken(),
       new Date)

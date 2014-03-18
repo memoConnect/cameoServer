@@ -5,7 +5,7 @@ import helper.JsonHelper._
 import traits.Model
 import scala.concurrent.Future
 import reactivemongo.core.commands.LastError
-import helper.MongoCollections
+import helper.{IdHelper, MongoCollections}
 
 /**
  * User: Björn Reimer
@@ -35,5 +35,9 @@ object MessageStatus extends Model[MessageStatus] {
       Json.obj("identityId" -> ms.identityId.toJson) ++
         Json.obj("status" -> ms.status) ++
         Json.obj("message" -> ms.message)
+  }
+
+  override def createDefault(): MessageStatus = {
+    new MessageStatus(IdHelper.generateMongoId(), "", "")
   }
 }

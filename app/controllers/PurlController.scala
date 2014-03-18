@@ -63,7 +63,7 @@ object PurlController extends ExtendedController {
               case None =>
                 // check if we need to generate a new token
                 val token = identity.tokens.headOption.getOrElse {
-                  val t = Token.create()
+                  val t = Token.createDefault()
                   identity.addToken(t)
                   t
                 }
