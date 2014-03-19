@@ -112,6 +112,7 @@ trait CockpitEditable[A] extends Model[A] {
       case None => Future(None)
       case Some(obj) =>
         val originalJs = Json.toJson(obj)
+        Logger.debug("original: "+ originalJs)
         // apply transformers
         val updatedJs = transformer.foldLeft(originalJs)(
           (js, transformer) =>
@@ -120,15 +121,17 @@ trait CockpitEditable[A] extends Model[A] {
               Json.obj()
             }
         )
+        Logger.debug("updated: "+ updatedJs)
         // check if the new js can still be deserialized
-        val newObj: Option[A] = updatedJs.asOpt[A] match {
+        updatedJs.asOpt[A] match {
           case None =>
             Logger.error("could not deserialize after transform: " + updatedJs)
-            None
-          case Some(obj) => Some(obj)
+            Future(None)
+          case Some(obj) =>
+            // save to db
+            save(Json.toJson(obj).as[JsObject]).map { lastError => Some(lastError.updatedExisting) }
         }
-        // save to db
-        save(Json.toJson(obj).as[JsObject]).map { lastError => Some(lastError.updatedExisting) }
+
     }
   }
 
