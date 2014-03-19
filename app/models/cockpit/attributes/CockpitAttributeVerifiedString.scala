@@ -1,15 +1,15 @@
-package models.cockpit
-
-import play.api.libs.json.JsObject
+package models.cockpit.attributes
 
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 import play.api.Logger
+import traits.CockpitAttribute
+import models.VerifiedString
 
-case class CockpitAttributeString[A](name: String,
-                                     displayName: String,
-                                     isEditable: Boolean = false,
-                                     showInList: Boolean = false)(implicit val format: Format[A]) extends CockpitAttribute {
+case class CockpitAttributeVerifiedString(name: String,
+                                          displayName: String,
+                                          isEditable: Boolean = false,
+                                          showInList: Boolean = false)(implicit val format: Format[VerifiedString]) extends CockpitAttribute {
+
   def getTypeName = "string"
   def getShowInList = showInList
   def getIsEditable = isEditable
@@ -20,12 +20,11 @@ case class CockpitAttributeString[A](name: String,
     (js \ name).asOpt[JsValue] match {
       case None => None
       case Some(attributeJs) =>
-        attributeJs.asOpt[A] match {
+        attributeJs.asOpt[VerifiedString] match {
           case None =>
             Logger.error("AttributeDoes not match specified type: " + js)
             None
-          case Some(obj) => Some(Json.toJson(obj))
-
+          case Some(vs) => Some(JsString(vs.value))
         }
     }
   }
@@ -42,13 +41,13 @@ case class CockpitAttributeString[A](name: String,
       case None                    => __.json.pickBranch
       case Some(js) if !isEditable => __.json.pickBranch
       case Some(js) =>
-        // check if json can be converted to our type
-        js.asOpt[A] match {
+        js.asOpt[String] match {
           case None =>
             Logger.error("Cannot be converted back to type: " + js)
             __.json.pickBranch
-          case Some(obj) =>
-            __.json.update((__ \ name).json.put(Json.toJson(obj)))
+          case Some(str) =>
+            val vs = VerifiedString.create(str)
+            __.json.update((__ \ name).json.put(Json.toJson(vs)))
         }
     }
   }

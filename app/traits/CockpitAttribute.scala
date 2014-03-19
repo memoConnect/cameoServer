@@ -1,11 +1,6 @@
-package models.cockpit
+package traits
 
 import play.api.libs.json._
-import play.api.libs.json.JsObject
-import play.api.Logger
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import play.api.libs.json.Reads._
 
 trait CockpitAttribute {
 

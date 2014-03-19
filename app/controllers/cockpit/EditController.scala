@@ -11,6 +11,7 @@ import helper.TwoFactorAuthAction
 import controllers.cockpit.ListController.ListOptions
 import play.api.libs.json.{JsValue, Json, Reads}
 import play.api.Logger
+import models.cockpit.CockpitEdit
 
 object EditController {
 
@@ -18,8 +19,10 @@ object EditController {
     ListController.getEditable(elementName) match {
       case None => Future(resNotFound("entity with name: "+elementName))
       case Some(definition) => definition.getAttributes(id).map {
-        case Some(attributes) => resOK(attributes)
         case None => resNotFound(elementName + " object with id: " + id)
+        case Some(attributes) =>
+          val cockpitEdit = new CockpitEdit(id, attributes)
+          resOK(cockpitEdit.toJson)
       }
     }
   }
