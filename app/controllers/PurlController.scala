@@ -76,8 +76,8 @@ object PurlController extends ExtendedController {
                       js =>
                         val res: JsObject =
                           Json.obj("conversation" -> js) ++
-                          Json.obj("identity" -> identity.toPrivateJson) ++
-                          Json.obj("token" -> token.id.toJson)
+                            Json.obj("identity" -> identity.toPrivateJson) ++
+                            Json.obj("token" -> token.id.toJson)
 
                         resOK(res)
                     }

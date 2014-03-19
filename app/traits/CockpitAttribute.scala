@@ -1,6 +1,8 @@
 package traits
 
 import play.api.libs.json._
+import play.api.Logger
+import models.VerifiedString
 
 trait CockpitAttribute {
 
@@ -11,7 +13,16 @@ trait CockpitAttribute {
   def getDisplayName: String
   def getData(js: JsObject): Option[JsValue]
   def getListString(js: JsObject): Option[String]
-  def getTransformer(updateJs: JsObject): Option[Reads[JsObject]]
+
+  def getTransformerFromData(data: JsValue): Option[Reads[JsObject]]
+
+  def getTransformer(newJs: JsObject): Option[Reads[JsObject]] = {
+    (newJs \ getName).asOpt[JsValue] match {
+      case None                         => None
+      case Some(data) if !getIsEditable => None
+      case Some(data)                   => getTransformerFromData(data)
+    }
+  }
 
   def getEditJson(js: JsObject): Option[JsObject] = {
     getData(js).map {

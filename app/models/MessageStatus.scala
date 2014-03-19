@@ -5,7 +5,7 @@ import helper.JsonHelper._
 import traits.Model
 import scala.concurrent.Future
 import reactivemongo.core.commands.LastError
-import helper.{IdHelper, MongoCollections}
+import helper.{ IdHelper, MongoCollections }
 
 /**
  * User: Björn Reimer

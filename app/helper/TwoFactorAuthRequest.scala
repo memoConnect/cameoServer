@@ -7,7 +7,6 @@ import models.{ TwoFactorToken, MongoId, Identity, Token }
 import helper.ResultHelper._
 import constants.Authentication._
 
-
 class TwoFactorAuthRequest[A](val identity: Identity, request: Request[A]) extends WrappedRequest[A](request)
 
 object TwoFactorAuthAction extends ActionBuilder[TwoFactorAuthRequest] {
@@ -25,7 +24,7 @@ object TwoFactorAuthAction extends ActionBuilder[TwoFactorAuthRequest] {
               // make sure that identities match
               authRequest.identity.id.equals(twoFactorToken.identityId) match {
                 case false => Future(resUnauthorized(REQUEST_TWO_FACTOR_ACCESS_DENIED, twoFactorRequired = true))
-                case true => block(new TwoFactorAuthRequest[A](authRequest.identity, authRequest))
+                case true  => block(new TwoFactorAuthRequest[A](authRequest.identity, authRequest))
               }
             }
           }

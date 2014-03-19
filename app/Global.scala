@@ -7,12 +7,12 @@ import actors.SendSmsActor
 import akka.actor.Props
 import helper.DbAdminUtilities
 import models.GlobalState
-import play.api.libs.json.{JsValue, Json}
-import play.api.{Logger, Play, GlobalSettings}
+import play.api.libs.json.{ JsValue, Json }
+import play.api.{ Logger, Play, GlobalSettings }
 import play.api.mvc.EssentialAction
 import play.api.http.HeaderNames._
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future, ExecutionContext}
+import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Play.current
 import helper.MongoCollections._

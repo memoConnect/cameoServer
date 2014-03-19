@@ -1,14 +1,23 @@
 package models.cockpit.attributes
 
 import play.api.libs.json._
-import play.api.Logger
 import traits.CockpitAttribute
+import play.api.Logger
+import scala.Some
+import play.api.libs.json.JsObject
+import scala.Some
 
-case class CockpitAttributeString[A](name: String,
-                                     displayName: String,
-                                     isEditable: Boolean = false,
-                                     showInList: Boolean = false)(implicit val format: Format[A]) extends CockpitAttribute {
-  def getTypeName = "string"
+/**
+ * User: Björn Reimer
+ * Date: 3/19/14
+ * Time: 11:51 AM
+ */
+case class CockpitAttributeOptionList[A](name: String,
+                                         displayName: String,
+                                         isEditable: Boolean = false,
+                                         showInList: Boolean = false)(implicit val format: Format[A]) extends CockpitAttribute {
+
+  def getTypeName = "optionList"
   def getShowInList = showInList
   def getIsEditable = isEditable
   def getName = name
@@ -36,6 +45,7 @@ case class CockpitAttributeString[A](name: String,
   }
 
   def getTransformerFromData(data: JsValue): Option[Reads[JsObject]] = {
+
     data.asOpt[A] match {
       case None =>
         Logger.error("Cannot be converted back to type: " + data)
@@ -45,3 +55,4 @@ case class CockpitAttributeString[A](name: String,
     }
   }
 }
+

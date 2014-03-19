@@ -3,10 +3,10 @@ package models
 import java.util.Date
 import traits.Model
 import play.api.libs.json._
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import helper.JsonHelper._
-import helper.{MongoCollections, IdHelper}
+import helper.{ MongoCollections, IdHelper }
 
 /**
  * User: Björn Reimer
@@ -46,7 +46,7 @@ object TwoFactorToken extends Model[TwoFactorToken] {
   }
 
   override def createDefault(): TwoFactorToken = {
-     TwoFactorToken.create(IdHelper.generateIdentityId())
+    TwoFactorToken.create(IdHelper.generateIdentityId())
   }
 }
 

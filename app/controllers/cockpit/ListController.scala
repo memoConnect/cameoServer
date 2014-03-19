@@ -8,7 +8,7 @@ import models.Identity
 import org.omg.CosNaming.NamingContextPackage.NotFound
 import traits.{ CockpitEditableDefinition, Model, CockpitEditable, ExtendedController }
 import ExecutionContext.Implicits.global
-import helper.{TwoFactorAuthAction, OutputLimits}
+import helper.{ TwoFactorAuthAction, OutputLimits }
 import helper.ResultHelper._
 
 /**
@@ -40,7 +40,7 @@ object ListController extends ExtendedController {
   }
 
   def getAllLists() = TwoFactorAuthAction {
-    val allNames:Seq[String] = allEditables.map{_.name}
+    val allNames: Seq[String] = allEditables.map { _.name }
     resOK(Json.obj("lists" -> Json.toJson(allNames)))
   }
 

@@ -12,11 +12,11 @@ package object actors {
 
   // define different actor for tests
   def SendSmsActorProps: Props = {
-   if(Play.isTest) {
-     Props[SendSmsTestActor]
-   } else {
-     Props[SendSmsActor]
-   }
+    if (Play.isTest) {
+      Props[SendSmsTestActor]
+    } else {
+      Props[SendSmsActor]
+    }
   }
 
 }

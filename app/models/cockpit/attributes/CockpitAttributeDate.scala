@@ -3,11 +3,13 @@ package models.cockpit.attributes
 import play.api.libs.json._
 import play.api.Logger
 import traits.CockpitAttribute
+import java.util.Date
 
-case class CockpitAttributeString[A](name: String,
-                                     displayName: String,
-                                     isEditable: Boolean = false,
-                                     showInList: Boolean = false)(implicit val format: Format[A]) extends CockpitAttribute {
+case class CockpitAttributeDate(name: String,
+                                displayName: String,
+                                isEditable: Boolean = false,
+                                showInList: Boolean = false) extends CockpitAttribute {
+
   def getTypeName = "string"
   def getShowInList = showInList
   def getIsEditable = isEditable
@@ -15,16 +17,12 @@ case class CockpitAttributeString[A](name: String,
   def getDisplayName = displayName
 
   def getData(js: JsObject): Option[JsValue] = {
-    (js \ name).asOpt[JsValue] match {
-      case None => None
-      case Some(attributeJs) =>
-        attributeJs.asOpt[A] match {
-          case None =>
-            Logger.error("AttributeDoes not match specified type: " + js)
-            None
-          case Some(obj) => Some(Json.toJson(obj))
+    Logger.debug("DATE: " + (js \ name \ "$date").as[JsValue])
 
-        }
+    (js \ name \ "$date").asOpt[Long].map {
+      num =>
+        val date = new Date(num)
+        JsString(date.toString)
     }
   }
 
@@ -36,7 +34,7 @@ case class CockpitAttributeString[A](name: String,
   }
 
   def getTransformerFromData(data: JsValue): Option[Reads[JsObject]] = {
-    data.asOpt[A] match {
+    data.asOpt[JsNumber] match {
       case None =>
         Logger.error("Cannot be converted back to type: " + data)
         None

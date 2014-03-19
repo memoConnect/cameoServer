@@ -3,7 +3,7 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.{CockpitAttribute, CockpitEditable, Model}
+import traits.{ CockpitAttribute, CockpitEditable, Model }
 import play.api.libs.json.Reads._
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.{ PrintDate, IdHelper }
@@ -31,7 +31,7 @@ import reactivemongo.core.commands.Limit
 import play.api.libs.json.JsObject
 import reactivemongo.core.commands.Skip
 import controllers.cockpit.ListController.{ SelectedFilters, ListOptions }
-import models.cockpit.attributes.{CockpitAttributeVerifiedString, CockpitAttributeString}
+import models.cockpit.attributes.{ CockpitAttributeDate, CockpitAttributeVerifiedString, CockpitAttributeString }
 
 /**
  * User: Björn Reimer
@@ -261,15 +261,33 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     3 -> IdentityEvolutions.removeConversations,
     4 -> IdentityEvolutions.removeAssets
   )
-  
+
   def cockpitMapping: Seq[CockpitAttribute] = {
-  Seq(
+    Seq(
       CockpitAttributeString[Option[String]](name = "displayName", displayName = "Display Name", isEditable = true, showInList = true),
       CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", showInList = true),
       CockpitAttributeVerifiedString(name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),
-      CockpitAttributeVerifiedString(name = "email", displayName = "Email", isEditable = true, showInList = true)
+      CockpitAttributeVerifiedString(name = "email", displayName = "Email", isEditable = true, showInList = true),
+      CockpitAttributeString[String](name = "userKey", displayName = "User Key"),
+      CockpitAttributeDate(name = "created", displayName = "Created"),
+      CockpitAttributeDate(name = "lastUpdated", displayName = "Last Updated")
     )
   }
+
+  //  id: MongoId,
+  //  accountId: Option[MongoId],
+  //  displayName: Option[String],
+  //  email: Option[VerifiedString],
+  //  phoneNumber: Option[VerifiedString],
+  //  cameoId: String,
+  //  preferredMessageType: String, // "mail" or "sms"
+  //  userKey: String,
+  //  contacts: Seq[Contact],
+  //  tokens: Seq[Token],
+  //  friendRequests: Seq[MongoId],
+  //  publicKeys: Seq[PublicKey],
+  //  created: Date,
+  //  lastUpdated: Date
 
   def cockpitListFilters: Seq[CockpitListFilter] = Seq(
     new CockpitListFilter("ID", str => Json.obj("_id.mongoId" -> Json.obj("$regex" -> str))),

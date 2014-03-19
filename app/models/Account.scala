@@ -162,6 +162,6 @@ object AccountReservation extends Model[AccountReservation] {
   }
 
   def createDefault(): AccountReservation = {
-    new AccountReservation(IdHelper.randomString(8),IdHelper.generateMongoId(), new Date)
+    new AccountReservation(IdHelper.randomString(8), IdHelper.generateMongoId(), new Date)
   }
 }

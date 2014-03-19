@@ -33,7 +33,7 @@ case class CockpitEditableDefinition(name: String,
                                      delete: (String) => Future[LastError],
                                      create: CockpitListElement,
                                      getAttributes: String => Future[Option[Seq[JsObject]]],
-                                      update: (String, JsObject) => Future[Option[Boolean]])
+                                     update: (String, JsObject) => Future[Option[Boolean]])
 
 trait CockpitEditable[A] extends Model[A] {
 
@@ -49,7 +49,7 @@ trait CockpitEditable[A] extends Model[A] {
   def getCockpitListElement(obj: A): CockpitListElement = {
     val js = Json.toJson(obj).as[JsObject]
     val id = (js \ "_id" \ "mongoId").as[String]
-    val attributes: Map[String, Option[String]] = cockpitMapping.zipWithIndex.map {
+    val attributes: Map[String, Option[String]] = cockpitMapping.filter(_.getShowInList).zipWithIndex.map {
       case (atr, index) =>
         (index.toString, atr.getListString(js))
     }.toMap
@@ -112,7 +112,7 @@ trait CockpitEditable[A] extends Model[A] {
       case None => Future(None)
       case Some(obj) =>
         val originalJs = Json.toJson(obj)
-        Logger.debug("original: "+ originalJs)
+        Logger.debug("original: " + originalJs)
         // apply transformers
         val updatedJs = transformer.foldLeft(originalJs)(
           (js, transformer) =>
@@ -121,7 +121,7 @@ trait CockpitEditable[A] extends Model[A] {
               Json.obj()
             }
         )
-        Logger.debug("updated: "+ updatedJs)
+        Logger.debug("updated: " + updatedJs)
         // check if the new js can still be deserialized
         updatedJs.asOpt[A] match {
           case None =>

@@ -4,7 +4,7 @@ import akka.actor.Actor
 import models.SmsMessage
 import play.api.Logger
 import helper.TestHelper
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{ JsObject, Json }
 
 /**
  * User: Björn Reimer

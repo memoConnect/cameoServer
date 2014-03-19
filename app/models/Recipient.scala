@@ -6,7 +6,7 @@ import helper.JsonHelper._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
-import helper.{IdHelper, MongoCollections}
+import helper.{ IdHelper, MongoCollections }
 
 /**
  * User: Björn Reimer

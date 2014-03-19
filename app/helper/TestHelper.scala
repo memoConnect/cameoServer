@@ -17,9 +17,9 @@ object TestHelper {
     values = values :+ (key, value)
   }
 
-  def getValues(key: String): Seq[JsObject] = values.filter(_._1.equals(key)).map{_._2}
+  def getValues(key: String): Seq[JsObject] = values.filter(_._1.equals(key)).map { _._2 }
 
-  def clear()  {
+  def clear() {
     values = Seq()
   }
 }
