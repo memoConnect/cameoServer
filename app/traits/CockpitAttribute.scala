@@ -11,7 +11,7 @@ trait CockpitAttribute {
   def getDisplayName: String
   def getData(js: JsObject): Option[JsValue]
   def getListString(js: JsObject): Option[String]
-  def transform(newData: JsObject): Reads[JsObject]
+  def getTransformer(updateJs: JsObject): Option[Reads[JsObject]]
 
   def getEditJson(js: JsObject): Option[JsObject] = {
     getData(js).map {

@@ -36,18 +36,18 @@ case class CockpitAttributeVerifiedString(name: String,
     }
   }
 
-  def transform(newJs: JsObject): Reads[JsObject] = {
+  def getTransformer(newJs: JsObject): Option[Reads[JsObject]] = {
     (newJs \ name).asOpt[JsValue] match {
-      case None                    => __.json.pickBranch
-      case Some(js) if !isEditable => __.json.pickBranch
+      case None                    => None
+      case Some(js) if !isEditable => None
       case Some(js) =>
         js.asOpt[String] match {
           case None =>
             Logger.error("Cannot be converted back to type: " + js)
-            __.json.pickBranch
+            None
           case Some(str) =>
             val vs = VerifiedString.create(str)
-            __.json.update((__ \ name).json.put(Json.toJson(vs)))
+            Some(__.json.update((__ \ name).json.put(Json.toJson(vs))))
         }
     }
   }

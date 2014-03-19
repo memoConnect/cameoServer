@@ -32,7 +32,8 @@ case class CockpitEditableDefinition(name: String,
                                      getList: ListOptions => Future[CockpitList],
                                      delete: (String) => Future[LastError],
                                      create: CockpitListElement,
-                                     getAttributes: String => Future[Option[Seq[JsObject]]])
+                                     getAttributes: String => Future[Option[Seq[JsObject]]],
+                                      update: (String, JsObject) => Future[Option[Boolean]])
 
 trait CockpitEditable[A] extends Model[A] {
 
@@ -100,4 +101,35 @@ trait CockpitEditable[A] extends Model[A] {
     col.insert(obj)
     getCockpitListElement(obj)
   }
+
+  def updateElement(id: String, updateJs: JsObject): Future[Option[Boolean]] = {
+    val transformer = cockpitMapping.map {
+      _.getTransformer(updateJs)
+    }.filter(_.isDefined).map(_.get)
+
+    // get original object
+    find(id).flatMap {
+      case None => Future(None)
+      case Some(obj) =>
+        val originalJs = Json.toJson(obj)
+        // apply transformers
+        val updatedJs = transformer.foldLeft(originalJs)(
+          (js, transformer) =>
+            js.transform(transformer).getOrElse {
+              Logger.error("transformer failed")
+              Json.obj()
+            }
+        )
+        // check if the new js can still be deserialized
+        val newObj: Option[A] = updatedJs.asOpt[A] match {
+          case None =>
+            Logger.error("could not deserialize after transform: " + updatedJs)
+            None
+          case Some(obj) => Some(obj)
+        }
+        // save to db
+        save(Json.toJson(obj).as[JsObject]).map { lastError => Some(lastError.updatedExisting) }
+    }
+  }
+
 }

@@ -9,7 +9,7 @@ import scala.Some
 import ExecutionContext.Implicits.global
 import helper.TwoFactorAuthAction
 import controllers.cockpit.ListController.ListOptions
-import play.api.libs.json.{JsValue, Json, Reads}
+import play.api.libs.json.{JsObject, JsValue, Json, Reads}
 import play.api.Logger
 import models.cockpit.CockpitEdit
 
@@ -27,19 +27,16 @@ object EditController {
     }
   }
 
-  /*def modify(elementName: String, id: String) = Action.async {
+  def modify(elementName: String, id: String) = Action.async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, ElementData.reads) {
-        listOptions =>
-        {
-          allEditables.find(definition => definition.name.equals(elementName)) match {
-            case None => Future(resNotFound("elementName"))
-            case Some(definition) => definition.getList(listOptions).map { list =>
-              resOK(list.toJson)
-            }
-          }
+      // todo: validate body
+      ListController.getEditable(elementName) match {
+        case None => Future(resNotFound("entity with name: "+elementName))
+        case Some(definition) => definition.update(id, request.body.as[JsObject]).map{
+          case None => resBadRequest("invalid element id or update values")
+          case Some(false) => resServerError("error saving update")
+          case Some(true) => resOK()
         }
       }
-
-  }*/
+  }
 }

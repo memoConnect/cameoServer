@@ -19,7 +19,7 @@ import helper.ResultHelper._
 object ListController extends ExtendedController {
 
   def allEditables = Seq(
-    new CockpitEditableDefinition("identity", Identity.getCockpitList, Identity.delete, Identity.newCockpitListElement, Identity.getAttributes)
+    new CockpitEditableDefinition("identity", Identity.getCockpitList, Identity.delete, Identity.newCockpitListElement, Identity.getAttributes, Identity.updateElement)
   )
 
   def getEditable(name: String): Option[CockpitEditableDefinition] = {
