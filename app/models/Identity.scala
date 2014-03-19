@@ -22,7 +22,6 @@ import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
-import play.modules.reactivemongo.json.BSONFormats._
 import reactivemongo.core.commands.Match
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsString
@@ -249,6 +248,10 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     col.find(query).cursor[Identity].collect[Seq]()
   }
 
+  def createDefault(): Identity = {
+    Identity.create(None, IdHelper.generateCameoId, None, None)
+  }
+
   def docVersion = 5
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
@@ -257,28 +260,11 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     3 -> IdentityEvolutions.removeConversations,
     4 -> IdentityEvolutions.removeAssets
   )
-
-  def cockpitListMapping(obj: Identity) = {
-    val attributes = Seq(
-      //    ("accountId", obj.accountId.map { _.toString }),
-      ("displayName", obj.displayName),
-      ("email", obj.email.map { _.value }),
-      ("phoneNumber", obj.phoneNumber.map { _.value }),
-      ("cameoId", Some(obj.cameoId))
-    //      ("preferredMessageType", Some(obj.preferredMessageType))
-    //    ("userKey", Some(obj.userKey)),
-    //    ("created", Some(PrintDate.toString(obj.created))),
-    //    ("lastUpdated", Some(PrintDate.toString(obj.lastUpdated))),
-    //    ("docVersion", Some(obj.docVersion.toString))
-    )
-    val id = obj.id.id
-    (attributes, id)
-  }
-
-  def cockpitEditMapping(obj: Identity): Seq[CockpitAttribute] = {
+  
+  def cockpitMapping: Seq[CockpitAttribute] = {
   Seq(
-      CockpitAttributeString(name = "displayName", isEditable = true, data = obj.displayName),
-      CockpitAttributeString(name = "cameoId", isEditable = false, data = Some(obj.cameoId))
+      CockpitAttributeString[Option[String]](name = "displayName", displayName = "Display Name", isEditable = true, showInList = true),
+      CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", showInList = true)
     )
   }
 
@@ -290,9 +276,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     new CockpitListFilter("CameoId", str => Json.obj("cameoId" -> Json.obj("$regex" -> str)))
   )
 
-  override def createDefault(): Identity = {
-    Identity.create(None, IdHelper.generateCameoId, None, None)
-  }
 }
 
 case class IdentityUpdate(phoneNumber: Option[VerifiedString],

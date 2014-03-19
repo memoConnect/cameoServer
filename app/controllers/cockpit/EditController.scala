@@ -10,17 +10,16 @@ import ExecutionContext.Implicits.global
 import helper.TwoFactorAuthAction
 import controllers.cockpit.ListController.ListOptions
 import play.api.libs.json.{JsValue, Json, Reads}
+import play.api.Logger
 
 object EditController {
 
   def edit(elementName: String, id: String) = Action.async {
-    ListController.allEditables.find(_.name.equals(elementName)) match {
+    ListController.getEditable(elementName) match {
       case None => Future(resNotFound("entity with name: "+elementName))
-      case Some(definition) => definition.getEdit(id, elementName).map {
-        maybeElement => maybeElement match {
-          case Some(element) => resOK(element.toJson)
-          case None => resNotFound(elementName+" object with id: "+id)
-        }
+      case Some(definition) => definition.getAttributes(id).map {
+        case Some(attributes) => resOK(attributes)
+        case None => resNotFound(elementName + " object with id: " + id)
       }
     }
   }

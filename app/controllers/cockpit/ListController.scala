@@ -19,8 +19,12 @@ import helper.ResultHelper._
 object ListController extends ExtendedController {
 
   def allEditables = Seq(
-    new CockpitEditableDefinition("identity", Identity.getList, Identity.delete, Identity.createCockpitElementAndInsert, Identity.getEdit)
+    new CockpitEditableDefinition("identity", Identity.getCockpitList, Identity.delete, Identity.newCockpitListElement, Identity.getAttributes)
   )
+
+  def getEditable(name: String): Option[CockpitEditableDefinition] = {
+    allEditables.find(definition => definition.name.equals(name))
+  }
 
   case class SelectedFilters(name: String, term: String)
 
@@ -40,12 +44,12 @@ object ListController extends ExtendedController {
     resOK(Json.obj("lists" -> Json.toJson(allNames)))
   }
 
-  def list(elementName: String) = TwoFactorAuthAction.async(parse.tolerantJson) {
+  def list(elementName: String) = Action.async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, ListOptions.reads) {
         listOptions =>
           {
-            allEditables.find(definition => definition.name.equals(elementName)) match {
+            getEditable(elementName) match {
               case None => Future(resNotFound("elementName"))
               case Some(definition) => definition.getList(listOptions).map { list =>
                 resOK(list.toJson)
@@ -56,7 +60,7 @@ object ListController extends ExtendedController {
   }
 
   def delete(elementName: String, id: String) = TwoFactorAuthAction.async {
-    allEditables.find(_.name.equals(elementName)) match {
+    getEditable(elementName) match {
       case None => Future(resNotFound("elementName"))
       case Some(obj) => obj.delete(id).map {
         _.ok match {
@@ -68,7 +72,7 @@ object ListController extends ExtendedController {
   }
 
   def create(elementName: String) = TwoFactorAuthAction {
-    allEditables.find(_.name.equals(elementName)) match {
+    getEditable(elementName) match {
       case None      => resNotFound("elementName")
       case Some(obj) => resOK(obj.create.toJson)
     }

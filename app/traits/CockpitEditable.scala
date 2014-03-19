@@ -4,8 +4,8 @@ import models.cockpit._
 import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands._
 import ExecutionContext.Implicits.global
-import controllers.cockpit.ListController.{SelectedFilters, ListOptions}
-import play.api.libs.json.Json
+import controllers.cockpit.ListController.{ SelectedFilters, ListOptions }
+import play.api.libs.json.{ JsObject, Json }
 import helper.JsonHelper._
 import scala.Some
 import scala.Some
@@ -19,6 +19,8 @@ import scala.Some
 import reactivemongo.core.commands.Limit
 import reactivemongo.core.commands.Skip
 import helper.IdHelper
+import play.modules.reactivemongo.json.BSONFormats._
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -29,35 +31,31 @@ import helper.IdHelper
 case class CockpitEditableDefinition(name: String,
                                      getList: ListOptions => Future[CockpitList],
                                      delete: (String) => Future[LastError],
-                                     create: CockpitListElement, // ToDo change to edit element
-                                     getEdit: (String, String) => Future[Option[CockpitElement]])
+                                     create: CockpitListElement,
+                                     getAttributes: String => Future[Option[Seq[JsObject]]])
 
 trait CockpitEditable[A] extends Model[A] {
 
-  def cockpitListMapping(obj: A): (Seq[(String, Option[String])], String)
-
-  def cockpitEditMapping(obj: A): Seq[CockpitAttribute]
+  def cockpitMapping: Seq[CockpitAttribute]
 
   def cockpitListFilters: Seq[CockpitListFilter]
 
   /**
    * Helper
    */
-  def getTitles(obj: A): Seq[String] = cockpitListMapping(obj)._1.map {
-    case (key, value) => key
-  }
+  def getTitles: Seq[String] = cockpitMapping.filter(_.getShowInList).map { _.getDisplayName }
 
-  def toCockpitListElement(obj: A): CockpitListElement = {
-    val (mapping, id) = cockpitListMapping(obj)
-    val attributes: Map[String, Option[String]] = mapping.filter(_._2.isDefined).map {
-      case (key, maybeValue) =>
-        val index = getTitles(obj).indexWhere(_.equals(key)).toString
-        (index, maybeValue)
+  def getCockpitListElement(obj: A): CockpitListElement = {
+    val js = Json.toJson(obj).as[JsObject]
+    val id = (js \ "_id" \ "mongoId").as[String]
+    val attributes: Map[String, Option[String]] = cockpitMapping.zipWithIndex.map {
+      case (atr, index) =>
+        (index.toString, atr.getListString(js))
     }.toMap
     new CockpitListElement(id, attributes)
   }
 
-  def getList(listOptions: ListOptions): Future[CockpitList] = {
+  def getCockpitList(listOptions: ListOptions): Future[CockpitList] = {
     val filterJsons = listOptions.filter.map {
       case SelectedFilters(filterName, term) =>
         // get filter from list
@@ -79,29 +77,27 @@ trait CockpitEditable[A] extends Model[A] {
 
     mongoDB.command(aggregationCommand).map {
       res =>
-      {
-        val list = res.toSeq.map { bson =>
-          Json.toJson(bson).as[A]
+        {
+          val list = res.toSeq.map { bson =>
+            Json.toJson(bson).as[A]
+          }
+          val elements = list.map(getCockpitListElement)
+          new CockpitList(getTitles, elements, cockpitListFilters)
         }
-        val elements = list.map(toCockpitListElement)
-        val titles = list.headOption.map(getTitles).getOrElse(Seq())
-        new CockpitList(titles, elements, cockpitListFilters)
-      }
     }
   }
 
-  def getEdit(id: String, name:String): Future[Option[CockpitElement]] = find(id).map {
-    maybeObj =>
-      maybeObj.map {
-        obj =>
-          val attributes = cockpitEditMapping(obj)
-          new CockpitElement(id, name, attributes)
+  def getAttributes(id: String): Future[Option[Seq[JsObject]]] =
+    find(id).map {
+      _.map { obj =>
+        val js = Json.toJson(obj).as[JsObject]
+        cockpitMapping.map(_.getEditJson(js)).filter(_.isDefined).map(_.get)
       }
-  }
+    }
 
-  def createCockpitElement: CockpitListElement = {
-    val identity = this.create(None, IdHelper.generateCameoId, None, None)
-    col.insert(identity)
-    toCockpitListElement(identity)
+  def newCockpitListElement: CockpitListElement = {
+    val obj = createDefault()
+    col.insert(obj)
+    getCockpitListElement(obj)
   }
 }
