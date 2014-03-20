@@ -133,7 +133,7 @@ class AuthenticationSpec extends StartedApp {
 
       status(res1) must equalTo(OK)
 
-      Await.result(res1, Duration.create(15, SECONDS) )
+      Await.result(res1, Duration.create(1, MINUTES) )
 
       val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
 
