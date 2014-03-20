@@ -20,7 +20,7 @@ import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
-import models.cockpit.attributes.{ CockpitAttributeDate, CockpitAttributeVerifiedString, CockpitAttributeString }
+import models.cockpit.attributes.{CockpitAttributeOptionList, CockpitAttributeDate, CockpitAttributeVerifiedString, CockpitAttributeString}
 
 /**
  * User: Björn Reimer
@@ -285,11 +285,14 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   )
 
   def cockpitMapping: Seq[CockpitAttribute] = {
+    val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
+
     Seq(
       CockpitAttributeString[Option[String]](name = "displayName", displayName = "Display Name", isEditable = true, showInList = true),
       CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", showInList = true),
       CockpitAttributeVerifiedString(name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),
       CockpitAttributeVerifiedString(name = "email", displayName = "Email", isEditable = true, showInList = true),
+      CockpitAttributeOptionList(name = "preferredMessageType", displayName = "Preferred Message Type", options = pmtOptions, isEditable = true ),
       CockpitAttributeString[String](name = "userKey", displayName = "User Key"),
       CockpitAttributeDate(name = "created", displayName = "Created"),
       CockpitAttributeDate(name = "lastUpdated", displayName = "Last Updated")
@@ -297,7 +300,8 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   //  id: MongoId,
-  //  accountId: Option[MongoId],
+  //  accountId: Option[MongoId],                                                            val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
+
   //  displayName: Option[String],
   //  email: Option[VerifiedString],
   //  phoneNumber: Option[VerifiedString],

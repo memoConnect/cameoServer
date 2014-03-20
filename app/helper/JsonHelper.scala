@@ -8,6 +8,7 @@ import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
 import play.modules.reactivemongo.json.BSONFormats
 import models.{ MongoId, VerifiedString }
+import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.json.JsArray
