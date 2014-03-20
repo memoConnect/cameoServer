@@ -20,7 +20,16 @@ import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
-import models.cockpit.attributes.{CockpitAttributeOptionList, CockpitAttributeDate, CockpitAttributeVerifiedString, CockpitAttributeString}
+import models.cockpit.attributes._
+import models.cockpit.attributes.CockpitAttributeDate
+import play.api.libs.json.JsArray
+import play.api.libs.json.JsString
+import scala.Some
+import play.api.libs.json.JsNumber
+import models.cockpit.attributes.CockpitAttributeString
+import models.cockpit.attributes.CockpitAttributeOptionList
+import models.cockpit.attributes.CockpitAttributeVerifiedString
+import play.api.libs.json.JsObject
 
 /**
  * User: Björn Reimer
@@ -288,12 +297,17 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
 
     Seq(
+      CockpitAttributeString[Option[MongoId]](name = "accountId", displayName = "Account Id", isEditable = false, showInList = false),
       CockpitAttributeString[Option[String]](name = "displayName", displayName = "Display Name", isEditable = true, showInList = true),
       CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", showInList = true),
       CockpitAttributeVerifiedString(name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),
       CockpitAttributeVerifiedString(name = "email", displayName = "Email", isEditable = true, showInList = true),
       CockpitAttributeOptionList(name = "preferredMessageType", displayName = "Preferred Message Type", options = pmtOptions, isEditable = true ),
       CockpitAttributeString[String](name = "userKey", displayName = "User Key"),
+      CockpitAttributeSimpleList("contacts", "Contacts"),
+      CockpitAttributeSimpleList("tokens", "Tokens"),
+      CockpitAttributeSimpleList("friendRequests", "Friend Requests"),
+      CockpitAttributeSimpleList("publicKeys", "Public Keys"),
       CockpitAttributeDate(name = "created", displayName = "Created"),
       CockpitAttributeDate(name = "lastUpdated", displayName = "Last Updated")
     )
