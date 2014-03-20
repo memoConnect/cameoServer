@@ -170,7 +170,6 @@ object ContactController extends ExtendedController {
         // check if the other identity is already in contact
         request.identity.contacts.exists(c => {
           if (c.identityId.equals(receiver)) {
-            Logger.debug("CONTACT:" + c.identityId.toJson + " COMPARE: " + receiver.toJson)
             true
           } else {
             false

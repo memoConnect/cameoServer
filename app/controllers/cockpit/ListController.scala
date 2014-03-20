@@ -3,7 +3,7 @@ package controllers.cockpit
 import play.api.mvc.Action
 import play.api.libs.json.{ Reads, Json }
 import scala.concurrent.{ ExecutionContext, Future }
-import models.Identity
+import models.{Account, Identity}
 import traits.{ CockpitEditableDefinition, ExtendedController }
 import ExecutionContext.Implicits.global
 import helper.TwoFactorAuthAction
@@ -16,8 +16,10 @@ import helper.ResultHelper._
  */
 object ListController extends ExtendedController {
 
+  // todo: find a better way to do this
   def allEditables = Seq(
-    new CockpitEditableDefinition("identity", Identity.getCockpitList, Identity.delete, Identity.newCockpitListElement, Identity.getAttributes, Identity.updateElement)
+    new CockpitEditableDefinition("identity", Identity.getCockpitList, Identity.delete, Identity.newCockpitListElement, Identity.getAttributes, Identity.updateElement),
+    new CockpitEditableDefinition("account", Account.getCockpitList, Account.delete, Account.newCockpitListElement, Account.getAttributes, Account.updateElement)
   )
 
   def getEditable(name: String): Option[CockpitEditableDefinition] = {
@@ -42,7 +44,7 @@ object ListController extends ExtendedController {
     resOK(Json.obj("lists" -> Json.toJson(allNames)))
   }
 
-  def list(elementName: String) = Action.async(parse.tolerantJson) {
+  def list(elementName: String) = TwoFactorAuthAction.async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, ListOptions.reads) {
         listOptions =>

@@ -20,9 +20,9 @@ case class CockpitAttributeString[A](name: String,
       case Some(attributeJs) =>
         attributeJs.asOpt[A] match {
           case None =>
-            Logger.error("AttributeDoes not match specified type: " + js)
+            Logger.error("Attribute " + name + " does not match specified type: " + js)
             None
-          case Some(obj) => Some(JsString(Json.toJson(obj).toString))
+          case Some(obj) => Some(Json.toJson(obj))
 
         }
     }

@@ -302,32 +302,16 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", showInList = true),
       CockpitAttributeVerifiedString(name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),
       CockpitAttributeVerifiedString(name = "email", displayName = "Email", isEditable = true, showInList = true),
-      CockpitAttributeOptionList(name = "preferredMessageType", displayName = "Preferred Message Type", options = pmtOptions, isEditable = true ),
+      CockpitAttributeString[String](name = "preferredMessageType", displayName = "Preferred Message Type", isEditable = true ),
       CockpitAttributeString[String](name = "userKey", displayName = "User Key"),
-      CockpitAttributeSimpleList("contacts", "Contacts"),
+      CockpitAttributeFilter("contacts", "Contacts", "identity", "ID"),
       CockpitAttributeSimpleList("tokens", "Tokens"),
       CockpitAttributeSimpleList("friendRequests", "Friend Requests"),
       CockpitAttributeSimpleList("publicKeys", "Public Keys"),
       CockpitAttributeDate(name = "created", displayName = "Created"),
-      CockpitAttributeDate(name = "lastUpdated", displayName = "Last Updated")
+      CockpitAttributeDate(name = "lastUpdated", displayName = "Last Updated (not working yet)")
     )
   }
-
-  //  id: MongoId,
-  //  accountId: Option[MongoId],                                                            val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
-
-  //  displayName: Option[String],
-  //  email: Option[VerifiedString],
-  //  phoneNumber: Option[VerifiedString],
-  //  cameoId: String,
-  //  preferredMessageType: String, // "mail" or "sms"
-  //  userKey: String,
-  //  contacts: Seq[Contact],
-  //  tokens: Seq[Token],
-  //  friendRequests: Seq[MongoId],
-  //  publicKeys: Seq[PublicKey],
-  //  created: Date,
-  //  lastUpdated: Date
 
   def cockpitListFilters: Seq[CockpitListFilter] = Seq(
     new CockpitListFilter("ID", str => Json.obj("_id.mongoId" -> Json.obj("$regex" -> str))),

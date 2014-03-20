@@ -105,7 +105,6 @@ trait CockpitEditable[A] extends Model[A] {
       case None => Future(None)
       case Some(obj) =>
         val originalJs = Json.toJson(obj)
-        Logger.debug("original: " + originalJs)
         // apply transformers
         val updatedJs = transformer.foldLeft(originalJs)(
           (js, transformer) =>
@@ -114,7 +113,6 @@ trait CockpitEditable[A] extends Model[A] {
               Json.obj()
             }
         )
-        Logger.debug("updated: " + updatedJs)
         // check if the new js can still be deserialized
         updatedJs.asOpt[A] match {
           case None =>

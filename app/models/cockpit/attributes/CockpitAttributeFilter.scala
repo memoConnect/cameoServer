@@ -10,8 +10,7 @@ import models.MongoId
 case class CockpitAttributeFilter(name: String,
                                   displayName: String,
                                   listName: String,
-                                  filterName: String
-                                   ) extends CockpitAttribute {
+                                  filterName: String) extends CockpitAttribute {
 
   def getTypeName = "filter"
 
@@ -24,12 +23,33 @@ case class CockpitAttributeFilter(name: String,
   def getDisplayName = displayName
 
   def getData(js: JsObject): Option[JsValue] = {
-    (js \ name).asOpt[MongoId].map {
-      id =>
-        Json.obj(
-          "filterName" -> filterName,
-          "listName" -> listName,
-          "filterTerm" -> id.id)
+    val res = Json.obj(
+      "filterName" -> filterName,
+      "listName" -> listName)
+
+    (js \ name).asOpt[MongoId] match {
+      case Some(id) => Some(res ++ Json.obj("filterTerm" -> id.id))
+      case None =>
+        (js \ name).asOpt[Seq[MongoId]] match {
+          case Some(list) =>
+            val strings = list.map(_.id)
+            Some(res ++ Json.obj("filterTerm" -> strings.mkString("(", "|", ")")))
+          case None =>
+            (js \ name).asOpt[Seq[JsObject]] match {
+              case Some(list2) =>
+                // special hack for contacts todo: make this generic
+                list2.headOption.flatMap {
+                  head =>
+                    (head \ "identityId").asOpt[MongoId].isDefined match {
+                      case false => None
+                      case true =>
+                        val strings = list2.map(js => (js \ "identityId").as[MongoId].id)
+                        Some(res ++ Json.obj("filterTerm" -> strings.mkString("(", "|", ")")))
+                    }
+                }
+              case None => None
+            }
+        }
     }
   }
 
