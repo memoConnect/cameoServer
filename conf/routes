@@ -77,6 +77,9 @@ OPTIONS        /api/v1/*foo                                   controllers.TokenC
 GET            /api/v1/util/dumpDb                            controllers.Application.dumpDb()
 GET            /api/v1/util/loadDb                            controllers.Application.loadFixtures()
 
+# check app to support monitoring
+GET            /api/v1/util/checkApp                          controllers.Application.checkApp()
+
 # Redirect for Shorturls
 GET            /p/:id                                         controllers.ShortUrlController.redirect(urlType = "p", id: String)
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
