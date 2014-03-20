@@ -1,10 +1,7 @@
 package models
 
 import play.api.libs.json.{ JsObject, Writes, Format, Json }
-import helper.JsonHelper._
 import traits.Model
-import scala.concurrent.Future
-import reactivemongo.core.commands.LastError
 import helper.{ IdHelper, MongoCollections }
 
 /**

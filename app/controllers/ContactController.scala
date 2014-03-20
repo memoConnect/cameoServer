@@ -10,7 +10,6 @@ import helper.ResultHelper._
 import scala.Some
 import ExecutionContext.Implicits.global
 import constants.Contacts._
-import reactivemongo.core.commands.LastError
 import play.api.mvc.SimpleResult
 import play.api.Logger
 

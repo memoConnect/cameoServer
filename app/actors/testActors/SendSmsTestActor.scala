@@ -2,7 +2,6 @@ package actors.testActors
 
 import akka.actor.Actor
 import models.SmsMessage
-import play.api.Logger
 import helper.TestHelper
 import play.api.libs.json.{ JsObject, Json }
 

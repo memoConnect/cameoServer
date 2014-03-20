@@ -8,7 +8,6 @@ import helper.IdHelper
 import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands.LastError
 import ExecutionContext.Implicits.global
-import play.api.Logger
 import helper.MongoCollections._
 
 /**

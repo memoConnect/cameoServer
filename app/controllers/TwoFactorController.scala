@@ -8,7 +8,6 @@ import play.api.libs.json.{ Json, Reads }
 import models.TwoFactorToken
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
-import play.api.Logger
 
 /**
  * User: Björn Reimer

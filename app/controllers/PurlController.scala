@@ -3,12 +3,10 @@ package controllers
 import play.api.libs.json.{ JsObject, Json }
 import traits.ExtendedController
 import models._
-import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
-import helper.AuthAction
 import scala.concurrent.Future
 import helper.ResultHelper._
-import play.api.mvc.{ SimpleResult, Result, Action }
+import play.api.mvc.Action
 import scala.Some
 import play.api.mvc.SimpleResult
 

@@ -1,13 +1,9 @@
 package helper
 
-import play.api.mvc.{ Action, SimpleResult, Results }
+import play.api.mvc.Results
 import play.api.mvc.Results._
 import play.api.libs.json._
-import helper.JsonHelper._
 import constants.Notifications._
-import scala.concurrent.Future
-import traits.Model
-import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.mvc.SimpleResult
 

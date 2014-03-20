@@ -3,11 +3,9 @@ package services
 import models.{ TwoFactorSmsKey, SmsMessage, VerifiedString, Identity }
 import scala.concurrent.{ ExecutionContext, Future }
 import play.api.libs.concurrent.Akka
-import actors.SendMailActor
 import play.api.Play.current
 import ExecutionContext.Implicits.global
-import global._
-import play.api.{ Play, Logger }
+import play.api.Logger
 
 /**
  * User: Björn Reimer

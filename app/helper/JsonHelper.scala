@@ -1,22 +1,15 @@
 package helper
 
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.Play.current
-import play.modules.reactivemongo.json.collection.JSONCollection
-
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
-import java.text.SimpleDateFormat
-import java.util.{ Date, TimeZone }
-import reactivemongo.api.indexes.{ IndexType, Index }
+import java.util.Date
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
 import play.modules.reactivemongo.json.BSONFormats
 import models.{ MongoId, VerifiedString }
-import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import org.mindrot.jbcrypt.BCrypt
-import play.api.Logger
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsObject

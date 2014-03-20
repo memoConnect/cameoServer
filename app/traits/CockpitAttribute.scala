@@ -1,8 +1,6 @@
 package traits
 
 import play.api.libs.json._
-import play.api.Logger
-import models.VerifiedString
 
 trait CockpitAttribute {
 

@@ -8,8 +8,6 @@ import helper.{ OutputLimits, AuthAction }
 import play.api.libs.json._
 import helper.ResultHelper._
 import scala.Some
-import play.api.libs.json.JsObject
-import scala.Some
 
 /**
  * User: Björn Reimer

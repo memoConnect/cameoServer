@@ -6,31 +6,20 @@ import java.util.Date
 import traits.{ CockpitAttribute, CockpitEditable, Model }
 import play.api.libs.json.Reads._
 import scala.concurrent.{ ExecutionContext, Future }
-import helper.{ PrintDate, IdHelper }
+import helper.IdHelper
 import ExecutionContext.Implicits.global
 import constants.Messaging._
 import constants.Contacts._
 import reactivemongo.core.commands._
 import helper.JsonHelper._
-import play.api.Logger
 import helper.MongoCollections._
 import reactivemongo.core.errors.DatabaseException
 import models.cockpit._
-import reactivemongo.bson.BSONInteger
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
-import reactivemongo.core.commands.Match
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsString
-import scala.Some
-import play.api.libs.json.JsNumber
-import reactivemongo.core.commands.Limit
-import play.api.libs.json.JsObject
-import reactivemongo.core.commands.Skip
-import controllers.cockpit.ListController.{ SelectedFilters, ListOptions }
 import models.cockpit.attributes.{ CockpitAttributeDate, CockpitAttributeVerifiedString, CockpitAttributeString }
 
 /**
@@ -67,7 +56,9 @@ case class Identity(id: MongoId,
     try {
       val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
       //    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
-      Identity.col.update(query, set).map { _.updatedExisting }
+      Identity.col.update(query, set).map {
+        _.updatedExisting
+      }
     } catch {
       case e: DatabaseException => Future(false)
     }
@@ -77,7 +68,9 @@ case class Identity(id: MongoId,
     val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$pull" ->
       Json.obj("contacts" -> Json.obj("_id" -> contactId)))
-    Identity.col.update(query, set).map { _.updatedExisting }
+    Identity.col.update(query, set).map {
+      _.updatedExisting
+    }
   }
 
   def addAsset(assetId: MongoId): Future[LastError] = {
@@ -107,12 +100,16 @@ case class Identity(id: MongoId,
 
   def addPublicKey(publicKey: PublicKey): Future[Boolean] = {
     val set = Json.obj("$addToSet" -> Json.obj("publicKeys" -> publicKey))
-    Identity.col.update(query, set).map { _.ok }
+    Identity.col.update(query, set).map {
+      _.ok
+    }
   }
 
   def deletePublicKey(id: MongoId): Future[Boolean] = {
     val set = Json.obj("$pull" -> Json.obj("publicKeys" -> Json.obj("_id" -> id)))
-    Identity.col.update(query, set).map { _.updatedExisting }
+    Identity.col.update(query, set).map {
+      _.updatedExisting
+    }
   }
 
   def editPublicKey(id: MongoId, update: PublicKeyUpdate): Future[Boolean] = {
@@ -123,23 +120,37 @@ case class Identity(id: MongoId,
     }
     val publicKeyQuery = query ++ arrayQuery("publicKeys", id)
     val set = Json.obj("$set" -> setValues)
-    Identity.col.update(publicKeyQuery, set).map { _.updatedExisting }
+    Identity.col.update(publicKeyQuery, set).map {
+      _.updatedExisting
+    }
   }
 
   def update(update: IdentityUpdate): Future[Boolean] = {
 
-    val newMail = update.email.flatMap { getNewValueVerifiedString(this.email, _) }
-    val newPhoneNumber = update.phoneNumber.flatMap { getNewValueVerifiedString(this.phoneNumber, _) }
-    val newDisplayName = update.displayName.flatMap { getNewValueString(this.displayName, _) }
+    val newMail = update.email.flatMap {
+      getNewValueVerifiedString(this.email, _)
+    }
+    val newPhoneNumber = update.phoneNumber.flatMap {
+      getNewValueVerifiedString(this.phoneNumber, _)
+    }
+    val newDisplayName = update.displayName.flatMap {
+      getNewValueString(this.displayName, _)
+    }
 
     val setValues = {
-      maybeEmptyJsValue("email", newMail.map { Json.toJson(_) }) ++
-        maybeEmptyJsValue("phoneNumber", newPhoneNumber.map { Json.toJson(_) }) ++
+      maybeEmptyJsValue("email", newMail.map {
+        Json.toJson(_)
+      }) ++
+        maybeEmptyJsValue("phoneNumber", newPhoneNumber.map {
+          Json.toJson(_)
+        }) ++
         maybeEmptyString("displayName", newDisplayName)
     }
     val set = Json.obj("$set" -> setValues)
 
-    Identity.col.update(query, set).map { _.updatedExisting }
+    Identity.col.update(query, set).map {
+      _.updatedExisting
+    }
   }
 
   def getGroup(groupName: String): Seq[Contact] = {
@@ -180,10 +191,16 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         maybeEmptyString("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        maybeEmptyJsValue("email", i.email.map { _.toJson }) ++
-        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map { _.toJson }) ++
+        maybeEmptyJsValue("email", i.email.map {
+          _.toJson
+        }) ++
+        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
+          _.toJson
+        }) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
-        Json.obj("publicKeys" -> i.publicKeys.map { _.toJson }) ++
+        Json.obj("publicKeys" -> i.publicKeys.map {
+          _.toJson
+        }) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
@@ -193,8 +210,12 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        maybeEmptyJsValue("email", i.email.map { _.toJson }) ++
-        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map { _.toJson }) ++
+        maybeEmptyJsValue("email", i.email.map {
+          _.toJson
+        }) ++
+        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
+          _.toJson
+        }) ++
         Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) ++
         Json.obj("publicKeys" -> i.publicKeys.map(pk => pk.key))
   }
@@ -254,6 +275,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   def docVersion = 5
+
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
     1 -> IdentityEvolutions.addFriedRequest,

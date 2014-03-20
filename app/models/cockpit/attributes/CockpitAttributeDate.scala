@@ -17,8 +17,6 @@ case class CockpitAttributeDate(name: String,
   def getDisplayName = displayName
 
   def getData(js: JsObject): Option[JsValue] = {
-    Logger.debug("DATE: " + (js \ name \ "$date").as[JsValue])
-
     (js \ name \ "$date").asOpt[Long].map {
       num =>
         val date = new Date(num)

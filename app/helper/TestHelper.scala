@@ -1,7 +1,5 @@
 package helper
 
-import akka.actor.Props
-import actors.testActors.SendSmsTestActor
 import play.api.libs.json.JsObject
 
 /**

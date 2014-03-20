@@ -4,19 +4,11 @@ import play.api.mvc.Action
 import play.api.libs.json._
 import traits.ExtendedController
 import models._
-import reactivemongo.core.errors.DatabaseException
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 import helper.ResultHelper._
-import helper.JsonHelper._
-import helper.{ IdHelper, UserNotification, AuthAction }
-import play.api.libs.json
+import helper.AuthAction
 import scala.Some
-import constants.Messaging._
-import scala.Some
-import scala.Some
-import scala.Some
-import java.util.Date
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._

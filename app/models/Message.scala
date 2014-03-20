@@ -1,14 +1,13 @@
 package models
 
 import java.util.Date
-import traits.{ Model }
+import traits.Model
 import play.api.libs.json._
 import helper.{ MongoCollections, IdHelper }
 import play.api.libs.functional.syntax._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import helper.JsonHelper._
-import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.core.commands.LastError
 
 /**

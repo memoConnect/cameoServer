@@ -3,8 +3,6 @@
  * Date: 5/25/13
  * Time: 4:27 PM
  */
-import actors.SendSmsActor
-import akka.actor.Props
 import helper.DbAdminUtilities
 import models.GlobalState
 import play.api.libs.json.{ JsValue, Json }
@@ -16,7 +14,6 @@ import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Play.current
 import helper.MongoCollections._
-import actors.testActors.SendSmsTestActor
 import info.schleichardt.play.embed.mongo.DynamicEmbedMongoPort
 import scala.collection.JavaConverters._
 

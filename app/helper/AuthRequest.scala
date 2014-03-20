@@ -3,7 +3,7 @@ package helper
 import play.api.mvc._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import models.{ TwoFactorToken, MongoId, Identity, Token }
+import models.{ MongoId, Identity }
 import helper.ResultHelper._
 import constants.Authentication._
 

@@ -10,7 +10,6 @@ import scala.concurrent.Future
 import models._
 import constants.Messaging._
 import play.api.libs.json.JsString
-import helper.JsonHelper._
 import play.api.libs.concurrent.Akka
 
 /**

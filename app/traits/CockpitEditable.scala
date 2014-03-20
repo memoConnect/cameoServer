@@ -7,18 +7,11 @@ import ExecutionContext.Implicits.global
 import controllers.cockpit.ListController.{ SelectedFilters, ListOptions }
 import play.api.libs.json.{ JsObject, Json }
 import helper.JsonHelper._
-import scala.Some
-import scala.Some
-import reactivemongo.core.commands.Match
-import scala.Some
-import reactivemongo.core.commands.Limit
-import reactivemongo.core.commands.Skip
 import helper.MongoCollections._
 import reactivemongo.core.commands.Match
 import scala.Some
 import reactivemongo.core.commands.Limit
 import reactivemongo.core.commands.Skip
-import helper.IdHelper
 import play.modules.reactivemongo.json.BSONFormats._
 import play.api.Logger
 

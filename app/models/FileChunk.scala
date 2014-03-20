@@ -1,19 +1,12 @@
 package models
 
-import play.modules.reactivemongo.json.collection.JSONCollection
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.libs.json.{ Reads, Json, Format }
+import play.api.libs.json.Format
 import play.api.Play.current
-import traits.Model
-import helper.JsonHelper._
 import helper.IdHelper
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import java.util.Date
 import traits.Model
 import play.api.libs.json.Reads._
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
 import helper.MongoCollections._
 
 /**

@@ -1,14 +1,12 @@
 package controllers.cockpit
 
 import play.api.mvc.Action
-import play.api.libs.json.{ Reads, Json, JsObject }
+import play.api.libs.json.{ Reads, Json }
 import scala.concurrent.{ ExecutionContext, Future }
-import models.cockpit.CockpitList
 import models.Identity
-import org.omg.CosNaming.NamingContextPackage.NotFound
-import traits.{ CockpitEditableDefinition, Model, CockpitEditable, ExtendedController }
+import traits.{ CockpitEditableDefinition, ExtendedController }
 import ExecutionContext.Implicits.global
-import helper.{ TwoFactorAuthAction, OutputLimits }
+import helper.TwoFactorAuthAction
 import helper.ResultHelper._
 
 /**

@@ -4,7 +4,7 @@ import traits.Model
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import reactivemongo.api.indexes.{ IndexType, Index }
+import reactivemongo.api.indexes.IndexType
 import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global

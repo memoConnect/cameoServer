@@ -6,7 +6,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 import models._
 import constants.Messaging._
 import scala.concurrent.Future
-import helper.JsonHelper._
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
 import scala.Some

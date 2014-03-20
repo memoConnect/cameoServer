@@ -6,8 +6,7 @@ import helper.{ MongoCollections, IdHelper }
 import traits.Model
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import play.api.mvc.{ Results, SimpleResult }
-import play.mvc.Result
+import play.api.mvc.SimpleResult
 import helper.ResultHelper._
 import play.api.Logger
 import helper.JsonHelper._
