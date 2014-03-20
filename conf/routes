@@ -99,7 +99,7 @@ GET            /v/:id                                         controllers.ShortU
 
 # Cockpit WebClient
 GET            /cockpit/                                      controllers.Assets.at(path="/public/cockpit", file="index.html")
-GET            /cockpit                                       controllers.Assets.at(path="/public/cockpit", file="index.html")
+GET            /cockpit                                       controllers.Application.redirect(url = "/cockpit/")
 GET            /cockpit/*file                                 controllers.Assets.at(path="/public/cockpit", file)
 
 ##
