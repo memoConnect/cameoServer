@@ -297,7 +297,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
 
     Seq(
-      CockpitAttributeString[Option[MongoId]](name = "accountId", displayName = "Account Id", isEditable = false, showInList = false),
+      CockpitAttributeFilter(name = "accountId", displayName = "Account Id", listName = "account", filterName = "ID" ),
       CockpitAttributeString[Option[String]](name = "displayName", displayName = "Display Name", isEditable = true, showInList = true),
       CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", showInList = true),
       CockpitAttributeVerifiedString(name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),

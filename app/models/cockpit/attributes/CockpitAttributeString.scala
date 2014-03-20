@@ -22,7 +22,7 @@ case class CockpitAttributeString[A](name: String,
           case None =>
             Logger.error("AttributeDoes not match specified type: " + js)
             None
-          case Some(obj) => Some(Json.toJson(obj))
+          case Some(obj) => Some(JsString(Json.toJson(obj).toString))
 
         }
     }
