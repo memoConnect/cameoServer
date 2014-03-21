@@ -49,14 +49,9 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/api/v1/purl/$id<[^/]+>")
     )
 
-    val twoFactorAuthRoutes: Seq[(String, String)] = Seq(
-      (GET, "/api/cockpit/v1/lists"),
-      (POST, "/api/cockpit/v1/$elementName<[^/]+>"),
-      (POST, "/api/cockpit/v1/$elementName<[^/]+>/new"),
-      (DELETE, "/api/cockpit/v1/$elementName<[^/]+>/$id<[^/]+>"),
-      (GET, "/api/cockpit/v1/$elementName<[^/]+>/$id<[^/]+>"),
-      (PUT, "/api/cockpit/v1/$elementName<[^/]+>/$id<[^/]+>")
-    )
+    val twoFactorAuthRoutes: Seq[(String, String)] =
+      // all that contain /api/cockpit/
+      allRoutes.filter(route => route._2.startsWith("/api/cockpit") && ! route._2.contains("twoFactorAuth"))
 
     // all routes not specified as nonAuth or twoFactorAuth are assumed to be auth
     val authRoutes: Seq[(String, String)] = allRoutes.sorted.diff(nonAuthRoutes.sorted).diff(twoFactorAuthRoutes.sorted)
