@@ -6,6 +6,8 @@ import reactivemongo.api.indexes.{ IndexType, Index }
 import play.api.Play.current
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
+import reactivemongo.bson.BSONDocument
+import play.api.libs.json.Json
 
 /**
  * User: Björn Reimer
@@ -41,12 +43,16 @@ object MongoCollections {
   }
   lazy val twoFactorTokenCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("twoFactorTokens")
-    // todo ttl
+    // expire after 1 hour
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> (1*60*60))).get
+    col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
     col
   }
   lazy val twoFactorSmsKeyCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("twoFactorSmsKeys")
-    // todo ttl
+    // expire after 10 min
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> (10*60))).get
+    col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
     col
   }
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")

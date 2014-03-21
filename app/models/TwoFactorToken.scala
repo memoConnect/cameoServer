@@ -51,7 +51,8 @@ object TwoFactorToken extends Model[TwoFactorToken] {
 }
 
 case class TwoFactorSmsKey(id: MongoId,
-                           identityId: MongoId) {
+                           identityId: MongoId,
+                           created: Date) {
   def toJson: JsValue = Json.toJson(this)(TwoFactorSmsKey.outputWrites)
 
   override def toString: String = this.id.id
