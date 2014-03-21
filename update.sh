@@ -2,6 +2,8 @@
 
 set -e
 
+
+
 case "$1" in
    "server")
 	updateServer=true
@@ -18,6 +20,10 @@ case "$1" in
       exit 1
       ;;
 esac
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo -e "\e[33m[cameo - Changing to install dir: ${DIR}]\033[0m"
+cd ${DIR}
 
 fileName="UPDATING"
 # check if we are alreade updating
