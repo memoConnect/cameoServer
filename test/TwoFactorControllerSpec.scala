@@ -33,6 +33,8 @@ class TwoFactorControllerSpec extends StartedApp {
 
     "check if smsKey was received" in {
 
+      Thread.sleep(500)
+
       val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
       sms.size must beEqualTo(1)
 
