@@ -15,7 +15,7 @@ trait StartedApp extends Specification with BeforeAfter {
     Play.maybeApplication match {
       case Some(a) =>
       case None =>
-        Play.start(Config.app)
+        Play.start(TestConfig.app)
     }
   }
 

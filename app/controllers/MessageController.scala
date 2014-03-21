@@ -8,33 +8,14 @@ import models._
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import reactivemongo.core.commands._
-import play.modules.reactivemongo.json.BSONFormats._
-import reactivemongo.bson._
 import java.util.Date
-import helper.JsonHelper._
 import play.api.libs.functional.syntax._
-import reactivemongo.core.commands.Group
-import reactivemongo.core.commands.Sort
-import reactivemongo.core.commands.Match
-import reactivemongo.bson.BSONDateTime
-import reactivemongo.bson.BSONString
 import scala.Some
-import reactivemongo.core.commands.SumValue
-import reactivemongo.bson.BSONInteger
-import reactivemongo.core.commands.Unwind
-import reactivemongo.core.commands.Limit
-import reactivemongo.core.commands.Project
-import play.api.libs.json.JsObject
-import reactivemongo.core.commands.Skip
-import reactivemongo.core.commands.Ascending
 import java.lang.NumberFormatException
 import play.api.libs.concurrent.Akka
 import akka.actor.Props
 import actors.SendMessageActor
 import play.api.Play.current
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.Logger
 
 /**
  * User: Björn Reimer

@@ -28,3 +28,4 @@ conf/version*
 /*.tmp
 /mode
 /nohup*
+*.log

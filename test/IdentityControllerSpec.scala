@@ -3,9 +3,9 @@ import play.api.Logger
 import play.api.test._
 import play.api.libs.json.{ Json, JsObject }
 import play.api.test.Helpers._
-import testHelper.MockupFactory._
+import testHelper.Stuff._
 import org.specs2.mutable._
-import testHelper.Config._
+import testHelper.TestConfig._
 import testHelper.StartedApp
 
 /**

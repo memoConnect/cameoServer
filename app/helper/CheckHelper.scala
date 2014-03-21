@@ -1,12 +1,10 @@
 package helper
 
 import play.api.mvc.BodyParsers.parse
-import play.api.libs.json.{ Json, JsValue }
+import play.api.libs.json.Json
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat
-import helper.ResultHelper._
 import scala.Some
-import play.api.Logger
 
 /**
  * User: Björn Reimer

@@ -4,7 +4,7 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import java.text.SimpleDateFormat
 import org.mindrot.jbcrypt.BCrypt
-import java.util.{ TimeZone, Date }
+import java.util.TimeZone
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.concurrent.{ Await, ExecutionContext, Future }
 import ExecutionContext.Implicits.global
@@ -32,6 +32,13 @@ trait Model[A] {
 
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
 
+  def delete(id: MongoId): Future[LastError] = {
+    val query = Json.obj("_id" -> id)
+    col.remove(query)
+  }
+
+  def delete(id: String): Future[LastError] = delete(new MongoId(id))
+
   implicit def mongoFormat: Format[A]
 
   def evolutions: Map[Int, Reads[JsObject]]
@@ -41,6 +48,8 @@ trait Model[A] {
   def save(js: JsObject): Future[LastError] = {
     col.save(js)
   }
+
+  def createDefault(): A
 
   /*
    * Helper functions

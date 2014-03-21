@@ -1,11 +1,11 @@
 package controllers
 
 import play.api.mvc._
-import play.api.libs.json.{ Json, JsValue }
+import play.api.libs.json.JsValue
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
-import models.{ MongoId, Identity, Account, Token }
+import models.{ Identity, Account, Token }
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.ResultHelper._
 import play.api.Logger
@@ -58,7 +58,7 @@ object TokenController extends ExtendedController {
                       // check loginNames and passwords match
                       if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginName)) {
                         // everything is ok
-                        val token = Token.create
+                        val token = Token.createDefault
                         identity.addToken(token)
                         resOK(token.toJson)
                       } else {

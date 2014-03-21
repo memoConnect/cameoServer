@@ -3,24 +3,19 @@
  * Date: 5/25/13
  * Time: 4:27 PM
  */
-
 import helper.DbAdminUtilities
-import models.{ GlobalState, Account }
+import models.GlobalState
 import play.api.libs.json.{ JsValue, Json }
 import play.api.{ Logger, Play, GlobalSettings }
-import info.schleichardt.play.embed.mongo.DynamicEmbedMongoPort
 import play.api.mvc.EssentialAction
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import reactivemongo.api.indexes.Index
-import reactivemongo.api.MongoDriver
-import scala.collection.JavaConverters._
 import play.api.http.HeaderNames._
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Play.current
-import helper.JsonHelper._
 import helper.MongoCollections._
+import info.schleichardt.play.embed.mongo.DynamicEmbedMongoPort
+import scala.collection.JavaConverters._
 
 object Global extends GlobalSettings with DynamicEmbedMongoPort {
 
@@ -31,13 +26,14 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
   override def doFilter(action: EssentialAction): EssentialAction = EssentialAction {
     request =>
       action.apply(request).map(_.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT, OPTIONS",
-        ACCESS_CONTROL_ALLOW_ORIGIN -> "*", ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization, Content-type, X-File-Name, X-Max-Chunks, X-File-Size, X-File-Type, X-Index"))
+        ACCESS_CONTROL_ALLOW_ORIGIN -> "*", ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization, Content-type, X-File-Name, X-Max-Chunks, X-File-Size, X-File-Type, X-Index, X-TwoFactorToken"))
   }
 
   override def onStart(app: play.api.Application) = {
 
     // load fixtures
     if (Play.configuration.getString("mongo.init.loadOnStart").getOrElse("fail").equalsIgnoreCase("true")) {
+
       // only load if there is no data in the DB alread
       val futureRes: Future[Boolean] = conversationCollection.find(Json.obj()).one[JsValue].flatMap {
         case None =>

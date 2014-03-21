@@ -1,10 +1,10 @@
 package models
 
-import traits.Model
+import traits.{CockpitEditable, CockpitAttribute, Model}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import reactivemongo.api.indexes.{ IndexType, Index }
+import reactivemongo.api.indexes.IndexType
 import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
@@ -16,6 +16,17 @@ import helper.JsonHelper._
 import helper.MongoCollections._
 import scala.Some
 import play.api.libs.json.JsObject
+import constants.Messaging._
+import scala.Some
+import play.api.libs.json.JsObject
+import models.cockpit.attributes._
+import models.cockpit.attributes.CockpitAttributeFilter
+import scala.Some
+import models.cockpit.attributes.CockpitAttributeString
+import models.cockpit.attributes.CockpitAttributeSimpleList
+import models.cockpit.attributes.CockpitAttributeVerifiedString
+import play.api.libs.json.JsObject
+import models.cockpit.CockpitListFilter
 
 /**
  * User: Björn Reimer
@@ -48,7 +59,7 @@ case class Account(id: MongoId,
   }
 }
 
-object Account extends Model[Account] {
+object Account extends Model[Account] with CockpitEditable[Account] {
 
   def col = accountCollection
 
@@ -98,6 +109,30 @@ object Account extends Model[Account] {
       }
     }
   }
+
+  def createDefault(): Account = {
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", Seq(), None, None, new Date, new Date)
+  }
+
+  def cockpitMapping: Seq[CockpitAttribute] = {
+    val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
+
+    Seq(
+      CockpitAttributeString[String](name = "loginName", displayName = "Login Name", showInList = true),
+      CockpitAttributeString[String](name = "password", displayName = "Password"),
+      CockpitAttributeString[Option[String]](name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),
+      CockpitAttributeString[Option[String]](name = "email", displayName = "Email", isEditable = true, showInList = true),
+      CockpitAttributeFilter("identities", "Identities", "identity", "ID"),
+      CockpitAttributeDate(name = "created", displayName = "Created"),
+      CockpitAttributeDate(name = "lastUpdated", displayName = "Last Updated (not working yet)")
+    )
+  }
+
+  def cockpitListFilters: Seq[CockpitListFilter] = Seq(
+    new CockpitListFilter("ID", str => Json.obj("_id.mongoId" -> Json.obj("$regex" -> str))),
+    new CockpitListFilter("Email", str => Json.obj("email" -> Json.obj("$regex" -> str))),
+    new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
+  )
 
 }
 
@@ -156,5 +191,9 @@ object AccountReservation extends Model[AccountReservation] {
   def deleteReserved(loginName: String): Future[LastError] = {
     val query = Json.obj("loginName" -> loginName)
     col.remove(query)
+  }
+
+  def createDefault(): AccountReservation = {
+    new AccountReservation(IdHelper.randomString(8), IdHelper.generateMongoId(), new Date)
   }
 }

@@ -2,7 +2,6 @@ package helper
 
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
-import play.api.libs.json.Reads
 import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Logger
@@ -10,7 +9,6 @@ import scala.io.Source
 import models.{ GlobalState, MongoId }
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import scala.concurrent.duration._
 import helper.MongoCollections._

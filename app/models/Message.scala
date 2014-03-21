@@ -1,14 +1,13 @@
 package models
 
 import java.util.Date
-import traits.{ Model }
+import traits.Model
 import play.api.libs.json._
 import helper.{ MongoCollections, IdHelper }
 import play.api.libs.functional.syntax._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import helper.JsonHelper._
-import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.core.commands.LastError
 
 /**
@@ -94,19 +93,23 @@ object Message extends Model[Message] {
   def findConversation(id: MongoId): Future[Option[Conversation]] = {
     Conversation.col.find(arrayQuery("messages", id)).one[Conversation]
   }
+
+  override def createDefault(): Message = {
+    new Message(IdHelper.generateMessageId(), "moep", IdHelper.generateIdentityId(), Seq(), Seq(), new Date)
+  }
 }
 
 object MessageEvolutions {
 
   val assetsToFiles: Reads[JsObject] = Reads {
     js =>
-    {
-      val deleteAsset: Reads[JsObject] = (__ \ 'assets).json.prune
-      val addFiles: Reads[JsObject] = __.json.update((__ \ 'files).json.put(JsArray()))
-      val renameBody: Reads[JsObject]  = __.json.update((__ \ 'body).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-      js.transform(deleteAsset andThen addFiles andThen renameBody andThen addVersion)
-    }
+      {
+        val deleteAsset: Reads[JsObject] = (__ \ 'assets).json.prune
+        val addFiles: Reads[JsObject] = __.json.update((__ \ 'files).json.put(JsArray()))
+        val renameBody: Reads[JsObject] = __.json.update((__ \ 'body).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(deleteAsset andThen addFiles andThen renameBody andThen addVersion)
+      }
   }
 
 }

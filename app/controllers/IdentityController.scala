@@ -8,10 +8,6 @@ import ExecutionContext.Implicits.global
 import helper.ResultHelper._
 import helper.AuthAction
 import scala.Some
-import play.api.libs.json._
-import scala.Some
-import helper.JsonHelper._
-import scala.Some
 
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
