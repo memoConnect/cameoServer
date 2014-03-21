@@ -24,7 +24,7 @@ object MongoCollections {
   }
   lazy val identityCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("identities")
-    col.indexesManager.ensure(Index(Seq("cameoId" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(Seq("cameoId" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
     col.indexesManager.ensure(Index(Seq("contacts._id" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("tokens._id" -> IndexType.Ascending)))
     col
@@ -37,6 +37,16 @@ object MongoCollections {
   lazy val accountCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("accounts")
     col.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
+    col
+  }
+  lazy val twoFactorTokenCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("twoFactorTokens")
+    // todo ttl
+    col
+  }
+  lazy val twoFactorSmsKeyCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("twoFactorSmsKeys")
+    // todo ttl
     col
   }
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")

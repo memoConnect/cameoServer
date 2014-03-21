@@ -2,12 +2,12 @@ import play.api.test._
 import play.api.libs.json.{ Json, JsObject }
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
-import testHelper.MockupFactory._
+import testHelper.Stuff._
 import scala.concurrent.ExecutionContext
 import play.api.GlobalSettings
-import testHelper.{ StartedApp, MockupFactory }
+import testHelper.{ StartedApp, Stuff }
 import org.specs2.mutable._
-import testHelper.Config._
+import testHelper.TestConfig._
 
 class FileControllerSpec extends StartedApp {
 
@@ -21,11 +21,11 @@ class FileControllerSpec extends StartedApp {
     var fileId = ""
 
     val chunks: Seq[String] = {
-      Seq.fill(10)(MockupFactory.randomString(256))
+      Seq.fill(10)(Stuff.randomString(256))
     }
 
-    val newChunk = MockupFactory.randomString(256)
-    val newChunkIndex = MockupFactory.random.nextInt(chunks.size)
+    val newChunk = Stuff.randomString(256)
+    val newChunkIndex = Stuff.random.nextInt(chunks.size)
 
     "FileController" should {
       "upload first chunk of file" in {

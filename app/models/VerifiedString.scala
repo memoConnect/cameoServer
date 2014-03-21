@@ -3,7 +3,6 @@ package models
 import java.util.Date
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import helper.JsonHelper._
 import traits.Model
 import helper.MongoCollections
 
@@ -48,11 +47,13 @@ object VerifiedString extends Model[VerifiedString] {
   }
 
   def createOpt(string: Option[String]): Option[VerifiedString] = {
-
     string match {
       case None    => None
       case Some(s) => Some(new VerifiedString(false, s, new Date))
     }
+  }
 
+  override def createDefault(): VerifiedString = {
+    VerifiedString.create("moep")
   }
 }

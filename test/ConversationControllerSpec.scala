@@ -5,13 +5,13 @@ import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import scala.Some
-import testHelper.MockupFactory._
+import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{ StartedApp, MockupFactory }
+import testHelper.{ StartedApp, Stuff }
 import org.specs2.mutable._
-import testHelper.Config._
+import testHelper.TestConfig._
 
 /**
  * User: Björn Reimer
@@ -198,7 +198,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with offset" in {
 
-      val offset = MockupFactory.random.nextInt(numberOfConversations)
+      val offset = Stuff.random.nextInt(numberOfConversations)
 
       val path = basePath + "/conversations?offset=" + offset
 
@@ -218,7 +218,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit" in {
 
-      val limit = Math.max(MockupFactory.random.nextInt(numberOfConversations), 1)
+      val limit = Math.max(Stuff.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit
 
@@ -238,8 +238,8 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit and offset" in {
 
-      val offset = MockupFactory.random.nextInt(numberOfConversations)
-      val limit = Math.max(MockupFactory.random.nextInt(numberOfConversations), 1)
+      val offset = Stuff.random.nextInt(numberOfConversations)
+      val limit = Math.max(Stuff.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit + "&offset=" + offset
 

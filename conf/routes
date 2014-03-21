@@ -39,6 +39,10 @@ POST           /api/v1/message/filter/count                   controllers.Messag
 GET            /api/v1/token                                  controllers.TokenController.createToken
 #DELETE         /api/v1/token/:token                           controllers.TokenController.deleteToken(token: String)
 
+# TWO FACTOR AUTH
+GET            /api/v1/twoFactorAuth                          controllers.TwoFactorController.initiate()
+POST           /api/v1/twoFactorAuth/confirm                  controllers.TwoFactorController.confirmKey()
+
 # CONTACTS
 POST           /api/v1/contact                                controllers.ContactController.addContact
 GET            /api/v1/contacts                               controllers.ContactController.getContacts(offset: Int ?= 0, limit: Int ?= 0)
@@ -70,6 +74,16 @@ GET            /api/v1/purl/:id                               controllers.PurlCo
 POST           /api/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber
 POST           /api/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
 
+# Cockpit API
+GET            /api/cockpit/v1/twoFactorAuth                  controllers.TwoFactorController.initiate()
+POST           /api/cockpit/v1/twoFactorAuth/confirm          controllers.TwoFactorController.confirmKey()
+GET            /api/cockpit/v1/lists                          controllers.cockpit.ListController.getAllLists()
+POST           /api/cockpit/v1/:elementName                   controllers.cockpit.ListController.list(elementName)
+POST           /api/cockpit/v1/:elementName/new               controllers.cockpit.ListController.create(elementName)
+DELETE         /api/cockpit/v1/:elementName/:id               controllers.cockpit.ListController.delete(elementName, id)
+GET            /api/cockpit/v1/:elementName/:id               controllers.cockpit.EditController.edit(elementName, id)
+PUT            /api/cockpit/v1/:elementName/:id               controllers.cockpit.EditController.modify(elementName, id)
+
 # Deal with options
 OPTIONS        /api/v1/*foo                                   controllers.TokenController.getTokenOptions(foo)
 
@@ -81,6 +95,12 @@ GET            /api/v1/util/loadDb                            controllers.Applic
 GET            /p/:id                                         controllers.ShortUrlController.redirect(urlType = "p", id: String)
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
+
+
+# Cockpit WebClient
+GET            /cockpit/                                      controllers.Assets.at(path="/public/cockpit", file="index.html")
+GET            /cockpit                                       controllers.Application.redirect(url = "/cockpit/")
+GET            /cockpit/*file                                 controllers.Assets.at(path="/public/cockpit", file)
 
 ##
 ##   WebClient

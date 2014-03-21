@@ -5,11 +5,12 @@ import traits.{ Model }
 import play.api.libs.json._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import reactivemongo.api.indexes.{ IndexType, Index }
+import reactivemongo.api.indexes.Index
 import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.IdHelper
 import helper.JsonHelper._
 import reactivemongo.core.commands.LastError
+import helper.MongoCollections
 
 /**
  * User: Björn Reimer
@@ -24,7 +25,7 @@ case class Token(id: MongoId,
 
 object Token extends Model[Token] {
 
-  val col = Identity.col
+  val col = MongoCollections.identityCollection
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
@@ -38,7 +39,7 @@ object Token extends Model[Token] {
         addCreated(t.created)
   }
 
-  def create(): Token = {
+  override def createDefault(): Token = {
     new Token(
       IdHelper.generateAccessToken(),
       new Date)
