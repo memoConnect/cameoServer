@@ -8,7 +8,6 @@ import helper.IdHelper
 import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands.LastError
 import ExecutionContext.Implicits.global
-import play.api.Logger
 import helper.MongoCollections._
 
 /**
@@ -71,6 +70,10 @@ object FileMeta extends Model[FileMeta] {
       fileType,
       new Date
     )
+  }
+
+  override def createDefault(): FileMeta = {
+    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", new Date)
   }
 }
 

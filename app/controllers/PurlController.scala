@@ -3,12 +3,10 @@ package controllers
 import play.api.libs.json.{ JsObject, Json }
 import traits.ExtendedController
 import models._
-import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
-import helper.AuthAction
 import scala.concurrent.Future
 import helper.ResultHelper._
-import play.api.mvc.{ SimpleResult, Result, Action }
+import play.api.mvc.Action
 import scala.Some
 import play.api.mvc.SimpleResult
 
@@ -63,7 +61,7 @@ object PurlController extends ExtendedController {
               case None =>
                 // check if we need to generate a new token
                 val token = identity.tokens.headOption.getOrElse {
-                  val t = Token.create()
+                  val t = Token.createDefault()
                   identity.addToken(t)
                   t
                 }
@@ -76,8 +74,8 @@ object PurlController extends ExtendedController {
                       js =>
                         val res: JsObject =
                           Json.obj("conversation" -> js) ++
-                          Json.obj("identity" -> identity.toPrivateJson) ++
-                          Json.obj("token" -> token.id.toJson)
+                            Json.obj("identity" -> identity.toPrivateJson) ++
+                            Json.obj("token" -> token.id.toJson)
 
                         resOK(res)
                     }

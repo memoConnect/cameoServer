@@ -1,22 +1,16 @@
 package helper
 
-import play.modules.reactivemongo.ReactiveMongoPlugin
-import play.api.Play.current
-import play.modules.reactivemongo.json.collection.JSONCollection
-
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
-import java.text.SimpleDateFormat
-import java.util.{ Date, TimeZone }
-import reactivemongo.api.indexes.{ IndexType, Index }
+import java.util.Date
+import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
 import play.modules.reactivemongo.json.BSONFormats
 import models.{ MongoId, VerifiedString }
 import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import org.mindrot.jbcrypt.BCrypt
-import play.api.Logger
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.JsObject
@@ -55,15 +49,12 @@ object JsonHelper {
       (__ \ '_id).json.prune
   }
 
-  val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
-  defaultDateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"))
-
   def addCreated(date: Date): JsObject = {
-    Json.obj("created" -> defaultDateFormat.format(date))
+    Json.obj("created" -> PrintDate.toString(date))
   }
 
   def addLastUpdated(date: Date): JsObject = {
-    Json.obj("lastUpdated" -> defaultDateFormat.format(date))
+    Json.obj("lastUpdated" -> PrintDate.toString(date))
   }
 
   def maybeEmptyString(key: String, value: Option[String]): JsObject = {

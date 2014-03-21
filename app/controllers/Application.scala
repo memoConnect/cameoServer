@@ -11,7 +11,7 @@ import helper.DbAdminUtilities
 import play.api.{Logger, Play}
 import helper.ResultHelper._
 import scala.concurrent.Future
-import reactivemongo.bson.BSONDocument
+import play.api.Logger
 import models.Account
 
 object Application extends Controller {

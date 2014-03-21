@@ -2,11 +2,9 @@ package models
 
 import traits.Model
 import play.api.libs.json._
-import reactivemongo.api.indexes.{ IndexType, Index }
+import reactivemongo.api.indexes.IndexType
 import helper.IdHelper
-import java.util.Date
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import helper.JsonHelper._
 import helper.MongoCollections._
 
@@ -48,5 +46,9 @@ object Purl extends Model[Purl] {
     new Purl(IdHelper.generatePurl(),
       messageId,
       identityId)
+  }
+
+  override def createDefault(): Purl = {
+    new Purl(IdHelper.generatePurl(), IdHelper.generateMessageId(), IdHelper.generateIdentityId())
   }
 }

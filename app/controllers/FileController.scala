@@ -3,12 +3,12 @@ package controllers
 import traits.ExtendedController
 import scala.util.Random
 import reactivemongo.bson.BSONObjectID
-import play.api.libs.json.{ JsError, JsObject, Json }
+import play.api.libs.json.JsError
 import models.{ ChunkMeta, FileChunk, FileMeta }
 import helper.{ General, IdHelper, AuthAction }
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
-import play.api.mvc.{ Request, Action }
+import play.api.mvc.Action
 import play.api.Logger
 import ExecutionContext.Implicits.global
 

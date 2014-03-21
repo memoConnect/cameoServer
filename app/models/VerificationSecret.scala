@@ -3,9 +3,8 @@ package models
 import play.api.libs.json._
 import helper.{ JsonHelper, IdHelper }
 import java.util.Date
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
-import helper.JsonHelper._
 import traits.Model
 import helper.MongoCollections._
 
@@ -38,5 +37,9 @@ object VerificationSecret extends Model[VerificationSecret] {
       verificationType,
       valueToBeVerified,
       new Date)
+  }
+
+  override def createDefault(): VerificationSecret = {
+    VerificationSecret.create(IdHelper.generateIdentityId(), "", "")
   }
 }

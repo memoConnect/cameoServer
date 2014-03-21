@@ -5,16 +5,12 @@ import play.api.{ Play, Logger }
 import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail.model._
-import play.api.Play.current
 import com.amazonaws.{ AmazonServiceException, AmazonClientException }
 import models._
 import play.api.Play.current
-import helper.JsonHelper._
 import constants.Messaging._
-import com.amazonaws.services.simpleemail.model.Message
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.ExecutionContext
 import models.MailMessage
-import models.Message
 import com.amazonaws.services.simpleemail.model
 import ExecutionContext.Implicits.global
 import play.api.libs.concurrent.Akka

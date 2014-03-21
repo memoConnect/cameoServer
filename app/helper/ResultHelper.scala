@@ -1,13 +1,9 @@
 package helper
 
-import play.api.mvc.{ Action, SimpleResult, Results }
+import play.api.mvc.Results
 import play.api.mvc.Results._
 import play.api.libs.json._
-import helper.JsonHelper._
 import constants.Notifications._
-import scala.concurrent.Future
-import traits.Model
-import play.api.Logger
 import play.api.libs.json.JsObject
 import play.api.mvc.SimpleResult
 
@@ -86,18 +82,19 @@ object ResultHelper {
 
   // Not Authorized
   def resUnauthorized(): SimpleResult = {
-    Unauthorized(""
-    //      Json.obj("res" -> "KO") ++
-    //        addMessagesOrEmpty(notifications)
-    )
+    Unauthorized(Json.obj("res" -> "KO"))
   }
 
-  def resUnauthorized(error: String)(implicit notifications: Seq[UserNotification] = Seq()): SimpleResult = {
+  def resUnauthorized(error: String, twoFactorRequired: Boolean = false): SimpleResult = {
+    val add = twoFactorRequired match {
+      case false => Json.obj()
+      case true  => Json.obj("twoFactorRequired" -> true)
+    }
+
     Unauthorized(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error) ++
-        addMessagesOrEmpty(notifications)
-    )
+        add)
   }
 
   // Server Error

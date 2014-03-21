@@ -6,8 +6,7 @@ import helper.{ MongoCollections, IdHelper }
 import traits.Model
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import play.api.mvc.{ Results, SimpleResult }
-import play.mvc.Result
+import play.api.mvc.SimpleResult
 import helper.ResultHelper._
 import play.api.Logger
 import helper.JsonHelper._
@@ -112,6 +111,10 @@ object Contact extends Model[Contact] {
 
   val docVersion = 1
   val evolutions = Map(0 -> evolutionAddContactType)
+
+  override def createDefault(): Contact = {
+    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), CONTACT_TYPE_NONE, docVersion)
+  }
 }
 
 case class ContactUpdate(groups: Option[Seq[String]],
