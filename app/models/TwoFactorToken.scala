@@ -81,7 +81,7 @@ object TwoFactorSmsKey extends Model[TwoFactorSmsKey] {
   }
 
   def create(identityId: MongoId): TwoFactorSmsKey = {
-    val key = new TwoFactorSmsKey(IdHelper.generateTwoFactorSmsKey(), identityId)
+    val key = new TwoFactorSmsKey(IdHelper.generateTwoFactorSmsKey(), identityId, new Date)
     col.insert(key)
     key
   }
