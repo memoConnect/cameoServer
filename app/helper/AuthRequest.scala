@@ -21,7 +21,7 @@ object AuthAction extends ActionBuilder[AuthRequest] {
     request.headers.get(REQUEST_TOKEN_HEADER_KEY) match {
       case None => Future.successful(resUnauthorized(REQUEST_TOKEN_MISSING))
       case Some(token) => {
-        Identity.findToken(new MongoId(token)).flatMap {
+        Identity.findByToken(new MongoId(token)).flatMap {
           case None           => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
           case Some(identity) => block(new AuthRequest[A](identity, request))
         }

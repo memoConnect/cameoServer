@@ -200,7 +200,7 @@ object ContactController extends ExtendedController {
             case (Some(i: String), None) => executeFriendRequest(new MongoId(i))
             case (None, Some(c: String)) => {
               // search for cameoId and get identityId
-              Identity.findCameoId(c).flatMap {
+              Identity.findByCameoId(c).flatMap {
                 case None           => Future(resNotFound("cameoId"))
                 case Some(identity) => executeFriendRequest(identity.id)
               }

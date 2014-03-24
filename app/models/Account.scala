@@ -1,6 +1,6 @@
 package models
 
-import traits.{CockpitEditable, CockpitAttribute, Model}
+import traits.{ CockpitEditable, CockpitAttribute, Model }
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -98,15 +98,21 @@ object Account extends Model[Account] with CockpitEditable[Account] {
   def findAlternative(loginName: String, count: Int = 1): Future[String] = {
     val currentTry = loginName + "_" + count
 
-    findByLoginName(currentTry).flatMap {
-      case Some(l) => findAlternative(loginName, count + 1) // o_O recursive futures ftw!
-      case None => {
+    val loginExists: Future[Boolean] = for {
+      account <- Account.findByLoginName(currentTry)
+      identity <- Identity.findByCameoId(currentTry)
+    } yield {
+      account.isDefined || identity.isDefined
+    }
+
+    loginExists.flatMap {
+      case true => findAlternative(loginName, count + 1) // recursive futures ftw!
+      case false =>
         // check if it is reserved
         AccountReservation.checkReserved(currentTry).flatMap {
           case Some(r) => findAlternative(loginName, count + 1)
           case None    => Future(currentTry)
         }
-      }
     }
   }
 

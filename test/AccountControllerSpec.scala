@@ -36,10 +36,9 @@ class AccountControllerSpec extends StartedApp {
   "AccountController" should {
 
     "Refuse invalid Logins" in {
-
       val path = basePath + "/account/check"
 
-      val logins = Seq("asdf", "asdfasdfasdfasdfasdfa", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\")
+      val logins = Seq("asdf", "asdfasdfasdfasdfasdfa", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\", "asdf.asdf.asdf", "asd@df")
 
       logins.map {
         l =>
@@ -108,7 +107,7 @@ class AccountControllerSpec extends StartedApp {
 
     "Refuse to claim reserved login without secret" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass, login)
+      val json = createUser(login, pass)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -121,7 +120,7 @@ class AccountControllerSpec extends StartedApp {
 
       TestConfig.invalidEmails.map { invalid =>
 
-        val json = createUser(login, pass, login, Some(tel), Some(invalid)) ++ Json.obj("reservationSecret" -> regSec)
+        val json = createUser(login, pass, Some(tel), Some(invalid)) ++ Json.obj("reservationSecret" -> regSec)
 
         val req = FakeRequest(POST, path).withJsonBody(json)
         val res = route(req).get
@@ -135,7 +134,7 @@ class AccountControllerSpec extends StartedApp {
 
       TestConfig.invalidPhoneNumbers.map { invalid =>
 
-        val json = createUser(login, pass, login, Some(invalid), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
+        val json = createUser(login, pass,  Some(invalid), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
 
         val req = FakeRequest(POST, path).withJsonBody(json)
         val res = route(req).get
@@ -144,9 +143,19 @@ class AccountControllerSpec extends StartedApp {
       }
     }
 
+    "Refuse to register with wrong loginName for secret" in {
+      val path = basePath + "/account"
+      val json = createUser(login +"a", pass) ++ Json.obj("reservationSecret" -> regSec)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
     "Create Account" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass, login, Some(tel), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
+      val json = createUser(login, pass, Some(tel), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -167,28 +176,14 @@ class AccountControllerSpec extends StartedApp {
       (data \ "id").asOpt[String] must beSome
     }
 
-    "Refuse to register with same secret" in {
+    "Refuse to register again with same secret" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass, login) ++ Json.obj("reservationSecret" -> regSec)
+      val json = createUser(login +"a", pass) ++ Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
-      status(res) must equalTo(232)
-    }
-
-    "Refuse duplicate CameoIds" in {
-      val path = basePath + "/account"
-      val json = createUser(login2, pass, login, Some(tel), Some(mail)) ++ Json.obj("reservationSecret" -> regSec2)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-
-      val messages = (contentAsJson(res) \ "messages").asOpt[JsArray]
-
-      messages must beSome
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     "Refuse to reserve existing loginName and return next alternative" in {
@@ -203,6 +198,22 @@ class AccountControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "alternative").asOpt[String] must beSome(login + "_1")
+    }
+
+    "Refuse to reserve loginName that is an existing CameoIds and return alterantive" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> cameoIdExisting)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      Logger.debug("CONTENT: " + contentAsString(res))
+
+      status(res) must equalTo(232)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "alternative").asOpt[String] must beSome(cameoIdExisting + "_1")
     }
 
     "Return a token" in {

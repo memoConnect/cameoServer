@@ -255,12 +255,12 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       docVersion)
   }
 
-  def findToken(tokenId: MongoId): Future[Option[Identity]] = {
+  def findByToken(tokenId: MongoId): Future[Option[Identity]] = {
     val query = Json.obj("tokens" -> Json.obj("$elemMatch" -> Json.obj("_id" -> tokenId)))
     col.find(query).one[Identity]
   }
 
-  def findCameoId(cameoId: String): Future[Option[Identity]] = {
+  def findByCameoId(cameoId: String): Future[Option[Identity]] = {
     val query = Json.obj("cameoId" -> cameoId)
     col.find(query).one[Identity]
   }

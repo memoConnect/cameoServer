@@ -26,10 +26,8 @@ object Application extends Controller {
   }
 
   def dumpDb() = Action {
-
     DbAdminUtilities.dumpDb()
     Ok("dumped")
-
   }
 
   def loadFixtures = Action {
@@ -41,9 +39,9 @@ object Application extends Controller {
     controllers.Assets.at(path, file)
 
   def checkApp = Action.async {
-    Account.col.find(Json.obj()).one[Account].flatMap {
-      case Some(wummel) => Future(resOK())
-      case None => Future(resKO("database connection down!"))
+    Account.col.find(Json.obj()).one[Account].map {
+      case Some(wummel) => resOK()
+      case None => resKO("database connection down!")
     }
   }
 }

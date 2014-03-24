@@ -26,15 +26,10 @@ object AccountController extends ExtendedController {
       login.matches("^\\w+$")
   }
 
-  case class AdditionalValues(
-    reservationSecret: String,
-    cameoId: String)
+  case class AdditionalValues(reservationSecret: String)
 
   object AdditionalValues {
-    val reads: Reads[AdditionalValues] = (
-      (__ \ 'reservationSecret).read[String] and
-      (__ \ 'cameoId).read[String]
-    )(AdditionalValues.apply _)
+    val reads: Reads[AdditionalValues] = Json.reads[AdditionalValues]
   }
 
   def createAccount = Action.async(parse.tolerantJson) {
@@ -43,47 +38,36 @@ object AccountController extends ExtendedController {
 
       validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
         additionalValues =>
-          // check if cameoId exists
-          Identity.findCameoId(additionalValues.cameoId).flatMap {
-            case Some(i) => Future(resKO(errorNotify("cameo id already exists")))
-            case None => {
-              validateFuture[Account](jsBody, Account.createReads) {
-                account =>
-                  {
+          validateFuture[Account](jsBody, Account.createReads) {
+            account =>
+              {
+                AccountReservation.checkReserved(account.loginName).flatMap {
+                  case None => Future(resBadRequest("this loginName is not reserved"))
+                  case Some(secret) =>
 
-                    AccountReservation.checkReserved(account.loginName).flatMap {
-                      case None => Future(resBadRequest("this loginName is not reserved"))
-                      case Some(secret) => {
+                    secret.equals(additionalValues.reservationSecret) match {
+                      case false => Future(resBadRequest("invalid reservation secret"))
+                      case true =>
 
-                        secret.equals(additionalValues.reservationSecret) match {
-                          case false => Future(resBadRequest("invalid reservation secret"))
-                          case true => {
+                        // everything is ok, we can create the account now
+                        AccountReservation.deleteReserved(account.loginName)
 
-                            // everything is ok, we can create the account now
-                            AccountReservation.deleteReserved(account.loginName)
+                        // create identity and add it to account
+                        val identity = Identity.create(Some(account.id), account.loginName, account.email, account.phoneNumber)
+                        Identity.col.insert(identity)
+                        val account2 = account.copy(identities = Seq(identity.id))
 
-                            // create identity and add it to account
-                            val identity = Identity.create(Some(account.id), additionalValues.cameoId, account.email, account.phoneNumber)
-                            Identity.col.insert(identity)
-                            val account2 = account.copy(identities = Seq(identity.id))
-
-                            Account.col.insert(account2).flatMap {
-                              lastError =>
-                                {
-                                  if (lastError.ok) {
-                                    account2.toJsonWithIdentities.map { resOK(_) }
-                                  } else {
-                                    Future(resServerError("MongoError: " + lastError))
-                                  }
-                                }
+                        Account.col.insert(account2).flatMap {
+                          lastError =>
+                            if (lastError.ok) {
+                              account2.toJsonWithIdentities.map { resOK(_) }
+                            } else {
+                              Future(resServerError("MongoError: " + lastError))
                             }
-                          }
                         }
-                      }
                     }
-                  }
+                }
               }
-            }
           }
       }
   }
@@ -107,14 +91,21 @@ object AccountController extends ExtendedController {
       validateFuture[VerifyRequest](request.body, reads) {
         vr =>
           if (checkLogin(vr.loginName)) {
-            // check if loginName exists
-            Account.findByLoginName(vr.loginName).flatMap {
+            // check if loginName exists or is a cameoId
+            val loginExists: Future[Boolean] = for {
+              account <- Account.findByLoginName(vr.loginName)
+              identity <- Identity.findByCameoId(vr.loginName)
+            } yield {
+              account.isDefined || identity.isDefined
+            }
+
+            loginExists.flatMap {
               // it exists, find alternative
-              case Some(a) => Account.findAlternative(vr.loginName).map {
+              case true => Account.findAlternative(vr.loginName).map {
                 newLoginName => resKO(Json.obj("alternative" -> newLoginName))
               }
               // it does not exist, check if it is reserved
-              case None => AccountReservation.checkReserved(vr.loginName).flatMap {
+              case false => AccountReservation.checkReserved(vr.loginName).flatMap {
                 // it is reserved, get alternative
                 case Some(ra) => Account.findAlternative(vr.loginName).map {
                   newLoginName => resKO(Json.obj("alternative" -> newLoginName))

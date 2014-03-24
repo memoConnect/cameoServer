@@ -26,7 +26,7 @@ object PurlController extends ExtendedController {
 
       def getPurlWithToken(purl: Purl, token: String): Future[SimpleResult] = {
         // check if token exists
-        Identity.findToken(new MongoId(token)).flatMap {
+        Identity.findByToken(new MongoId(token)).flatMap {
           case None => Future(resNotFound("token"))
           case Some(identity) =>
             // check if the identityId match
