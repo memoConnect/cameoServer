@@ -13,6 +13,7 @@ import helper.ResultHelper._
 import scala.concurrent.Future
 import play.api.Logger
 import models.Account
+import play.api.Play.current
 
 object Application extends Controller {
 
