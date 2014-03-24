@@ -86,7 +86,6 @@ Account Management
           "password": "password",
           "email": "mail",
           "phoneNumber": "12335",
-          "cameoId":"testtest",
           "reservationSecret":"VaXdx3xAAzk3cTXvdDlC"
         }
 
@@ -605,6 +604,270 @@ Sending and reading messages
           }
         }
 
+
+## Get all conversations of user [/conversations]
+
+### GET
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+            {
+              "res": "OK",
+              "data": {
+                "conversations": [
+                  {
+                    "id": "OM9QeJ4RfJcdscyo52g4",
+                    "lastUpdated": "21.02.2014 12:51:31",
+                    "numberOfMessages": 3,
+                    "messages": [
+                      {
+                        "id": "0kKqtZmEWKs0ndF03GHp",
+                        "body": "asdf",
+                        "fromIdentity": "g9PWZY7xKNbeCO6LPNnx",
+                        "messageStatus": [
+                          {
+                            "identityId": "N2HKgBdxxnWBGxlYY7Dn",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "GhEWGfy3Jqx8BRP1pITO",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "g9PWZY7xKNbeCO6LPNnx",
+                            "status": "none",
+                            "message": "sender"
+                          }
+                        ],
+                        "fileIds": [],
+                        "created": "21.02.2014 12:57:40"
+                      }
+                    ],
+                    "recipients": [
+                      {
+                        "identity": {
+                          "id": "N2HKgBdxxnWBGxlYY7Dn",
+                          "cameoId": "bwyVeVnCvuO",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                      },
+                      {
+                        "identity": {
+                          "id": "GhEWGfy3Jqx8BRP1pITO",
+                          "cameoId": "KN5Ws0zFwzXc38H",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "GhEWGfy3Jqx8BRP1pITO"
+                      },
+                      {
+                        "identity": {
+                          "id": "g9PWZY7xKNbeCO6LPNnx",
+                          "cameoId": "KG5mSGTY8l3",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "g9PWZY7xKNbeCO6LPNnx"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "9YNtlNZ2LHcAvzqd42EE",
+                    "lastUpdated": "13.02.2014 15:19:13",
+                    "numberOfMessages": 100,
+                    "subject": "some 1337 subject hlPVY",
+                    "messages": [
+                      {
+                        "id": "dWC81WRkgM8En13DGqrX",
+                        "body": "19 :I3vS2 qo5W3 vTcj5n3DFZ132BxpoASZS0AwuZycZHv1NQ n4ssza0sTy4Wr",
+                        "fromIdentity": "2Kurw70t9TXg4iPfCWAw",
+                        "messageStatus": [
+                          {
+                            "identityId": "N2HKgBdxxnWBGxlYY7Dn",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "tfy8ZdsGVWlUI98igv2S",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "Tya0cZiaYFhFOBS2RNP1",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "xiDoJmuua853krSS5SeZ",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "2Kurw70t9TXg4iPfCWAw",
+                            "status": "none",
+                            "message": "sender"
+                          }
+                        ],
+                        "fileIds": [],
+                        "created": "13.02.2014 15:19:23"
+                      }
+                    ],
+                    "recipients": [
+                      {
+                        "identity": {
+                          "id": "N2HKgBdxxnWBGxlYY7Dn",
+                          "cameoId": "bwyVeVnCvuO",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                      },
+                      {
+                        "identity": {
+                          "id": "tfy8ZdsGVWlUI98igv2S",
+                          "cameoId": "0FZzLdfrRZC9r5VQZ3Fs",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "tfy8ZdsGVWlUI98igv2S"
+                      },
+                      {
+                        "identity": {
+                          "id": "Tya0cZiaYFhFOBS2RNP1",
+                          "cameoId": "FSkoFBVtbiYv1mm9PHO4",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "Tya0cZiaYFhFOBS2RNP1"
+                      },
+                      {
+                        "identity": {
+                          "id": "xiDoJmuua853krSS5SeZ",
+                          "cameoId": "lILg8itaxWLo3sRIKXRX",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "xiDoJmuua853krSS5SeZ"
+                      },
+                      {
+                        "identity": {
+                          "id": "2Kurw70t9TXg4iPfCWAw",
+                          "cameoId": "ozGUT9TcV9KAHYisBvau",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "2Kurw70t9TXg4iPfCWAw"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "Me6e7EG0wnshvnrvYTrb",
+                    "lastUpdated": "13.02.2014 15:19:13",
+                    "numberOfMessages": 100,
+                    "subject": "some 1337 subject OTngs",
+                    "messages": [
+                      {
+                        "id": "FePbCR1tYBrvptPF5cL0",
+                        "body": "49 :W2M27K XuyvW0rOXi gH2lxvAxgyOzznm",
+                        "fromIdentity": "2Kurw70t9TXg4iPfCWAw",
+                        "messageStatus": [
+                          {
+                            "identityId": "N2HKgBdxxnWBGxlYY7Dn",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "2Kurw70t9TXg4iPfCWAw",
+                            "status": "none",
+                            "message": "sender"
+                          }
+                        ],
+                        "fileIds": [],
+                        "created": "13.02.2014 15:19:22"
+                      }
+                    ],
+                    "recipients": [
+                      {
+                        "identity": {
+                          "id": "N2HKgBdxxnWBGxlYY7Dn",
+                          "cameoId": "bwyVeVnCvuO",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                      },
+                      {
+                        "identity": {
+                          "id": "2Kurw70t9TXg4iPfCWAw",
+                          "cameoId": "zswZpOudfb5Ba0ZFD4dX",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "2Kurw70t9TXg4iPfCWAw"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "fUd6U62SWV2maTOEHEbQ",
+                    "lastUpdated": "13.02.2014 15:19:13",
+                    "numberOfMessages": 99,
+                    "subject": "some 1337 subject SnY6l",
+                    "messages": [
+                      {
+                        "id": "MADVzNPfRaSRYGtEsyyt",
+                        "body": "32 :8k4N2YFSDYjYig1x",
+                        "fromIdentity": "xiDoJmuua853krSS5SeZ",
+                        "messageStatus": [
+                          {
+                            "identityId": "N2HKgBdxxnWBGxlYY7Dn",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "tfy8ZdsGVWlUI98igv2S",
+                            "status": "queued",
+                            "message": "default"
+                          },
+                          {
+                            "identityId": "xiDoJmuua853krSS5SeZ",
+                            "status": "none",
+                            "message": "sender"
+                          }
+                        ],
+                        "fileIds": [],
+                        "created": "13.02.2014 15:19:22"
+                      }
+                    ],
+                    "recipients": [
+                      {
+                        "identity": {
+                          "id": "N2HKgBdxxnWBGxlYY7Dn",
+                          "cameoId": "bwyVeVnCvuO",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                      },
+                      {
+                        "identity": {
+                          "id": "tfy8ZdsGVWlUI98igv2S",
+                          "cameoId": "KN83LYOAzHjc96bDv4Cs",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "tfy8ZdsGVWlUI98igv2S"
+                      },
+                      {
+                        "identity": {
+                          "id": "xiDoJmuua853krSS5SeZ",
+                          "cameoId": "MP7Dwzau6IWktgKDrBgT",
+                          "displayName": "NoName"
+                        },
+                        "identityId": "xiDoJmuua853krSS5SeZ"
+                      }
+                    ]
+                  }
+                ],
+                "numberOfConversations": 4
+              }
+            }
 
 
 ## Add new Recipient to Conversation [/conversation/{id}/recipient]
