@@ -1,9 +1,10 @@
 
-import play.api.libs.json.JsArray
+import play.api.libs.json._
+import play.api.libs.json.JsObject
 import play.api.test._
-import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.FakeApplication
 import play.api.test.Helpers._
+import scala.Some
 import scala.Some
 import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
@@ -189,7 +190,9 @@ class ConversationControllerSpec extends StartedApp {
           (c \ "id").asOpt[String] must beSome
           (c \ "numberOfMessages").asOpt[Int] must beSome
           (c \ "lastUpdated").asOpt[String] must beSome
-          (c \ "messages").asOpt[JsArray] must beSome
+          (c \ "messages").asOpt[Seq[JsObject]] must beSome
+          (c \ "messages")(1).asOpt[JsValue] must beNone
+          (c \ "recipients").asOpt[Seq[JsObject]] must be beSome
       }
       // check if it contains ids
       conversations.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew))) must beTrue

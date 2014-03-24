@@ -106,13 +106,16 @@ object ConversationController extends ExtendedController {
 
   def getConversations(offset: Int, limit: Int) = AuthAction.async {
     request =>
-      Conversation.findByIdentityId(request.identity.id).map { list =>
+      Conversation.findByIdentityId(request.identity.id).flatMap { list =>
         // TODO: this can be done more efficiently with the aggregation framework in mongo
         val sorted = list.sortBy(_.lastUpdated).reverse
         val limited = OutputLimits.applyLimits(sorted, offset, limit)
-        val json = limited.map(_.toSummaryJson)
-        val res = Json.obj("conversations" -> json, "numberOfConversations" -> list.length)
-        resOK(res)
+        val futureJson = Future.sequence(limited.map(_.toSummaryJsonWithRecipients))
+        futureJson.map {
+          json =>
+            val res = Json.obj("conversations" -> json, "numberOfConversations" -> list.length)
+            resOK(res)
+        }
       }
   }
 
