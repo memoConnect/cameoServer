@@ -25,8 +25,16 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
   // wrap action to modify the headers of every request
   override def doFilter(action: EssentialAction): EssentialAction = EssentialAction {
     request =>
-      action.apply(request).map(_.withHeaders(ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT, OPTIONS",
-        ACCESS_CONTROL_ALLOW_ORIGIN -> "*", ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization, Content-type, X-File-Name, X-Max-Chunks, X-File-Size, X-File-Type, X-Index, X-TwoFactorToken"))
+      // todo: this check should not be done for each request...
+      Play.configuration.getString("headers.accessControl.enable") match {
+        case Some("true") =>
+          action.apply(request).map(_.withHeaders(
+            ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT, OPTIONS",
+            ACCESS_CONTROL_ALLOW_ORIGIN -> "*",
+            ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization, Content-type, X-File-Name, X-Max-Chunks, X-File-Size, X-File-Type, X-Index, X-TwoFactorToken")
+          )
+        case _ => action.apply(request)
+      }
   }
 
   override def onStart(app: play.api.Application) = {

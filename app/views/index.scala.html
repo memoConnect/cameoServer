@@ -1,12 +1,13 @@
 @import _root_.helper.General
+@import play.api.Play
+@import sys.process.stringSeqToProcess
+@import play.api.Play.current
 
-import play.api.Play
-import sys.process.stringSeqToProcess
-import play.api.Play.current
 @main("Cameo") {
 
     <strong>Cameo API</strong><br>
     <a href="http://docs.cameo.apiary.io/">Doku</a>
+    <p>Application mode is: @{Play.mode}</p>
     <p>
         CameoServer: @{General.getAppVersion}<br>
         Play Framework: @{play.core.PlayVersion.current}<br>

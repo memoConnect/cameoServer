@@ -16,6 +16,10 @@ case "$mode" in
       echo -e "\e[33m[cameo - Running as prod]\033[0m"
       app_options=-Dconfig.file=/opt/cameoSecrets/secret_prod.conf
       ;;
+   "stage")
+      echo -e "\e[33m[cameo - Running as stage]\033[0m"
+      app_options=-Dconfig.file=/opt/cameoSecrets/secret_stage.conf
+      ;;
    "dev")
        echo -e "\e[33m[cameo - Running as dev]\033[0m"
       app_options=-Dconfig.file=/opt/cameoSecrets/secret_dev.conf

@@ -6,9 +6,9 @@ import play.api.libs.concurrent.Execution.Implicits._
 import helper.JsonHelper._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.FileWriter
-import play.api.libs.json.{Json, JsObject}
+import play.api.libs.json.{ Json, JsObject }
 import helper.DbAdminUtilities
-import play.api.{Logger, Play}
+import play.api.{ Logger, Play }
 import helper.ResultHelper._
 import scala.concurrent.Future
 import play.api.Logger
@@ -26,13 +26,23 @@ object Application extends Controller {
   }
 
   def dumpDb() = Action {
-    DbAdminUtilities.dumpDb()
-    Ok("dumped")
+    Play.isDev match {
+      case true =>
+        DbAdminUtilities.dumpDb()
+        Ok("dumped")
+      case false =>
+        resBadRequest("not in dev mode")
+    }
   }
 
   def loadFixtures = Action {
-    DbAdminUtilities.loadFixtures()
-    Ok("loaded")
+    Play.isDev match {
+      case true =>
+        DbAdminUtilities.loadFixtures()
+        Ok("loaded")
+      case false =>
+        resBadRequest("not in dev mode")
+    }
   }
 
   def staticAssets(path: String, file: String, foo: String) =
@@ -41,7 +51,7 @@ object Application extends Controller {
   def checkApp = Action.async {
     Account.col.find(Json.obj()).one[Account].map {
       case Some(wummel) => resOK()
-      case None => resKO("database connection down!")
+      case None         => resKO("database connection down!")
     }
   }
 }
