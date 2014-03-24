@@ -60,4 +60,5 @@ object MongoCollections {
   lazy val fileChunkCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileChunks")
   lazy val fileMetaCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileMeta")
   lazy val globalStateCollection: JSONCollection = mongoDB.collection[JSONCollection]("globalState")
+  lazy val cockpitAccessCollection: JSONCollection = mongoDB.collection[JSONCollection]("cockpitAccess")
 }

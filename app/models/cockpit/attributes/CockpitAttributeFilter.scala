@@ -27,13 +27,22 @@ case class CockpitAttributeFilter(name: String,
       "filterName" -> filterName,
       "listName" -> listName)
 
+    def createFilter(strings: Seq[String]): JsObject = {
+      strings.isEmpty match {
+        case true => // match nothing
+          Json.obj("filterTerm" -> "moep^")
+        case false =>
+          Json.obj("filterTerm" -> strings.mkString("(", "|", ")"))
+      }
+    }
+
     (js \ name).asOpt[MongoId] match {
       case Some(id) => Some(res ++ Json.obj("filterTerm" -> id.id))
       case None =>
         (js \ name).asOpt[Seq[MongoId]] match {
           case Some(list) =>
             val strings = list.map(_.id)
-            Some(res ++ Json.obj("filterTerm" -> strings.mkString("(", "|", ")")))
+            Some(res ++ createFilter(strings))
           case None =>
             (js \ name).asOpt[Seq[JsObject]] match {
               case Some(list2) =>
@@ -44,7 +53,7 @@ case class CockpitAttributeFilter(name: String,
                       case false => None
                       case true =>
                         val strings = list2.map(js => (js \ "identityId").as[MongoId].id)
-                        Some(res ++ Json.obj("filterTerm" -> strings.mkString("(", "|", ")")))
+                        Some(res ++ createFilter(strings))
                     }
                 }
               case None => None

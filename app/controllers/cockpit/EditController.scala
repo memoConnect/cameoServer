@@ -12,14 +12,16 @@ import helper.TwoFactorAuthAction
 
 object EditController {
 
-  def edit(elementName: String, id: String) = TwoFactorAuthAction.async {
-    ListController.getEditable(elementName) match {
-      case None => Future(resNotFound("entity with name: " + elementName))
-      case Some(definition) => definition.getAttributes(id).map {
-        case None => resNotFound(elementName + " object with id: " + id)
-        case Some(attributes) =>
-          val cockpitEdit = new CockpitEdit(id, attributes)
-          resOK(cockpitEdit.toJson)
+  def edit(elementName: String, id: String) = TwoFactorAuthAction.async { request =>
+    ListController.checkAccessList(request.identity.accountId) {
+      ListController.getEditable(elementName) match {
+        case None => Future(resNotFound("entity with name: " + elementName))
+        case Some(definition) => definition.getAttributes(id).map {
+          case None => resNotFound(elementName + " object with id: " + id)
+          case Some(attributes) =>
+            val cockpitEdit = new CockpitEdit(id, attributes)
+            resOK(cockpitEdit.toJson)
+        }
       }
     }
   }
@@ -27,12 +29,14 @@ object EditController {
   def modify(elementName: String, id: String) = TwoFactorAuthAction.async(parse.tolerantJson) {
     request =>
       // todo: validate body
-      ListController.getEditable(elementName) match {
-        case None => Future(resNotFound("entity with name: " + elementName))
-        case Some(definition) => definition.update(id, request.body.as[JsObject]).map {
-          case None        => resBadRequest("invalid element id or update values")
-          case Some(false) => resServerError("error saving update")
-          case Some(true)  => resOK()
+      ListController.checkAccessList(request.identity.accountId) {
+        ListController.getEditable(elementName) match {
+          case None => Future(resNotFound("entity with name: " + elementName))
+          case Some(definition) => definition.update(id, request.body.as[JsObject]).map {
+            case None        => resBadRequest("invalid element id or update values")
+            case Some(false) => resServerError("error saving update")
+            case Some(true)  => resOK()
+          }
         }
       }
   }

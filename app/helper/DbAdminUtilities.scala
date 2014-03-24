@@ -12,6 +12,8 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import scala.concurrent.duration._
 import helper.MongoCollections._
+import reactivemongo.api.indexes.{IndexType, Index}
+import reactivemongo.bson.BSONDocument
 
 /**
  * User: Björn Reimer
@@ -20,19 +22,29 @@ import helper.MongoCollections._
  */
 object DbAdminUtilities {
 
-  def dumpDb() = {
-    val path = "fixtures/dump"
+  val collections: Seq[JSONCollection] = Seq(
+    conversationCollection,
+    accountCollection,
+    reservedAccountCollection,
+    identityCollection,
+    purlCollection,
+    globalStateCollection,
+    fileChunkCollection,
+    fileMetaCollection,
+    verificationCollection,
+    twoFactorTokenCollection,
+    twoFactorSmsKeyCollection,
+    cockpitAccessCollection
+  )
 
-    val collections: Seq[JSONCollection] = Seq(
-      conversationCollection,
-      accountCollection,
-      reservedAccountCollection,
-      identityCollection,
-      purlCollection,
-      globalStateCollection,
-      fileChunkCollection,
-      fileMetaCollection
-    )
+  def findColByName(name: String): Option[JSONCollection] = {
+    collections.find(_.name.equals(name))
+  }
+
+
+  def dumpDb() = {
+
+    val path = "fixtures/dump"
 
     collections.map {
       col =>
@@ -62,23 +74,21 @@ object DbAdminUtilities {
 
           Logger.debug("Loading Fixture: " + file.getName)
 
-          val col: JSONCollection = file.getName.replace(".json", "") match {
-            case ("conversations") => conversationCollection
-            case ("accounts")      => accountCollection
-            case ("identities")    => identityCollection
-            case ("purls")         => purlCollection
-            case ("globalState")   => globalStateCollection
-            case _                 => throw new IllegalArgumentException("No matching collection for this file: " + file.getName)
-          }
+          val colName = file.getName.replace(".json", "")
 
-          val futureResults: Seq[Future[Boolean]] = Source.fromFile(file).getLines().toSeq.map {
-            line =>
-              val json = Json.parse(line)
-              col.insert(json).map(_.ok)
-          }
+          findColByName(colName) match {
+            case None => Future(false)
+            case Some(col) =>
 
-          Future.sequence(futureResults).map {
-            _.forall(p => p)
+              val futureResults: Seq[Future[Boolean]] = Source.fromFile(file).getLines().toSeq.map {
+                line =>
+                  val json = Json.parse(line)
+                  col.insert(json).map(_.ok)
+              }
+
+              Future.sequence(futureResults).map {
+                _.forall(p => p)
+              }
           }
         } else Future(true)
     }
