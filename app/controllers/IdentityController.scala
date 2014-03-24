@@ -54,15 +54,16 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def search() = Action.async(parse.tolerantJson) {
+  def search() = AuthAction.async(parse.tolerantJson) {
 
     request =>
 
-      case class VerifyRequest(search: String, fields: Seq[String])
+      case class VerifyRequest(search: String, fields: Seq[String], excludeContacts: Option[Boolean])
 
       def reads: Reads[VerifyRequest] = (
         (__ \ 'search).read[String](minLength[String](4)) and
-        (__ \ 'fields).read[Seq[String]]
+        (__ \ 'fields).read[Seq[String]] and
+        (__ \ 'excludeContacts).readNullable[Boolean]
       )(VerifyRequest.apply _)
 
       validateFuture(request.body, reads) {
@@ -76,7 +77,18 @@ object IdentityController extends ExtendedController {
               val displayName = if (vr.fields.contains("displayName")) Some(vr.search) else None
 
               Identity.search(cameoId, displayName).map {
-                list => resOK(list.map { i => i.toPublicSummaryJson })
+                list =>
+                  // todo: filter directly in mongo search
+                  val filtered = list.filterNot(i =>
+                    request.identity.equals(i) ||
+                      {
+                        vr.excludeContacts match {
+                          case true  => request.identity.contacts.exists(_.identityId.equals(i))
+                          case false => false
+                        }
+                      }
+                  )
+                  resOK(filtered.map { i => i.toPublicSummaryJson })
               }
             }
           }
