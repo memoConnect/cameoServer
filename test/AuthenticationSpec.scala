@@ -36,7 +36,7 @@ class AuthenticationSpec extends StartedApp {
     val nonAuthRoutes: Seq[(String, String)] = Seq(
       (POST, "/api/v1/services/checkEmailAddress"),
       (POST, "/api/v1/services/checkPhoneNumber"),
-      (POST, "/api/v1/identity/search"),
+     // (POST, "/api/v1/identity/search"),
       (POST, "/api/v1/account"),
       (POST, "/api/v1/account/check"),
       (GET, "/api/v1/token"),

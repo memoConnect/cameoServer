@@ -54,6 +54,9 @@ object TestConfig {
   val cameoIdExisting = "KG5mSGTY8l3"
   val cameoIdExisting2 ="bwyVeVnCvuO"
 
+  val displayNameExisting = "Moeper"
+  val displayNameExisting2 = "Moeper2"
+
   val tokenExisting = "hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo"
   val tokenExisting2 = "viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ"
 
@@ -62,6 +65,9 @@ object TestConfig {
 
   val invalidPhoneNumbers = Seq("abcd", "+4912345123451234512345", "", "+!\"§$%&/()=")
   val invalidEmails = Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43")
+
+  val genericDisplayName = "generic Display Name"
+  val existingContactIdentityId = "DOLkwAfL8zuMsh9JcXy4"
 
   val validPhoneNumbers: Seq[(String, String)] =
     Seq(

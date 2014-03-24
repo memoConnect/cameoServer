@@ -79,15 +79,13 @@ object IdentityController extends ExtendedController {
               Identity.search(cameoId, displayName).map {
                 list =>
                   // todo: filter directly in mongo search
-                  val filtered = list.filterNot(i =>
-                    request.identity.equals(i) ||
-                      {
-                        vr.excludeContacts match {
-                          case true  => request.identity.contacts.exists(_.identityId.equals(i))
-                          case false => false
-                        }
-                      }
-                  )
+                  val filtered = list.filter(identity => {
+                    val matchesContact: Boolean = vr.excludeContacts match {
+                      case Some(true) => request.identity.contacts.exists(_.identityId.equals(identity.id))
+                      case _          => false
+                    }
+                    !request.identity.id.equals(identity.id) && !matchesContact
+                  })
                   resOK(filtered.map { i => i.toPublicSummaryJson })
               }
             }
