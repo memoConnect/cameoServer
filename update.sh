@@ -67,8 +67,9 @@ if [ "$updateClient" = true ]; then
 	    exit 1
 	fi
 fi
+
 ./compile.sh
-./start.sh ${mode}
+./start.sh
 
 # check if another update is sheduled
 if [ -s ${fileName} ]; then

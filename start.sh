@@ -29,7 +29,7 @@ case "$mode" in
       app_options=-Dconfig.file=/opt/cameoSecrets/secret_local.conf
       ;;
    *)
-      echo Invalid deployment type: ${mode}
+      echo "\e[33m[cameo - Invalid mode: ${mode}]\033[0m"
       exit 1
       ;;
 esac
