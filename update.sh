@@ -84,6 +84,7 @@ fi
 if [ "$updateServer" = true ]; then
 	echo -e "\e[33m[cameo - updating server]\033[0m"
 	if [ "$mode" == "stage" ]; then
+	    git fetch --tags
         git checkout tags/stage
     else
 	    git pull
@@ -96,6 +97,7 @@ if [ "$updateClient" = true ]; then
 	    echo -e "\e[33m[cameo - updating client]\033[0m"
 	    cd ../cameoJSClient
 	    if [ "$mode" == "stage" ]; then
+	        git fetch --tags
             git checkout tags/stage
         else
             git pull
