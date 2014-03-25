@@ -41,7 +41,7 @@ fi
 if [ -d ../cameoSecrets ];then
     echo -e "\e[33m[cameo - updating secrets]\033[0m"
     cd ../cameoSecrets
-    git pull
+    git pull || true
     cd -
 else
     echo -e "\e[33m[cameo - directory cameoSecrets not found]\033[0m"

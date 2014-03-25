@@ -71,8 +71,7 @@ object IdentityController extends ExtendedController {
           // there needs to be at least one field
           vr.fields.isEmpty match {
             case true => Future(resBadRequest("at least one element in fields required"))
-            case false => {
-
+            case false =>
               val cameoId = if (vr.fields.contains("cameoId")) Some(vr.search) else None
               val displayName = if (vr.fields.contains("displayName")) Some(vr.search) else None
 
@@ -89,8 +88,6 @@ object IdentityController extends ExtendedController {
                   resOK(filtered.map { i => i.toPublicSummaryJson })
               }
             }
-          }
-
       }
   }
 
