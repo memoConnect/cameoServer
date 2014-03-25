@@ -46,7 +46,8 @@ object TestConfig {
   lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
 
   val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
-  val cidOther = "2GOdNSfdPMavyl95KUah"
+  val cidExisting2 = "dLBDYFdfj9ymiTblElmN"
+  val cidExistingNonMember = "2GOdNSfdPMavyl95KUah"
 
   val identityExisting = "g9PWZY7xKNbeCO6LPNnx"
   val identityExisting2 = "N2HKgBdxxnWBGxlYY7Dn"
