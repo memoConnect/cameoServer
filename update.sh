@@ -13,15 +13,55 @@ case "$1" in
 	updateClient=true
 	updateServer=true
       ;;
+   "none")
+    ;;
    *)
-      echo -e "\e[33m[cameo - Update type required: [server|client|both] ]\033[0m"
+      echo -e "\e[33m[cameo - Update type required: [server|client|both|none] ]\033[0m"
       exit 1
       ;;
 esac
 
+# get app mode
+if [ -e "mode" ]; then
+    mode=$(cat mode)
+else
+    echo -e "\e[33m[cameo - mode file not found. exiting]\033[0m"
+    exit 1
+fi
+
+case "$mode" in
+   "prod")
+      echo -e "\e[33m[cameo - Running as prod]\033[0m"
+      appOptions=-Dconfig.file=/opt/cameoSecrets/secret_prod.conf
+      ;;
+   "stage")
+      echo -e "\e[33m[cameo - Running as stage]\033[0m"
+      appOptions=-Dconfig.file=/opt/cameoSecrets/secret_stage.conf
+      ;;
+   "dev")
+       echo -e "\e[33m[cameo - Running as dev]\033[0m"
+      appOptions=-Dconfig.file=/opt/cameoSecrets/secret_dev.conf
+      ;;
+   "local")
+      echo -e "\e[33m[cameo - Running as local]\033[0m"
+      appOptions=-Dconfig.file=/opt/cameoSecrets/secret_local.conf
+      ;;
+   *)
+      echo "\e[33m[cameo - Invalid mode: ${mode}]\033[0m"
+      exit 1
+      ;;
+esac
+
+# change to install dir
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo -e "\e[33m[cameo - Changing to install dir: ${DIR}]\033[0m"
 cd ${DIR}
+
+# set mode to stage
+if [  "$stage" = true ]; then
+    echo -e "\e[33m[cameo - Setting mode to stage]\033[0m"
+    echo "stage" > mode
+fi
 
 fileName="UPDATING"
 # check if we are alreade updating
@@ -49,7 +89,11 @@ fi
 # update server
 if [ "$updateServer" = true ]; then
 	echo -e "\e[33m[cameo - updating server]\033[0m"
-	git pull
+	if [ "$mode" == "stage" ]; then
+        git checkout tags/stage
+    else
+	    git pull
+	fi
 fi
 
 #update client
@@ -57,9 +101,14 @@ if [ "$updateClient" = true ]; then
 	if [ -d ../cameoJSClient ]; then
 	    echo -e "\e[33m[cameo - updating client]\033[0m"
 	    cd ../cameoJSClient
-	    git pull
-	    ./compile.sh
+	    if [ "$mode" == "stage" ]; then
+            git checkout tags/stage
+        else
+            git pull
+        fi
+	    ./compile.sh #todo pass stage
 	    echo -e "\e[33m[cameo - copying client dist to public]\033[0m"
+        mkdir -p ../cameoServer/public
 	    cp -r dist/* ../cameoServer/public/
 	    cd - &> /dev/null
 	else
@@ -69,14 +118,14 @@ if [ "$updateClient" = true ]; then
 fi
 
 ./compile.sh
-./start.sh
+./start.sh ${appOptions}
 
 # check if another update is sheduled
 if [ -s ${fileName} ]; then
 	nextMode=$(cat ${fileName})
     echo -e "\e[33m[cameo - found scheduled update, starting it now. Mode: ${nextMode}]\033[0m"
     rm ${fileName}
-    ./update.sh ${nextMode}
+    ./update.sh ${nextMode} $2
 else
     rm ${fileName}
 fi

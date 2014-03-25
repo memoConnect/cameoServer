@@ -30,3 +30,4 @@ conf/version*
 /nohup*
 *.log
 /UPDATING
+/public/

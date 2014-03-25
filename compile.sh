@@ -8,6 +8,7 @@ else
     exit 1
 fi
 
+# determine version
 branch=$(git rev-parse --symbolic-full-name --abbrev-ref HEAD)
 case "$mode" in
    "prod")
@@ -16,9 +17,8 @@ case "$mode" in
       ;;
    "stage")
       echo -e "\e[33m[cameo - Compiling as stage]\033[0m"
-      # get version number from last tag
-      tag=$(git describe --abbrev=0 --tags)
-      version=${tag}_stage
+      # get version number from branch name
+      version=$(echo ${branch} | cut -d"-" -f1)_stage
       ;;
    "dev")
       echo -e "\e[33m[cameo - Compiling as dev]\033[0m"
