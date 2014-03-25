@@ -28,7 +28,7 @@ class MessageControllerSpec extends StartedApp {
   "MessageController" should {
 
     "add message to conversation" in {
-      val path = basePath + "/conversation/" + cidExisting + "/message"
+      val path = basePath + "/conversation/" + cidExisting2 + "/message"
 
       val json = Json.obj("body" -> body)
 
@@ -65,7 +65,7 @@ class MessageControllerSpec extends StartedApp {
     }
 
     "check if conversation summary is updated" in {
-      val path = basePath + "/conversation/" + cidExisting + "/summary"
+      val path = basePath + "/conversation/" + cidExisting2 + "/summary"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -100,12 +100,12 @@ class MessageControllerSpec extends StartedApp {
       (data \ "conversations")(0).asOpt[JsObject] must beSome
       val conversation = (data \ "conversations")(0).as[JsObject]
 
-      (conversation \ "id").asOpt[String] must beSome(cidExisting)
+      (conversation \ "id").asOpt[String] must beSome(cidExisting2)
     }
 
     "refuse non-members to send message to conversation" in {
 
-      val path = basePath + "/conversation/" + cidExisting + "/message"
+      val path = basePath + "/conversation/" + cidExisting2 + "/message"
 
       val json = Json.obj("body" -> "wir rocken")
 
@@ -129,7 +129,7 @@ class MessageControllerSpec extends StartedApp {
     var messageId2 = ""
 
     "send message with fileIds" in {
-      val path = basePath + "/conversation/" + cidExisting + "/message"
+      val path = basePath + "/conversation/" + cidExisting2 + "/message"
 
       val json = Json.obj("body" -> body , "fileIds" -> fileIds)
 

@@ -352,7 +352,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "refuse non-members to add recipients to conversation" in {
 
-      val path = basePath + "/conversation/" + cidOther + "/recipient"
+      val path = basePath + "/conversation/" + cidExistingNonMember + "/recipient"
 
       val json = Json.obj("recipients" -> validRecipients)
 
