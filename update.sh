@@ -102,7 +102,7 @@ if [ "$updateClient" = true ]; then
         else
             git pull
         fi
-	    ./compile.sh #todo pass stage
+	    bash ./compile.sh #todo pass stage
 	    echo -e "\e[33m[cameo - copying client dist to public]\033[0m"
         mkdir -p ../cameoServer/public
 	    cp -r dist/* ../cameoServer/public/
