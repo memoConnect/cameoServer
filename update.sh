@@ -2,6 +2,11 @@
 
 set -e
 
+ # change to install dir
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo -e "\e[33m[cameo - Changing to install dir: ${DIR}]\033[0m"
+cd ${DIR}
+
 case "$1" in
    "server")
 	updateServer=true
@@ -51,17 +56,6 @@ case "$mode" in
       exit 1
       ;;
 esac
-
-# change to install dir
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-echo -e "\e[33m[cameo - Changing to install dir: ${DIR}]\033[0m"
-cd ${DIR}
-
-# set mode to stage
-if [  "$stage" = true ]; then
-    echo -e "\e[33m[cameo - Setting mode to stage]\033[0m"
-    echo "stage" > mode
-fi
 
 fileName="UPDATING"
 # check if we are alreade updating
