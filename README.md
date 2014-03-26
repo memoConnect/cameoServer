@@ -22,7 +22,7 @@ cameo Client
 
 [here](https://github.com/memoConnect/cameoJSClient) you can find cameo web client
 
-Technical issues
+Technology Stack
 ================
 
 * Playframework2

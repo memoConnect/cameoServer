@@ -12,11 +12,9 @@
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- daily rollover -->
-            <fileNamePattern>${application.home}/logs/logFile.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <!-- keep 30 days' worth of history -->
-            <maxHistory>30</maxHistory>
+            <fileNamePattern>${application.home}/logs/%d{yyyy-MM-dd}.log</fileNamePattern>
         </rollingPolicy>
+
         <encoder>
             <pattern>%date - %highlight(%-5level) - %-15.15logger{15} - %msg%n%xException</pattern>
         </encoder>

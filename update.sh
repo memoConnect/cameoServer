@@ -36,20 +36,13 @@ fi
 
 case "$mode" in
    "prod")
-      echo -e "\e[33m[cameo - Running as prod]\033[0m"
-      appOptions=-Dconfig.file=/opt/cameoSecrets/secret_prod.conf
       ;;
    "stage")
-      echo -e "\e[33m[cameo - Running as stage]\033[0m"
-      appOptions=-Dconfig.file=/opt/cameoSecrets/secret_stage.conf
+        checkoutStage=true
       ;;
    "dev")
-       echo -e "\e[33m[cameo - Running as dev]\033[0m"
-      appOptions=-Dconfig.file=/opt/cameoSecrets/secret_dev.conf
       ;;
    "local")
-      echo -e "\e[33m[cameo - Running as local]\033[0m"
-      appOptions=-Dconfig.file=/opt/cameoSecrets/secret_local.conf
       ;;
    *)
       echo "\e[33m[cameo - Invalid mode: ${mode}]\033[0m"
@@ -83,7 +76,7 @@ fi
 # update server
 if [ "$updateServer" = true ]; then
 	echo -e "\e[33m[cameo - updating server]\033[0m"
-	if [ "$mode" == "stage" ]; then
+	if [ "$checkoutStage" = true ]; then
 	    git fetch --tags
         git checkout tags/stage
     else
@@ -96,7 +89,7 @@ if [ "$updateClient" = true ]; then
 	if [ -d ../cameoJSClient ]; then
 	    echo -e "\e[33m[cameo - updating client]\033[0m"
 	    cd ../cameoJSClient
-	    if [ "$mode" == "stage" ]; then
+	    if [ "$checkoutStage" = true ]; then
 	        git fetch --tags
             git checkout tags/stage
         else
