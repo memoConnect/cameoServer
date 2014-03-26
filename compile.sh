@@ -2,9 +2,9 @@
 
 # write version to file
 if [ -z "$1" ]; then
-    version=$1
-else
     version="none"
+else
+    version=$1
 fi
 
 echo application.version=${version} > ./conf/version.conf
