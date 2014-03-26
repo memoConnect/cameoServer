@@ -6,7 +6,7 @@ import play.api.test.Helpers._
 import testHelper.TestConfig._
 import testHelper.Stuff._
 import testHelper.StartedApp
-import helper.TestHelper
+import helper.TestValueStore
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import play.api.libs.json.JsObject
@@ -24,9 +24,9 @@ class CockpitControllerSpec extends StartedApp {
 
     var twoFactorToken = ""
 
-    "get two factor auth token" in {
+    step(TestValueStore.start())
 
-      TestHelper.clear()
+    "get two factor auth token" in {
 
       val path1 = basePath + "/twoFactorAuth"
       val req1 = FakeRequest(GET, path1).withHeaders(tokenHeader(tokenExisting))
@@ -36,7 +36,7 @@ class CockpitControllerSpec extends StartedApp {
 
       Await.result(res1, Duration.create(1, MINUTES) )
 
-      val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
+      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
 
       val smsKey = (sms(0) \ "body").as[String]
 
@@ -56,6 +56,9 @@ class CockpitControllerSpec extends StartedApp {
       (data \ "created").asOpt[String] must beSome
     }
 
+    step(TestValueStore.stop())
+
+
     cockpitRoutesWithIds.seq.map { r =>
 
       r._1 + " " + r._2 + "\t: should work for users on access list" in {
@@ -73,10 +76,9 @@ class CockpitControllerSpec extends StartedApp {
 
     var twoFactorToken2 = ""
 
+    step(TestValueStore.start())
 
     "get two factor auth token" in {
-
-      TestHelper.clear()
 
       val path1 = basePath + "/twoFactorAuth"
       val req1 = FakeRequest(GET, path1).withHeaders(tokenHeader(tokenExisting2))
@@ -86,7 +88,7 @@ class CockpitControllerSpec extends StartedApp {
 
       Await.result(res1, Duration.create(1, MINUTES) )
 
-      val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
+      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
 
       val smsKey = (sms(0) \ "body").as[String]
 
@@ -104,7 +106,10 @@ class CockpitControllerSpec extends StartedApp {
       (data \ "token").asOpt[String] must beSome
       twoFactorToken = (data \ "token").as[String]
       (data \ "created").asOpt[String] must beSome
+
     }
+
+    step(TestValueStore.stop())
 
     cockpitRoutesWithIds.seq.map { r =>
 

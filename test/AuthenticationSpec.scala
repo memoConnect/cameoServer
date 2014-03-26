@@ -1,5 +1,5 @@
 
-import helper.TestHelper
+import helper.TestValueStore
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsObject
 import play.api.test._
@@ -118,9 +118,9 @@ class AuthenticationSpec extends StartedApp {
 
     var twoFactorToken = ""
 
-    "get two factor auth token" in {
+    step(TestValueStore.start())
 
-      TestHelper.clear()
+    "get two factor auth token" in {
 
       val path1 = basePath + "/twoFactorAuth"
       val req1 = FakeRequest(GET, path1).withHeaders(tokenHeader(tokenExisting))
@@ -130,7 +130,7 @@ class AuthenticationSpec extends StartedApp {
 
       Await.result(res1, Duration.create(1, MINUTES) )
 
-      val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
+      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
 
       val smsKey = (sms(0) \ "body").as[String]
 
@@ -149,6 +149,8 @@ class AuthenticationSpec extends StartedApp {
       twoFactorToken = (data \ "token").as[String]
       (data \ "created").asOpt[String] must beSome
     }
+
+    step(TestValueStore.stop())
 
     twoFactorAuthRoutesWithIds.map { r =>
 

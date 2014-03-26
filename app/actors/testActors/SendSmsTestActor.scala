@@ -2,7 +2,7 @@ package actors.testActors
 
 import akka.actor.Actor
 import models.SmsMessage
-import helper.TestHelper
+import helper.TestValueStore
 import play.api.libs.json.{ JsObject, Json }
 
 /**
@@ -14,6 +14,6 @@ class SendSmsTestActor extends Actor {
 
   def receive = {
     case (sms: SmsMessage, tryCount: Int) =>
-      TestHelper.addValue("sms", Json.toJson(sms).as[JsObject])
+      TestValueStore.addValue("sms", Json.toJson(sms).as[JsObject])
   }
 }

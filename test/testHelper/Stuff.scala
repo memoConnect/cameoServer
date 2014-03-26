@@ -1,7 +1,7 @@
 package testHelper
 
 import play.api.libs.json.{Json, JsObject}
-import helper.TestHelper
+import helper.TestValueStore
 
 /**
  * User: Björn Reimer

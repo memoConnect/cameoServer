@@ -1,4 +1,4 @@
-import helper.TestHelper
+import helper.TestValueStore
 import play.api.libs.json.{Json, JsObject}
 import play.api.Logger
 import play.api.test.FakeRequest
@@ -20,8 +20,8 @@ class TwoFactorControllerSpec extends StartedApp {
 
     var smsKey = ""
     var twoFactorToken = ""
-    TestHelper.clear()
 
+    step(TestValueStore.start())
 
     "Send a new SmsKey to User with valid token" in {
       val path = basePath + "/twoFactorAuth"
@@ -35,7 +35,7 @@ class TwoFactorControllerSpec extends StartedApp {
 
       Thread.sleep(500)
 
-      val sms = TestHelper.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
+      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
       sms.size must beEqualTo(1)
 
       (sms(0) \ "body").asOpt[String] must beSome
@@ -43,6 +43,8 @@ class TwoFactorControllerSpec extends StartedApp {
 
       smsKey.length() must beEqualTo(8)
     }
+
+    step(TestValueStore.stop())
 
     "refuse to return two factor token to other identity" in {
       val path = basePath + "/twoFactorAuth/confirm"
@@ -93,6 +95,7 @@ class TwoFactorControllerSpec extends StartedApp {
 
       status(res) must equalTo(BAD_REQUEST)
     }
+
 
   }
 }
