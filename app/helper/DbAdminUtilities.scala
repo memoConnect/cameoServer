@@ -4,7 +4,7 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
 import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import play.api.Logger
+import play.api.{Play, Logger}
 import scala.io.Source
 import models.{ GlobalState, MongoId }
 import play.api.libs.iteratee.Iteratee
@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 import helper.MongoCollections._
 import reactivemongo.api.indexes.{IndexType, Index}
 import reactivemongo.bson.BSONDocument
+import play.api.Play.current
 
 /**
  * User: Björn Reimer
@@ -67,7 +68,7 @@ object DbAdminUtilities {
   }
 
   def loadFixtures(): Future[Boolean] = {
-    val allResults: Seq[Future[Boolean]] = new File("fixtures/").listFiles.toSeq.map {
+    val allResults: Seq[Future[Boolean]] = new File(Play.application.path.getAbsolutePath + "/fixtures/").listFiles.toSeq.map {
       file =>
 
         if (file.getName.endsWith(".json")) {

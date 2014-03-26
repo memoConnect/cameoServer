@@ -9,5 +9,5 @@ fi
 
 echo application.version=${version} > ./conf/version.conf
 
-echo -e "\e[33m[cameo - Compiling version: $1 ]\033[0m"
+echo -e "\e[33m[cameo - Compiling version: ${version} ]\033[0m"
 ./sbt clean compile stage
