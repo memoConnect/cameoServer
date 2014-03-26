@@ -39,9 +39,12 @@ object ListController extends ExtendedController {
     implicit val reads: Reads[ListOptions] = Json.reads[ListOptions]
   }
 
-  def getAllLists() = TwoFactorAuthAction {
-    val allNames: Seq[String] = allEditables.map { _.name }
-    resOK(Json.obj("lists" -> Json.toJson(allNames)))
+  def getAllLists() = TwoFactorAuthAction.async {
+    request =>
+      checkAccessList(request.identity.accountId) {
+        val allNames: Seq[String] = allEditables.map ( _.name )
+        Future(resOK(Json.obj("lists" -> Json.toJson(allNames))))
+      }
   }
 
   def checkAccessList(accountId: Option[MongoId])(action: Future[SimpleResult]): Future[SimpleResult] = {

@@ -104,7 +104,7 @@ class CockpitControllerSpec extends StartedApp {
       val data = (contentAsJson(res2) \ "data").as[JsObject]
 
       (data \ "token").asOpt[String] must beSome
-      twoFactorToken = (data \ "token").as[String]
+      twoFactorToken2 = (data \ "token").as[String]
       (data \ "created").asOpt[String] must beSome
 
     }
