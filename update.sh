@@ -95,7 +95,7 @@ if [ "$updateClient" = true ]; then
         else
             git pull
         fi
-	    bash ./compile.sh #todo pass stage
+	    bash ./compile.sh ${mode}
 	    echo -e "\e[33m[cameo - copying client dist to public]\033[0m"
         mkdir -p ../cameoServer/public
 	    cp -r dist/* ../cameoServer/public/
@@ -107,7 +107,7 @@ if [ "$updateClient" = true ]; then
 fi
 
 ./compile.sh
-./start.sh ${appOptions}
+./start.sh
 
 # check if another update is sheduled
 if [ -s ${fileName} ]; then
