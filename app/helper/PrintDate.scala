@@ -14,7 +14,7 @@ object PrintDate {
   defaultDateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"))
 
   def toString(date: Date) = {
-    defaultDateFormat.format(date)
+    date.getTime
   }
 
 }
