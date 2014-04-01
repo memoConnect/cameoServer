@@ -149,7 +149,7 @@ class AuthenticationSpec extends StartedApp {
 
       (data \ "token").asOpt[String] must beSome
       twoFactorToken = (data \ "token").as[String]
-      (data \ "created").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
     }
 
     step(TestValueStore.stop())

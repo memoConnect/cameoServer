@@ -50,8 +50,8 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
       m.length must beEqualTo(100)
-      (data \ "created").asOpt[String] must beSome
-      (data \ "lastUpdated").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
     }
 
     "Create a new conversation with subject" in {
@@ -72,8 +72,8 @@ class ConversationControllerSpec extends StartedApp {
       val recipient = (data \ "recipients")(0).as[JsObject]
       (recipient \ "identityId").asOpt[String] must beSome(identityExisting)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
-      (data \ "created").asOpt[String] must beSome
-      (data \ "lastUpdated").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "subject").asOpt[String] must beSome(subject)
     }
 
@@ -93,8 +93,8 @@ class ConversationControllerSpec extends StartedApp {
       val recipient = (data \ "recipients")(0).as[JsObject]
       (recipient \ "identityId").asOpt[String] must beSome(identityExisting)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
-      (data \ "created").asOpt[String] must beSome
-      (data \ "lastUpdated").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "subject").asOpt[String] must beNone
 
     }
@@ -115,8 +115,8 @@ class ConversationControllerSpec extends StartedApp {
       (r \ "identityId").asOpt[String] must beSome(identityExisting)
       (r \ "identity" \ "displayName").asOpt[String] must beSome
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
-      (data \ "created").asOpt[String] must beSome
-      (data \ "lastUpdated").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "subject").asOpt[String] must beNone
     }
 
@@ -138,8 +138,8 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
       m.length must beEqualTo(100)
-      (data \ "created").asOpt[String] must beSome
-      (data \ "lastUpdated").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
     }
 
     "get conversation summary" in {
@@ -154,7 +154,7 @@ class ConversationControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       (data \ "numberOfMessages").asOpt[Int] must beSome(100)
-      (data \ "lastUpdated").asOpt[String] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "messages")(0).asOpt[JsObject] must beSome
       (data \ "messages")(1).asOpt[JsObject] must beNone
       (data \ "subject").asOpt[String] must beSome
@@ -189,7 +189,7 @@ class ConversationControllerSpec extends StartedApp {
         c =>
           (c \ "id").asOpt[String] must beSome
           (c \ "numberOfMessages").asOpt[Int] must beSome
-          (c \ "lastUpdated").asOpt[String] must beSome
+          (c \ "lastUpdated").asOpt[Long] must beSome
           (c \ "messages").asOpt[Seq[JsObject]] must beSome
           (c \ "messages")(1).asOpt[JsValue] must beNone
           (c \ "recipients").asOpt[Seq[JsObject]] must be beSome

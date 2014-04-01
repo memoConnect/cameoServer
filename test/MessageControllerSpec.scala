@@ -44,7 +44,7 @@ class MessageControllerSpec extends StartedApp {
       (data \ "body").asOpt[String] must beSome(body)
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
       (data \ "fromIdentity").asOpt[String] must beSome
-      (data \ "created").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
     }
 
     "get single message" in {
@@ -61,7 +61,7 @@ class MessageControllerSpec extends StartedApp {
       (data \ "body").asOpt[String] must beSome(body)
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
       (data \ "fromIdentity").asOpt[String] must beSome
-      (data \ "created").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
     }
 
     "check if conversation summary is updated" in {
@@ -81,10 +81,10 @@ class MessageControllerSpec extends StartedApp {
       (message \ "body").asOpt[String] must beSome(body)
       (message \ "messageStatus").asOpt[Seq[JsObject]] must beSome
       (message \ "fromIdentity").asOpt[String] must beSome(identityExisting)
-      (message \ "created").asOpt[String] must beSome
+      (message \ "created").asOpt[Long] must beSome
 
       // check that lastUpdated contains todays date
-      (data \ "lastUpdated").asOpt[String] must beSome(contain(new SimpleDateFormat("dd.MM.yyyy").format(new Date)))
+      (data \ "lastUpdated").asOpt[Long] must beSome
     }
 
     "check if this conversation is returned first in the conversations call" in {
@@ -149,7 +149,7 @@ class MessageControllerSpec extends StartedApp {
       (data \ "fromIdentity").asOpt[String] must beSome
       (data \ "fileIds")(0).asOpt[String] must beSome(fileIds(0))
       (data \ "fileIds")(1).asOpt[String] must beSome(fileIds(1))
-      (data \ "created").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
     }
 
     "return fileIds with message" in {
@@ -168,7 +168,7 @@ class MessageControllerSpec extends StartedApp {
       (data \ "fromIdentity").asOpt[String] must beSome
       (data \ "fileIds")(0).asOpt[String] must beSome(fileIds(0))
       (data \ "fileIds")(1).asOpt[String] must beSome(fileIds(1))
-      (data \ "created").asOpt[String] must beSome
+      (data \ "created").asOpt[Long] must beSome
     }
   }
 }
