@@ -59,6 +59,7 @@ class AuthenticationSpec extends StartedApp {
     // dont test utils and webapp
     val filteredAuthRoutes = authRoutes.filterNot(r =>
       r._2.startsWith("/app") ||
+      r._2.startsWith("/dl") ||
         r._2.startsWith("/cockpit") ||
         r._2.equals("/") ||
         r._2.startsWith("/api/v1/util") ||
