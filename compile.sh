@@ -7,7 +7,7 @@ else
     version=$1
 fi
 
-echo application.version=${version} > ./conf/version.conf
+echo application.version=\"${version}\" > ./conf/version.conf
 
 echo -e "\e[33m[ CameoServer - Compiling version: ${version} ]\033[0m"
 
