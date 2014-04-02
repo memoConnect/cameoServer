@@ -99,6 +99,11 @@ GET            /p/:id                                         controllers.ShortU
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
 
+# app downloads
+GET            /dl                                            controllers.Assets.at(path="/public/cockpit", file="index.html")
+GET            /dl/                                           controllers.Assets.at(path="/public/cockpit", file="index.html")
+GET            /dl/*file                                      controllers.Assets.at(path="/public/cockpit", file)
+
 
 # Cockpit WebClient
 GET            /cockpit/                                      controllers.Assets.at(path="/public/cockpit", file="index.html")
