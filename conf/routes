@@ -98,12 +98,10 @@ GET            /api/v1/util/checkApp                          controllers.Applic
 GET            /p/:id                                         controllers.ShortUrlController.redirect(urlType = "p", id: String)
 GET            /v/:id                                         controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
-
 # app downloads
-GET            /dl                                            controllers.Assets.at(path="/public/cockpit", file="index.html")
-GET            /dl/                                           controllers.Assets.at(path="/public/cockpit", file="index.html")
-GET            /dl/*file                                      controllers.Assets.at(path="/public/cockpit", file)
-
+GET            /dl                                            controllers.Assets.at(path="/public/dl", file="index.html")
+GET            /dl/                                           controllers.Assets.at(path="/public/dl", file="index.html")
+GET            /dl/*file                                      controllers.Assets.at(path="/public/dl", file)
 
 # Cockpit WebClient
 GET            /cockpit/                                      controllers.Assets.at(path="/public/cockpit", file="index.html")
