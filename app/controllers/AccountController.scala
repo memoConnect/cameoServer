@@ -23,7 +23,7 @@ object AccountController extends ExtendedController {
 
   def checkLogin(login: String): Boolean = {
     login.length >= 6 &&
-      login.length < 20 &&
+      login.length < 21 &&
       login.matches("^\\w+$")
 
   }

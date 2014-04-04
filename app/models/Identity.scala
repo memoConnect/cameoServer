@@ -226,7 +226,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
           _.toJson
         }) ++
         Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) ++
-        Json.obj("publicKeys" -> i.publicKeys.map(pk => pk.key))
+        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
   }
 
   def publicSummaryWrites: Writes[Identity] = Writes {
