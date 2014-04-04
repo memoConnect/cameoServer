@@ -86,6 +86,7 @@ PUT            /api/cockpit/v1/:elementName/:id                        controlle
 
 # Deal with options
 OPTIONS        /api/v1/*foo                                            controllers.TokenController.getTokenOptions(foo)
+OPTIONS        /cockpit/v1/*foo                                        controllers.TokenController.getTokenOptions(foo)
 
 # Utitility functions
 GET            /api/v1/util/dumpDb                                     controllers.Application.dumpDb()
