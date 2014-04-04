@@ -53,7 +53,7 @@ object PublicKey extends Model[PublicKey] {
 
   override def save(js: JsObject): Future[LastError] = {
     val id: MongoId = (js \ "_id").as[MongoId]
-    val query = arrayQuery("publicKey", id)
+    val query = arrayQuery("publicKeys", id)
     val set = Json.obj("$set" -> js)
     col.update(query, set)
   }

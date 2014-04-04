@@ -12,6 +12,7 @@ import scala.Some
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
+import play.api.libs.ws.WS
 
 /**
  * User: Björn Reimer
@@ -24,6 +25,7 @@ object AccountController extends ExtendedController {
     login.length >= 6 &&
       login.length < 20 &&
       login.matches("^\\w+$")
+
   }
 
   case class AdditionalValues(reservationSecret: String)

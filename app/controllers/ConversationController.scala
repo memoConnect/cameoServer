@@ -119,22 +119,6 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def updateRecipient(id: String, rid: String) = AuthAction.async(parse.tolerantJson) {
-    request =>
-      validateFuture(request.body, RecipientUpdate.format) {
-        ru =>
-          Conversation.find(id).flatMap {
-            case None => Future(resNotFound("conversation"))
-            case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-              c.updateRecipient(Recipient.create(rid), ru).map {
-                case false => resServerError("could not update")
-                case true  => resOK("updated")
-              }
-            }
-          }
-      }
-  }
-
   def updateConversation(id: String) = AuthAction.async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, ConversationUpdate.format) {
@@ -149,5 +133,21 @@ object ConversationController extends ExtendedController {
             }
           }
       }
+  }
+
+  def setEncryptedPassphraseList(id: String) = AuthAction.async(parse.tolerantJson) { request =>
+    Conversation.find(id).flatMap {
+      case None => Future(resNotFound("conversation"))
+      case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+        val list: JsValue = (request.body \ "encryptedPassphraseList").asOpt[JsValue].getOrElse(JsArray())
+        validateFuture(list, Reads.seq(EncryptedPassphrase.createReads)) {
+          list =>
+            c.setEncPassList(list).map {
+              case false => resServerError("unable to update")
+              case true => resOK("updated")
+            }
+        }
+      }
+    }
   }
 }
