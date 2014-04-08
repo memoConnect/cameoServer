@@ -225,7 +225,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
           _.toJson
         }) ++
-        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) ++
+        maybeEmptyString("displayName", i.displayName) ++
         Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
   }
 
@@ -233,7 +233,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
+        maybeEmptyString("displayName", i.displayName)
   }
 
   def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String]): Identity = {
