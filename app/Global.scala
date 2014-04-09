@@ -42,7 +42,7 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
     // load fixtures
     if (Play.configuration.getString("mongo.init.loadOnStart").getOrElse("fail").equalsIgnoreCase("true")) {
 
-      // only load if there is no data in the DB alread
+      // only load if there is no data in the DB already
       val futureRes: Future[Boolean] = conversationCollection.find(Json.obj()).one[JsValue].flatMap {
         case None =>
           Logger.info("Loading initial data")
@@ -58,27 +58,38 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
     // global database migrations
     if (Play.configuration.getString("mongo.migrate.global").getOrElse("fail").equalsIgnoreCase("true")) {
 
-      val latestVersion: Int = DbAdminUtilities.latestDbVersion
+      def migrate: Future[Boolean] = {
+        val latestVersion: Int = DbAdminUtilities.latestDbVersion
 
-      // get global state from db
-      val state: Future[GlobalState] = globalStateCollection.find(Json.obj()).one[GlobalState].flatMap {
-        case None =>
-          val newState = new GlobalState(0, false)
-          globalStateCollection.insert(newState).map(lastError => newState)
-        case Some(s) => Future(s)
-      }
-
-      val res: Future[Boolean] = state.flatMap {
-        // only migrate if there is a new version and nobody else is migrating
-        case GlobalState(version, false) if version < latestVersion => {
-          Logger.debug("Migrating. Current Version: " + version + " latestVersion: " + latestVersion)
-          // apply migrations
-          DbAdminUtilities.migrate(version)
+        // get global state from db
+        val futureState: Future[GlobalState] = globalStateCollection.find(Json.obj()).one[GlobalState].flatMap {
+          case None =>
+            val newState = new GlobalState(0, false)
+            globalStateCollection.insert(newState).map(lastError => newState)
+          case Some(s) => Future(s)
         }
-        case _ => Future(false)
+
+        val state = Await.result(futureState, 1 minute)
+
+        state match {
+          // only migrate if there is a new version and nobody else is migrating
+          case GlobalState(version, false) if version < latestVersion => {
+            Logger.debug("Migrating. Current Version: " + version + " latestVersion: " + latestVersion)
+            // apply migrations
+            DbAdminUtilities.migrate(version)
+          }
+          case GlobalState(version, true) =>
+          // wait until lock is lifted
+            Logger.info("A global migration seems to be running, waiting...")
+            Thread.sleep(2000)
+            migrate
+          case _ =>
+            Logger.error("no global db version, This should not happen ;)")
+            Future(false)
+        }
       }
 
-      Await.result(res, 6 hours)
+      Await.result(migrate, 6 hours)
     }
 
   }
