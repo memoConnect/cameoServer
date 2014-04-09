@@ -222,17 +222,19 @@ object DbAdminUtilities {
         val loginName = (js \ "loginName").as[String]
         val loginNameLower = loginName.toLowerCase
 
-        Logger.debug(loginName + " => " + loginNameLower)
         loginNameLower match {
           case `loginName` =>
             Future(true)
           case x =>
+            Logger.debug(loginName + " => " + loginNameLower)
             val query = Json.obj("_id" -> id)
             val set = Json.obj("$set" -> Json.obj("loginName" -> loginNameLower))
             accountCollection.update(query, set).map {
-              _.updatedExisting
+              le => {
+                Logger.debug("updated: " + loginNameLower)
+                le.updatedExisting
+              }
             }
-
         }
       }
 
