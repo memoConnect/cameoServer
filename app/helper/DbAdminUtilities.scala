@@ -128,9 +128,7 @@ object DbAdminUtilities {
       res =>
         Logger.debug("finished migration: " + res)
         val set2 = Json.obj("$set" -> new GlobalState(latestDbVersion, false))
-        globalStateCollection.update(query, set2).map {
-          _.updatedExisting
-        }
+        globalStateCollection.update(query, set2)
         res
     }
   }
@@ -224,10 +222,11 @@ object DbAdminUtilities {
         val loginName = (js \ "loginName").as[String]
         val loginNameLower = loginName.toLowerCase
 
+        Logger.debug(loginName + " => " + loginNameLower)
         loginNameLower match {
-          case `loginName` => Future(true)
+          case `loginName` =>
+            Future(true)
           case x =>
-            Logger.debug(loginName + " => " + loginNameLower)
             val query = Json.obj("_id" -> id)
             val set = Json.obj("$set" -> Json.obj("loginName" -> loginNameLower))
             accountCollection.update(query, set).map {

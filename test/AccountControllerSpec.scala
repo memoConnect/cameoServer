@@ -22,8 +22,8 @@ class AccountControllerSpec extends StartedApp {
 
   sequential
 
-  val login = randomString(8)
-  val login2 = randomString(8)
+  val login = "superMoep"
+  val login2 = "monsterMoep"
   val pass = randomString(8)
   val displayName = "MOEP"
   val mail = validEmails(0)
@@ -104,6 +104,21 @@ class AccountControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "alternative").asOpt[String] must beSome(login + "_1")
+    }
+
+    "Refuse to reserve reserved loginName with different capitalization" in {
+      val path = basePath + "/account/check"
+      val loginUpper = login.toUpperCase
+      val json = Json.obj("loginName" -> loginUpper)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(232)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "alternative").asOpt[String] must beSome(loginUpper + "_1")
     }
 
     "Refuse to claim reserved login without secret" in {
@@ -210,8 +225,6 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
-      Logger.debug("CONTENT: " + contentAsString(res))
-
       status(res) must equalTo(232)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -236,6 +249,20 @@ class AccountControllerSpec extends StartedApp {
       }
 
       tokenOpt must beSome
+    }
+
+    "Return a token and ignore capitalization of loginName" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((login.toUpperCase + ":" + pass).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "token").asOpt[String] must beSome
     }
 
     "Automatically create an identity for a new account" in {
