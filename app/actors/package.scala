@@ -1,6 +1,6 @@
 import actors.testActors.SendSmsTestActor
 import akka.actor.Props
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 
 /**
@@ -13,6 +13,7 @@ package object actors {
   // define different actor for tests
   def SendSmsActorProps: Props = {
     if (Play.isTest) {
+      Logger.debug("Using SMS Test Actor")
       Props[SendSmsTestActor]
     } else {
       Props[SendSmsActor]

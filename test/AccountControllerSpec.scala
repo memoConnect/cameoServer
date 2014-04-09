@@ -25,6 +25,7 @@ class AccountControllerSpec extends StartedApp {
   val login = randomString(8)
   val login2 = randomString(8)
   val pass = randomString(8)
+  val displayName = "MOEP"
   val mail = validEmails(0)
   val tel = validPhoneNumbers(0)._1
   val cleanedTel = validPhoneNumbers(0)._2
@@ -155,7 +156,9 @@ class AccountControllerSpec extends StartedApp {
 
     "Create Account" in {
       val path = basePath + "/account"
-      val json = createUser(login, pass, Some(tel), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
+      val json = createUser(login, pass, Some(tel), Some(mail)) ++
+        Json.obj("reservationSecret" -> regSec) ++
+        Json.obj("displayName" -> displayName)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -248,6 +251,7 @@ class AccountControllerSpec extends StartedApp {
       (data \ "id").asOpt[String] must beSome
       (data \ "userKey").asOpt[String] must beSome
       (data \ "cameoId").asOpt[String] must beSome(login)
+      (data \ "displayName").asOpt[String] must beSome(displayName)
       (data \ "email" \ "value").asOpt[String] must beSome(mail)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(cleanedTel)
     }

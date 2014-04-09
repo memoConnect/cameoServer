@@ -236,11 +236,11 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         maybeEmptyString("displayName", i.displayName)
   }
 
-  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String]): Identity = {
+  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
       accountId,
-      None,
+      displayName,
       VerifiedString.createOpt(email),
       VerifiedString.createOpt(phoneNumber),
       cameoId,

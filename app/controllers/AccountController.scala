@@ -28,7 +28,7 @@ object AccountController extends ExtendedController {
 
   }
 
-  case class AdditionalValues(reservationSecret: String)
+  case class AdditionalValues(reservationSecret: String, displayName: Option[String])
 
   object AdditionalValues {
     val reads: Reads[AdditionalValues] = Json.reads[AdditionalValues]
@@ -55,7 +55,7 @@ object AccountController extends ExtendedController {
                         AccountReservation.deleteReserved(account.loginName)
 
                         // create identity and add it to account
-                        val identity = Identity.create(Some(account.id), account.loginName, account.email, account.phoneNumber)
+                        val identity = Identity.create(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
                         Identity.col.insert(identity)
                         val account2 = account.copy(identities = Seq(identity.id))
 
