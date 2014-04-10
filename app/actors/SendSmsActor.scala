@@ -76,7 +76,7 @@ class SendSmsActor extends Actor {
         message.updateSingleStatus(ms)
       } else {
         // get identity of sender
-        val from: String = fromIdentity.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)
+        val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
         val to: String = toIdentity.phoneNumber.get.toString
         val body: String = message.body
 
