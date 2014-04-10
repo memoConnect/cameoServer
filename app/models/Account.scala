@@ -124,10 +124,10 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
 
     Seq(
-      CockpitAttributeString[String](name = "loginName", displayName = "Login Name", showInList = true),
-      CockpitAttributeString[String](name = "password", displayName = "Password"),
-      CockpitAttributeString[Option[String]](name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),
-      CockpitAttributeString[Option[String]](name = "email", displayName = "Email", isEditable = true, showInList = true),
+      CockpitAttributeString[String](name = "loginName", displayName = "Login Name", nullValue = "", showInList = true),
+      CockpitAttributeString[String](name = "password", displayName = "Password", nullValue = ""),
+      CockpitAttributeString[Option[String]](name = "phoneNumber", displayName = "Phone Number", nullValue = None, isEditable = true, showInList = true),
+      CockpitAttributeString[Option[String]](name = "email", displayName = "Email", nullValue = None, isEditable = true, showInList = true),
       CockpitAttributeFilter("identities", "Identities", "identity", "ID"),
       CockpitAttributeDate(name = "created", displayName = "Created"),
       CockpitAttributeDate(name = "lastUpdated", displayName = "Last Updated (not working yet)")

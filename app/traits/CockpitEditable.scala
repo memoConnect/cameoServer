@@ -1,11 +1,11 @@
 package traits
 
 import models.cockpit._
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ExecutionContext, Future}
 import reactivemongo.core.commands._
 import ExecutionContext.Implicits.global
-import controllers.cockpit.ListController.{ SelectedFilters, ListOptions }
-import play.api.libs.json.{ JsObject, Json }
+import controllers.cockpit.ListController.{SelectedFilters, ListOptions}
+import play.api.libs.json.{JsObject, Json}
 import helper.JsonHelper._
 import helper.MongoCollections._
 import reactivemongo.core.commands.Match
@@ -37,7 +37,9 @@ trait CockpitEditable[A] extends Model[A] {
   /**
    * Helper
    */
-  def getTitles: Seq[String] = cockpitMapping.filter(_.getShowInList).map { _.getDisplayName }
+  def getTitles: Seq[String] = cockpitMapping.filter(_.getShowInList).map {
+    _.getDisplayName
+  }
 
   def getCockpitListElement(obj: A): CockpitListElement = {
     val js = Json.toJson(obj).as[JsObject]
@@ -54,12 +56,14 @@ trait CockpitEditable[A] extends Model[A] {
       case SelectedFilters(filterName, term) =>
         // get filter from list
         cockpitListFilters.find(_.filterName.equals(filterName)) match {
-          case None            => Json.obj()
+          case None => Json.obj()
           case Some(filterDef) => filterDef.filterFunction(term)
         }
     }
     // convert them to Mongo Match
-    val matches = filterJsons.map { js => Match(toBson(js).get) }
+    val matches = filterJsons.map {
+      js => Match(toBson(js).get)
+    }
 
     // add limit and offset
     val pipeline: Seq[PipelineOperator] = matches ++
@@ -70,22 +74,25 @@ trait CockpitEditable[A] extends Model[A] {
     val aggregationCommand = Aggregate(col.name, pipeline)
 
     mongoDB.command(aggregationCommand).map {
-      res =>
-        {
-          val list = res.toSeq.map { bson =>
+      res => {
+        val list = res.toSeq.map {
+          bson =>
             Json.toJson(bson).as[A]
-          }
-          val elements = list.map(getCockpitListElement)
-          new CockpitList(getTitles, elements, cockpitListFilters)
         }
+        val elements = list.map(getCockpitListElement)
+        new CockpitList(getTitles, elements, cockpitListFilters)
+      }
     }
   }
 
   def getAttributes(id: String): Future[Option[Seq[JsObject]]] =
     find(id).map {
-      _.map { obj =>
-        val js = Json.toJson(obj).as[JsObject]
-        cockpitMapping.map(_.getEditJson(js)).filter(_.isDefined).map(_.get)
+      _.map {
+        obj =>
+          val js = Json.toJson(obj).as[JsObject]
+
+          // get edit json for each attribute
+          cockpitMapping.map(_.getEditJson(js))
       }
     }
 
@@ -120,7 +127,9 @@ trait CockpitEditable[A] extends Model[A] {
             Future(None)
           case Some(obj) =>
             // save to db
-            save(Json.toJson(obj).as[JsObject]).map { lastError => Some(lastError.updatedExisting) }
+            save(Json.toJson(obj).as[JsObject]).map {
+              lastError => Some(lastError.updatedExisting)
+            }
         }
 
     }

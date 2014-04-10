@@ -300,12 +300,12 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
     Seq(
       CockpitAttributeFilter(name = "accountId", displayName = "Account Id", listName = "account", filterName = "ID"),
-      CockpitAttributeString[Option[String]](name = "displayName", displayName = "Display Name", isEditable = true, showInList = true),
-      CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", showInList = true),
+      CockpitAttributeString[Option[String]](name = "displayName", displayName = "Display Name", isEditable = true, showInList = true, nullValue = None),
+      CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", nullValue = "", showInList = true),
       CockpitAttributeVerifiedString(name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),
       CockpitAttributeVerifiedString(name = "email", displayName = "Email", isEditable = true, showInList = true),
-      CockpitAttributeString[String](name = "preferredMessageType", displayName = "Preferred Message Type", isEditable = true),
-      CockpitAttributeString[String](name = "userKey", displayName = "User Key"),
+      CockpitAttributeString[String](name = "preferredMessageType", displayName = "Preferred Message Type", nullValue = "", isEditable = true),
+      CockpitAttributeString[String](name = "userKey", displayName = "User Key", nullValue = ""),
       CockpitAttributeFilter("contacts", "Contacts", "identity", "ID"),
       CockpitAttributeSimpleList("tokens", "Tokens"),
       CockpitAttributeSimpleList("friendRequests", "Friend Requests"),

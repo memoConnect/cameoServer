@@ -37,13 +37,18 @@ case class CockpitAttributeVerifiedString(name: String,
   }
 
   def getTransformerFromData(data: JsValue): Option[Reads[JsObject]] = {
-    data.asOpt[String] match {
-      case None =>
-        Logger.error("Cannot be converted back to type: " + data)
-        None
-      case Some(str) =>
+    val value: Option[JsValue] = data match {
+      case JsNull => Some(JsNull)
+      case JsString(str) =>
         val vs = VerifiedString.create(str)
-        Some(__.json.update((__ \ name).json.put(Json.toJson(vs))))
+        Some(Json.toJson(vs))
+      case _ =>
+        Logger.error("Cannot be converted to verified string: " + data)
+        None
+    }
+    value.map {
+      js =>
+        __.json.update((__ \ name).json.put(js))
     }
   }
 

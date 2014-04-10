@@ -6,8 +6,10 @@ import traits.CockpitAttribute
 
 case class CockpitAttributeString[A](name: String,
                                      displayName: String,
+                                     nullValue: A,
                                      isEditable: Boolean = false,
-                                     showInList: Boolean = false)(implicit val format: Format[A]) extends CockpitAttribute {
+                                     showInList: Boolean = false
+                                     )(implicit val format: Format[A]) extends CockpitAttribute {
   def getTypeName = "string"
   def getShowInList = showInList
   def getIsEditable = isEditable
@@ -36,7 +38,15 @@ case class CockpitAttributeString[A](name: String,
   }
 
   def getTransformerFromData(data: JsValue): Option[Reads[JsObject]] = {
-    data.asOpt[A] match {
+
+    val dataWithoutNull = data match {
+      case JsNull => Json.toJson(nullValue)
+      case _ => data
+    }
+
+    Logger.debug("DataWithoutNullL:" + dataWithoutNull + ":")
+
+    dataWithoutNull.asOpt[A] match {
       case None =>
         Logger.error("Cannot be converted back to type: " + data)
         None

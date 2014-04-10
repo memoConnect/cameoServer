@@ -22,16 +22,15 @@ trait CockpitAttribute {
     }
   }
 
-  def getEditJson(js: JsObject): Option[JsObject] = {
-    getData(js).map {
-      data =>
-        Json.obj("name" -> getName) ++
-          Json.obj("displayName" -> getDisplayName) ++
-          Json.obj("isEditable" -> getIsEditable) ++
-          Json.obj("data" -> data) ++
-          Json.obj("type" -> getTypeName)
+  def getEditJson(js: JsObject): JsObject = {
 
-    }
+    val data = getData(js)
+    val dataOrNull = data.getOrElse(JsNull )
+    Json.obj( "name" -> getName ) ++
+      Json.obj( "displayName" -> getDisplayName ) ++
+      Json.obj( "isEditable" -> getIsEditable ) ++
+      Json.obj( "data" -> dataOrNull ) ++
+      Json.obj( "type" -> getTypeName )
   }
 
 }

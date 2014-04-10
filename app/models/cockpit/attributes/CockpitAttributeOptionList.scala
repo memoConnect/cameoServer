@@ -42,6 +42,8 @@ case class CockpitAttributeOptionList[A](name: String,
   }
 
   def getTransformerFromData(data: JsValue): Option[Reads[JsObject]] = {
+
+    //todo: this will probably not work
     data.asOpt[A] match {
       case None =>
         Logger.error("Cannot be converted back to type: " + data)
