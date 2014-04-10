@@ -12,6 +12,7 @@ import scala.Some
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
+import play.api.libs.ws.WS
 
 /**
  * User: Björn Reimer
@@ -22,11 +23,12 @@ object AccountController extends ExtendedController {
 
   def checkLogin(login: String): Boolean = {
     login.length >= 6 &&
-      login.length < 20 &&
+      login.length < 21 &&
       login.matches("^\\w+$")
+
   }
 
-  case class AdditionalValues(reservationSecret: String)
+  case class AdditionalValues(reservationSecret: String, displayName: Option[String])
 
   object AdditionalValues {
     val reads: Reads[AdditionalValues] = Json.reads[AdditionalValues]
@@ -41,7 +43,7 @@ object AccountController extends ExtendedController {
           validateFuture[Account](jsBody, Account.createReads) {
             account =>
               {
-                AccountReservation.checkReserved(account.loginName).flatMap {
+                AccountReservation.checkReserved(account.loginName.toLowerCase).flatMap {
                   case None => Future(resBadRequest("this loginName is not reserved"))
                   case Some(secret) =>
 
@@ -50,12 +52,12 @@ object AccountController extends ExtendedController {
                       case true =>
 
                         // everything is ok, we can create the account now
-                        AccountReservation.deleteReserved(account.loginName)
+                        AccountReservation.deleteReserved(account.loginName.toLowerCase)
 
                         // create identity and add it to account
-                        val identity = Identity.create(Some(account.id), account.loginName, account.email, account.phoneNumber)
+                        val identity = Identity.create(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
                         Identity.col.insert(identity)
-                        val account2 = account.copy(identities = Seq(identity.id))
+                        val account2 = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
 
                         Account.col.insert(account2).flatMap {
                           lastError =>
@@ -90,10 +92,12 @@ object AccountController extends ExtendedController {
 
       validateFuture[VerifyRequest](request.body, reads) {
         vr =>
+          val lowerLogin = vr.loginName.toLowerCase
+
           if (checkLogin(vr.loginName)) {
             // check if loginName exists or is a cameoId
             val loginExists: Future[Boolean] = for {
-              account <- Account.findByLoginName(vr.loginName)
+              account <- Account.findByLoginName(lowerLogin)
               identity <- Identity.findByCameoId(vr.loginName)
             } yield {
               account.isDefined || identity.isDefined
@@ -105,14 +109,14 @@ object AccountController extends ExtendedController {
                 newLoginName => resKO(Json.obj("alternative" -> newLoginName))
               }
               // it does not exist, check if it is reserved
-              case false => AccountReservation.checkReserved(vr.loginName).flatMap {
+              case false => AccountReservation.checkReserved(lowerLogin).flatMap {
                 // it is reserved, get alternative
                 case Some(ra) => Account.findAlternative(vr.loginName).map {
                   newLoginName => resKO(Json.obj("alternative" -> newLoginName))
                 }
                 // not reserved, reserve it and return reservation Secret
                 case None => {
-                  AccountReservation.reserve(vr.loginName).map {
+                  AccountReservation.reserve(lowerLogin).map {
                     res =>
                       resOK(res.toJson)
                   }

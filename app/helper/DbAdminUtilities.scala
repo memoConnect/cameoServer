@@ -1,19 +1,17 @@
 package helper
 
 import play.modules.reactivemongo.json.collection.JSONCollection
-import java.io.{ File, FileWriter }
-import scala.concurrent.{ Await, Future, ExecutionContext }
+import java.io.{File, FileWriter}
+import scala.concurrent.{Await, Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 import play.api.{Play, Logger}
 import scala.io.Source
-import models.{ GlobalState, MongoId }
+import models.{GlobalState, MongoId}
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import scala.concurrent.duration._
 import helper.MongoCollections._
-import reactivemongo.api.indexes.{IndexType, Index}
-import reactivemongo.bson.BSONDocument
 import play.api.Play.current
 
 /**
@@ -42,32 +40,31 @@ object DbAdminUtilities {
     collections.find(_.name.equals(name))
   }
 
-
   def dumpDb() = {
 
     val path = "fixtures/dump"
 
     collections.map {
-      col =>
-        {
-          try {
-            col.find(Json.obj()).cursor[JsObject].collect[List](1000, stopOnError = false).map {
-              list =>
-                Logger.debug("Dumping: " + col.name)
-                val fw = new FileWriter(path + "/" + col.name + ".json", false)
-                try {
-                  list.seq.foreach {
-                    js =>
-                      fw.write(js.toString + "\n")
-                  }
-                } finally fw.close()
-            }
+      col => {
+        try {
+          col.find(Json.obj()).cursor[JsObject].collect[List](1000, stopOnError = false).map {
+            list =>
+              Logger.debug("Dumping: " + col.name)
+              val fw = new FileWriter(path + "/" + col.name + ".json", false)
+              try {
+                list.seq.foreach {
+                  js =>
+                    fw.write(js.toString + "\n")
+                }
+              } finally fw.close()
           }
         }
+      }
     }
   }
 
   def loadFixtures(): Future[Boolean] = {
+
     val allResults: Seq[Future[Boolean]] = new File(Play.application.path.getAbsolutePath + "/fixtures/").listFiles.toSeq.map {
       file =>
 
@@ -99,7 +96,7 @@ object DbAdminUtilities {
     }
   }
 
-  val latestDbVersion = 2
+  val latestDbVersion = 3
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -131,9 +128,7 @@ object DbAdminUtilities {
       res =>
         Logger.debug("finished migration: " + res)
         val set2 = Json.obj("$set" -> new GlobalState(latestDbVersion, false))
-        globalStateCollection.update(query, set2).map {
-          _.updatedExisting
-        }
+        globalStateCollection.update(query, set2)
         res
     }
   }
@@ -143,7 +138,7 @@ object DbAdminUtilities {
 
     def addTokensToIdentity: (JsObject => Boolean) = {
       js =>
-        // get identityId
+      // get identityId
         val id = (js \ "_id").as[MongoId]
 
         // find all tokens with this identityId
@@ -218,5 +213,40 @@ object DbAdminUtilities {
     enumerator.run(iteratee)
   }
 
-  def migrations: Map[Int, Any => Future[Boolean]] = Map(0 -> migrateTokensWithIteratee, 1 -> migrateRecipients)
+  def loginNamesToLowerCase: Any => Future[Boolean] = foo => {
+    Logger.info("migrating loginNames")
+
+    def processAccount: (JsObject => Future[Boolean]) =
+      js => {
+        val id = (js \ "_id").as[MongoId]
+        val loginName = (js \ "loginName").as[String]
+        val loginNameLower = loginName.toLowerCase
+
+        loginNameLower match {
+          case `loginName` =>
+            Future(true)
+          case x =>
+            Logger.debug(loginName + " => " + loginNameLower)
+            val query = Json.obj("_id" -> id)
+            val set = Json.obj("$set" -> Json.obj("loginName" -> loginNameLower))
+            accountCollection.update(query, set).map {
+              le => {
+                Logger.debug("updated: " + loginNameLower)
+                le.updatedExisting
+              }
+            }
+        }
+      }
+
+    val enumerator = accountCollection.find(Json.obj()).cursor[JsObject].enumerate()
+
+    val iteratee: Iteratee[JsObject, Boolean] = Iteratee.foldM(true) {
+      (result, js) => processAccount(js).map(r => r && result)
+    }
+
+    enumerator.run(iteratee)
+
+  }
+
+  def migrations: Map[Int, Any => Future[Boolean]] = Map(0 -> migrateTokensWithIteratee, 1 -> migrateRecipients, 2 -> loginNamesToLowerCase)
 }

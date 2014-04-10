@@ -14,8 +14,7 @@ import helper.{ IdHelper, MongoCollections }
  * Time: 2:02 PM
  */
 
-case class Recipient(identityId: MongoId,
-                     encryptedKey: Option[String]) {
+case class Recipient(identityId: MongoId) {
 
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 
@@ -38,16 +37,15 @@ object Recipient extends Model[Recipient] {
 
   def outputWrites: Writes[Recipient] = Writes[Recipient] {
     r =>
-      Json.obj("identityId" -> r.identityId.toJson) ++
-        maybeEmptyString("encryptedKey", r.encryptedKey)
+      Json.obj("identityId" -> r.identityId.toJson)
   }
 
   def create(identityId: MongoId): Recipient = {
-    new Recipient(identityId, None)
+    new Recipient(identityId)
   }
 
   def create(identityId: String): Recipient = {
-    new Recipient(new MongoId(identityId), None)
+    new Recipient(new MongoId(identityId))
   }
 
   override def save(js: JsObject): Future[LastError] = {
@@ -58,12 +56,6 @@ object Recipient extends Model[Recipient] {
   }
 
   override def createDefault(): Recipient = {
-    new Recipient(IdHelper.generateRecipientId(), None)
+    new Recipient(IdHelper.generateRecipientId())
   }
-}
-
-case class RecipientUpdate(encryptedKey: String)
-
-object RecipientUpdate {
-  implicit val format = Json.format[RecipientUpdate]
 }

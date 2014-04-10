@@ -46,8 +46,9 @@ object TokenController extends ExtendedController {
           case Some(basicAuth) =>
             {
               val (loginName, password) = decodeBasicAuth(basicAuth)
+              val loginNameLower = loginName.toLowerCase
               //find account and get first identity
-              Account.findByLoginName(loginName).flatMap {
+              Account.findByLoginName(loginNameLower).flatMap {
                 case None => Future(resUnauthorized("Invalid password/loginName"))
                 case Some(account) => if (account.identities.nonEmpty) {
                   val identityId = account.identities(0)
@@ -56,7 +57,7 @@ object TokenController extends ExtendedController {
                     case None => resNotFound("identity")
                     case Some(identity) => {
                       // check loginNames and passwords match
-                      if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginName)) {
+                      if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
                         // everything is ok
                         val token = Token.createDefault
                         identity.addToken(token)

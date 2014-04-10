@@ -403,19 +403,29 @@ class ConversationControllerSpec extends StartedApp {
       recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beFalse
     }
 
-    "add encrypted key to recipient in conversation" in {
+    val encryptedPassphrase: Seq[(String, String)] = Seq(
+      ("keyId1" -> "phrase1"),
+      ("keyId1" -> "phrase2"),
+      ("keyId1" -> "phrase3")
+    )
 
-      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(0)
 
-      val json = Json.obj("encryptedKey" -> encryptedKey)
+    "add encrypted passphrase list to conversation" in {
 
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val path = basePath + "/conversation/" + cidExisting + "/encryptedPassphraseList"
+
+      val json = Json.obj("encryptedPassphraseList" -> encryptedPassphrase.map{
+        case (k,e) => Json.obj("keyId" -> k, "encryptedPassphrase" -> e)}
+      )
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
     }
 
     "return the encrypted key" in {
+
       val path = basePath + "/conversation/" + cidExisting
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -423,21 +433,53 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
-      val recipients = (data \ "recipients").as[Seq[JsObject]]
+      (data \ "encryptedPassphraseList").asOpt[Seq[JsObject]] must beSome
+      val encPasses = (data \ "encryptedPassphraseList").as[Seq[JsObject]]
 
-      val recipient0 = recipients.find(r => (r \ "identityId").as[String].equals(validRecipients(0))).get
-      (recipient0 \ "encryptedKey").asOpt[String] must beSome(encryptedKey)
+      encPasses.length must beEqualTo(3)
+
+      encPasses.zip(encryptedPassphrase).map {
+        case (encPass, wanted) =>
+          (encPass \ "keyId").asOpt[String] must beSome(wanted._1)
+          (encPass \ "encryptedPassphrase").asOpt[String] must beSome(wanted._2)
+      }
 
     }
 
+    "return the encrypted key in summary" in {
+
+      val path = basePath + "/conversation/" + cidExisting + "/summary"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+
+      (data \ "encryptedPassphraseList").asOpt[Seq[JsObject]] must beSome
+      val encPasses = (data \ "encryptedPassphraseList").as[Seq[JsObject]]
+
+      encPasses.length must beEqualTo(3)
+
+      encPasses.zip(encryptedPassphrase).map {
+        case (encPass, wanted) =>
+          (encPass \ "keyId").asOpt[String] must beSome(wanted._1)
+          (encPass \ "encryptedPassphrase").asOpt[String] must beSome(wanted._2)
+      }
+    }
+
+
     "refuse non-members to add encrypted keys to recipient" in {
 
-      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(0)
+      val path = basePath + "/conversation/" + cidExisting + "/encryptedPassphraseList"
 
-      val json = Json.obj("encryptedKey" -> encryptedKey)
+      val json = Json.obj("encryptedPassphraseList" -> encryptedPassphrase.map{
+        case (k,e) => Json.obj("keyId" -> k, "encryptedPassphrase" -> e)}
+      )
 
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(UNAUTHORIZED)

@@ -3,31 +3,32 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.{ CockpitAttribute, CockpitEditable, Model }
+import traits.{CockpitAttribute, CockpitEditable, Model}
 import play.api.libs.json.Reads._
-import scala.concurrent.{ ExecutionContext, Future }
-import helper.IdHelper
+import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
-import constants.Messaging._
 import constants.Contacts._
 import reactivemongo.core.commands._
 import helper.JsonHelper._
-import helper.MongoCollections._
-import reactivemongo.core.errors.DatabaseException
 import models.cockpit._
+import play.api.libs.json.JsArray
+import scala.Some
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsObject
+import models.cockpit.attributes._
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
 import play.api.libs.json.JsObject
-import models.cockpit.attributes._
+import helper.MongoCollections._
+import helper.IdHelper
+import constants.Messaging._
 import models.cockpit.attributes.CockpitAttributeDate
 import play.api.libs.json.JsArray
-import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
 import models.cockpit.attributes.CockpitAttributeString
-import models.cockpit.attributes.CockpitAttributeOptionList
 import models.cockpit.attributes.CockpitAttributeVerifiedString
 import play.api.libs.json.JsObject
 
@@ -62,14 +63,15 @@ case class Identity(id: MongoId,
   private val query = Json.obj("_id" -> this.id)
 
   def addContact(contact: Contact): Future[Boolean] = {
-    try {
-      val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
-      //    val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact), "$sort" -> Json.obj("name" -> 1), "$slice" -> (this.contacts.size + 5)*(-1))))
-      Identity.col.update(query, set).map {
-        _.updatedExisting
-      }
-    } catch {
-      case e: DatabaseException => Future(false)
+
+    // check if this identity is already a contact
+    this.contacts.find(_.identityId.equals(contact.identityId)) match {
+      case Some(c) => Future(true)
+      case None =>
+        val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
+        Identity.col.update(query, set).map {
+          _.updatedExisting
+        }
     }
   }
 
@@ -179,20 +181,20 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   def createReads: Reads[Identity] = (
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
-    Reads.pure[Option[MongoId]](None) and
-    (__ \ 'displayName).readNullable[String] and
-    (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-    ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId)) and
-    ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
-    Reads.pure[String](IdHelper.generateUserKey()) and
-    Reads.pure[Seq[Contact]](Seq()) and
-    Reads.pure[Seq[Token]](Seq()) and
-    Reads.pure[Seq[MongoId]](Seq()) and
-    Reads.pure[Seq[PublicKey]](Seq()) and
-    Reads.pure[Date](new Date()) and
-    Reads.pure[Date](new Date()) and
-    Reads.pure[Int](docVersion))(Identity.apply _)
+      Reads.pure[Option[MongoId]](None) and
+      (__ \ 'displayName).readNullable[String] and
+      (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+      (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+      ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId)) and
+      ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
+      Reads.pure[String](IdHelper.generateUserKey()) and
+      Reads.pure[Seq[Contact]](Seq()) and
+      Reads.pure[Seq[Token]](Seq()) and
+      Reads.pure[Seq[MongoId]](Seq()) and
+      Reads.pure[Seq[PublicKey]](Seq()) and
+      Reads.pure[Date](new Date()) and
+      Reads.pure[Date](new Date()) and
+      Reads.pure[Int](docVersion))(Identity.apply _)
 
   def privateWrites: Writes[Identity] = Writes {
     i =>
@@ -225,22 +227,22 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
           _.toJson
         }) ++
-        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME))) ++
-        Json.obj("publicKeys" -> i.publicKeys.map(pk => pk.key))
+        maybeEmptyString("displayName", i.displayName) ++
+        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
   }
 
   def publicSummaryWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        Json.obj("displayName" -> JsString(i.displayName.getOrElse(IDENTITY_DEFAULT_DISPLAY_NAME)))
+        maybeEmptyString("displayName", i.displayName)
   }
 
-  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String]): Identity = {
+  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
       accountId,
-      None,
+      displayName,
       VerifiedString.createOpt(email),
       VerifiedString.createOpt(phoneNumber),
       cameoId,
@@ -269,7 +271,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
     def toQueryOrEmpty(key: String, field: Option[String]): Seq[JsObject] = {
       field match {
-        case None    => Seq()
+        case None => Seq()
         case Some(f) => Seq(Json.obj(key -> Json.obj("$regex" -> f)))
       }
     }
@@ -297,12 +299,12 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
 
     Seq(
-      CockpitAttributeFilter(name = "accountId", displayName = "Account Id", listName = "account", filterName = "ID" ),
+      CockpitAttributeFilter(name = "accountId", displayName = "Account Id", listName = "account", filterName = "ID"),
       CockpitAttributeString[Option[String]](name = "displayName", displayName = "Display Name", isEditable = true, showInList = true),
       CockpitAttributeString[String](name = "cameoId", displayName = "Cameo Id", showInList = true),
       CockpitAttributeVerifiedString(name = "phoneNumber", displayName = "Phone Number", isEditable = true, showInList = true),
       CockpitAttributeVerifiedString(name = "email", displayName = "Email", isEditable = true, showInList = true),
-      CockpitAttributeString[String](name = "preferredMessageType", displayName = "Preferred Message Type", isEditable = true ),
+      CockpitAttributeString[String](name = "preferredMessageType", displayName = "Preferred Message Type", isEditable = true),
       CockpitAttributeString[String](name = "userKey", displayName = "User Key"),
       CockpitAttributeFilter("contacts", "Contacts", "identity", "ID"),
       CockpitAttributeSimpleList("tokens", "Tokens"),
@@ -331,9 +333,9 @@ object IdentityUpdate {
 
   implicit val reads: Reads[IdentityUpdate] = (
     (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-    (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ "displayName").readNullable[String]
-  )(IdentityUpdate.apply _)
+      (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+      (__ \ "displayName").readNullable[String]
+    )(IdentityUpdate.apply _)
 
   def create(phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None, displayName: Option[String] = None): IdentityUpdate = {
     new IdentityUpdate(phoneNumber, email, displayName)
@@ -343,47 +345,42 @@ object IdentityUpdate {
 object IdentityEvolutions {
 
   val addCameoId: Reads[JsObject] = Reads {
-    js =>
-      {
-        val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-        js.transform(addCameoId andThen addVersion)
-      }
+    js => {
+      val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+      js.transform(addCameoId andThen addVersion)
+    }
   }
 
   val addFriedRequest: Reads[JsObject] = Reads {
-    js =>
-      {
-        val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
-        js.transform(addFriendRequest andThen addVersion)
-      }
+    js => {
+      val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+      js.transform(addFriendRequest andThen addVersion)
+    }
   }
 
   val addPublicKeys: Reads[JsObject] = Reads {
-    js =>
-      {
-        val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'publicKeys).json.put(JsArray()))
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
-        js.transform(addFriendRequest andThen addVersion)
-      }
+    js => {
+      val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'publicKeys).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+      js.transform(addFriendRequest andThen addVersion)
+    }
   }
 
   val removeConversations: Reads[JsObject] = Reads {
-    js =>
-      {
-        val removeConversations: Reads[JsObject] = (__ \ 'conversations).json.prune
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
-        js.transform(removeConversations andThen addVersion)
-      }
+    js => {
+      val removeConversations: Reads[JsObject] = (__ \ 'conversations).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
+      js.transform(removeConversations andThen addVersion)
+    }
   }
 
   val removeAssets: Reads[JsObject] = Reads {
-    js =>
-      {
-        val removeAssets: Reads[JsObject] = (__ \ 'assets).json.prune
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
-        js.transform(removeAssets andThen addVersion)
-      }
+    js => {
+      val removeAssets: Reads[JsObject] = (__ \ 'assets).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
+      js.transform(removeAssets andThen addVersion)
+    }
   }
 }
