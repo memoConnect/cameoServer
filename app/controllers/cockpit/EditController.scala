@@ -27,7 +27,7 @@ object EditController {
     }
   }
 
-  def modify(elementName: String, id: String) = AuthAction.async(parse.tolerantJson) {
+  def modify(elementName: String, id: String) = TwoFactorAuthAction.async(parse.tolerantJson) {
     request =>
       // todo: validate body
       ListController.checkAccessList(request.identity.accountId) {
