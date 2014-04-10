@@ -85,7 +85,7 @@ class SendMailActor extends Actor {
       } else {
         // get identity of sender
         val from: String = Play.configuration.getString("mail.from").get
-        val subject = "[cameo.io] - Message from " + fromIdentity.cameoId
+        val subject = "[cameo.io] - Message from " + fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
         val to: String = toIdentity.email.get.toString
         val body: String = message.body
 
