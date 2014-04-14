@@ -44,8 +44,6 @@ case class CockpitAttributeString[A](name: String,
       case _ => data
     }
 
-    Logger.debug("DataWithoutNullL:" + dataWithoutNull + ":")
-
     dataWithoutNull.asOpt[A] match {
       case None =>
         Logger.error("Cannot be converted back to type: " + data)
