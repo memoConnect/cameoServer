@@ -56,14 +56,12 @@ class SendMessageActor extends Actor {
                         case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, 0)
                         case _ =>
                           // if recipient has a mail, send mail
-                          if (toIdentity.email.isDefined) {
-                            Logger.debug("Sending message to MailActor")
-                            sendMailActor ! (message, fromIdentity, toIdentity, 0)
-                          } else if (toIdentity.phoneNumber.isDefined) {
-                            Logger.debug("Sending message to SMSActor")
+                          if (toIdentity.phoneNumber.isDefined) {
                             sendSmsActor ! (message, fromIdentity, toIdentity, 0)
-                          } else {
-                            Logger.info("SendMessageActor: Identity + " + toIdentity.id + " has no valid mail or sms")
+                          } else if (toIdentity.email.isDefined) {
+                            sendMailActor ! (message, fromIdentity, toIdentity, 0)
+                          }   else {
+                            Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
                           }
                         // TODO case _ => sendFailActor ! (message, identity)
                       }
