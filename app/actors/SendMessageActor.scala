@@ -39,7 +39,6 @@ class SendMessageActor extends Actor {
           val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
             recipient =>
               {
-                Logger.info("SendMessageActor: Sending to recipient " + recipient.identityId)
 
                 // dont send back to sender
                 if (!recipient.identityId.equals(fromIdentity.id)) {
@@ -50,15 +49,21 @@ class SendMessageActor extends Actor {
                       new MessageStatus(recipient.identityId, MESSAGE_STATUS_ERROR, error)
                     }
                     case Some(toIdentity) => {
+                      Logger.debug("SendMessageActor: Message " + message.id + " Sending to identity " + toIdentity.id)
+
                       toIdentity.preferredMessageType match {
                         case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)
                         case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, 0)
-                        case MESSAGE_TYPE_DEFAULT =>
+                        case _ =>
                           // if recipient has a mail, send mail
                           if (toIdentity.email.isDefined) {
+                            Logger.debug("Sending message to MailActor")
                             sendMailActor ! (message, fromIdentity, toIdentity, 0)
                           } else if (toIdentity.phoneNumber.isDefined) {
+                            Logger.debug("Sending message to SMSActor")
                             sendSmsActor ! (message, fromIdentity, toIdentity, 0)
+                          } else {
+                            Logger.info("SendMessageActor: Identity + " + toIdentity.id + " has no valid mail or sms")
                           }
                         // TODO case _ => sendFailActor ! (message, identity)
                       }

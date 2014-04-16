@@ -78,6 +78,9 @@ class SendMailActor extends Actor {
     }
 
     case (message: models.Message, fromIdentity: Identity, toIdentity: Identity, tryCount: Int) =>
+
+      Logger.debug("received mail message")
+
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
