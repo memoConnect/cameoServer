@@ -39,7 +39,7 @@ class SendMessageActor extends Actor {
           val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
             recipient =>
               {
-                Logger.debug("SendMessageActor: Sending to recipient " + recipient.identityId)
+                Logger.info("SendMessageActor: Sending to recipient " + recipient.identityId)
 
                 // dont send back to sender
                 if (!recipient.identityId.equals(fromIdentity.id)) {

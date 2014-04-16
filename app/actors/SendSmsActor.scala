@@ -21,7 +21,7 @@ class SendSmsActor extends Actor {
 
   def sendSms(sms: SmsMessage): Future[MessageStatus] = {
 
-    Logger.debug("SendSMSActor: To: " + sms.to + " Content: " + sms.body)
+    Logger.info("SendSMSActor: To: " + sms.to + " Content: " + sms.body)
 
     val key = Play.configuration.getString("nexmo.key")
     val secret = Play.configuration.getString("nexmo.secret")

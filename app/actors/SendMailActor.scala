@@ -25,7 +25,7 @@ class SendMailActor extends Actor {
 
   def sendMail(mail: MailMessage): MessageStatus = {
 
-    Logger.debug("SendMailActor: Sending email to " + mail.to + " from " + mail.from + " with subject \'" + mail.subject + "\'")
+    Logger.info("SendMailActor: Sending email to " + mail.to + " from " + mail.from + " with subject \'" + mail.subject + "\'")
 
     // check if there are there are credentials in the config
     val accessKey = Play.configuration.getString("aws.accessKey")
