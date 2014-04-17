@@ -122,7 +122,7 @@ object MessageEvolutions {
     js =>
       {
         val deleteFiles = (__ \ 'files).json.prune // file not used yet, not need to move them
-        val moveMessageBody = __.json.update((__ \ 'encrypted).json.copyFrom((__ \ 'body).json.pick)) andThen (__ \ 'body).json.prune
+        val moveMessageBody = __.json.update((__ \ 'encrypted).json.copyFrom((__ \ 'body).json.pickBranch)) andThen (__ \ 'body).json.prune
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
         val addEmptyFiles = __.json.update((__ \ 'plain \ 'files).json.put(JsArray()))
 
