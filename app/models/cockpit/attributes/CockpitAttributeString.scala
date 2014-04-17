@@ -8,8 +8,7 @@ case class CockpitAttributeString[A](name: String,
                                      displayName: String,
                                      nullValue: A,
                                      isEditable: Boolean = false,
-                                     showInList: Boolean = false
-                                     )(implicit val format: Format[A]) extends CockpitAttribute {
+                                     showInList: Boolean = false)(implicit val format: Format[A]) extends CockpitAttribute {
   def getTypeName = "string"
   def getShowInList = showInList
   def getIsEditable = isEditable
@@ -41,7 +40,7 @@ case class CockpitAttributeString[A](name: String,
 
     val dataWithoutNull = data match {
       case JsNull => Json.toJson(nullValue)
-      case _ => data
+      case _      => data
     }
 
     dataWithoutNull.asOpt[A] match {

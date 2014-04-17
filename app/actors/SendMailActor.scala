@@ -92,7 +92,7 @@ class SendMailActor extends Actor {
         val to: String = toIdentity.email.get.toString
         val body: String = message.plain match {
           case Some(PlainMessagePart(Some(text), _)) => text
-          case _ => MESSAGE_TEXT_REPLACE_ENCRYPTED
+          case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
         }
 
         // create purl

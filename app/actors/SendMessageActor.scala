@@ -60,7 +60,7 @@ class SendMessageActor extends Actor {
                             sendSmsActor ! (message, fromIdentity, toIdentity, 0)
                           } else if (toIdentity.email.isDefined) {
                             sendMailActor ! (message, fromIdentity, toIdentity, 0)
-                          }   else {
+                          } else {
                             Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
                           }
                         // TODO case _ => sendFailActor ! (message, identity)

@@ -1,6 +1,6 @@
 import actors.testActors.SendSmsTestActor
 import akka.actor.Props
-import play.api.{Logger, Play}
+import play.api.{ Logger, Play }
 import play.api.Play.current
 
 /**

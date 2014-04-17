@@ -79,7 +79,7 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
             DbAdminUtilities.migrate(version)
           }
           case GlobalState(version, true) =>
-          // wait until lock is lifted
+            // wait until lock is lifted
             Logger.info("A global migration seems to be running, waiting...")
             Thread.sleep(2000)
             migrate

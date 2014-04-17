@@ -44,14 +44,14 @@ object MongoCollections {
   lazy val twoFactorTokenCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("twoFactorTokens")
     // expire after 1 hour
-    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> (1*60*60))).get
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> (1 * 60 * 60))).get
     col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
     col
   }
   lazy val twoFactorSmsKeyCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("twoFactorSmsKeys")
     // expire after 10 min
-    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> (10*60))).get
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> (10 * 60))).get
     col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
     col
   }

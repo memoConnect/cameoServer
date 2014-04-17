@@ -42,7 +42,7 @@ object ListController extends ExtendedController {
   def getAllLists() = TwoFactorAuthAction.async {
     request =>
       checkAccessList(request.identity.accountId) {
-        val allNames: Seq[String] = allEditables.map ( _.name )
+        val allNames: Seq[String] = allEditables.map(_.name)
         Future(resOK(Json.obj("lists" -> Json.toJson(allNames))))
       }
   }

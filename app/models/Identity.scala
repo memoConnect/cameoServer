@@ -3,9 +3,9 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.{CockpitAttribute, CockpitEditable, Model}
+import traits.{ CockpitAttribute, CockpitEditable, Model }
 import play.api.libs.json.Reads._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import constants.Contacts._
 import reactivemongo.core.commands._
@@ -181,20 +181,20 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   def createReads: Reads[Identity] = (
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
-      Reads.pure[Option[MongoId]](None) and
-      (__ \ 'displayName).readNullable[String] and
-      (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-      (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-      ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId)) and
-      ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
-      Reads.pure[String](IdHelper.generateUserKey()) and
-      Reads.pure[Seq[Contact]](Seq()) and
-      Reads.pure[Seq[Token]](Seq()) and
-      Reads.pure[Seq[MongoId]](Seq()) and
-      Reads.pure[Seq[PublicKey]](Seq()) and
-      Reads.pure[Date](new Date()) and
-      Reads.pure[Date](new Date()) and
-      Reads.pure[Int](docVersion))(Identity.apply _)
+    Reads.pure[Option[MongoId]](None) and
+    (__ \ 'displayName).readNullable[String] and
+    (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+    (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+    ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId)) and
+    ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
+    Reads.pure[String](IdHelper.generateUserKey()) and
+    Reads.pure[Seq[Contact]](Seq()) and
+    Reads.pure[Seq[Token]](Seq()) and
+    Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Seq[PublicKey]](Seq()) and
+    Reads.pure[Date](new Date()) and
+    Reads.pure[Date](new Date()) and
+    Reads.pure[Int](docVersion))(Identity.apply _)
 
   def privateWrites: Writes[Identity] = Writes {
     i =>
@@ -271,7 +271,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
     def toQueryOrEmpty(key: String, field: Option[String]): Seq[JsObject] = {
       field match {
-        case None => Seq()
+        case None    => Seq()
         case Some(f) => Seq(Json.obj(key -> Json.obj("$regex" -> f)))
       }
     }
@@ -333,9 +333,9 @@ object IdentityUpdate {
 
   implicit val reads: Reads[IdentityUpdate] = (
     (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-      (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-      (__ \ "displayName").readNullable[String]
-    )(IdentityUpdate.apply _)
+    (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+    (__ \ "displayName").readNullable[String]
+  )(IdentityUpdate.apply _)
 
   def create(phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None, displayName: Option[String] = None): IdentityUpdate = {
     new IdentityUpdate(phoneNumber, email, displayName)
@@ -345,42 +345,47 @@ object IdentityUpdate {
 object IdentityEvolutions {
 
   val addCameoId: Reads[JsObject] = Reads {
-    js => {
-      val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-      js.transform(addCameoId andThen addVersion)
-    }
+    js =>
+      {
+        val addCameoId: Reads[JsObject] = __.json.update((__ \ 'cameoId).json.put(IdHelper.generateMessageId().toJson))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(addCameoId andThen addVersion)
+      }
   }
 
   val addFriedRequest: Reads[JsObject] = Reads {
-    js => {
-      val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
-      js.transform(addFriendRequest andThen addVersion)
-    }
+    js =>
+      {
+        val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+        js.transform(addFriendRequest andThen addVersion)
+      }
   }
 
   val addPublicKeys: Reads[JsObject] = Reads {
-    js => {
-      val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'publicKeys).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
-      js.transform(addFriendRequest andThen addVersion)
-    }
+    js =>
+      {
+        val addFriendRequest: Reads[JsObject] = __.json.update((__ \ 'publicKeys).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+        js.transform(addFriendRequest andThen addVersion)
+      }
   }
 
   val removeConversations: Reads[JsObject] = Reads {
-    js => {
-      val removeConversations: Reads[JsObject] = (__ \ 'conversations).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
-      js.transform(removeConversations andThen addVersion)
-    }
+    js =>
+      {
+        val removeConversations: Reads[JsObject] = (__ \ 'conversations).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
+        js.transform(removeConversations andThen addVersion)
+      }
   }
 
   val removeAssets: Reads[JsObject] = Reads {
-    js => {
-      val removeAssets: Reads[JsObject] = (__ \ 'assets).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
-      js.transform(removeAssets andThen addVersion)
-    }
+    js =>
+      {
+        val removeAssets: Reads[JsObject] = (__ \ 'assets).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
+        js.transform(removeAssets andThen addVersion)
+      }
   }
 }

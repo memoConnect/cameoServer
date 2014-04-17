@@ -1,11 +1,11 @@
 package traits
 
 import models.cockpit._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands._
 import ExecutionContext.Implicits.global
-import controllers.cockpit.ListController.{SelectedFilters, ListOptions}
-import play.api.libs.json.{JsObject, Json}
+import controllers.cockpit.ListController.{ SelectedFilters, ListOptions }
+import play.api.libs.json.{ JsObject, Json }
 import helper.JsonHelper._
 import helper.MongoCollections._
 import reactivemongo.core.commands.Match
@@ -56,7 +56,7 @@ trait CockpitEditable[A] extends Model[A] {
       case SelectedFilters(filterName, term) =>
         // get filter from list
         cockpitListFilters.find(_.filterName.equals(filterName)) match {
-          case None => Json.obj()
+          case None            => Json.obj()
           case Some(filterDef) => filterDef.filterFunction(term)
         }
     }
@@ -74,14 +74,15 @@ trait CockpitEditable[A] extends Model[A] {
     val aggregationCommand = Aggregate(col.name, pipeline)
 
     mongoDB.command(aggregationCommand).map {
-      res => {
-        val list = res.toSeq.map {
-          bson =>
-            Json.toJson(bson).as[A]
+      res =>
+        {
+          val list = res.toSeq.map {
+            bson =>
+              Json.toJson(bson).as[A]
+          }
+          val elements = list.map(getCockpitListElement)
+          new CockpitList(getTitles, elements, cockpitListFilters)
         }
-        val elements = list.map(getCockpitListElement)
-        new CockpitList(getTitles, elements, cockpitListFilters)
-      }
     }
   }
 

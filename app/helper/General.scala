@@ -27,8 +27,8 @@ object General {
       val tag: String = Seq("bash", "-c", "git describe --abbrev=0 --tags").!!.trim
       val branch: String = Seq("bash", "-c", "git rev-parse --abbrev-ref HEAD").!!.trim
       branch match {
-        case "dev"    => "dev_build." + tag.split('_')(1)
-        case b        => b
+        case "dev" => "dev_build." + tag.split('_')(1)
+        case b     => b
       }
     })
   }

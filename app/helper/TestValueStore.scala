@@ -21,12 +21,12 @@ object TestValueStore {
     } else {
       var maxWait = 100
       // wait untill block is lifted
-      while(blocked && maxWait > 0) {
+      while (blocked && maxWait > 0) {
         Logger.debug("waiting: " + maxWait)
         Thread.sleep(50)
         maxWait -= 1
       }
-      if(!blocked) {
+      if (!blocked) {
         values = Seq()
         blocked = true
       } else {
@@ -41,7 +41,7 @@ object TestValueStore {
   }
 
   def addValue(key: String, value: JsObject) = {
-      values = values :+ (key, value)
+    values = values :+ (key, value)
   }
 
   def getValues(key: String): Seq[JsObject] = values.filter(_._1.equals(key)).map { _._2 }

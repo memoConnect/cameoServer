@@ -127,8 +127,8 @@ case class Conversation(id: MongoId,
 
   def setEncPassList(list: Seq[EncryptedPassphrase]): Future[Boolean] = {
     val set = Json.obj("$set" ->
-    Json.obj("encPassList" -> list))
-    Conversation.col.update(query, set).map{_.updatedExisting}
+      Json.obj("encPassList" -> list))
+    Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
 }

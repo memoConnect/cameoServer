@@ -144,7 +144,7 @@ object ConversationController extends ExtendedController {
           list =>
             c.setEncPassList(list).map {
               case false => resServerError("unable to update")
-              case true => resOK("updated")
+              case true  => resOK("updated")
             }
         }
       }

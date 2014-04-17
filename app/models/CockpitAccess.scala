@@ -2,14 +2,14 @@ package models
 
 import java.util.Date
 import play.api.libs.json._
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ Future, ExecutionContext }
 import helper.JsonHelper._
 import helper.{ MongoCollections, IdHelper }
 import traits.Model
 import ExecutionContext.Implicits.global
 
 case class CockpitAccess(id: MongoId,
-                           accountId: MongoId)
+                         accountId: MongoId)
 
 object CockpitAccess extends Model[CockpitAccess] {
 
@@ -29,6 +29,4 @@ object CockpitAccess extends Model[CockpitAccess] {
   override def createDefault(): CockpitAccess =
     new CockpitAccess(IdHelper.generateMongoId(), IdHelper.generateAccountId())
 }
-
-
 

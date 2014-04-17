@@ -118,16 +118,16 @@ object MessageEvolutions {
       }
   }
 
-  val splitPlainAndEncrypted: Reads[JsObject] = Reads{
+  val splitPlainAndEncrypted: Reads[JsObject] = Reads {
     js =>
-    {
-      val deleteFiles = (__ \ 'files).json.prune // file not used yet, not need to move them
-      val moveMessageBody = __.json.update((__ \ 'encrypted).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
-      val addEmptyFiles = __.json.update((__ \ 'plain \ 'files).json.put(JsArray()))
+      {
+        val deleteFiles = (__ \ 'files).json.prune // file not used yet, not need to move them
+        val moveMessageBody = __.json.update((__ \ 'encrypted).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+        val addEmptyFiles = __.json.update((__ \ 'plain \ 'files).json.put(JsArray()))
 
-      js.transform(addVersion andThen deleteFiles andThen moveMessageBody andThen addEmptyFiles)
-    }
+        js.transform(addVersion andThen deleteFiles andThen moveMessageBody andThen addEmptyFiles)
+      }
   }
 }
 
@@ -135,14 +135,14 @@ case class PlainMessagePart(text: Option[String],
                             files: Seq[MongoId]) {
   def toJson(): JsObject = {
     maybeEmptyString("text", this.text) ++
-    Json.obj("files" -> this.files.map(_.toJson))
+      Json.obj("files" -> this.files.map(_.toJson))
   }
 }
 
 object PlainMessagePart {
   implicit val format: Format[PlainMessagePart] = Json.format[PlainMessagePart]
 
-  val createReads =         (
+  val createReads = (
     (__ \ 'text).readNullable[String] and
     ((__ \ 'files).read[Seq[MongoId]](Reads.seq(MongoId.createReads)) or Reads.pure[Seq[MongoId]](Seq()))
   )(PlainMessagePart.apply _)

@@ -8,7 +8,7 @@ import scala.Some
 import ExecutionContext.Implicits.global
 import play.api.libs.json.JsObject
 import models.cockpit.CockpitEdit
-import helper.{AuthAction, TwoFactorAuthAction}
+import helper.{ AuthAction, TwoFactorAuthAction }
 import play.api.Logger
 
 object EditController {

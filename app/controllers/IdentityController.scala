@@ -87,7 +87,7 @@ object IdentityController extends ExtendedController {
                   })
                   resOK(filtered.map { i => i.toPublicSummaryJson })
               }
-            }
+          }
       }
   }
 
