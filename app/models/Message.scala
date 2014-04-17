@@ -16,11 +16,12 @@ import reactivemongo.core.commands.LastError
  * Time: 2:36 PM
  */
 case class Message(id: MongoId,
-                   body: String,
                    fromIdentityId: MongoId,
                    messageStatus: Seq[MessageStatus],
-                   files: Seq[MongoId],
-                   created: Date) {
+                   plain: Option[PlainMessagePart],
+                   encrypted: Option[String],
+                   created: Date,
+                   docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
 
@@ -34,15 +35,18 @@ case class Message(id: MongoId,
     val query = arrayQuery("messages", this.id)
     val set = Json.obj("$pull" -> Json.obj("messages.$.messageStatus" -> Json.obj("identityId" -> status.identityId)))
 
-    Message.col.update(query, set).flatMap { lastError =>
-      lastError.ok match {
-        case false => Future(false)
-        case true => {
-          // write new message status
-          val set2 = Json.obj("$push" -> Json.obj("messages.$.messageStatus" -> status))
-          Message.col.update(query, set2).map { _.ok }
+    Message.col.update(query, set).flatMap {
+      lastError =>
+        lastError.ok match {
+          case false => Future(false)
+          case true => {
+            // write new message status
+            val set2 = Json.obj("$push" -> Json.obj("messages.$.messageStatus" -> status))
+            Message.col.update(query, set2).map {
+              _.ok
+            }
+          }
         }
-      }
     }
   }
 }
@@ -52,24 +56,26 @@ object Message extends Model[Message] {
   val col = MongoCollections.conversationCollection
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
-  def docVersion = 1
-  def evolutions = Map(0 -> MessageEvolutions.assetsToFiles)
+  def docVersion = 2
+
+  def evolutions = Map(0 -> MessageEvolutions.assetsToFiles, 1 -> MessageEvolutions.splitPlainAndEncrypted)
 
   def createReads(fromIdentityId: MongoId) = (
     Reads.pure[MongoId](IdHelper.generateMessageId()) and
-    (__ \ 'body).read[String] and
     Reads.pure[MongoId](fromIdentityId) and
     Reads.pure[Seq[MessageStatus]](Seq()) and
-    ((__ \ 'fileIds).read[Seq[MongoId]](Reads.seq(MongoId.createReads)) or Reads.pure[Seq[MongoId]](Seq())) and
-    Reads.pure[Date](new Date))(Message.apply _)
+    (__ \ 'plain).readNullable[PlainMessagePart](PlainMessagePart.createReads) and
+    (__ \ 'encrypted).readNullable[String] and
+    Reads.pure[Date](new Date) and
+    Reads.pure[Int](docVersion)
+  )(Message.apply _)
 
   def outputWrites = Writes[Message] {
     m =>
       Json.obj("id" -> m.id.toJson) ++
-        Json.obj("body" -> m.body) ++
         Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
-        Json.obj("messageStatus" -> m.messageStatus.map(_.toJson)) ++
-        Json.obj("fileIds" -> m.files.map(_.toJson)) ++
+        Json.obj("plain" -> m.plain.map(_.toJson)) ++
+        Json.obj("encrypted" -> m.encrypted) ++
         addCreated(m.created)
   }
 
@@ -95,7 +101,7 @@ object Message extends Model[Message] {
   }
 
   override def createDefault(): Message = {
-    new Message(IdHelper.generateMessageId(), "moep", IdHelper.generateIdentityId(), Seq(), Seq(), new Date)
+    new Message(IdHelper.generateMessageId(), MongoId(""), Seq(), None, None, new Date, docVersion)
   }
 }
 
@@ -112,5 +118,33 @@ object MessageEvolutions {
       }
   }
 
+  val splitPlainAndEncrypted: Reads[JsObject] = Reads{
+    js =>
+    {
+      val deleteFiles = (__ \ 'files).json.prune // file not used yet, not need to move them
+      val moveMessageBody = __.json.update((__ \ 'encrypted).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+      val addEmptyFiles = __.json.update((__ \ 'plain \ 'files).json.put(JsArray()))
+
+      js.transform(addVersion andThen deleteFiles andThen moveMessageBody andThen addEmptyFiles)
+    }
+  }
+}
+
+case class PlainMessagePart(text: Option[String],
+                            files: Seq[MongoId]) {
+  def toJson(): JsObject = {
+    maybeEmptyString("text", this.text) ++
+    Json.obj("files" -> this.files.map(_.toJson))
+  }
+}
+
+object PlainMessagePart {
+  implicit val format: Format[PlainMessagePart] = Json.format[PlainMessagePart]
+
+  val createReads =         (
+    (__ \ 'text).readNullable[String] and
+    ((__ \ 'files).read[Seq[MongoId]](Reads.seq(MongoId.createReads)) or Reads.pure[Seq[MongoId]](Seq()))
+  )(PlainMessagePart.apply _)
 }
 

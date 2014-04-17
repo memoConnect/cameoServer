@@ -23,14 +23,54 @@ class MessageControllerSpec extends StartedApp {
   sequential
 
   var messageId = ""
-  var body = "wir rocken"
+  val encrypted = Stuff.randomLengthString(100)
+  val body = "wir rocken"
 
   "MessageController" should {
 
-    "add message to conversation" in {
+    "add message with encrypted part only to conversation" in {
       val path = basePath + "/conversation/" + cidExisting2 + "/message"
 
-      val json = Json.obj("body" -> body)
+      val json = Json.obj("encrypted" -> encrypted)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId = (data \ "id").as[String]
+      (data \ "plain").asOpt[String] must beNone
+      (data \ "encrypted").asOpt[String] must beSome(encrypted)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
+      (data \ "created").asOpt[Long] must beSome
+    }
+
+    "get encrypted message" in {
+      val path = basePath + "/message/" + messageId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "plain").asOpt[String] must beNone
+      (data \ "encrypted").asOpt[String] must beSome(encrypted)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
+      (data \ "created").asOpt[Long] must beSome
+    }
+
+    "add message with plain part only to conversation" in {
+      val path = basePath + "/conversation/" + cidExisting2 + "/message"
+
+      val json = Json.obj("plain" -> Json.obj("text" -> body))
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -41,13 +81,14 @@ class MessageControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       messageId = (data \ "id").as[String]
-      (data \ "body").asOpt[String] must beSome(body)
-      (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
-      (data \ "fromIdentity").asOpt[String] must beSome
+      (data \ "plain" \ "text").asOpt[String] must beSome(body)
+      (data \ "encrypted").asOpt[String] must beNone
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
       (data \ "created").asOpt[Long] must beSome
     }
 
-    "get single message" in {
+    "get plain message" in {
       val path = basePath + "/message/" + messageId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -57,10 +98,48 @@ class MessageControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
+      (data \ "plain" \ "text").asOpt[String] must beSome(body)
+      (data \ "encrypted").asOpt[String] must beNone
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
+      (data \ "created").asOpt[Long] must beSome
+    }
+
+    "add message with plain and encrypted part to conversation" in {
+      val path = basePath + "/conversation/" + cidExisting2 + "/message"
+
+      val json = Json.obj("plain" -> Json.obj("text" -> body)) ++ Json.obj("encrypted" -> encrypted)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
       (data \ "id").asOpt[String] must beSome
-      (data \ "body").asOpt[String] must beSome(body)
-      (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
-      (data \ "fromIdentity").asOpt[String] must beSome
+      messageId = (data \ "id").as[String]
+      (data \ "plain" \ "text").asOpt[String] must beSome(body)
+      (data \ "encrypted").asOpt[String] must beSome(encrypted)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
+      (data \ "created").asOpt[Long] must beSome
+    }
+
+    "get plain and encrypted message" in {
+      val path = basePath + "/message/" + messageId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "plain" \ "text").asOpt[String] must beSome(body)
+      (data \ "encrypted").asOpt[String] must beSome(encrypted)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
       (data \ "created").asOpt[Long] must beSome
     }
 
@@ -78,12 +157,12 @@ class MessageControllerSpec extends StartedApp {
 
       val message = (data \ "messages")(0).as[JsObject]
       (message \ "id").asOpt[String] must beSome(messageId)
-      (message \ "body").asOpt[String] must beSome(body)
-      (message \ "messageStatus").asOpt[Seq[JsObject]] must beSome
+      (message \ "plain" \ "text").asOpt[String] must beSome(body)
+      (message \ "encrypted").asOpt[String] must beSome(encrypted)
+      (message \ "messageStatus").asOpt[Seq[JsObject]] must beNone
       (message \ "fromIdentity").asOpt[String] must beSome(identityExisting)
       (message \ "created").asOpt[Long] must beSome
 
-      // check that lastUpdated contains todays date
       (data \ "lastUpdated").asOpt[Long] must beSome
     }
 
@@ -125,31 +204,33 @@ class MessageControllerSpec extends StartedApp {
       status(res) must equalTo(UNAUTHORIZED)
     }
 
-    val fileIds = Seq("asdf", "aassddff")
+    val files = Seq("asdf", "aassddff")
     var messageId2 = ""
 
     "send message with fileIds" in {
       val path = basePath + "/conversation/" + cidExisting2 + "/message"
 
-      val json = Json.obj("body" -> body , "fileIds" -> fileIds)
+      val json = Json.obj("encrypted" -> encrypted , "plain" -> Json.obj("files" -> files, "text" -> body))
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
 
-      val data = (contentAsJson(res) \ "data").as[JsObject]
+      Logger.debug("ADSF: " + contentAsString(res))
 
-      Logger.debug("foo" + data)
+      val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
       messageId2 = (data \ "id").as[String]
-      (data \ "body").asOpt[String] must beSome(body)
-      (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
-      (data \ "fromIdentity").asOpt[String] must beSome
-      (data \ "fileIds")(0).asOpt[String] must beSome(fileIds(0))
-      (data \ "fileIds")(1).asOpt[String] must beSome(fileIds(1))
+      (data \ "plain" \ "text").asOpt[String] must beSome(body)
+      (data \ "plain" \ "files")(0).asOpt[String] must beSome(files(0))
+      (data \ "plain" \ "files")(1).asOpt[String] must beSome(files(1))
+      (data \ "encrypted").asOpt[String] must beSome(encrypted)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
       (data \ "created").asOpt[Long] must beSome
+
     }
 
     "return fileIds with message" in {
@@ -162,12 +243,13 @@ class MessageControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "id").asOpt[String] must beSome
-      (data \ "body").asOpt[String] must beSome(body)
-      (data \ "messageStatus").asOpt[Seq[JsObject]] must beSome
-      (data \ "fromIdentity").asOpt[String] must beSome
-      (data \ "fileIds")(0).asOpt[String] must beSome(fileIds(0))
-      (data \ "fileIds")(1).asOpt[String] must beSome(fileIds(1))
+      (data \ "id").asOpt[String] must beSome(messageId2)
+      (data \ "plain" \ "text").asOpt[String] must beSome(body)
+      (data \ "plain" \ "files")(0).asOpt[String] must beSome(files(0))
+      (data \ "plain" \ "files")(1).asOpt[String] must beSome(files(1))
+      (data \ "encrypted").asOpt[String] must beSome(encrypted)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
       (data \ "created").asOpt[Long] must beSome
     }
   }

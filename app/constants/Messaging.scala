@@ -19,7 +19,7 @@ object Messaging {
 
   val MESSAGE_MAX_TRY_COUNT = 0
 
-  val IDENTITY_DEFAULT_DISPLAY_NAME = "NoName"
+  val MESSAGE_TEXT_REPLACE_ENCRYPTED = "-= encrypted Message =-"
 
 }
 

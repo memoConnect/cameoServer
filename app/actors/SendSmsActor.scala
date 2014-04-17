@@ -78,7 +78,10 @@ class SendSmsActor extends Actor {
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
         val to: String = toIdentity.phoneNumber.get.toString
-        val body: String = message.body
+        val body: String = message.plain match {
+          case Some(PlainMessagePart(Some(text), _)) => text
+          case _ => MESSAGE_TEXT_REPLACE_ENCRYPTED
+        }
 
         // create purl 
         val purl = Purl.create(message.id, toIdentity.id)

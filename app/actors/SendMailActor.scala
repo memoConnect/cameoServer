@@ -90,7 +90,10 @@ class SendMailActor extends Actor {
         val from: String = Play.configuration.getString("mail.from").get
         val subject = "[cameo.io] - Message from " + fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
         val to: String = toIdentity.email.get.toString
-        val body: String = message.body
+        val body: String = message.plain match {
+          case Some(PlainMessagePart(Some(text), _)) => text
+          case _ => MESSAGE_TEXT_REPLACE_ENCRYPTED
+        }
 
         // create purl
         val purl = Purl.create(message.id, toIdentity.id)
