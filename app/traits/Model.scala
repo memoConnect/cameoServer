@@ -80,12 +80,7 @@ trait Model[A] {
                 case false =>
                   Logger.error("Error saving DB evolution: " + newJs); JsError()
                 case true =>
-                  newJs.asOpt[T](fromMongoDates andThen fromMongoId andThen reads) match {
-                    case None =>
-                      Logger.error("Error reading Json after evolution: " + newJs); JsError()
-                    case Some(o) =>
-                      JsSuccess(o)
-                  }
+                  newJs.validate[T](fromMongoDates andThen fromMongoId andThen reads)
               }
           }
       }
