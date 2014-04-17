@@ -6,9 +6,8 @@ import models._
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 import helper.ResultHelper._
-import play.api.mvc.Action
+import play.api.mvc.{ Result, Action, SimpleResult }
 import scala.Some
-import play.api.mvc.SimpleResult
 
 /**
  * User: Björn Reimer
@@ -24,29 +23,57 @@ object PurlController extends ExtendedController {
   def getPurl(id: String, offset: Int = 0, limit: Int = 0) = Action.async {
     request =>
 
+      def externalUserResponse(identity: Identity, purl: Purl): Future[SimpleResult] = {
+        // check if we need to generate a new token
+        val token = identity.tokens.headOption.getOrElse {
+          val t = Token.createDefault()
+          identity.addToken(t)
+          t
+        }
+        //get conversation
+        Conversation.findByMessageId(purl.messageId).flatMap {
+          case None => Future(resNotFound("conversation"))
+          case Some(conversation) =>
+            // return result
+            conversation.toJsonWithIdentities(offset, limit).map {
+              js =>
+                val res: JsObject =
+                  Json.obj("conversation" -> js) ++
+                    Json.obj("identity" -> identity.toPrivateJson) ++
+                    Json.obj("token" -> token.id.toJson)
+
+                resOK(res)
+            }
+        }
+      }
+
       def getPurlWithToken(purl: Purl, token: String): Future[SimpleResult] = {
-        // check if token exists
-        Identity.findByToken(new MongoId(token)).flatMap {
-          case None => Future(resNotFound("token"))
+        // get identity behind purl
+        Identity.find(purl.identityId).flatMap {
+          case None => Future(resNotFound("purl"))
           case Some(identity) =>
-            // check if the identityId match
-            identity.id.equals(purl.identityId) match {
-              case false => Future(resUnauthorized("This purl belongs to a different identity"))
-              case true => {
-                // get conversation
-                Conversation.findByMessageId(purl.messageId).flatMap {
-                  case None => Future(resNotFound("conversation"))
-                  case Some(conversation) =>
-                    // return result
-                    conversation.toJsonWithIdentities(offset, limit).map {
-                      js =>
-                        val res: JsObject =
-                          Json.obj("conversation" -> js) ++
-                            Json.obj("identity" -> identity.toPrivateJson)
-                        resOK(res)
+            // check if the identity has an account
+            identity.accountId match {
+              case None => externalUserResponse(identity, purl)
+              case Some(a) =>
+                // purl belongs to a registered user, check we have the right token
+                identity.tokens.exists(_.id.id.equals(token)) match {
+                  case false => Future(resUnauthorized("This purl belongs to a different identity"))
+                  case true =>
+                    // get conversation
+                    Conversation.findByMessageId(purl.messageId).flatMap {
+                      case None => Future(resNotFound("conversation"))
+                      case Some(conversation) =>
+                        // return result
+                        conversation.toJsonWithIdentities(offset, limit).map {
+                          js =>
+                            val res: JsObject =
+                              Json.obj("conversation" -> js) ++
+                                Json.obj("identity" -> identity.toPrivateJson)
+                            resOK(res)
+                        }
                     }
                 }
-              }
             }
         }
       }
@@ -57,29 +84,8 @@ object PurlController extends ExtendedController {
           case None => Future(resNotFound("identity"))
           case Some(identity) =>
             identity.accountId match {
-              case Some(a) => Future(resUnauthorized("This purl belong to a registered user, pleas supply token"))
-              case None =>
-                // check if we need to generate a new token
-                val token = identity.tokens.headOption.getOrElse {
-                  val t = Token.createDefault()
-                  identity.addToken(t)
-                  t
-                }
-                //get conversation
-                Conversation.findByMessageId(purl.messageId).flatMap {
-                  case None => Future(resNotFound("conversation"))
-                  case Some(conversation) =>
-                    // return result
-                    conversation.toJsonWithIdentities(offset, limit).map {
-                      js =>
-                        val res: JsObject =
-                          Json.obj("conversation" -> js) ++
-                            Json.obj("identity" -> identity.toPrivateJson) ++
-                            Json.obj("token" -> token.id.toJson)
-
-                        resOK(res)
-                    }
-                }
+              case Some(a) => Future(resUnauthorized("This purl belongs to a registered user, pleas supply token"))
+              case None    => externalUserResponse(identity, purl)
             }
         }
       }
