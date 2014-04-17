@@ -73,15 +73,19 @@ trait Model[A] {
 
           js.transform(readsWithEvolution).flatMap {
             newJs =>
-              // save to db and try to serialise after evolutions
-              val futureRes: Future[Boolean] = save(newJs).map { _.ok }
-              val res = Await.result(futureRes, 10 minutes)
-              res match {
-                case false =>
-                  Logger.error("Error saving DB evolution: " + newJs); JsError()
-                case true =>
-                  newJs.validate[T](fromMongoDates andThen fromMongoId andThen reads)
+              // try to serialise after evolutions and save to db
+              newJs.validate[T](fromMongoDates andThen fromMongoId andThen reads).map{
+                o =>  val futureRes: Future[Boolean] = save(newJs).map { _.ok }
+                  val res = Await.result(futureRes, 10 minutes)
+                  res match {
+                    case false =>
+                      Logger.error("Error saving DB evolution: " + newJs)
+                    case true =>
+                      Logger.info("DB migration successfull")
+                  }
+                  o
               }
+
           }
       }
   }
