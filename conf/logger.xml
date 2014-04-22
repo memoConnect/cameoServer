@@ -20,6 +20,11 @@
         </encoder>
     </appender>
 
+    <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
+        <syslogHost>jump</syslogHost>
+        <facility>LOCAL0</facility>
+        <suffixPattern>[%thread] %logger %msg</suffixPattern>
+    </appender>
 
     <logger name="play" level="INFO"/>
     <logger name="application" level="INFO"/>
@@ -29,9 +34,10 @@
     <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF"/>
     <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF"/>
 
-    <root level="ERROR">
+    <root level="DEBUG">
         <appender-ref ref="STDOUT"/>
         <appender-ref ref="FILE"/>
+        <appender-ref ref="SYSLOG"/>
     </root>
 
 </configuration>
