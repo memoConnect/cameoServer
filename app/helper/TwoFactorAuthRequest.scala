@@ -33,8 +33,8 @@ object TwoFactorAuthAction extends ActionBuilder[TwoFactorAuthRequest] {
   }
 
   def invokeBlock[A](request: Request[A], block: TwoFactorAuthRequest[A] => Future[SimpleResult]) = {
-    // do normal Auth an then try to elevate it to two factor auth
+    // do normal Auth and then try to elevate it to two factor auth
     val elevatedBlock = elevate(block)
-    AuthAction.invokeBlock(request, elevatedBlock)
+    AuthRequestHelper.doAction(allowExternal = false, request,elevatedBlock)
   }
 }

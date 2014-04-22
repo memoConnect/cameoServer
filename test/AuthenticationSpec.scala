@@ -36,7 +36,7 @@ class AuthenticationSpec extends StartedApp {
     val nonAuthRoutes: Seq[(String, String)] = Seq(
       (POST, "/api/v1/services/checkEmailAddress"),
       (POST, "/api/v1/services/checkPhoneNumber"),
-     // (POST, "/api/v1/identity/search"),
+      // (POST, "/api/v1/identity/search"),
       (POST, "/api/v1/account"),
       (POST, "/api/v1/account/check"),
       (GET, "/api/v1/token"),
@@ -51,15 +51,23 @@ class AuthenticationSpec extends StartedApp {
 
     val twoFactorAuthRoutes: Seq[(String, String)] =
       // all that contain /api/cockpit/
-      allRoutes.filter(route => route._2.startsWith("/api/cockpit") && ! route._2.contains("twoFactorAuth"))
+      allRoutes.filter(route => route._2.startsWith("/api/cockpit") && !route._2.contains("twoFactorAuth"))
 
-    // all routes not specified as nonAuth or twoFactorAuth are assumed to be auth
-    val authRoutes: Seq[(String, String)] = allRoutes.sorted.diff(nonAuthRoutes.sorted).diff(twoFactorAuthRoutes.sorted)
+    // routes allowed for tokens of external users
+    val allowExternalRoutes: Seq[(String, String)] = Seq(
+      (GET, "/api/v1/conversation/$id<[^/]+>"),
+      (GET, "/api/v1/conversation/$id<[^/]+>/summary"),
+      (POST, "/api/v1/conversation/$id<[^/]+>/message"),
+      (GET, "/api/v1/message/$id<[^/]+>")
+    )
+
+    // all routes not specified as nonAuth, allowExternal or twoFactorAuth are assumed to be auth
+    val authRoutes: Seq[(String, String)] = allRoutes.sorted.diff(nonAuthRoutes.sorted).diff(twoFactorAuthRoutes.sorted).diff(allowExternalRoutes.sorted)
 
     // dont test utils and webapp
     val filteredAuthRoutes = authRoutes.filterNot(r =>
       r._2.startsWith("/app") ||
-      r._2.startsWith("/dl") ||
+        r._2.startsWith("/dl") ||
         r._2.startsWith("/cockpit") ||
         r._2.equals("/") ||
         r._2.startsWith("/api/v1/util") ||
@@ -77,8 +85,11 @@ class AuthenticationSpec extends StartedApp {
     val nonAuthRoutesWithIds = nonAuthRoutes.map { r =>
       (r._1, addIds(r._2))
     }
+    val allowExternalRoutesWithIds = allowExternalRoutes.map { r =>
+      (r._1, addIds(r._2))
+    }
 
-    authRoutesWithIds.seq.map { r =>
+    (authRoutesWithIds ++ allowExternalRoutesWithIds).seq.map { r =>
 
       "WITH AUTH - " + r._1 + " " + r._2 + "\t: should not work with invalid token" in {
         val method = r._1
@@ -113,8 +124,53 @@ class AuthenticationSpec extends StartedApp {
         val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must not equalTo(UNAUTHORIZED)
+        status(res) must not equalTo (UNAUTHORIZED)
       }
+    }
+
+    var tokenExternal = ""
+    // get purl token
+    "get token object for external user from purl" in {
+
+      val path = basePath + "/purl/" + purlExtern
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      tokenExternal = (data \ "token").as[String]
+      (data \ "token").asOpt[String] must beSome
+    }
+
+    authRoutesWithIds.seq.map {
+      r =>
+        "EXTERNAL AUTH - " + r._1 + " " + r._2 + "\t: should not work with external token" in {
+          val method = r._1
+          val path = r._2
+
+          val json = Json.obj()
+
+          val req = FakeRequest(method, path).withHeaders(tokenHeader(tokenExternal)).withJsonBody(json)
+          val res = route(req).get
+
+          status(res) must equalTo(UNAUTHORIZED)
+        }
+    }
+
+    allowExternalRoutesWithIds.seq.map {
+      r =>
+        "EXTERNAL AUTH - " + r._1 + " " + r._2 + "\t: should work with external token" in {
+          val method = r._1
+          val path = r._2
+
+          val json = Json.obj()
+
+          val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExternal))
+          val res = route(req).get
+
+          status(res) must not equalTo (UNAUTHORIZED)
+        }
     }
 
     var twoFactorToken = ""
@@ -129,7 +185,7 @@ class AuthenticationSpec extends StartedApp {
 
       status(res1) must equalTo(OK)
 
-      Await.result(res1, Duration.create(1, MINUTES) )
+      Await.result(res1, Duration.create(1, MINUTES))
 
       Thread.sleep(300)
 
@@ -236,7 +292,7 @@ class AuthenticationSpec extends StartedApp {
         val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting), twoFactorTokenHeader(twoFactorToken))
         val res = route(req).get
 
-        status(res) must not equalTo(UNAUTHORIZED)
+        status(res) must not equalTo (UNAUTHORIZED)
 
         (contentAsJson(res) \ "twoFactorRequired").asOpt[Boolean] must beNone
       }
@@ -253,7 +309,7 @@ class AuthenticationSpec extends StartedApp {
         val req = FakeRequest(method, path).withJsonBody(json)
         val res = route(req).get
 
-        status(res) must not equalTo(UNAUTHORIZED)
+        status(res) must not equalTo (UNAUTHORIZED)
       }
 
       "NO AUTH - " + r._1 + " " + r._2 + "\t: should work with token" in {
@@ -265,7 +321,7 @@ class AuthenticationSpec extends StartedApp {
         val req = FakeRequest(method, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
         val res = route(req).get
 
-        status(res) must not equalTo(UNAUTHORIZED)
+        status(res) must not equalTo (UNAUTHORIZED)
       }
     }
 
