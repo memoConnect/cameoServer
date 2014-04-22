@@ -1,13 +1,13 @@
 import play.api.libs.json.JsObject
-import play.api.libs.json.{JsArray, Json, JsObject}
-import play.api.test.{FakeRequest, FakeApplication}
+import play.api.libs.json.{ JsArray, Json, JsObject }
+import play.api.test.{ FakeRequest, FakeApplication }
 import play.api.test.Helpers._
 import scala.Some
 import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{StartedApp, Stuff}
+import testHelper.{ StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
 
@@ -27,10 +27,9 @@ class ContactControllerSpec extends StartedApp {
   val newContactMail = "test@bjrm.de"
   val newContactTel = "+4561233"
   val newContactName = "foobar"
-
+  val friendRequestMessage = "whooop! moep!"
 
   "ContactController" should {
-
 
     "get all contacts" in {
       val path = basePath + "/contacts"
@@ -124,7 +123,6 @@ class ContactControllerSpec extends StartedApp {
       val res = route(req).get
 
       status(res) must equalTo(232)
-
 
     }
 
@@ -369,7 +367,7 @@ class ContactControllerSpec extends StartedApp {
     "send FriendRequest with identityId" in {
       val path = basePath + "/friendRequest"
 
-      val json = Json.obj("identityId" -> identityExisting2)
+      val json = Json.obj("identityId" -> identityExisting2, "message" -> friendRequestMessage)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -388,16 +386,16 @@ class ContactControllerSpec extends StartedApp {
       status(res) must equalTo(NOT_FOUND)
     }
 
-//    "send FriendRequest with cameoId" in {
-//      val path = basePath + "/friendRequest"
-//
-//      val json = Json.obj("cameoId" -> login)
-//
-//      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
-//      val res = route(req).get
-//
-//      status(res) must equalTo(OK)
-//    }
+    //    "send FriendRequest with cameoId" in {
+    //      val path = basePath + "/friendRequest"
+    //
+    //      val json = Json.obj("cameoId" -> login)
+    //
+    //      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+    //      val res = route(req).get
+    //
+    //      status(res) must equalTo(OK)
+    //    }
 
     "refuse to send FriendRequest to invalid cameoId" in {
       val path = basePath + "/friendRequest"
@@ -418,10 +416,10 @@ class ContactControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
-      status(res) must equalTo(OK)
+      status(res) must equalTo(232)
     }
 
-    "get friendRequest and check that there is only one" in {
+    "get friendRequests and check that there is only one" in {
       val path = basePath + "/friendRequests"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
@@ -433,7 +431,9 @@ class ContactControllerSpec extends StartedApp {
 
       data.length must beEqualTo(1)
 
-      (data(0) \ "id").asOpt[String] must beSome(identityExisting)
+      (data(0) \ "identityId").asOpt[String] must beSome(identityExisting)
+      (data(0) \ "identity").asOpt[JsObject] must beSome
+      (data(0) \ "message").asOpt[String] must beSome(friendRequestMessage)
     }
 
     "reject FriendRequest" in {
@@ -566,6 +566,5 @@ class ContactControllerSpec extends StartedApp {
 
       status(res) must equalTo(232)
     }
-
-      }
+  }
 }

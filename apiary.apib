@@ -1337,17 +1337,19 @@ Returns all Friendship Requests for one identity
             "data": {
                 [
                     {
-                        "id":"NyGAvBnLeR3mLEYdofgf",
-                        "cameoId":"ovkTHfPA1XKx9lmQJ5cR",
-                        "displayName":"NoName"
-                    }
-                    {
-                        "id":"NyGAvBnLeR3mLEYdofgf",
-                        "cameoId": "test",
-                        "displayName":"NoName"
+                        "idenityId":"NyGAvBnLeR3mLEYdofgf",
+                        "idenity":
+                            {
+                                "id":"NyGAvBnLeR3mLEYdofgf",
+                                "cameoId":"ovkTHfPA1XKx9lmQJ5cR",
+                                "displayName":"NoName"
+                            },
+                        "message":"friend request message",
+                        "created":"timestamp"
                     }
                 ]
             }
+        }
 
 ## Send Friendship Request [/friendRequest]
 
@@ -1363,7 +1365,8 @@ Send a Friendship Request to an other identity. Either the identityID or the cam
     
             {
               "identityId":"adfaasdv46abghart",
-              "cameoId":"test"
+              "cameoId":"test",
+              "message":"some message (optional)"
             }
  
 + Response 200

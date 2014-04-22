@@ -3,7 +3,7 @@ package controllers
 import traits.ExtendedController
 
 import play.api.libs.json._
-import models.{ ContactUpdate, MongoId, Identity, Contact }
+import models._
 import helper.{ OutputLimits, AuthAction }
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
@@ -12,6 +12,10 @@ import ExecutionContext.Implicits.global
 import constants.Contacts._
 import play.api.mvc.SimpleResult
 import play.api.Logger
+import scala.Some
+import play.api.mvc.SimpleResult
+import play.api.libs.json.JsObject
+import java.util.Date
 
 /**
  * User: Björn Reimer
@@ -144,13 +148,7 @@ object ContactController extends ExtendedController {
 
   def getFriendRequests = AuthAction.async {
     request =>
-      val futureFriendRequests = request.identity.friendRequests.map {
-        id =>
-          Identity.find(id).map {
-            case None    => Json.obj()
-            case Some(i) => i.toPublicSummaryJson
-          }
-      }
+      val futureFriendRequests = request.identity.friendRequests.map(_.toJsonWithIdentity)
 
       Future.sequence(futureFriendRequests).map {
         seq => resOK(seq)
@@ -158,7 +156,8 @@ object ContactController extends ExtendedController {
   }
 
   case class SendFriendRequest(identityId: Option[String],
-                               cameoId: Option[String])
+                               cameoId: Option[String],
+                               message: Option[String])
 
   object SendFriendRequest {
     implicit val reads: Reads[SendFriendRequest] = Json.reads[SendFriendRequest]
@@ -166,28 +165,28 @@ object ContactController extends ExtendedController {
 
   def sendFriendRequest = AuthAction.async(parse.tolerantJson) {
     request =>
-      def executeFriendRequest(receiver: MongoId): Future[SimpleResult] = {
-        // check if the other identity is already in contact
-        request.identity.contacts.exists(c => {
-          if (c.identityId.equals(receiver)) {
-            true
-          } else {
-            false
-          }
-        }) match {
+      def executeFriendRequest(receiver: MongoId, message: Option[String]): Future[SimpleResult] = {
+        // check if the other identity is already in contacts
+        request.identity.contacts.exists(_.identityId.equals(receiver)) match {
           case true => Future(resKO("identity is already in address book"))
           case false =>
             // check if identityId exists
             Identity.find(receiver).flatMap {
               case None => Future(resNotFound("identity"))
-              case Some(other) => other.addFriendRequest(request.identity.id).map {
-                lastError =>
-                  if (lastError.updatedExisting) {
-                    resOK()
-                  } else {
-                    resServerError("could not update")
-                  }
-              }
+              case Some(other) =>
+                other.friendRequests.exists(_.identityId.equals(request.identity.id)) match {
+                  case true => Future(resKO("friendRequest already exists"))
+                  case false =>
+                    val fr = new FriendRequest(request.identity.id, message, new Date)
+                    other.addFriendRequest(fr).map {
+                      lastError =>
+                        if (lastError.updatedExisting) {
+                          resOK()
+                        } else {
+                          resServerError("could not update")
+                        }
+                    }
+                }
             }
         }
       }
@@ -197,12 +196,12 @@ object ContactController extends ExtendedController {
           (sfr.identityId, sfr.cameoId) match {
             case (None, None)            => Future(resBadRequest("either identityId or cameoId required"))
             case (Some(i), Some(c))      => Future(resBadRequest("only identityId or cameoId allowed"))
-            case (Some(i: String), None) => executeFriendRequest(new MongoId(i))
+            case (Some(i: String), None) => executeFriendRequest(new MongoId(i), sfr.message)
             case (None, Some(c: String)) => {
               // search for cameoId and get identityId
               Identity.findByCameoId(c).flatMap {
                 case None           => Future(resNotFound("cameoId"))
-                case Some(identity) => executeFriendRequest(identity.id)
+                case Some(identity) => executeFriendRequest(identity.id, sfr.message)
               }
             }
           }
@@ -217,8 +216,8 @@ object ContactController extends ExtendedController {
     request =>
       validateFuture(request.body, AnswerFriendRequest.format) {
         afr =>
-          request.identity.friendRequests.find(_.id.equals(afr.identityId)) match {
-            case None => Future(resBadRequest("no friendRequest from this identityId"))
+          request.identity.friendRequests.find(_.identityId.toString.equals(afr.identityId)) match {
+            case None => Future(resBadRequest("no friendRequests from this identityId"))
             case Some(o) => afr.answerType match {
               case FRIEND_REQUEST_REJECT => request.identity.deleteFriendRequest(new MongoId(afr.identityId)).map {
                 lastError => if (lastError.updatedExisting) resOK() else resServerError("unable to delete")

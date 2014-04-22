@@ -48,7 +48,7 @@ case class Identity(id: MongoId,
                     userKey: String,
                     contacts: Seq[Contact],
                     tokens: Seq[Token],
-                    friendRequests: Seq[MongoId],
+                    friendRequests: Seq[FriendRequest],
                     publicKeys: Seq[PublicKey],
                     created: Date,
                     lastUpdated: Date,
@@ -99,13 +99,13 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set)
   }
 
-  def addFriendRequest(friendRequestId: MongoId): Future[LastError] = {
-    val set = Json.obj("$addToSet" -> Json.obj("friendRequests" -> friendRequestId))
+  def addFriendRequest(friendRequest: FriendRequest): Future[LastError] = {
+    val set = Json.obj("$addToSet" -> Json.obj("friendRequests" -> friendRequest))
     Identity.col.update(query, set)
   }
 
-  def deleteFriendRequest(friendRequestId: MongoId): Future[LastError] = {
-    val set = Json.obj("$pull" -> Json.obj("friendRequests" -> friendRequestId))
+  def deleteFriendRequest(identityId: MongoId): Future[LastError] = {
+    val set = Json.obj("$pull" -> Json.obj("friendRequests" -> Json.obj("ident  `ityId" -> identityId)))
     Identity.col.update(query, set)
   }
 
@@ -190,7 +190,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and
     Reads.pure[Seq[Token]](Seq()) and
-    Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Seq[FriendRequest]](Seq()) and
     Reads.pure[Seq[PublicKey]](Seq()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
@@ -285,14 +285,15 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Identity.create(None, IdHelper.generateCameoId, None, None)
   }
 
-  def docVersion = 5
+  def docVersion = 6
 
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
     1 -> IdentityEvolutions.addFriedRequest,
     2 -> IdentityEvolutions.addPublicKeys,
     3 -> IdentityEvolutions.removeConversations,
-    4 -> IdentityEvolutions.removeAssets
+    4 -> IdentityEvolutions.removeAssets,
+    5 -> IdentityEvolutions.convertFriendRequests
   )
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -387,5 +388,14 @@ object IdentityEvolutions {
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
         js.transform(removeAssets andThen addVersion)
       }
+  }
+
+  val convertFriendRequests: Reads[JsObject] = Reads {
+    js =>
+    {
+      val resetFriendRequests = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(6)))
+      js.transform(resetFriendRequests andThen addVersion)
+    }
   }
 }
