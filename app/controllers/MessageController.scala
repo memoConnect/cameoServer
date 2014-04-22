@@ -28,7 +28,7 @@ object MessageController extends ExtendedController {
    * Actions
    */
 
-  def createMessage(id: String) = authAction().async(parse.tolerantJson) {
+  def createMessage(id: String) = authAction(allowExternal = true).async(parse.tolerantJson) {
     request =>
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
@@ -50,7 +50,7 @@ object MessageController extends ExtendedController {
       }
   }
 
-  def getMessage(id: String) = authAction().async {
+  def getMessage(id: String) = authAction(allowExternal = true).async {
     (request) =>
       Message.findConversation(new MongoId(id)).map {
         case None => resNotFound("message")

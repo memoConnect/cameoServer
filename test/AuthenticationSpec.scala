@@ -140,11 +140,12 @@ class AuthenticationSpec extends StartedApp {
       status(res) must equalTo(OK)
       val data = (contentAsJson(res) \ "data").as[JsObject]
       tokenExternal = (data \ "token").as[String]
+      (data \ "token").asOpt[String] must beSome
     }
 
     authRoutesWithIds.seq.map {
       r =>
-        "WITH AUTH - " + r._1 + " " + r._2 + "\t: should not work with external token" in {
+        "EXTERNAL AUTH - " + r._1 + " " + r._2 + "\t: should not work with external token" in {
           val method = r._1
           val path = r._2
 
@@ -157,20 +158,20 @@ class AuthenticationSpec extends StartedApp {
         }
     }
 
-//    allowExternalRoutesWithIds.seq.map {
-//      r =>
-//        "WITH AUTH - " + r._1 + " " + r._2 + "\t: should work with external token" in {
-//          val method = r._1
-//          val path = r._2
-//
-//          val json = Json.obj()
-//
-//          val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-//          val res = route(req).get
-//
-//          status(res) must not equalTo (UNAUTHORIZED)
-//        }
-//    }
+    allowExternalRoutesWithIds.seq.map {
+      r =>
+        "EXTERNAL AUTH - " + r._1 + " " + r._2 + "\t: should work with external token" in {
+          val method = r._1
+          val path = r._2
+
+          val json = Json.obj()
+
+          val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExternal))
+          val res = route(req).get
+
+          status(res) must not equalTo (UNAUTHORIZED)
+        }
+    }
 
     var twoFactorToken = ""
 

@@ -32,7 +32,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversation(id: String, offset: Int, limit: Int) = authAction().async {
+  def getConversation(id: String, offset: Int, limit: Int) = authAction(allowExternal = true).async {
     request =>
       Conversation.find(id).flatMap {
         case None => Future.successful(resNotFound("conversation"))
@@ -95,7 +95,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversationSummary(id: String) = authAction().async {
+  def getConversationSummary(id: String) = authAction(allowExternal = true).async {
     request =>
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))

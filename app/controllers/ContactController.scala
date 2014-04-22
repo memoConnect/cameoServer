@@ -141,10 +141,10 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroups = authAction()(parse.tolerantJson) {
+  def getGroups = authAction().async {
     request =>
       val groups = request.identity.getGroups
-      resOK(Json.toJson(groups))
+      Future(resOK(Json.toJson(groups)))
   }
 
   def getFriendRequests = authAction().async {

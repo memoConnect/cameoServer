@@ -6,7 +6,7 @@ import services.TwoFactorAuth
 import helper.ResultHelper._
 import play.api.libs.json.{ Json, Reads }
 import models.TwoFactorToken
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 
 /**
@@ -16,11 +16,11 @@ import ExecutionContext.Implicits.global
  */
 object TwoFactorController extends ExtendedController {
 
-  def initiate() = authAction()(parse.tolerantJson) {
+  def initiate() = authAction().async {
     request =>
       TwoFactorAuth.sendNewKey(request.identity) match {
-        case None        => resOK()
-        case Some(error) => resBadRequest(error)
+        case None        => Future(resOK())
+        case Some(error) => Future(resBadRequest(error))
       }
   }
 
