@@ -493,17 +493,6 @@ class ContactControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "recipient accept FriendRequest" in {
-      val path = basePath + "/friendRequest/answer"
-
-      val json = Json.obj("answerType" -> "accept", "identityId" -> identityExisting2)
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(OK)
-    }
-
     "check if contact was added to sender (and only once)" in {
       val path = basePath + "/contacts"
 

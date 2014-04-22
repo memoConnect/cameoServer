@@ -228,6 +228,8 @@ object ContactController extends ExtendedController {
                 Identity.find(afr.identityId).flatMap {
                   case None => Future(resNotFound("other identity"))
                   case Some(otherIdentity) =>
+                    // check if accepting identity also has send a friendRequest and remove it
+                    otherIdentity.deleteFriendRequest(request.identity.id)
                     for {
                       le1 <- otherIdentity.addContact(Contact.create(request.identity.id, CONTACT_TYPE_INTERNAL))
                       le2 <- request.identity.addContact(Contact.create(otherIdentity.id, CONTACT_TYPE_INTERNAL))
