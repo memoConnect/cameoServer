@@ -2,7 +2,7 @@ package controllers
 
 import play.api.libs.json._
 
-import helper.AuthAction
+import helper.AuthRequestHelper.authAction
 import traits.ExtendedController
 import models._
 import helper.ResultHelper._
@@ -28,7 +28,7 @@ object MessageController extends ExtendedController {
    * Actions
    */
 
-  def createMessage(id: String) = AuthAction.async(parse.tolerantJson) {
+  def createMessage(id: String) = authAction().async(parse.tolerantJson) {
     request =>
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
@@ -50,7 +50,7 @@ object MessageController extends ExtendedController {
       }
   }
 
-  def getMessage(id: String) = AuthAction.async {
+  def getMessage(id: String) = authAction().async {
     (request) =>
       Message.findConversation(new MongoId(id)).map {
         case None => resNotFound("message")
@@ -99,7 +99,7 @@ object MessageController extends ExtendedController {
 
   }
 
-  def filter(offset: Int = 0, varLimit: Int = 0, count: String = "false") = AuthAction.async(parse.tolerantJson) {
+  def filter(offset: Int = 0, varLimit: Int = 0, count: String = "false") = authAction().async(parse.tolerantJson) {
     request => Future(Ok(""))
 
     //      // set default limit

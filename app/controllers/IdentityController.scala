@@ -6,7 +6,7 @@ import play.api.mvc.Action
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import helper.ResultHelper._
-import helper.AuthAction
+import helper.AuthRequestHelper.authAction
 import scala.Some
 
 import play.api.libs.json._
@@ -29,7 +29,7 @@ object IdentityController extends ExtendedController {
     }
   }
 
-  def getIdentityByToken = AuthAction.async {
+  def getIdentityByToken = authAction().async {
     request =>
 
       val mongoId = request.identity.id
@@ -40,7 +40,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def updateIdentity() = AuthAction.async(parse.tolerantJson) {
+  def updateIdentity() = authAction().async(parse.tolerantJson) {
     request =>
       validateFuture[IdentityUpdate](request.body, IdentityUpdate.reads) {
         identityUpdate =>
@@ -54,7 +54,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def search() = AuthAction.async(parse.tolerantJson) {
+  def search() = authAction().async(parse.tolerantJson) {
 
     request =>
 
@@ -91,7 +91,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def addPublicKey() = AuthAction.async(parse.tolerantJson) {
+  def addPublicKey() = authAction().async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, PublicKey.createReads) {
         publicKey =>
@@ -102,7 +102,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def editPublicKey(id: String) = AuthAction.async(parse.tolerantJson) {
+  def editPublicKey(id: String) = authAction().async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, PublicKeyUpdate.format) {
         pku =>
@@ -113,7 +113,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def deletePublicKey(id: String) = AuthAction.async {
+  def deletePublicKey(id: String) = authAction().async {
     request =>
       request.identity.deletePublicKey(new MongoId(id)).map {
         case false => resServerError("unable to delete")

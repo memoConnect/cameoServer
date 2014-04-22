@@ -9,7 +9,7 @@ import models.{ Identity, Account, Token }
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.ResultHelper._
 import play.api.Logger
-import helper.AuthAction
+import helper.AuthRequestHelper.authAction
 
 /**
  * User: Björn Reimer

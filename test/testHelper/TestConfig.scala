@@ -70,6 +70,10 @@ object TestConfig {
   val genericDisplayName = "generic Display Name"
   val existingContactIdentityId = "DOLkwAfL8zuMsh9JcXy4"
 
+  val purlExtern = "MSaKlj4hJP"
+  val purlExtern2 = "PkFWPuCiBB"
+  val purlExtern3 = "agirsrEN3j"
+
   val validPhoneNumbers: Seq[(String, String)] =
     Seq(
       (" 0173-12  34dd5678"     , "+4917312345678"),

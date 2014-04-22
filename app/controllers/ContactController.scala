@@ -4,7 +4,8 @@ import traits.ExtendedController
 
 import play.api.libs.json._
 import models._
-import helper.{ OutputLimits, AuthAction }
+import helper.{ OutputLimits}
+import helper.AuthRequestHelper.authAction
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
 import scala.Some
@@ -24,7 +25,7 @@ import java.util.Date
  */
 object ContactController extends ExtendedController {
 
-  def addContact() = AuthAction.async(parse.tolerantJson) {
+  def addContact() = authAction().async(parse.tolerantJson) {
     request =>
 
       def addExternalContact(js: JsObject): Future[SimpleResult] = {
@@ -74,7 +75,7 @@ object ContactController extends ExtendedController {
 
   }
 
-  def editContact(contactId: String) = AuthAction(parse.tolerantJson) {
+  def editContact(contactId: String) = authAction()(parse.tolerantJson) {
     request =>
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
@@ -96,7 +97,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getContact(contactId: String) = AuthAction.async {
+  def getContact(contactId: String) = authAction().async {
     request =>
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
@@ -106,7 +107,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getContacts(offset: Int, limit: Int) = AuthAction.async {
+  def getContacts(offset: Int, limit: Int) = authAction().async {
     request =>
       val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
 
@@ -115,7 +116,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def deleteContact(contactId: String) = AuthAction.async {
+  def deleteContact(contactId: String) = authAction().async {
     request =>
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
@@ -129,7 +130,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroup(group: String, offset: Int, limit: Int) = AuthAction.async {
+  def getGroup(group: String, offset: Int, limit: Int) = authAction().async {
     request =>
 
       val contacts = request.identity.getGroup(group)
@@ -140,13 +141,13 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroups = AuthAction {
+  def getGroups = authAction()(parse.tolerantJson) {
     request =>
       val groups = request.identity.getGroups
       resOK(Json.toJson(groups))
   }
 
-  def getFriendRequests = AuthAction.async {
+  def getFriendRequests = authAction().async {
     request =>
       val futureFriendRequests = request.identity.friendRequests.map(_.toJsonWithIdentity)
 
@@ -163,7 +164,7 @@ object ContactController extends ExtendedController {
     implicit val reads: Reads[SendFriendRequest] = Json.reads[SendFriendRequest]
   }
 
-  def sendFriendRequest = AuthAction.async(parse.tolerantJson) {
+  def sendFriendRequest = authAction().async(parse.tolerantJson) {
     request =>
       def executeFriendRequest(receiver: MongoId, message: Option[String]): Future[SimpleResult] = {
         // check if the other identity is already in contacts
@@ -212,7 +213,7 @@ object ContactController extends ExtendedController {
 
   object AnswerFriendRequest { implicit val format = Json.format[AnswerFriendRequest] }
 
-  def answerFriendRequest = AuthAction.async(parse.tolerantJson) {
+  def answerFriendRequest = authAction().async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, AnswerFriendRequest.format) {
         afr =>
