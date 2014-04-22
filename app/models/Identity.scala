@@ -105,7 +105,7 @@ case class Identity(id: MongoId,
   }
 
   def deleteFriendRequest(identityId: MongoId): Future[LastError] = {
-    val set = Json.obj("$pull" -> Json.obj("friendRequests" -> Json.obj("ident  `ityId" -> identityId)))
+    val set = Json.obj("$pull" -> Json.obj("friendRequests" -> Json.obj("identityId" -> identityId)))
     Identity.col.update(query, set)
   }
 
