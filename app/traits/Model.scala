@@ -74,8 +74,9 @@ trait Model[A] {
           js.transform(readsWithEvolution).flatMap {
             newJs =>
               // try to serialise after evolutions and save to db
-              newJs.validate[T](fromMongoDates andThen fromMongoId andThen reads).map{
-                o =>  val futureRes: Future[Boolean] = save(newJs).map { _.ok }
+              newJs.validate[T](fromMongoDates andThen fromMongoId andThen reads).map {
+                o =>
+                  val futureRes: Future[Boolean] = save(newJs).map { _.ok }
                   val res = Await.result(futureRes, 10.minutes)
                   res match {
                     case false =>

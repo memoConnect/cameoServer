@@ -6,7 +6,7 @@ import services.TwoFactorAuth
 import helper.ResultHelper._
 import play.api.libs.json.{ Json, Reads }
 import models.TwoFactorToken
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 
 /**

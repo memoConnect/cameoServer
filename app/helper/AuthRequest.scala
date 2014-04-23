@@ -3,7 +3,7 @@ package helper
 import play.api.mvc._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import models.{TwoFactorToken, MongoId, Identity}
+import models.{ TwoFactorToken, MongoId, Identity }
 import helper.ResultHelper._
 import constants.Authentication._
 
@@ -26,7 +26,7 @@ object CmActions {
     def invokeBlock[A](request: Request[A], block: TwoFactorAuthRequest[A] => Future[SimpleResult]) = {
       // do normal Auth and then try to elevate it to two factor auth
       doAuthAction(allowExternal = false, request, elevate(block))
-    }    
+    }
   }
 
   def doAuthAction[A](allowExternal: Boolean, request: Request[A], block: AuthRequest[A] => Future[SimpleResult]) = {
@@ -40,7 +40,7 @@ object CmActions {
             // check if identity has account
             (allowExternal, identity.accountId) match {
               case (false, None) => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
-              case _ => block(new AuthRequest[A](identity, request))
+              case _             => block(new AuthRequest[A](identity, request))
             }
         }
       }

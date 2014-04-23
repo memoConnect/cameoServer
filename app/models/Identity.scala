@@ -151,7 +151,6 @@ case class Identity(id: MongoId,
     }
   }
 
-
   def update(update: IdentityUpdate): Future[Boolean] = {
 
     val newMail = update.email.flatMap {
@@ -238,12 +237,12 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-//        maybeEmptyJsValue("email", i.email.map {
-//          _.toJson
-//        }) ++
-//        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
-//          _.toJson
-//        }) ++
+        //        maybeEmptyJsValue("email", i.email.map {
+        //          _.toJson
+        //        }) ++
+        //        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
+        //          _.toJson
+        //        }) ++
         maybeEmptyString("displayName", i.displayName) ++
         Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
   }
@@ -411,19 +410,19 @@ object IdentityEvolutions {
 
   val convertFriendRequests: Reads[JsObject] = Reads {
     js =>
-    {
-      val resetFriendRequests = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(6)))
-      js.transform(resetFriendRequests andThen addVersion)
-    }
+      {
+        val resetFriendRequests = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(6)))
+        js.transform(resetFriendRequests andThen addVersion)
+      }
   }
 
   val addIgnoredIdentities: Reads[JsObject] = Reads {
     js =>
-    {
-      val addArray = __.json.update((__ \ 'ignoredIdentities).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(7)))
-      js.transform(addArray andThen addVersion)
-    }
+      {
+        val addArray = __.json.update((__ \ 'ignoredIdentities).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(7)))
+        js.transform(addArray andThen addVersion)
+      }
   }
 }

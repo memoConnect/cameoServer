@@ -4,7 +4,7 @@ import traits.ExtendedController
 import models._
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
-import helper.{ OutputLimits}
+import helper.{ OutputLimits }
 import helper.CmActions.AuthAction
 import play.api.libs.json._
 import helper.ResultHelper._

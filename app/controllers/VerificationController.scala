@@ -1,6 +1,5 @@
 package controllers
 
-
 import helper.CmActions.AuthAction
 import traits.ExtendedController
 import play.api.mvc.{ Action, Controller }

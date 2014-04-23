@@ -51,7 +51,7 @@ case class Contact(id: MongoId,
       case Some(groups) =>
         val query = arrayQuery("contacts", this.id)
         val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
-        Contact.col.update(query, set).map (_.updatedExisting)
+        Contact.col.update(query, set).map(_.updatedExisting)
       case None => Future(false)
     }
 
@@ -92,7 +92,7 @@ object Contact extends Model[Contact] {
 
   def create(identityId: MongoId, groups: Seq[String] = Seq(), id: Option[MongoId] = None): Contact = {
     val contactId = id match {
-      case None => IdHelper.generateContactId()
+      case None      => IdHelper.generateContactId()
       case Some(cid) => cid
     }
     new Contact(contactId, groups, identityId, docVersion)
