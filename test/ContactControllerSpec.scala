@@ -430,6 +430,24 @@ class ContactControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
+    "check if it appears in contacts as pending" in {
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      val contact = data.find(js => (js \ "identityId").as[String].equals(identityExisting2))
+
+      contact must beSome
+
+      (contact.get \ "pendingFriendRequest").asOpt[Boolean] must beSome(true)
+      (contact.get \ "identity").asOpt[JsObject] must beSome
+    }
+
     "recipient send FriendRequest" in {
       val path = basePath + "/friendRequest"
 
@@ -438,7 +456,6 @@ class ContactControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
 
-      Logger.debug("ASDF" + contentAsString(res))
 
       status(res) must equalTo(OK)
     }
@@ -516,5 +533,7 @@ class ContactControllerSpec extends StartedApp {
 
       status(res) must equalTo(232)
     }
+
+
   }
 }

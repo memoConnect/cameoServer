@@ -84,7 +84,7 @@ object ContactController extends ExtendedController {
           validateFuture(request.body, ContactUpdate.format) {
             contactUpdate =>
               contact.update(contactUpdate).map {
-                case true => resOK("updated")
+                case true  => resOK("updated")
                 case false => resBadRequest("cannot update")
               }
           }
@@ -108,15 +108,24 @@ object ContactController extends ExtendedController {
       val query = Json.obj("friendRequests.identityId" -> request.identity.id)
       val futurePendingFriendRequests = Identity.col.find(query).cursor[Identity].collect[Seq]()
 
-      //      // get public information
-      //      futurePendingFriendRequests.map{ _.
-      //
-      //      }
-
-      val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
-
-      Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
-        c => resOK(c)
+      for {
+        futurePendingContacts <- futurePendingFriendRequests.map {
+          _.map {
+            identity =>
+              Contact.create(identity.id, id = Some(new MongoId(""))).toJson ++
+                identity.toPublicJson ++
+                Json.obj("contactType" -> CONTACT_TYPE_PENDING)
+          }
+        }
+        futureContacts <- Future.sequence(request.identity.contacts.map(_.toJsonWithIdentity))
+      } yield {
+        val all = futureContacts ++ futurePendingContacts
+        Logger.debug("CL " + all)
+        val sorted = all.sortBy(js =>
+          (js \ "identity" \ "displayName").asOpt[String]
+          .getOrElse((js \ "identity" \ "cameoId").as[String]))
+        val limited = OutputLimits.applyLimits(sorted, offset, limit)
+        resOK(limited)
       }
   }
 
@@ -236,8 +245,8 @@ object ContactController extends ExtendedController {
                     // check if accepting identity also has send a friendRequest and remove it
                     otherIdentity.deleteFriendRequest(request.identity.id)
                     for {
-                      le1 <- otherIdentity.addContact(Contact.create(request.identity.id, CONTACT_TYPE_INTERNAL))
-                      le2 <- request.identity.addContact(Contact.create(otherIdentity.id, CONTACT_TYPE_INTERNAL))
+                      le1 <- otherIdentity.addContact(Contact.create(request.identity.id))
+                      le2 <- request.identity.addContact(Contact.create(otherIdentity.id))
                     } yield {
                       le1 && le2 match {
                         case true  => resOK("added contacts")

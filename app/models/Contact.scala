@@ -90,8 +90,12 @@ object Contact extends Model[Contact] {
         Json.obj("identityId" -> c.identityId.toJson)
   }
 
-  def create(identityId: MongoId, contactType: String, groups: Seq[String] = Seq()): Contact = {
-    new Contact(IdHelper.generateContactId(), groups, identityId, docVersion)
+  def create(identityId: MongoId, groups: Seq[String] = Seq(), id: Option[MongoId] = None): Contact = {
+    val contactId = id match {
+      case None => IdHelper.generateContactId()
+      case Some(cid) => cid
+    }
+    new Contact(contactId, groups, identityId, docVersion)
   }
 
   override def save(js: JsObject): Future[LastError] = {
