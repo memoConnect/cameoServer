@@ -444,8 +444,9 @@ class ContactControllerSpec extends StartedApp {
 
       contact must beSome
 
-      (contact.get \ "pendingFriendRequest").asOpt[Boolean] must beSome(true)
+      (contact.get \ "contactType").asOpt[String] must beSome("pending")
       (contact.get \ "identity").asOpt[JsObject] must beSome
+      (contact.get \ "id").asOpt[String] must beSome("")
     }
 
     "recipient send FriendRequest" in {

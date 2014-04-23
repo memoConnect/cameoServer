@@ -113,19 +113,20 @@ object ContactController extends ExtendedController {
           _.map {
             identity =>
               Contact.create(identity.id, id = Some(new MongoId(""))).toJson ++
-                identity.toPublicJson ++
+                Json.obj("identity" -> identity.toPublicJson) ++
                 Json.obj("contactType" -> CONTACT_TYPE_PENDING)
           }
         }
         futureContacts <- Future.sequence(request.identity.contacts.map(_.toJsonWithIdentity))
       } yield {
         val all = futureContacts ++ futurePendingContacts
-        Logger.debug("CL " + all)
         val sorted = all.sortBy(js =>
           (js \ "identity" \ "displayName").asOpt[String]
-          .getOrElse((js \ "identity" \ "cameoId").as[String]))
+            .getOrElse((js \ "identity" \ "cameoId").as[String])
+        )
         val limited = OutputLimits.applyLimits(sorted, offset, limit)
         resOK(limited)
+
       }
   }
 
