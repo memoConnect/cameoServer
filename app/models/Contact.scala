@@ -34,8 +34,13 @@ case class Contact(id: MongoId,
           case Some(a) => CONTACT_TYPE_INTERNAL
         }
 
+        val identityJson = identity.accountId match {
+          case None    => identity.toPrivateJson
+          case Some(a) => identity.toPublicJson
+        }
+
         Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
-          Json.obj("identity" -> identity.toPublicJson) ++
+          Json.obj("identity" -> identityJson) ++
           Json.obj("contactType" -> contactType)
     }
 
