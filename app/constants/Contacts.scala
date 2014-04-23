@@ -14,5 +14,6 @@ object Contacts {
 
   val FRIEND_REQUEST_ACCEPT = "accept"
   val FRIEND_REQUEST_REJECT = "reject"
+  val FRIEND_REQUEST_IGNORE = "ignore"
 
 }

@@ -189,16 +189,22 @@ object ContactController extends ExtendedController {
             Identity.find(receiver).flatMap {
               case None => Future(resNotFound("identity"))
               case Some(other) =>
-                other.friendRequests.exists(_.identityId.equals(request.identity.id)) match {
-                  case true => Future(resKO("friendRequest already exists"))
+                // check if identity is ignored
+                other.ignoredIdentities.exists(_.equals(request.identity.id)) match {
+                  case true => Future(resOK())
                   case false =>
-                    val fr = new FriendRequest(request.identity.id, message, new Date)
-                    other.addFriendRequest(fr).map {
-                      lastError =>
-                        if (lastError.updatedExisting) {
-                          resOK()
-                        } else {
-                          resServerError("could not update")
+                    // check if there already is a friend request of this identity
+                    other.friendRequests.exists(_.identityId.equals(request.identity.id)) match {
+                      case true => Future(resKO("friendRequest already exists"))
+                      case false =>
+                        val fr = new FriendRequest(request.identity.id, message, new Date)
+                        other.addFriendRequest(fr).map {
+                          lastError =>
+                            if (lastError.updatedExisting) {
+                              resOK("request added")
+                            } else {
+                              resServerError("could not update")
+                            }
                         }
                     }
                 }
@@ -234,9 +240,10 @@ object ContactController extends ExtendedController {
           request.identity.friendRequests.find(_.identityId.toString.equals(afr.identityId)) match {
             case None => Future(resBadRequest("no friendRequests from this identityId"))
             case Some(o) => afr.answerType match {
-              case FRIEND_REQUEST_REJECT => request.identity.deleteFriendRequest(new MongoId(afr.identityId)).map {
-                lastError => if (lastError.updatedExisting) resOK() else resServerError("unable to delete")
-              }
+              case FRIEND_REQUEST_REJECT =>
+                // delete friend request and do nothing else
+                request.identity.deleteFriendRequest(new MongoId(afr.identityId))
+                Future(resOK())
               case FRIEND_REQUEST_ACCEPT =>
                 // add contact to both identites
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
@@ -255,6 +262,11 @@ object ContactController extends ExtendedController {
                       }
                     }
                 }
+              case FRIEND_REQUEST_IGNORE =>
+                // delete friend request and add identity to ignore list
+                request.identity.deleteFriendRequest(new MongoId(afr.identityId)).map(_.updatedExisting)
+                request.identity.addIgnored(new MongoId(afr.identityId))
+                Future(resOK())
               case _ => Future(resBadRequest("invalid answer type"))
             }
           }

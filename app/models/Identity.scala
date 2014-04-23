@@ -50,6 +50,7 @@ case class Identity(id: MongoId,
                     tokens: Seq[Token],
                     friendRequests: Seq[FriendRequest],
                     publicKeys: Seq[PublicKey],
+                    ignoredIdentities: Seq[MongoId],
                     created: Date,
                     lastUpdated: Date,
                     docVersion: Int) {
@@ -136,6 +137,21 @@ case class Identity(id: MongoId,
     }
   }
 
+  def addIgnored(identityId: MongoId): Future[Boolean] = {
+    val set = Json.obj("$addToSet" -> Json.obj("ignoredIdentities" -> identityId))
+    Identity.col.update(query, set).map {
+      _.ok
+    }
+  }
+
+  def deleteIgnored(identityId: MongoId): Future[Boolean] = {
+    val set = Json.obj("$pull" -> Json.obj("ignoredIdentities" -> identityId))
+    Identity.col.update(query, set).map {
+      _.updatedExisting
+    }
+  }
+
+
   def update(update: IdentityUpdate): Future[Boolean] = {
 
     val newMail = update.email.flatMap {
@@ -192,6 +208,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Reads.pure[Seq[Token]](Seq()) and
     Reads.pure[Seq[FriendRequest]](Seq()) and
     Reads.pure[Seq[PublicKey]](Seq()) and
+    Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Int](docVersion))(Identity.apply _)
@@ -252,6 +269,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       Seq(),
       Seq(),
       Seq(),
+      Seq(),
       new Date,
       new Date,
       docVersion)
@@ -285,7 +303,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Identity.create(None, IdHelper.generateCameoId, None, None)
   }
 
-  def docVersion = 6
+  def docVersion = 7
 
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
@@ -293,7 +311,8 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     2 -> IdentityEvolutions.addPublicKeys,
     3 -> IdentityEvolutions.removeConversations,
     4 -> IdentityEvolutions.removeAssets,
-    5 -> IdentityEvolutions.convertFriendRequests
+    5 -> IdentityEvolutions.convertFriendRequests,
+    6 -> IdentityEvolutions.addIgnoredIdentities
   )
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -396,6 +415,15 @@ object IdentityEvolutions {
       val resetFriendRequests = __.json.update((__ \ 'friendRequests).json.put(JsArray()))
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(6)))
       js.transform(resetFriendRequests andThen addVersion)
+    }
+  }
+
+  val addIgnoredIdentities: Reads[JsObject] = Reads {
+    js =>
+    {
+      val addArray = __.json.update((__ \ 'ignoredIdentities).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(7)))
+      js.transform(addArray andThen addVersion)
     }
   }
 }

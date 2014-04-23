@@ -406,7 +406,7 @@ class ContactControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "check if friendRequest is gone" in {
+    "check that friendRequest is gone" in {
       val path = basePath + "/friendRequests"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
@@ -457,7 +457,6 @@ class ContactControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
 
-
       status(res) must equalTo(OK)
     }
 
@@ -472,6 +471,8 @@ class ContactControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
+    var senderContactId = ""
+
     "check if contact was added to sender (and only once)" in {
       val path = basePath + "/contacts"
 
@@ -482,9 +483,15 @@ class ContactControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.count(c => (c \ "identityId").as[String].equals(identityExisting)) must beEqualTo(1)
+
+      val contact = data.partition(c => (c \ "identityId").as[String].equals(identityExisting))._1
+      contact.length must beEqualTo(1)
+      (contact(0) \ "id").asOpt[String] must beSome
+      senderContactId = (contact(0) \ "id").as[String]
+      (contact(0) \ "identity").asOpt[JsObject] must beSome
     }
 
+    var receiverContactId = ""
     "check if contact was added to receiver (and only once)" in {
       val path = basePath + "/contacts"
 
@@ -495,7 +502,11 @@ class ContactControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.count(c => (c \ "identityId").as[String].equals(identityExisting2)) must beEqualTo(1)
+      val contact = data.partition(c => (c \ "identityId").as[String].equals(identityExisting2))._1
+      contact.length must beEqualTo(1)
+      (contact(0) \ "id").asOpt[String] must beSome
+      receiverContactId = (contact(0) \ "id").as[String]
+      (contact(0) \ "identity").asOpt[JsObject] must beSome
     }
 
     "check if friendRequest is gone" in {
@@ -535,6 +546,91 @@ class ContactControllerSpec extends StartedApp {
       status(res) must equalTo(232)
     }
 
+    "delete contact 1" in {
+      val path = basePath + "/contact/" + senderContactId
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+      status(res) must equalTo(200)
+    }
+
+    "delete contact 2" in {
+      val path = basePath + "/contact/" + receiverContactId
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+      status(res) must equalTo(200)
+    }
+
+    "send another FriendRequest" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> identityExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "ignore FriendRequest" in {
+      val path = basePath + "/friendRequest/answer"
+
+      val json = Json.obj("answerType" -> "ignore", "identityId" -> identityExisting)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "ignored identity should not be in contacts" in {
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.find(c => (c \ "identityId").as[String].equals(identityExisting)) must beNone
+    }
+
+    "check that friendRequest is gone" in {
+      val path = basePath + "/friendRequests"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(0)
+    }
+
+    "send another FriendRequest to ignoring identity" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> identityExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "no friend request should be received" in {
+      val path = basePath + "/friendRequests"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(0)
+    }
 
   }
 }
