@@ -89,7 +89,7 @@ class SendMailActor extends Actor {
         // get identity of sender
         val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
         val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
-        val subject = "[cameo.io] - " + subject
+        val mailSubject = "[cameo.io] - " + subject
         val to: String = toIdentity.email.get.toString
         val body: String = message.plain match {
           case Some(PlainMessagePart(Some(text), _)) => text
@@ -106,7 +106,7 @@ class SendMailActor extends Actor {
         // cut message, so it will fit in the sms with the footer.
         val bodyWithFooter = body + footer
 
-        val mail = new MailMessage(from, to, bodyWithFooter, subject)
+        val mail = new MailMessage(from, to, bodyWithFooter, mailSubject)
 
         val messageStatus = sendMail(mail)
 
