@@ -58,7 +58,8 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/api/v1/conversation/$id<[^/]+>"),
       (GET, "/api/v1/conversation/$id<[^/]+>/summary"),
       (POST, "/api/v1/conversation/$id<[^/]+>/message"),
-      (GET, "/api/v1/message/$id<[^/]+>")
+      (GET, "/api/v1/message/$id<[^/]+>"),
+      (GET, "/api/v1/identity")
     )
 
     // all routes not specified as nonAuth, allowExternal or twoFactorAuth are assumed to be auth
