@@ -75,20 +75,20 @@ case class Conversation(id: MongoId,
 
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
     val set = Json.obj("$set" -> maybeEmptyString("subject", conversationUpdate.subject))
-    Conversation.col.update(query, setLastUpdated(set)).map { _.ok }
+    Conversation.col.update(query, set).map { _.ok }
   }
 
   def addRecipients(recipients: Seq[Recipient]): Future[Boolean] = {
     val set = Json.obj("$addToSet" ->
       Json.obj("recipients" ->
         Json.obj("$each" -> recipients)))
-    Conversation.col.update(query, setLastUpdated(set)).map { _.updatedExisting }
+    Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
   def deleteRecipient(recipient: Recipient): Future[Boolean] = {
     val set = Json.obj("$pull" ->
       Json.obj("recipients" -> recipient))
-    Conversation.col.update(query, setLastUpdated(set)).map { _.updatedExisting }
+    Conversation.col.update(query, set).map { _.updatedExisting }
   }
 
   def hasMember(identityId: MongoId): Boolean = {

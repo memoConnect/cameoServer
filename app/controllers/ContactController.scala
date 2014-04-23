@@ -57,8 +57,10 @@ object ContactController extends ExtendedController {
         validateFuture(request.body, Contact.createReads(identityId, contactType)) {
           contact =>
             {
-              request.identity.addContact(contact)
-              contact.toJsonWithIdentity.map(js => resOK(js))
+              request.identity.addContact(contact).flatMap {
+                case false => Future(resBadRequest("could not create contact"))
+                case true  => contact.toJsonWithIdentity.map(js => resOK(js))
+              }
             }
         }
       }
@@ -120,13 +122,14 @@ object ContactController extends ExtendedController {
         futureContacts <- Future.sequence(request.identity.contacts.map(_.toJsonWithIdentity))
       } yield {
         val all = futureContacts ++ futurePendingContacts
-        val sorted = all.sortBy(js =>
-          (js \ "identity" \ "displayName").asOpt[String]
-            .getOrElse((js \ "identity" \ "cameoId").as[String])
+        val sorted = all.sortBy(
+          js =>
+            (js \ "identity" \ "displayName").asOpt[String]
+              .getOrElse((js \ "identity" \ "cameoId").as[String])
+              .toLowerCase
         )
         val limited = OutputLimits.applyLimits(sorted, offset, limit)
         resOK(limited)
-
       }
   }
 
