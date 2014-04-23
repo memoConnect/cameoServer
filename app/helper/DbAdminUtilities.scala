@@ -162,7 +162,7 @@ object DbAdminUtilities {
               Future(true)
         }
 
-        val lastRes = Await.result(res, 5 minutes)
+        val lastRes = Await.result(res, 5.minutes)
         Logger.debug("Migrated Token: " + id)
         lastRes
     }
@@ -200,7 +200,7 @@ object DbAdminUtilities {
             }
         }
 
-        val lastRes = Await.result(res, 5 minutes)
+        val lastRes = Await.result(res, 5.minutes)
         Logger.debug("Migrated Recipients in Conversation: " + id)
         lastRes
       }

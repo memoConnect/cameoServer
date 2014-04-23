@@ -50,7 +50,7 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
         case Some(i) => Future(true)
       }
 
-      Await.result(futureRes, 5 minutes)
+      Await.result(futureRes, 5.minutes)
       Logger.debug("finished loading fixtures")
 
     }
@@ -69,7 +69,7 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
           case Some(s) => Future(s)
         }
 
-        val state = Await.result(futureState, 1 minute)
+        val state = Await.result(futureState, 1.minute)
 
         state match {
           // only migrate if there is a new version and nobody else is migrating
@@ -94,7 +94,7 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
         }
       }
 
-      Await.result(migrate, 6 hours)
+      Await.result(migrate, 6.hours)
     }
 
   }

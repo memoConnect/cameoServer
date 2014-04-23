@@ -18,5 +18,9 @@ libraryDependencies ++= Seq(
 
 play.Project.playScalaSettings
 
+scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
+
+// disable reverse route to get rid of some useless compiler warnings
+generateReverseRouter := false
 
 com.typesafe.sbt.SbtAtmosPlay.atmosPlaySettings
