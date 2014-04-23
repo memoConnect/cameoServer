@@ -27,190 +27,188 @@ class FileControllerSpec extends StartedApp {
     val newChunk = Stuff.randomString(256)
     val newChunkIndex = Stuff.random.nextInt(chunks.size)
 
-    "FileController" should {
-      "upload first chunk of file" in {
-        val path = basePath + "/file"
+    "upload first chunk of file" in {
+      val path = basePath + "/file"
 
-        val json = Json.obj("chunk" -> chunks.head)
+      val json = Json.obj("chunk" -> chunks.head)
 
-        val header: Seq[(String, String)] = Seq(
-          ("X-File-Name", fileName),
-          ("X-Max-Chunks", chunks.size.toString),
-          ("X-File-Size", fileSize.toString),
-          ("X-File-Type", fileType)) :+
-          tokenHeader(tokenExisting2)
+      val header: Seq[(String, String)] = Seq(
+        ("X-File-Name", fileName),
+        ("X-Max-Chunks", chunks.size.toString),
+        ("X-File-Size", fileSize.toString),
+        ("X-File-Type", fileType)) :+
+        tokenHeader(tokenExisting2)
 
-        val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
-        val res = route(req).get
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val res = route(req).get
 
-        status(res) must equalTo(OK)
+      status(res) must equalTo(OK)
 
-        val data = (contentAsJson(res) \ "data").as[JsObject]
+      val data = (contentAsJson(res) \ "data").as[JsObject]
 
-        (data \ "id").asOpt[String] must beSome
-        fileId = (data \ "id").as[String]
-        (data \ "chunks")(0).asOpt[Int] must beNone
-        (data \ "fileName").asOpt[String] must beSome(fileName)
-        (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
-        (data \ "fileSize").asOpt[Int] must beSome(fileSize)
-        (data \ "fileType").asOpt[String] must beSome(fileType)
+      (data \ "id").asOpt[String] must beSome
+      fileId = (data \ "id").as[String]
+      (data \ "chunks")(0).asOpt[Int] must beNone
+      (data \ "fileName").asOpt[String] must beSome(fileName)
+      (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
+      (data \ "fileSize").asOpt[Int] must beSome(fileSize)
+      (data \ "fileType").asOpt[String] must beSome(fileType)
+    }
+
+    "upload the other chunks" in {
+      val path = basePath + "/file/" + fileId
+
+      chunks.zipWithIndex.map {
+        case (chunk, i) =>
+
+          val json = Json.obj("chunk" -> chunk)
+
+          val header: Seq[(String, String)] = Seq(
+            ("X-Index", i.toString)) :+
+            tokenHeader(tokenExisting2)
+
+          val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+          val res = route(req).get
+
+          status(res) must equalTo(OK)
       }
+    }
 
-      "upload the other chunks" in {
-        val path = basePath + "/file/" + fileId
+    "refuse upload to chunks to invalid fileId" in {
+      val path = basePath + "/file/" + "asdfasdf"
 
-        chunks.zipWithIndex.map {
-          case (chunk, i) =>
+      val json = Json.obj("chunk" -> chunks(1))
 
-            val json = Json.obj("chunk" -> chunk)
+      val header: Seq[(String, String)] = Seq(
+        ("X-Index", "2")) :+
+        tokenHeader(tokenExisting2)
 
-            val header: Seq[(String, String)] = Seq(
-              ("X-Index", i.toString)) :+
-              tokenHeader(tokenExisting2)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val res = route(req).get
 
-            val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
-            val res = route(req).get
+      status(res) must equalTo(NOT_FOUND)
+    }
 
-            status(res) must equalTo(OK)
+    "get file meta information" in {
+
+      val path = basePath + "/file/" + fileId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      fileId = (data \ "id").as[String]
+      (data \ "chunks").asOpt[Seq[Int]] must beSome
+      val returnedChunks: Seq[Int] = (data \ "chunks").as[Seq[Int]].sorted
+      returnedChunks.size must beEqualTo(10)
+      returnedChunks.min must beEqualTo(0)
+      returnedChunks.max must beEqualTo(9)
+      (data \ "fileName").asOpt[String] must beSome(fileName)
+      (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
+      (data \ "fileSize").asOpt[Int] must beSome(fileSize)
+      (data \ "fileType").asOpt[String] must beSome(fileType)
+    }
+
+    "get all chunks of a file" in {
+      chunks.zipWithIndex.map {
+        case (chunk, i) => {
+          val path = basePath + "/file/" + fileId + "/" + i
+
+          val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+          val res = route(req).get
+
+          status(res) must equalTo(OK)
+
+          val data = (contentAsJson(res) \ "data").as[JsObject]
+
+          (data \ "chunk").asOpt[String] must beSome(chunks(i))
         }
       }
+    }
 
-      "refuse upload to chunks to invalid fileId" in {
-        val path = basePath + "/file/" + "asdfasdf"
+    "overwrite existing chunk" in {
+      val path = basePath + "/file/" + fileId
 
-        val json = Json.obj("chunk" -> chunks(1))
+      val json = Json.obj("chunk" -> newChunk)
 
-        val header: Seq[(String, String)] = Seq(
-          ("X-Index", "2")) :+
-          tokenHeader(tokenExisting2)
+      val header: Seq[(String, String)] = Seq(
+        ("X-Index", newChunkIndex.toString)) :+
+        tokenHeader(tokenExisting2)
 
-        val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
-        val res = route(req).get
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val res = route(req).get
 
-        status(res) must equalTo(NOT_FOUND)
-      }
+      status(res) must equalTo(OK)
+    }
 
-      "get file meta information" in {
+    "check if old chunk has been overwritten" in {
 
-        val path = basePath + "/file/" + fileId
+      val path = basePath + "/file/" + fileId + "/" + newChunkIndex
 
-        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
-        val res = route(req).get
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
 
-        status(res) must equalTo(OK)
+      status(res) must equalTo(OK)
 
-        val data = (contentAsJson(res) \ "data").as[JsObject]
+      val data = (contentAsJson(res) \ "data").as[JsObject]
 
-        (data \ "id").asOpt[String] must beSome
-        fileId = (data \ "id").as[String]
-        (data \ "chunks").asOpt[Seq[Int]] must beSome
-        val returnedChunks: Seq[Int] = (data \ "chunks").as[Seq[Int]].sorted
-        returnedChunks.size must beEqualTo(10)
-        returnedChunks.min must beEqualTo(0)
-        returnedChunks.max must beEqualTo(9)
-        (data \ "fileName").asOpt[String] must beSome(fileName)
-        (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
-        (data \ "fileSize").asOpt[Int] must beSome(fileSize)
-        (data \ "fileType").asOpt[String] must beSome(fileType)
-      }
+      (data \ "chunk").asOpt[String] must beSome(newChunk)
+    }
 
-      "get all chunks of a file" in {
-        chunks.zipWithIndex.map {
-          case (chunk, i) => {
-            val path = basePath + "/file/" + fileId + "/" + i
+    "check that there is only one chunk for each index" in {
+      val path = basePath + "/file/" + fileId
 
-            val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
-            val res = route(req).get
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
 
-            status(res) must equalTo(OK)
+      status(res) must equalTo(OK)
 
-            val data = (contentAsJson(res) \ "data").as[JsObject]
+      val data = (contentAsJson(res) \ "data").as[JsObject]
 
-            (data \ "chunk").asOpt[String] must beSome(chunks(i))
-          }
+      (data \ "chunks").asOpt[Seq[Int]] must beSome
+      val returnedChunks: Seq[Int] = (data \ "chunks").as[Seq[Int]].sorted
+
+      returnedChunks.distinct.size must beEqualTo(returnedChunks.size)
+
+    }
+
+    "refuse to return non existing chunk" in {
+      chunks.zipWithIndex.map {
+        case (chunk, i) => {
+          val path = basePath + "/file/" + fileId + "/15"
+
+          val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+          val res = route(req).get
+
+          status(res) must equalTo(NOT_FOUND)
         }
       }
+    }
 
-      "overwrite existing chunk" in {
-        val path = basePath + "/file/" + fileId
+    "detect non-numerical chunk index" in {
+      chunks.zipWithIndex.map {
+        case (chunk, i) => {
+          val path = basePath + "/file/" + fileId + "/d"
 
-        val json = Json.obj("chunk" -> newChunk)
+          val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+          val res = route(req).get
 
-        val header: Seq[(String, String)] = Seq(
-          ("X-Index", newChunkIndex.toString)) :+
-          tokenHeader(tokenExisting2)
-
-        val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
-        val res = route(req).get
-
-        status(res) must equalTo(OK)
-      }
-
-      "check if old chunk has been overwritten" in {
-
-        val path = basePath + "/file/" + fileId + "/" + newChunkIndex
-
-        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
-        val res = route(req).get
-
-        status(res) must equalTo(OK)
-
-        val data = (contentAsJson(res) \ "data").as[JsObject]
-
-        (data \ "chunk").asOpt[String] must beSome(newChunk)
-      }
-
-      "check that there is only one chunk for each index" in {
-        val path = basePath + "/file/" + fileId
-
-        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
-        val res = route(req).get
-
-        status(res) must equalTo(OK)
-
-        val data = (contentAsJson(res) \ "data").as[JsObject]
-
-        (data \ "chunks").asOpt[Seq[Int]] must beSome
-        val returnedChunks: Seq[Int] = (data \ "chunks").as[Seq[Int]].sorted
-
-        returnedChunks.distinct.size must beEqualTo(returnedChunks.size)
-
-      }
-
-      "refuse to return non existing chunk" in {
-        chunks.zipWithIndex.map {
-          case (chunk, i) => {
-            val path = basePath + "/file/" + fileId + "/15"
-
-            val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
-            val res = route(req).get
-
-            status(res) must equalTo(NOT_FOUND)
-          }
+          status(res) must equalTo(BAD_REQUEST)
         }
       }
+    }
 
-      "detect non-numerical chunk index" in {
-        chunks.zipWithIndex.map {
-          case (chunk, i) => {
-            val path = basePath + "/file/" + fileId + "/d"
+    "refuse to return non existing FileMeta" in {
+      val path = basePath + "/file/0"
 
-            val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
-            val res = route(req).get
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
 
-            status(res) must equalTo(BAD_REQUEST)
-          }
-        }
-      }
-
-      "refuse to return non existing FileMeta" in {
-        val path = basePath + "/file/0"
-
-        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
-        val res = route(req).get
-
-        status(res) must equalTo(NOT_FOUND)
-      }
+      status(res) must equalTo(NOT_FOUND)
     }
   }
 }

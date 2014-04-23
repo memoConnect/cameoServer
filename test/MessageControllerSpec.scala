@@ -217,8 +217,6 @@ class MessageControllerSpec extends StartedApp {
 
       status(res) must equalTo(OK)
 
-      Logger.debug("ADSF: " + contentAsString(res))
-
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome

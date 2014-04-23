@@ -290,7 +290,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     def toQueryOrEmpty(key: String, field: Option[String]): Seq[JsObject] = {
       field match {
         case None    => Seq()
-        case Some(f) => Seq(Json.obj(key -> Json.obj("$regex" -> f)))
+        case Some(f) => Seq(Json.obj(key -> Json.obj("$regex" -> f, "$options" -> "i")))
       }
     }
 

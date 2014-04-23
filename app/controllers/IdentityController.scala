@@ -55,7 +55,6 @@ object IdentityController extends ExtendedController {
   }
 
   def search() = AuthAction().async(parse.tolerantJson) {
-
     request =>
 
       case class VerifyRequest(search: String, fields: Seq[String], excludeContacts: Option[Boolean])

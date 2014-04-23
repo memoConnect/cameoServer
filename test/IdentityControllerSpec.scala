@@ -154,6 +154,25 @@ class IdentityControllerSpec extends StartedApp {
       data.length must beEqualTo(1)
     }
 
+    "Search for an CameoId with different case" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("search" -> cameoIdExisting2.toLowerCase, "fields" -> Seq("cameoId"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
+
+      data.length must beEqualTo(1)
+    }
+
     "Refuse to Search for an CameoId if the search term is too short" in {
 
       val path = basePath + "/identity/search"
@@ -170,7 +189,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("search" -> "moep", "fields" -> Seq("cameoId"))
+      val json = Json.obj("search" -> "moeps", "fields" -> Seq("cameoId"))
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -218,6 +237,24 @@ class IdentityControllerSpec extends StartedApp {
       data.length must beEqualTo(1)
     }
 
+    "Search for a DisplayName with different case" in {
+
+      val path = basePath + "/identity/search"
+
+      val json = Json.obj("search" -> displayNameExisting2.toUpperCase, "fields" -> Seq("displayName"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
+
+      data.length must beEqualTo(1)
+    }
+
     "Find nothing for non-existing DisplayNames" in {
 
       val path = basePath + "/identity/search"
@@ -229,7 +266,7 @@ class IdentityControllerSpec extends StartedApp {
 
       status(res) must equalTo(OK)
 
-      val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
       data.length must beEqualTo(0)
     }

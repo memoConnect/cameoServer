@@ -45,7 +45,7 @@ class ContactControllerSpec extends StartedApp {
       numberOfContacts = data.length
 
       val contact = data(10)
-      (contact \ "groups")(0).asOpt[String] must beSome("group1")
+      (contact \ "groups").asOpt[Seq[String]] must beSome
       (contact \ "identityId").asOpt[String] must beSome
       identityOf10thContact = (contact \ "identityId").as[String]
       (contact \ "id").asOpt[String] must beSome
