@@ -8,12 +8,12 @@ import scala.Some
 import ExecutionContext.Implicits.global
 import play.api.libs.json.JsObject
 import models.cockpit.CockpitEdit
-import helper.{ TwoFactorAuthAction }
+import helper.CmActions._
 import play.api.Logger
 
 object EditController {
 
-  def getEdit(elementName: String, id: String) = TwoFactorAuthAction.async { request =>
+  def getEdit(elementName: String, id: String) = TwoFactorAuthAction().async { request =>
     ListController.checkAccessList(request.identity.accountId) {
       ListController.getEditable(elementName) match {
         case None => Future(resNotFound("entity with name: " + elementName))
@@ -27,7 +27,7 @@ object EditController {
     }
   }
 
-  def modify(elementName: String, id: String) = TwoFactorAuthAction.async(parse.tolerantJson) {
+  def modify(elementName: String, id: String) = TwoFactorAuthAction().async(parse.tolerantJson) {
     request =>
       // todo: validate body
       ListController.checkAccessList(request.identity.accountId) {

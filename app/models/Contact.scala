@@ -21,7 +21,6 @@ import constants.Contacts._
 case class Contact(id: MongoId,
                    groups: Seq[String],
                    identityId: MongoId,
-                   contactType: String,
                    docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
@@ -30,8 +29,14 @@ case class Contact(id: MongoId,
     Identity.find(this.identityId).map {
       case None => Json.obj()
       case Some(identity) =>
+        val contactType = identity.accountId match {
+          case None    => CONTACT_TYPE_EXTERNAL
+          case Some(a) => CONTACT_TYPE_INTERNAL
+        }
+
         Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
-          Json.obj("identity" -> identity.toPublicJson)
+          Json.obj("identity" -> identity.toPublicJson) ++
+          Json.obj("contactType" -> contactType)
     }
 
   def toJsonWithIdentityResult: Future[SimpleResult] = {
@@ -39,27 +44,27 @@ case class Contact(id: MongoId,
       js => resOK(js))
   }
 
-  def update(contactUpdate: ContactUpdate): Any = {
+  def update(contactUpdate: ContactUpdate): Future[Boolean] = {
 
     // edit groups
-    if (contactUpdate.groups.isDefined) {
-      val query = arrayQuery("contacts", this.id)
-      val newGroups = maybeEmptyJsValue("contacts.$.groups", contactUpdate.groups.map(Json.toJson(_)))
-      val set = Json.obj("$set" -> newGroups)
-
-      Contact.col.update(query, set).map {
-        lastError => if (!lastError.updatedExisting) Logger.error("Could not update Contact: " + query + ":" + set)
-      }
+    val updatedGroups = contactUpdate.groups match {
+      case Some(groups) =>
+        val query = arrayQuery("contacts", this.id)
+        val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
+        Contact.col.update(query, set).map (_.updatedExisting)
+      case None => Future(false)
     }
 
-    // edit identity only for external contacts
-    if (this.contactType.equals(CONTACT_TYPE_EXTERNAL)) {
-      val identityUpdate = new IdentityUpdate(VerifiedString.createOpt(contactUpdate.phoneNumber), VerifiedString.createOpt(contactUpdate.email), contactUpdate.displayName)
-
-      Identity.find(this.identityId).map {
-        case Some(identity) => identity.update(identityUpdate)
-        case None           =>
-      }
+    Identity.find(this.identityId).flatMap {
+      case None => updatedGroups
+      case Some(identity) =>
+        // only update, if the identity does not have an account
+        identity.accountId match {
+          case Some(a) => updatedGroups
+          case None =>
+            val identityUpdate = new IdentityUpdate(VerifiedString.createOpt(contactUpdate.phoneNumber), VerifiedString.createOpt(contactUpdate.email), contactUpdate.displayName)
+            identity.update(identityUpdate)
+        }
     }
   }
 
@@ -75,7 +80,6 @@ object Contact extends Model[Contact] {
     Reads.pure[MongoId](IdHelper.generateContactId()) and
     ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
     Reads.pure[MongoId](identityId) and
-    Reads.pure[String](contactType) and
     Reads.pure[Int](docVersion)
   )(Contact.apply _)
 
@@ -83,12 +87,15 @@ object Contact extends Model[Contact] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("groups" -> c.groups) ++
-        Json.obj("identityId" -> c.identityId.toJson) ++
-        Json.obj("contactType" -> c.contactType)
+        Json.obj("identityId" -> c.identityId.toJson)
   }
 
-  def create(identityId: MongoId, contactType: String, groups: Seq[String] = Seq()): Contact = {
-    new Contact(IdHelper.generateContactId(), groups, identityId, contactType, docVersion)
+  def create(identityId: MongoId, groups: Seq[String] = Seq(), id: Option[MongoId] = None): Contact = {
+    val contactId = id match {
+      case None => IdHelper.generateContactId()
+      case Some(cid) => cid
+    }
+    new Contact(contactId, groups, identityId, docVersion)
   }
 
   override def save(js: JsObject): Future[LastError] = {
@@ -113,7 +120,7 @@ object Contact extends Model[Contact] {
   val evolutions = Map(0 -> evolutionAddContactType)
 
   override def createDefault(): Contact = {
-    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), CONTACT_TYPE_NONE, docVersion)
+    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), docVersion)
   }
 }
 

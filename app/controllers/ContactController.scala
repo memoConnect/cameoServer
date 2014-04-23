@@ -4,8 +4,8 @@ import traits.ExtendedController
 
 import play.api.libs.json._
 import models._
-import helper.{ OutputLimits}
-import helper.AuthRequestHelper.authAction
+import helper.{ OutputLimits }
+import helper.CmActions.AuthAction
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
 import scala.Some
@@ -25,7 +25,7 @@ import java.util.Date
  */
 object ContactController extends ExtendedController {
 
-  def addContact() = authAction().async(parse.tolerantJson) {
+  def addContact() = AuthAction().async(parse.tolerantJson) {
     request =>
 
       def addExternalContact(js: JsObject): Future[SimpleResult] = {
@@ -75,29 +75,23 @@ object ContactController extends ExtendedController {
 
   }
 
-  def editContact(contactId: String) = authAction()(parse.tolerantJson) {
+  def editContact(contactId: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
-
-      res match {
-        case None => resNotFound("contact")
-        case Some(contact) => {
-          validate(request.body, ContactUpdate.format) {
+      val maybeContact = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
+      maybeContact match {
+        case None => Future(resNotFound("contact"))
+        case Some(contact) =>
+          validateFuture(request.body, ContactUpdate.format) {
             contactUpdate =>
-              // if the contact is internal we can only change the groups
-              if (contact.contactType.equals(CONTACT_TYPE_INTERNAL) &&
-                (contactUpdate.email.isDefined || contactUpdate.phoneNumber.isDefined || contactUpdate.displayName.isDefined)) {
-                resUnauthorized("cannot change contact details of another cameo user")
-              } else {
-                contact.update(contactUpdate)
-                resOK()
+              contact.update(contactUpdate).map {
+                case true  => resOK("updated")
+                case false => resBadRequest("cannot update")
               }
           }
-        }
       }
   }
 
-  def getContact(contactId: String) = authAction().async {
+  def getContact(contactId: String) = AuthAction().async {
     request =>
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
@@ -107,16 +101,36 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getContacts(offset: Int, limit: Int) = authAction().async {
+  def getContacts(offset: Int, limit: Int) = AuthAction().async {
     request =>
-      val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
 
-      Future.sequence(contacts.map(_.toJsonWithIdentity)).map {
-        c => resOK(c)
+      // get all pending friendRequest, todo: this can be done more efficiently
+      val query = Json.obj("friendRequests.identityId" -> request.identity.id)
+      val futurePendingFriendRequests = Identity.col.find(query).cursor[Identity].collect[Seq]()
+
+      for {
+        futurePendingContacts <- futurePendingFriendRequests.map {
+          _.map {
+            identity =>
+              Contact.create(identity.id, id = Some(new MongoId(""))).toJson ++
+                Json.obj("identity" -> identity.toPublicJson) ++
+                Json.obj("contactType" -> CONTACT_TYPE_PENDING)
+          }
+        }
+        futureContacts <- Future.sequence(request.identity.contacts.map(_.toJsonWithIdentity))
+      } yield {
+        val all = futureContacts ++ futurePendingContacts
+        val sorted = all.sortBy(js =>
+          (js \ "identity" \ "displayName").asOpt[String]
+            .getOrElse((js \ "identity" \ "cameoId").as[String])
+        )
+        val limited = OutputLimits.applyLimits(sorted, offset, limit)
+        resOK(limited)
+
       }
   }
 
-  def deleteContact(contactId: String) = authAction().async {
+  def deleteContact(contactId: String) = AuthAction().async {
     request =>
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
@@ -130,7 +144,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroup(group: String, offset: Int, limit: Int) = authAction().async {
+  def getGroup(group: String, offset: Int, limit: Int) = AuthAction().async {
     request =>
 
       val contacts = request.identity.getGroup(group)
@@ -141,13 +155,13 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroups = authAction().async {
+  def getGroups = AuthAction().async {
     request =>
       val groups = request.identity.getGroups
       Future(resOK(Json.toJson(groups)))
   }
 
-  def getFriendRequests = authAction().async {
+  def getFriendRequests = AuthAction().async {
     request =>
       val futureFriendRequests = request.identity.friendRequests.map(_.toJsonWithIdentity)
 
@@ -164,7 +178,7 @@ object ContactController extends ExtendedController {
     implicit val reads: Reads[SendFriendRequest] = Json.reads[SendFriendRequest]
   }
 
-  def sendFriendRequest = authAction().async(parse.tolerantJson) {
+  def sendFriendRequest = AuthAction().async(parse.tolerantJson) {
     request =>
       def executeFriendRequest(receiver: MongoId, message: Option[String]): Future[SimpleResult] = {
         // check if the other identity is already in contacts
@@ -213,7 +227,7 @@ object ContactController extends ExtendedController {
 
   object AnswerFriendRequest { implicit val format = Json.format[AnswerFriendRequest] }
 
-  def answerFriendRequest = authAction().async(parse.tolerantJson) {
+  def answerFriendRequest = AuthAction().async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, AnswerFriendRequest.format) {
         afr =>
@@ -232,8 +246,8 @@ object ContactController extends ExtendedController {
                     // check if accepting identity also has send a friendRequest and remove it
                     otherIdentity.deleteFriendRequest(request.identity.id)
                     for {
-                      le1 <- otherIdentity.addContact(Contact.create(request.identity.id, CONTACT_TYPE_INTERNAL))
-                      le2 <- request.identity.addContact(Contact.create(otherIdentity.id, CONTACT_TYPE_INTERNAL))
+                      le1 <- otherIdentity.addContact(Contact.create(request.identity.id))
+                      le2 <- request.identity.addContact(Contact.create(otherIdentity.id))
                     } yield {
                       le1 && le2 match {
                         case true  => resOK("added contacts")

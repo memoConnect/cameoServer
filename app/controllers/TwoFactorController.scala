@@ -1,7 +1,7 @@
 package controllers
 
 import traits.ExtendedController
-import helper.AuthRequestHelper.authAction
+import helper.CmActions.AuthAction
 import services.TwoFactorAuth
 import helper.ResultHelper._
 import play.api.libs.json.{ Json, Reads }
@@ -16,7 +16,7 @@ import ExecutionContext.Implicits.global
  */
 object TwoFactorController extends ExtendedController {
 
-  def initiate() = authAction().async {
+  def initiate() = AuthAction().async {
     request =>
       TwoFactorAuth.sendNewKey(request.identity) match {
         case None        => Future(resOK())
@@ -28,7 +28,7 @@ object TwoFactorController extends ExtendedController {
 
   object ConfirmKey { implicit val reads: Reads[ConfirmKey] = Json.reads[ConfirmKey] }
 
-  def confirmKey() = authAction().async(parse.tolerantJson) {
+  def confirmKey() = AuthAction().async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, ConfirmKey.reads) { ck =>
         TwoFactorAuth.verifyKey(ck.key, request.identity).map {

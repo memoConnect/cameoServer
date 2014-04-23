@@ -9,6 +9,7 @@ object Contacts {
 
   val CONTACT_TYPE_EXTERNAL = "external"
   val CONTACT_TYPE_INTERNAL = "internal"
+  val CONTACT_TYPE_PENDING = "pending"
   val CONTACT_TYPE_NONE = "none"
 
   val FRIEND_REQUEST_ACCEPT = "accept"

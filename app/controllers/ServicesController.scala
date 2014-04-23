@@ -5,7 +5,7 @@ import traits.{ ExtendedController }
 import models.Conversation
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.{ CheckHelper }
-import helper.AuthRequestHelper.authAction
+import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import play.api.mvc.Action
 import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat

@@ -22,8 +22,8 @@ class ContactControllerSpec extends StartedApp {
 
   var identityOf10thContact = ""
   var idOf10thContact = ""
-  var internalContactId = ""
   var externalContactId = ""
+  var numberOfContacts = 0
   val newContactMail = "test@bjrm.de"
   val newContactTel = "+4561233"
   val newContactName = "foobar"
@@ -41,7 +41,8 @@ class ContactControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.length must beEqualTo(44)
+      data.length must beGreaterThan(40)
+      numberOfContacts = data.length
 
       val contact = data(10)
       (contact \ "groups")(0).asOpt[String] must beSome("group1")
@@ -63,7 +64,7 @@ class ContactControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.length must beEqualTo(34)
+      data.length must beEqualTo(numberOfContacts - 10)
     }
 
     "get all contacts with limit" in {
@@ -94,50 +95,7 @@ class ContactControllerSpec extends StartedApp {
       (data(0) \ "identityId").asOpt[String] must beSome(identityOf10thContact)
     }
 
-    "add internal contact" in {
-      val path = basePath + "/contact"
-
-      val json = Json.obj("groups" -> Seq("group3", "group1"), "identityId" -> identityExisting2)
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "id").asOpt[String] must beSome
-      internalContactId = (data \ "id").as[String]
-      (data \ "groups")(0).asOpt[String] must beSome("group3")
-      (data \ "groups")(1).asOpt[String] must beSome("group1")
-      (data \ "identityId").asOpt[String] must beSome(identityExisting2)
-      (data \ "contactType").asOpt[String] must beSome("internal")
-    }
-
-    "refuse to add internal contact that already exists" in {
-      val path = basePath + "/contact"
-
-      val json = Json.obj("groups" -> Seq("group3", "group1"), "identityId" -> identityExisting2)
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-
-    }
-
-    "refuse to add internal contact with invalid identity" in {
-      val path = basePath + "/contact"
-
-      val json = Json.obj("groups" -> Seq("group3", "group1"), "identityId" -> "asdf")
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(NOT_FOUND)
-    }
-
-    "get the new internal contact" in {
+    "get internal contact" in {
 
       val path = basePath + "/contact/" + internalContactId
 
@@ -148,14 +106,15 @@ class ContactControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "identityId").asOpt[String] must beSome(identityExisting2)
+      (data \ "identityId").asOpt[String] must beSome(internalContactIdentityId)
+      (data \ "contactType").asOpt[String] must beSome("internal")
     }
+    val newGroups: Seq[String] = Seq("group1", "group4")
 
     "edit groups of internal contact" in {
 
       val path = basePath + "/contact/" + internalContactId
 
-      val newGroups = Seq("group1", "group4")
       val json = Json.obj("groups" -> newGroups)
 
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
@@ -173,7 +132,7 @@ class ContactControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-      status(res) must equalTo(UNAUTHORIZED)
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     "refuse to edit phoneNumber of internal contact" in {
@@ -185,7 +144,7 @@ class ContactControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-      status(res) must equalTo(UNAUTHORIZED)
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     "refuse to edit DisplayName of internal contact" in {
@@ -197,7 +156,7 @@ class ContactControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-      status(res) must equalTo(UNAUTHORIZED)
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     "add external contact" in {
@@ -297,11 +256,11 @@ class ContactControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.length must beEqualTo(24)
+      data.length must beGreaterThan(20)
 
     }
 
-    "get group with created internal contact" in {
+    "get group with internal contact" in {
       val path = basePath + "/contact-group/group4"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -313,7 +272,7 @@ class ContactControllerSpec extends StartedApp {
 
       data.length must beEqualTo(1)
 
-      (data(0) \ "identityId").asOpt[String] must beSome(identityExisting2)
+      (data(0) \ "identityId").asOpt[String] must beSome(internalContactIdentityId)
     }
 
     "get group with created external contact" in {
@@ -471,6 +430,25 @@ class ContactControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
+    "check if it appears in contacts as pending" in {
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      val contact = data.find(js => (js \ "identityId").as[String].equals(identityExisting2))
+
+      contact must beSome
+
+      (contact.get \ "contactType").asOpt[String] must beSome("pending")
+      (contact.get \ "identity").asOpt[JsObject] must beSome
+      (contact.get \ "id").asOpt[String] must beSome("")
+    }
+
     "recipient send FriendRequest" in {
       val path = basePath + "/friendRequest"
 
@@ -478,6 +456,7 @@ class ContactControllerSpec extends StartedApp {
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
+
 
       status(res) must equalTo(OK)
     }
@@ -555,5 +534,7 @@ class ContactControllerSpec extends StartedApp {
 
       status(res) must equalTo(232)
     }
+
+
   }
 }
