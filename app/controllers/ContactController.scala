@@ -4,7 +4,7 @@ import traits.ExtendedController
 
 import play.api.libs.json._
 import models._
-import helper.{ OutputLimits}
+import helper.{ OutputLimits }
 import helper.CmActions.AuthAction
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
@@ -75,25 +75,19 @@ object ContactController extends ExtendedController {
 
   }
 
-  def editContact(contactId: String) = AuthAction()(parse.tolerantJson) {
+  def editContact(contactId: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
-
-      res match {
-        case None => resNotFound("contact")
-        case Some(contact) => {
-          validate(request.body, ContactUpdate.format) {
+      val maybeContact = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
+      maybeContact match {
+        case None => Future(resNotFound("contact"))
+        case Some(contact) =>
+          validateFuture(request.body, ContactUpdate.format) {
             contactUpdate =>
-              // if the contact is internal we can only change the groups
-              if (contact.contactType.equals(CONTACT_TYPE_INTERNAL) &&
-                (contactUpdate.email.isDefined || contactUpdate.phoneNumber.isDefined || contactUpdate.displayName.isDefined)) {
-                resUnauthorized("cannot change contact details of another cameo user")
-              } else {
-                contact.update(contactUpdate)
-                resOK()
+              contact.update(contactUpdate).map {
+                case true => resOK("updated")
+                case false => resBadRequest("cannot update")
               }
           }
-        }
       }
   }
 
@@ -109,6 +103,16 @@ object ContactController extends ExtendedController {
 
   def getContacts(offset: Int, limit: Int) = AuthAction().async {
     request =>
+
+      // get all pending friendRequest, todo: this can be done more efficiently
+      val query = Json.obj("friendRequests.identityId" -> request.identity.id)
+      val futurePendingFriendRequests = Identity.col.find(query).cursor[Identity].collect[Seq]()
+
+      //      // get public information
+      //      futurePendingFriendRequests.map{ _.
+      //
+      //      }
+
       val contacts = OutputLimits.applyLimits(request.identity.contacts, offset, limit)
 
       Future.sequence(contacts.map(_.toJsonWithIdentity)).map {

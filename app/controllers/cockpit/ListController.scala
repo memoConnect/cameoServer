@@ -6,7 +6,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import models.{ CockpitAccess, MongoId, Account, Identity }
 import traits.{ CockpitEditableDefinition, ExtendedController }
 import ExecutionContext.Implicits.global
-import helper.TwoFactorAuthAction
+import helper.CmActions._
 import helper.ResultHelper._
 
 /**
@@ -39,7 +39,7 @@ object ListController extends ExtendedController {
     implicit val reads: Reads[ListOptions] = Json.reads[ListOptions]
   }
 
-  def getAllLists() = TwoFactorAuthAction.async {
+  def getAllLists() = TwoFactorAuthAction().async {
     request =>
       checkAccessList(request.identity.accountId) {
         val allNames: Seq[String] = allEditables.map(_.name)
@@ -58,7 +58,7 @@ object ListController extends ExtendedController {
     }
   }
 
-  def list(elementName: String) = TwoFactorAuthAction.async(parse.tolerantJson) {
+  def list(elementName: String) = TwoFactorAuthAction().async(parse.tolerantJson) {
     request =>
       checkAccessList(request.identity.accountId) {
         validateFuture(request.body, ListOptions.reads) {
@@ -76,7 +76,7 @@ object ListController extends ExtendedController {
       }
   }
 
-  def delete(elementName: String, id: String) = TwoFactorAuthAction.async { request =>
+  def delete(elementName: String, id: String) = TwoFactorAuthAction().async { request =>
     checkAccessList(request.identity.accountId) {
       getEditable(elementName) match {
         case None => Future(resNotFound("elementName"))
@@ -90,7 +90,7 @@ object ListController extends ExtendedController {
     }
   }
 
-  def create(elementName: String) = TwoFactorAuthAction.async { request =>
+  def create(elementName: String) = TwoFactorAuthAction().async { request =>
     checkAccessList(request.identity.accountId) {
       getEditable(elementName) match {
         case None      => Future(resNotFound("elementName"))

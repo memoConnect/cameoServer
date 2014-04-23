@@ -74,6 +74,9 @@ object TestConfig {
   val purlExtern2 = "PkFWPuCiBB"
   val purlExtern3 = "agirsrEN3j"
 
+  val internalContactId = "RJaMVpSkdhMRXc0DqnfT"
+  val internalContactIdentityId = "l4ytByiHOw0iJ0LA2hpz"
+
   val validPhoneNumbers: Seq[(String, String)] =
     Seq(
       (" 0173-12  34dd5678"     , "+4917312345678"),
