@@ -6,7 +6,7 @@ import reactivemongo.bson.BSONObjectID
 import play.api.libs.json.JsError
 import models.{ ChunkMeta, FileChunk, FileMeta }
 import helper.{ General}
-import helper.AuthRequestHelper.authAction
+import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
 import play.api.mvc.Action
@@ -20,7 +20,7 @@ import ExecutionContext.Implicits.global
  */
 object FileController extends ExtendedController {
 
-  def uploadFile = authAction().async(parse.tolerantJson(512 * 1024)) {
+  def uploadFile = AuthAction().async(parse.tolerantJson(512 * 1024)) {
     request =>
 
       val fileName = request.headers.get("X-File-Name")
@@ -51,7 +51,7 @@ object FileController extends ExtendedController {
       }
   }
 
-  def uploadFileChunks(id: String) = authAction().async(parse.tolerantJson(512 * 1024)) {
+  def uploadFileChunks(id: String) = AuthAction().async(parse.tolerantJson(512 * 1024)) {
     request =>
       {
         val chunkIndex = request.headers.get("X-Index")
@@ -91,7 +91,7 @@ object FileController extends ExtendedController {
       }
   }
 
-  def getFile(id: String) = authAction().async {
+  def getFile(id: String) = AuthAction().async {
     request =>
       FileMeta.find(id).map {
         case None => resNotFound("file")
@@ -101,7 +101,7 @@ object FileController extends ExtendedController {
       }
   }
 
-  def getFileChunk(id: String, chunkIndex: String) = authAction().async {
+  def getFileChunk(id: String, chunkIndex: String) = AuthAction().async {
     request =>
       General.safeStringToInt(chunkIndex) match {
         case None => Future(resBadRequest("chunkIndex is not a number"))

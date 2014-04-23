@@ -5,7 +5,7 @@ import models._
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits._
 import helper.{ OutputLimits}
-import helper.AuthRequestHelper.authAction
+import helper.CmActions.AuthAction
 import play.api.libs.json._
 import helper.ResultHelper._
 import scala.Some
@@ -17,7 +17,7 @@ import scala.Some
  */
 object ConversationController extends ExtendedController {
 
-  def createConversation = authAction()(parse.tolerantJson) {
+  def createConversation = AuthAction()(parse.tolerantJson) {
     request =>
       {
         validate[Conversation](request.body, Conversation.createReads) {
@@ -32,7 +32,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversation(id: String, offset: Int, limit: Int) = authAction(allowExternal = true).async {
+  def getConversation(id: String, offset: Int, limit: Int) = AuthAction(allowExternal = true).async {
     request =>
       Conversation.find(id).flatMap {
         case None => Future.successful(resNotFound("conversation"))
@@ -42,7 +42,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def addRecipients(id: String) = authAction().async(parse.tolerantJson) {
+  def addRecipients(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
 
       Conversation.find(new MongoId(id)).flatMap {
@@ -82,7 +82,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def deleteRecipient(id: String, rid: String) = authAction().async {
+  def deleteRecipient(id: String, rid: String) = AuthAction().async {
     request =>
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))
@@ -95,7 +95,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversationSummary(id: String) = authAction(allowExternal = true).async {
+  def getConversationSummary(id: String) = AuthAction(allowExternal = true).async {
     request =>
       Conversation.find(id).flatMap {
         case None => Future(resNotFound("conversation"))
@@ -105,7 +105,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversations(offset: Int, limit: Int) = authAction().async {
+  def getConversations(offset: Int, limit: Int) = AuthAction().async {
     request =>
       Conversation.findByIdentityId(request.identity.id).flatMap { list =>
         // TODO: this can be done more efficiently with the aggregation framework in mongo
@@ -120,7 +120,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def updateConversation(id: String) = authAction().async(parse.tolerantJson) {
+  def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, ConversationUpdate.format) {
         cu =>
@@ -136,7 +136,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def setEncryptedPassphraseList(id: String) = authAction().async(parse.tolerantJson) { request =>
+  def setEncryptedPassphraseList(id: String) = AuthAction().async(parse.tolerantJson) { request =>
     Conversation.find(id).flatMap {
       case None => Future(resNotFound("conversation"))
       case Some(c) => c.hasMemberFutureResult(request.identity.id) {

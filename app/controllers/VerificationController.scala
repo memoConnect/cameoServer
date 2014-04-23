@@ -1,7 +1,7 @@
 package controllers
 
 
-import helper.AuthRequestHelper.authAction
+import helper.CmActions.AuthAction
 import traits.ExtendedController
 import play.api.mvc.{ Action, Controller }
 import helper.ResultHelper._
@@ -18,7 +18,7 @@ import akka.actor.Props
 import play.api.Play.current
 
 object VerificationController extends Controller with ExtendedController {
-  def sendVerifyMessage() = authAction()(parse.tolerantJson) {
+  def sendVerifyMessage() = AuthAction()(parse.tolerantJson) {
     request =>
       case class VerifyRequest(verifyPhoneNumber: Option[Boolean], verifyMail: Option[Boolean])
 
