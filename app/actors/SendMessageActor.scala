@@ -19,7 +19,7 @@ class SendMessageActor extends Actor {
 
   def receive = {
 
-    case (message: Message, recipients: Seq[Recipient]) => {
+    case (message: Message, recipients: Seq[Recipient], subject: String) => {
 
       Logger.info("SendMessageActor: Processing message with id " + message.id)
 
@@ -53,13 +53,13 @@ class SendMessageActor extends Actor {
 
                       toIdentity.preferredMessageType match {
                         case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)
-                        case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, 0)
+                        case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, subject, 0)
                         case _ =>
                           // if recipient has a mail, send mail
                           if (toIdentity.phoneNumber.isDefined) {
                             sendSmsActor ! (message, fromIdentity, toIdentity, 0)
                           } else if (toIdentity.email.isDefined) {
-                            sendMailActor ! (message, fromIdentity, toIdentity, 0)
+                            sendMailActor ! (message, fromIdentity, toIdentity, subject, 0)
                           } else {
                             Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
                           }

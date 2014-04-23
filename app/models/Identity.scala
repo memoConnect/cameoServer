@@ -238,12 +238,12 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        maybeEmptyJsValue("email", i.email.map {
-          _.toJson
-        }) ++
-        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
-          _.toJson
-        }) ++
+//        maybeEmptyJsValue("email", i.email.map {
+//          _.toJson
+//        }) ++
+//        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
+//          _.toJson
+//        }) ++
         maybeEmptyString("displayName", i.displayName) ++
         Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
   }

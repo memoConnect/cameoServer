@@ -77,7 +77,7 @@ class SendMailActor extends Actor {
       }
     }
 
-    case (message: models.Message, fromIdentity: Identity, toIdentity: Identity, tryCount: Int) =>
+    case (message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, tryCount: Int) =>
 
       Logger.debug("received mail message")
 
@@ -87,8 +87,9 @@ class SendMailActor extends Actor {
         message.updateSingleStatus(ms)
       } else {
         // get identity of sender
-        val from: String = Play.configuration.getString("mail.from").get
-        val subject = "[cameo.io] - Message from " + fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
+        val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
+        val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
+        val subject = "[cameo.io] - " + subject
         val to: String = toIdentity.email.get.toString
         val body: String = message.plain match {
           case Some(PlainMessagePart(Some(text), _)) => text
@@ -100,7 +101,7 @@ class SendMailActor extends Actor {
         Purl.col.insert(purl)
 
         // add footer to mail
-        val footer = "---\nRead entire conversation on cameo.io: " + Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
+        val footer = "\n---\nRead entire conversation on cameo.io: " + Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
 
         // cut message, so it will fit in the sms with the footer.
         val bodyWithFooter = body + footer

@@ -41,7 +41,7 @@ object MessageController extends ExtendedController {
                   conversation.addMessage(message)
                   // initiate new actor for each request
                   val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
-                  sendMessageActor ! (message, conversation.recipients)
+                  sendMessageActor ! (message, conversation.recipients, conversation.subject.getOrElse(""))
                   Future(resOK(message.toJson))
                 }
               }
