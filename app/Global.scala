@@ -73,11 +73,16 @@ object Global extends GlobalSettings with DynamicEmbedMongoPort {
 
         state match {
           // only migrate if there is a new version and nobody else is migrating
-          case GlobalState(version, false) if version < latestVersion => {
-            Logger.debug("Migrating. Current Version: " + version + " latestVersion: " + latestVersion)
+          case GlobalState(version, false) if version < latestVersion =>
+            Logger.info("Migrating. Current Version: " + version + " latestVersion: " + latestVersion)
             // apply migrations
             DbAdminUtilities.migrate(version)
-          }
+          case GlobalState(version, false) if version == latestVersion =>
+            Logger.debug("Global db version: " + version + ". no migrations required")
+            Future(true)
+          case GlobalState(version, false) if version > latestVersion =>
+            Logger.error("Global db version (" + version + ") higher than latest version in code: " + latestVersion)
+            Future(false)
           case GlobalState(version, true) =>
             // wait until lock is lifted
             Logger.info("A global migration seems to be running, waiting...")
