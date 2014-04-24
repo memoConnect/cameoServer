@@ -25,7 +25,7 @@ class ConversationControllerSpec extends StartedApp {
 
   var cidNew = ""
   val newSubject = "moep"
-  val validRecipients = Seq("6iOuCefN12ma0wF7QxR5", "dKeg67XtSNBCFMq8WQor")
+  val validRecipients = Seq("XD6wejHsiPbK1czU9TcK", "l4ytByiHOw0iJ0LA2hpz")
   val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
   val encryptedKey = "foobarbaz!"
   var numberOfConversations = 0
@@ -317,6 +317,17 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(232)
     }
 
+    "refuse to add recipient that is not in own address book" in {
+      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+
+      val json = Json.obj("recipients" -> Seq(identityExisting2))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(232)
+    }
+
     "conversation should contain new recipients" in {
       val path = basePath + "/conversation/" + cidExisting
 
@@ -344,10 +355,7 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-      status(res) must equalTo(BAD_REQUEST)
-
-      contentAsString(res) must contain("\"res\":\"KO\"")
-      contentAsString(res) must contain("invalid")
+      status(res) must equalTo(232)
     }
 
     "refuse non-members to add recipients to conversation" in {

@@ -58,21 +58,26 @@ object ConversationController extends ExtendedController {
                   recipientIds.forall(id => !c.hasMember(new MongoId(id))) match {
                     case false => Future(resKO("At least one identity is already a member of this conversation"))
                     case true =>
-                      // check if all recipients exist
-                      val maybeIdentities = Future.sequence(recipientIds.map({
-                        id => Identity.find(id)
-                      }))
-                      val futureResult: Future[Boolean] = maybeIdentities.map {
-                        i => i.forall(_.isDefined)
-                      }
-                      futureResult.flatMap {
-                        case false => Future(resBadRequest("At least one idenityId is invalid"))
-                        case true => {
-                          c.addRecipients(recipientIds.map(Recipient.create)).map {
-                            case true  => resOK("updated")
-                            case false => resServerError("update failed")
+                      // check if all recipients are in the users address book
+                      recipientIds.forall(recipient => request.identity.contacts.exists(_.identityId.id.equals(recipient))) match {
+                        case false => Future(resKO("At least one identity is not a contact"))
+                        case true =>
+                          // check if all recipients exist
+                          val maybeIdentities = Future.sequence(recipientIds.map({
+                            id => Identity.find(id)
+                          }))
+                          val futureResult: Future[Boolean] = maybeIdentities.map {
+                            i => i.forall(_.isDefined)
                           }
-                        }
+                          futureResult.flatMap {
+                            case false => Future(resBadRequest("At least one identityId is invalid"))
+                            case true => {
+                              c.addRecipients(recipientIds.map(Recipient.create)).map {
+                                case true  => resOK("updated")
+                                case false => resServerError("update failed")
+                              }
+                            }
+                          }
                       }
                   }
                 }
