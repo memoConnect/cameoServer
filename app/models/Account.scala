@@ -136,6 +136,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
 
   def cockpitListFilters: Seq[CockpitListFilter] = Seq(
     new CockpitListFilter("ID", str => Json.obj("_id.mongoId" -> Json.obj("$regex" -> str))),
+    new CockpitListFilter("LoginName", str => Json.obj("loginName" -> Json.obj("$regex" -> str.toLowerCase))),
     new CockpitListFilter("Email", str => Json.obj("email" -> Json.obj("$regex" -> str))),
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
