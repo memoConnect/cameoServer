@@ -303,6 +303,10 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if(status(res) != OK) {
+        Logger.debug("response: " + contentAsString(res))
+      }
+
       status(res) must equalTo(OK)
     }
 
