@@ -181,6 +181,7 @@ object ContactController extends ExtendedController {
     implicit val reads: Reads[SendFriendRequest] = Json.reads[SendFriendRequest]
   }
 
+  // todo: set maximum size of friend request message
   def sendFriendRequest = AuthAction().async(parse.tolerantJson) {
     request =>
       def executeFriendRequest(receiver: MongoId, message: Option[String]): Future[SimpleResult] = {
@@ -219,16 +220,15 @@ object ContactController extends ExtendedController {
         sfr =>
           (sfr.identityId, sfr.cameoId) match {
             case (None, None)            => Future(resBadRequest("either identityId or cameoId required"))
-            case (Some(i), Some(c))      => Future(resBadRequest("only identityId or cameoId allowed"))
+            case (Some(i), Some(c))      => Future(resBadRequest("only one of identityId and cameoId allowed"))
             case (Some(i: String), None) => executeFriendRequest(new MongoId(i), sfr.message)
-            case (None, Some(c: String)) => {
+            case (None, Some(c: String)) =>
               // search for cameoId and get identityId
               Identity.findByCameoId(c).flatMap {
                 case None           => Future(resNotFound("cameoId"))
                 case Some(identity) => executeFriendRequest(identity.id, sfr.message)
               }
             }
-          }
       }
   }
 

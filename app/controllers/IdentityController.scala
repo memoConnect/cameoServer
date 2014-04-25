@@ -12,6 +12,7 @@ import scala.Some
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
+import helper.OutputLimits
 
 /**
  * User: Björn Reimer
@@ -54,7 +55,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def search() = AuthAction().async(parse.tolerantJson) {
+  def search(id: String, offset: Int, limit: Int) = AuthAction().async(parse.tolerantJson) {
     request =>
 
       case class VerifyRequest(search: String, fields: Seq[String], excludeContacts: Option[Boolean])
@@ -84,7 +85,8 @@ object IdentityController extends ExtendedController {
                     }
                     !request.identity.id.equals(identity.id) && !matchesContact
                   })
-                  resOK(filtered.map { i => i.toPublicSummaryJson })
+                  val limited = OutputLimits.applyLimits(filtered, offset, limit)
+                  resOK(limited.map { i => i.toPublicSummaryJson })
               }
           }
       }

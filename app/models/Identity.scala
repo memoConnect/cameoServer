@@ -296,7 +296,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
     val query = Json.obj("$or" -> (toQueryOrEmpty("cameoId", cameoId) ++ toQueryOrEmpty("displayName", displayName)))
 
-    col.find(query).cursor[Identity].collect[Seq]()
+    col.find(query).cursor[Identity].collect[Seq](upTo=250)
   }
 
   def createDefault(): Identity = {

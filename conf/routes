@@ -13,7 +13,7 @@ DELETE         /api/v1/account/:loginName                              controlle
 GET            /api/v1/identity/:id                                    controllers.IdentityController.getIdentityById(id)
 GET            /api/v1/identity                                        controllers.IdentityController.getIdentityByToken()
 PUT            /api/v1/identity                                        controllers.IdentityController.updateIdentity()
-POST           /api/v1/identity/search                                 controllers.IdentityController.search()
+POST           /api/v1/identity/search                                 controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
 POST           /api/v1/identity/publicKey                              controllers.IdentityController.addPublicKey()
 PUT            /api/v1/identity/publicKey/:id                          controllers.IdentityController.editPublicKey(id)
 DELETE         /api/v1/identity/publicKey/:id                          controllers.IdentityController.deletePublicKey(id)
