@@ -8,6 +8,7 @@ import scala.concurrent.Future
 import helper.ResultHelper._
 import play.api.mvc.{ Result, Action, SimpleResult }
 import scala.Some
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -22,7 +23,6 @@ object PurlController extends ExtendedController {
    */
   def getPurl(id: String, offset: Int = 0, limit: Int = 0) = Action.async {
     request =>
-
       def externalUserResponse(identity: Identity, purl: Purl): Future[SimpleResult] = {
         // check if we need to generate a new token
         val token = identity.tokens.headOption.getOrElse {
