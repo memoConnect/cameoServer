@@ -46,7 +46,8 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/api/v1/verify/$id<[^/]+>"),
       (GET, "/v/$id<[^/]+>"),
       (GET, "/p/$id<[^/]+>"),
-      (GET, "/api/v1/purl/$id<[^/]+>")
+      (GET, "/api/v1/purl/$id<[^/]+>"),
+      (POST, "/api/v1/callStack")
     )
 
     val twoFactorAuthRoutes: Seq[(String, String)] =
