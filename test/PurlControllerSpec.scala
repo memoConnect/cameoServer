@@ -19,13 +19,7 @@ class PurlControllerSpec extends StartedApp {
 
   sequential
 
-  val purlExtern = "MSaKlj4hJP"
-  val purlExtern2 = "PkFWPuCiBB"
-  val purlExtern3 = "agirsrEN3j"
-  val purlExternIdentitityId = "GhEWGfy3Jqx8BRP1pITO"
-  val purlIntern = "V3Ml6hzqX8"
-  val purlIntern2 = "u02iLiIeQu"
-  val purlConversationId = "OM9QeJ4RfJcdscyo52g4"
+
   var purlExternToken = ""
 
   "PurlController" should {

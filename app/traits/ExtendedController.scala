@@ -19,7 +19,7 @@ trait ExtendedController extends Controller with MongoController {
     js.validate(reads).map {
       action
     }.recoverTotal {
-      error => resBadRequest(JsError.toFlatJson(error).toString())
+      error => resBadRequest(JsError.toFlatJson(error))
     }
   }
 
@@ -27,7 +27,7 @@ trait ExtendedController extends Controller with MongoController {
     js.validate(reads).map {
       action
     }.recoverTotal {
-      error => Future.successful(resBadRequest(JsError.toFlatJson(error).toString()))
+      error => Future.successful(resBadRequest(JsError.toFlatJson(error)))
     }
   }
 

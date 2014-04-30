@@ -25,7 +25,7 @@ class ConversationControllerSpec extends StartedApp {
 
   var cidNew = ""
   val newSubject = "moep"
-  val validRecipients = Seq("XD6wejHsiPbK1czU9TcK", "gKBeSgtJXV1hP9swdsbW")
+  val validRecipients = Seq("kJIcR9bXwZ1os5ckqTcn", "LhqsHt6VFtgBHGC6u4A0")
   val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
   val encryptedKey = "foobarbaz!"
   var numberOfConversations = 0

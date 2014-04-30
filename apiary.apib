@@ -1456,6 +1456,59 @@ check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]
         
 # Group Util
 
+## call stack [/api/v1/callStack]
+
+Allows batch processing of requests.
+
+### POST
+
++ Request
+
+        {
+          "requests": [
+            {
+              "method": "get",
+              "path": "/api/v1/identity",
+              "data": {}
+            }
+          ]
+        }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "responses": [
+              {
+                "body": {
+                  "res": "OK",
+                  "data": {
+                    "id": "N2HKgBdxxnWBGxlYY7Dn",
+                    "displayName": "Moeper2",
+                    "userKey": "whEGDKfdkIt7Ex6YDWVhjeE53hO8u2aXXyTDvzru",
+                    "cameoId": "bwyVeVnCvuO",
+                    "email": {
+                      "value": "test@cameo.io",
+                      "isVerified": false
+                    },
+                    "phoneNumber": {
+                      "value": "+49123456789",
+                      "isVerified": false
+                    },
+                    "preferredMessageType": "default",
+                    "publicKeys": [],
+                    "userType": "internal",
+                    "created": 1392301152706,
+                    "lastUpdated": 1392301152706
+                  }
+                },
+                "status": 200
+              }
+            ]
+          }
+        }
+
 ## check app [/api/v1/util/checkApp]
 
 this API method could be used to monitor the app server

@@ -62,10 +62,14 @@ object ResultHelper {
     BadRequest(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error))
-    //        ++
-    //        addMessagesOrEmpty(notifications))
-
   }
+
+  def resBadRequest(error: JsObject): SimpleResult = {
+    BadRequest(
+      Json.obj("res" -> "KO") ++
+        Json.obj("error" -> error))
+  }
+
   def resBadRequest(notifications: Seq[UserNotification] = Seq()): SimpleResult =
     BadRequest(
       Json.obj("res" -> "KO") ++

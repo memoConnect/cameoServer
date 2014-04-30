@@ -3,6 +3,9 @@
 ##
 GET            /api/v1                                                 controllers.Application.index
 
+# CALL STACK
+POST    /api/v1/callStack       controllers.CallStackController.processCallStack()
+
 # ACCOUNT
 POST           /api/v1/account                                         controllers.AccountController.createAccount
 POST           /api/v1/account/check                                   controllers.AccountController.checkLoginName
