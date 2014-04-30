@@ -1,13 +1,14 @@
 import play.api.test._
-import play.api.libs.json.{ Json, JsObject }
+import play.api.libs.json.{JsValue, Json, JsObject}
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
 import testHelper.Stuff._
 import scala.concurrent.ExecutionContext
-import play.api.GlobalSettings
+import play.api.{Play, Logger, GlobalSettings}
 import testHelper.{ StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
+import play.api.Play.current
 
 class FileControllerSpec extends StartedApp {
 
@@ -17,29 +18,26 @@ class FileControllerSpec extends StartedApp {
 
     val fileName = "some_name.pdf"
     val fileType = "some_type"
-    val fileSize = 1234567
     var fileId = ""
 
     val chunks: Seq[String] = {
-      Seq.fill(10)(Stuff.randomString(256))
+      Seq.fill(10)(Stuff.randomString(1024))
     }
 
-    val newChunk = Stuff.randomString(256)
+    val newChunk = Stuff.randomString(1024)
     val newChunkIndex = Stuff.random.nextInt(chunks.size)
 
-    "upload first chunk of file" in {
+    "upload file meta data" in {
       val path = basePath + "/file"
-
-      val json = Json.obj("chunk" -> chunks.head)
 
       val header: Seq[(String, String)] = Seq(
         ("X-File-Name", fileName),
         ("X-Max-Chunks", chunks.size.toString),
-        ("X-File-Size", fileSize.toString),
+        ("X-File-Size", chunks.map(_.size).sum.toString ),
         ("X-File-Type", fileType)) :+
         tokenHeader(tokenExisting2)
 
-      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(header: _*)
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -51,7 +49,7 @@ class FileControllerSpec extends StartedApp {
       (data \ "chunks")(0).asOpt[Int] must beNone
       (data \ "fileName").asOpt[String] must beSome(fileName)
       (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
-      (data \ "fileSize").asOpt[Int] must beSome(fileSize)
+      (data \ "fileSize").asOpt[Int] must beSome(chunks.map(_.size).sum)
       (data \ "fileType").asOpt[String] must beSome(fileType)
     }
 
@@ -109,7 +107,7 @@ class FileControllerSpec extends StartedApp {
       returnedChunks.max must beEqualTo(9)
       (data \ "fileName").asOpt[String] must beSome(fileName)
       (data \ "maxChunks").asOpt[Int] must beSome(chunks.size)
-      (data \ "fileSize").asOpt[Int] must beSome(fileSize)
+      (data \ "fileSize").asOpt[Int] must beSome(chunks.map(_.size).sum)
       (data \ "fileType").asOpt[String] must beSome(fileType)
     }
 
@@ -209,6 +207,75 @@ class FileControllerSpec extends StartedApp {
       val res = route(req).get
 
       status(res) must equalTo(NOT_FOUND)
+    }
+
+    "refuse to upload file that is larger than maximum filesize" in {
+      val maxSize = Play.configuration.getInt("files.size.max").get
+
+      val path = basePath + "/file"
+
+      val header: Seq[(String, String)] = Seq(
+        ("X-File-Name", fileName),
+        ("X-Max-Chunks", chunks.size.toString),
+        ("X-File-Size", (maxSize + 10).toString ),
+        ("X-File-Type", fileType)) :+
+        tokenHeader(tokenExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(header: _*)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+
+      (contentAsJson(res) \ "error" \ "maxFileSize").asOpt[Int] must beSome(maxSize)
+    }
+
+    "return error if actual size exceeds submitted size" in {
+      val path = basePath + "/file"
+
+      val header: Seq[(String, String)] = Seq(
+        ("X-File-Name", fileName),
+        ("X-Max-Chunks", chunks.size.toString),
+        ("X-File-Size", (chunks.map(_.size).sum / 2).toString ),
+        ("X-File-Type", fileType)) :+
+        tokenHeader(tokenExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(header: _*)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      val fileId2 = (data \ "id").as[String]
+
+      // upload chunks
+      val path2 = basePath + "/file/" + fileId2
+
+      var error: JsValue = Json.obj()
+
+      chunks.zipWithIndex.seq.map {
+        case (chunk, i) =>
+
+          val json = Json.obj("chunk" -> chunk)
+
+          val header: Seq[(String, String)] = Seq(
+            ("X-Index", i.toString)) :+
+            tokenHeader(tokenExisting2)
+
+          val req2 = FakeRequest(POST, path2).withHeaders(header: _*).withJsonBody(json)
+          val res2 = route(req2).get
+
+          status(res2) match {
+            case OK =>
+            case BAD_REQUEST =>
+              error = contentAsJson(res2)
+            case _ =>
+          }
+      }
+
+      (error \ "error").asOpt[String] must beSome(contain("actual fileSize is bigger than submitted value"))
+
     }
   }
 }

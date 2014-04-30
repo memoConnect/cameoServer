@@ -3,15 +3,16 @@ package controllers
 import traits.ExtendedController
 import scala.util.Random
 import reactivemongo.bson.BSONObjectID
-import play.api.libs.json.JsError
+import play.api.libs.json.{ Json, JsError }
 import models.{ ChunkMeta, FileChunk, FileMeta }
 import helper.{ General }
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
 import play.api.mvc.Action
-import play.api.Logger
+import play.api.{ Play, Logger }
 import ExecutionContext.Implicits.global
+import play.api.Play.current
 
 /**
  * User: Björn Reimer
@@ -20,7 +21,7 @@ import ExecutionContext.Implicits.global
  */
 object FileController extends ExtendedController {
 
-  def uploadFile = AuthAction().async(parse.tolerantJson(512 * 1024)) {
+  def uploadFile = AuthAction().async {
     request =>
 
       val fileName = request.headers.get("X-File-Name")
@@ -39,15 +40,21 @@ object FileController extends ExtendedController {
 
       headerInvalid match {
         case true => Future(resBadRequest("header content missing or invalid"))
-        case false => {
-          val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get)
-          FileMeta.col.insert(fileMeta).map { lastError =>
-            lastError.ok match {
-              case false => resServerError("could not save chunk")
-              case true  => resOK(fileMeta.toJson)
-            }
+        case false =>
+
+          // check filesize
+          fileSize.get.toInt <= Play.configuration.getInt("files.size.max").get match {
+            case false => Future(resBadRequest(Json.obj("maxFileSize" -> Play.configuration.getInt("files.size.max").get)))
+            case true =>
+              val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get)
+              FileMeta.col.insert(fileMeta).map { lastError =>
+                lastError.ok match {
+                  case false => resServerError("could not save chunk")
+                  case true  => resOK(fileMeta.toJson)
+                }
+
+              }
           }
-        }
       }
   }
 
@@ -63,30 +70,38 @@ object FileController extends ExtendedController {
 
         headerInvalid match {
           case true => Future(resBadRequest("header content missing or invalid"))
-          case false => {
+          case false =>
             validateFuture(request.body, FileChunk.createReads) {
               chunk =>
                 // check if the give fileId exists
                 FileMeta.find(id).flatMap {
                   case None => Future(resNotFound("file"))
-                  case Some(fileMeta) => {
-                    val futureResult: Future[(Boolean, Boolean)] = for {
-                      le1 <- fileMeta.addChunk(new ChunkMeta(chunkIndex.get.toInt, chunk.id))
-                      le2 <- FileChunk.col.insert(chunk)
-                    } yield {
-                      (le1.ok, le2.ok)
-                    }
+                  case Some(fileMeta) =>
 
-                    futureResult.map {
-                      case (false, false) => resServerError("could not save chunk and metadata")
-                      case (true, false)  => resServerError("could not update metadata")
-                      case (false, true)  => resServerError("could not save chunk")
-                      case (true, true)   => resOK()
+                    // check if actual filesize matches the given filesize
+                    val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
+                    val totalSize = fileMeta.chunks.map(_.chunkSize).sum
+//                    Logger.debug("Actual: " + totalSize + " Submitted: " + fileMeta.fileSize + " Allowed: " + fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f))
+
+                    totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
+                      case false => Future(resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize))
+                      case true =>
+                        val futureResult: Future[(Boolean, Boolean)] = for {
+                          le1 <- fileMeta.addChunk(new ChunkMeta(chunkIndex.get.toInt, chunk.id, chunk.chunk.size))
+                          le2 <- FileChunk.col.insert(chunk)
+                        } yield {
+                          (le1.ok, le2.ok)
+                        }
+                        futureResult.map {
+                          case (false, false) => resServerError("could not save chunk and metadata")
+                          case (true, false)  => resServerError("could not update metadata")
+                          case (false, true)  => resServerError("could not save chunk")
+                          case (true, true)   => resOK()
+
+                        }
                     }
-                  }
                 }
             }
-          }
         }
       }
   }
@@ -95,9 +110,8 @@ object FileController extends ExtendedController {
     request =>
       FileMeta.find(id).map {
         case None => resNotFound("file")
-        case Some(fileMeta) => {
+        case Some(fileMeta) =>
           resOK(fileMeta.toJson)
-        }
       }
   }
 
@@ -110,7 +124,7 @@ object FileController extends ExtendedController {
           // check if file exists
           FileMeta.find(id).flatMap {
             case None => Future(resNotFound("file"))
-            case Some(fileMeta) => {
+            case Some(fileMeta) =>
               fileMeta.chunks.find(_.index == i) match {
                 case None => Future(resNotFound("chunk index"))
                 case Some(meta) =>
@@ -119,7 +133,6 @@ object FileController extends ExtendedController {
                     case Some(chunk) => resOK(chunk.toJson)
                   }
               }
-            }
           }
       }
   }

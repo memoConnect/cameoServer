@@ -77,8 +77,7 @@ object FileMeta extends Model[FileMeta] {
   }
 }
 
-case class ChunkMeta(index: Int, chunkId: MongoId) {
-
+case class ChunkMeta(index: Int, chunkId: MongoId, chunkSize: Int) {
   def toJson: JsNumber = JsNumber(index)
 }
 
