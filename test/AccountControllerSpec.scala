@@ -150,7 +150,7 @@ class AccountControllerSpec extends StartedApp {
 
       TestConfig.invalidPhoneNumbers.map { invalid =>
 
-        val json = createUser(login, pass,  Some(invalid), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
+        val json = createUser(login, pass, Some(invalid), Some(mail)) ++ Json.obj("reservationSecret" -> regSec)
 
         val req = FakeRequest(POST, path).withJsonBody(json)
         val res = route(req).get
@@ -161,7 +161,7 @@ class AccountControllerSpec extends StartedApp {
 
     "Refuse to register with wrong loginName for secret" in {
       val path = basePath + "/account"
-      val json = createUser(login +"a", pass) ++ Json.obj("reservationSecret" -> regSec)
+      val json = createUser(login + "a", pass) ++ Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -196,7 +196,7 @@ class AccountControllerSpec extends StartedApp {
 
     "Refuse to register again with same secret" in {
       val path = basePath + "/account"
-      val json = createUser(login +"a", pass) ++ Json.obj("reservationSecret" -> regSec)
+      val json = createUser(login + "a", pass) ++ Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -281,6 +281,53 @@ class AccountControllerSpec extends StartedApp {
       (data \ "displayName").asOpt[String] must beSome(displayName)
       (data \ "email" \ "value").asOpt[String] must beSome(mail)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(cleanedTel)
+    }
+    var fileId = ""
+    "automatically create avatar for new identity" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "avatar").asOpt[String] must beSome
+      fileId = (data \ "avatar").as[String]
+      1 === 1
+    }
+
+    "check that avatar file meta exist" in {
+
+      val path = basePath + "/file/" + fileId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(fileId)
+      (data \ "chunks").asOpt[Seq[Int]] must beSome
+      (data \ "chunks")(0).asOpt[Int] must beSome(0)
+      (data \ "chunks")(1).asOpt[Int] must beNone
+      (data \ "fileName").asOpt[String] must beSome("avatar.png")
+      (data \ "fileSize").asOpt[Int] must beSome
+      (data \ "fileType").asOpt[String] must beSome("image/png")
+    }
+
+    "check that avatar file chunk exists" in {
+      val path = basePath + "/file/" + fileId + "/" + 0
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "chunk").asOpt[String] must beSome(startWith("data:image/png;base64,"))
     }
   }
 }

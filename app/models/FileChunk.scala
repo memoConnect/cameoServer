@@ -39,4 +39,8 @@ object FileChunk extends Model[FileChunk] {
   def createDefault(): FileChunk = {
     new FileChunk(IdHelper.generateChunkId, "moep")
   }
+
+  def create(chunk: String) = {
+    new FileChunk(IdHelper.generateChunkId, chunk)
+  }
 }

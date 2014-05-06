@@ -14,6 +14,7 @@ import scala.concurrent.Future
 import play.api.Logger
 import models.Account
 import play.api.Play.current
+import services.AvatarGenerator
 
 object Application extends Controller {
 

@@ -13,6 +13,7 @@ import scala.Some
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.ws.WS
+import services.AvatarGenerator
 
 /**
  * User: Björn Reimer
@@ -57,6 +58,9 @@ object AccountController extends ExtendedController {
                         // create identity and add it to account
                         val identity = Identity.create(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
                         Identity.col.insert(identity)
+                        // generate default avatar
+                        AvatarGenerator.generate(identity)
+
                         val account2 = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
 
                         Account.col.insert(account2).flatMap {

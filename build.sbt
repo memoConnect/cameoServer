@@ -13,7 +13,9 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk" % "1.3.21",
   "javax.mail" % "mail" % "1.4.7",
   "org.specs2" %% "specs2" % "2.3.7" % "test",
-  "com.googlecode.libphonenumber" % "libphonenumber" % "5.9"
+  "com.googlecode.libphonenumber" % "libphonenumber" % "5.9",
+  "batik" % "batik-svggen" % "1.6-1",
+  "batik" % "batik-transcoder" % "1.6-1"
 )
 
 play.Project.playScalaSettings

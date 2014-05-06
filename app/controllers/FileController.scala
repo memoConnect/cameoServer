@@ -5,7 +5,7 @@ import scala.util.Random
 import reactivemongo.bson.BSONObjectID
 import play.api.libs.json.{ Json, JsError }
 import models.{ ChunkMeta, FileChunk, FileMeta }
-import helper.{ General }
+import helper.{ Utils }
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -34,8 +34,8 @@ object FileController extends ExtendedController {
           maxChunks.isEmpty ||
           fileSize.isEmpty ||
           fileType.isEmpty ||
-          General.safeStringToInt(maxChunks.get).isEmpty ||
-          General.safeStringToInt(fileSize.get).isEmpty
+          Utils.safeStringToInt(maxChunks.get).isEmpty ||
+          Utils.safeStringToInt(fileSize.get).isEmpty
       }
 
       headerInvalid match {
@@ -65,7 +65,7 @@ object FileController extends ExtendedController {
 
         val headerInvalid = {
           chunkIndex.isEmpty ||
-            General.safeStringToInt(chunkIndex.get).isEmpty
+            Utils.safeStringToInt(chunkIndex.get).isEmpty
         }
 
         headerInvalid match {
@@ -81,7 +81,7 @@ object FileController extends ExtendedController {
                     // check if actual filesize matches the given filesize
                     val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
                     val totalSize = fileMeta.chunks.map(_.chunkSize).sum
-//                    Logger.debug("Actual: " + totalSize + " Submitted: " + fileMeta.fileSize + " Allowed: " + fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f))
+                    //                    Logger.debug("Actual: " + totalSize + " Submitted: " + fileMeta.fileSize + " Allowed: " + fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f))
 
                     totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
                       case false => Future(resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize))
@@ -117,7 +117,7 @@ object FileController extends ExtendedController {
 
   def getFileChunk(id: String, chunkIndex: String) = AuthAction().async {
     request =>
-      General.safeStringToInt(chunkIndex) match {
+      Utils.safeStringToInt(chunkIndex) match {
         case None => Future(resBadRequest("chunkIndex is not a number"))
         case Some(i) =>
 

@@ -1,4 +1,4 @@
-@import _root_.helper.General
+@import _root_.helper.Utils
 @import play.api.Play
 @import sys.process.stringSeqToProcess
 @import play.api.Play.current
@@ -8,7 +8,7 @@
     <strong>Cameo API</strong><br>
     <a href="http://docs.cameo.apiary.io/">Doku</a>
     <p>
-        CameoServer: @{General.getAppVersion}<br>
+        CameoServer: @{Utils.getAppVersion}<br>
         Play Framework: @{play.core.PlayVersion.current}<br>
         Scala: @{play.core.PlayVersion.scalaVersion}<br>
         Sbt: @{play.core.PlayVersion.sbtVersion}<br>
