@@ -56,9 +56,9 @@ object Message extends Model[Message] {
   val col = MongoCollections.conversationCollection
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
-  def docVersion = 1
+  def docVersion = 3
 
-  def evolutions = Map(0 -> MessageEvolutions.splitPlainAndEncrypted)
+  def evolutions = Map(1 -> MessageEvolutions.splitPlainAndEncrypted, 2 -> MessageEvolutions.filesToFileIds)
 
   def createReads(fromIdentityId: MongoId) = (
     Reads.pure[MongoId](IdHelper.generateMessageId()) and
@@ -128,6 +128,16 @@ object MessageEvolutions {
 
         js.transform(addVersion andThen deleteFiles andThen moveMessageBody andThen addEmptyFiles)
       }
+  }
+
+  val filesToFileIds: Reads[JsObject] = Reads {
+    js =>
+    {
+      val deleteFiles: Reads[JsObject] = (__ \ 'files).json.prune
+      val addFileIds: Reads[JsObject] = __.json.update((__ \ 'fileIds).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+      js.transform(deleteFiles andThen addFileIds andThen addVersion)
+    }
   }
 }
 
