@@ -28,6 +28,7 @@ class ConversationControllerSpec extends StartedApp {
   val validRecipients = Seq("kJIcR9bXwZ1os5ckqTcn", "LhqsHt6VFtgBHGC6u4A0")
   val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
   val encryptedKey = "foobarbaz!"
+  val passCaptchaId = "NOBKao9AhhXUaBZVNevr"
   var numberOfConversations = 0
 
   "ConversationController" should {
@@ -495,6 +496,41 @@ class ConversationControllerSpec extends StartedApp {
       val res = route(req).get
 
       status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    "add passCaptcha to convesation" in {
+      val path = basePath + "/conversation/" + cidExisting + "/passCaptcha"
+
+      val json = Json.obj("passCaptcha" -> passCaptchaId)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "refuse non-member to add passCaptcha to conversation" in {
+      val path = basePath + "/conversation/" + cidExisting + "/passCaptcha"
+
+      val json = Json.obj("passCaptcha" -> passCaptchaId)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
+    "passCaptcha should be returned with conversation" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "passCaptcha").asOpt[String] must beSome(passCaptchaId)
     }
 
   }

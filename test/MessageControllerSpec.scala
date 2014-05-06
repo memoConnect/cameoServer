@@ -210,7 +210,7 @@ class MessageControllerSpec extends StartedApp {
     "send message with fileIds" in {
       val path = basePath + "/conversation/" + cidExisting2 + "/message"
 
-      val json = Json.obj("encrypted" -> encrypted , "plain" -> Json.obj("files" -> files, "text" -> body))
+      val json = Json.obj("encrypted" -> encrypted , "plain" -> Json.obj("fileIds" -> files, "text" -> body))
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -222,8 +222,8 @@ class MessageControllerSpec extends StartedApp {
       (data \ "id").asOpt[String] must beSome
       messageId2 = (data \ "id").as[String]
       (data \ "plain" \ "text").asOpt[String] must beSome(body)
-      (data \ "plain" \ "files")(0).asOpt[String] must beSome(files(0))
-      (data \ "plain" \ "files")(1).asOpt[String] must beSome(files(1))
+      (data \ "plain" \ "fileIds")(0).asOpt[String] must beSome(files(0))
+      (data \ "plain" \ "fileIds")(1).asOpt[String] must beSome(files(1))
       (data \ "encrypted").asOpt[String] must beSome(encrypted)
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
       (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
@@ -243,8 +243,8 @@ class MessageControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome(messageId2)
       (data \ "plain" \ "text").asOpt[String] must beSome(body)
-      (data \ "plain" \ "files")(0).asOpt[String] must beSome(files(0))
-      (data \ "plain" \ "files")(1).asOpt[String] must beSome(files(1))
+      (data \ "plain" \ "fileIds")(0).asOpt[String] must beSome(files(0))
+      (data \ "plain" \ "fileIds")(1).asOpt[String] must beSome(files(1))
       (data \ "encrypted").asOpt[String] must beSome(encrypted)
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
       (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)

@@ -112,16 +112,17 @@ object ConversationController extends ExtendedController {
 
   def getConversations(offset: Int, limit: Int) = AuthAction().async {
     request =>
-      Conversation.findByIdentityId(request.identity.id).flatMap { list =>
-        // TODO: this can be done more efficiently with the aggregation framework in mongo
-        val sorted = list.sortBy(_.lastUpdated).reverse
-        val limited = OutputLimits.applyLimits(sorted, offset, limit)
-        val futureJson = Future.sequence(limited.map(_.toSummaryJsonWithRecipients))
-        futureJson.map {
-          json =>
-            val res = Json.obj("conversations" -> json, "numberOfConversations" -> list.length)
-            resOK(res)
-        }
+      Conversation.findByIdentityId(request.identity.id).flatMap {
+        list =>
+          // TODO: this can be done more efficiently with the aggregation framework in mongo
+          val sorted = list.sortBy(_.lastUpdated).reverse
+          val limited = OutputLimits.applyLimits(sorted, offset, limit)
+          val futureJson = Future.sequence(limited.map(_.toSummaryJsonWithRecipients))
+          futureJson.map {
+            json =>
+              val res = Json.obj("conversations" -> json, "numberOfConversations" -> list.length)
+              resOK(res)
+          }
       }
   }
 
@@ -141,19 +142,47 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def setEncryptedPassphraseList(id: String) = AuthAction().async(parse.tolerantJson) { request =>
-    Conversation.find(id).flatMap {
-      case None => Future(resNotFound("conversation"))
-      case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-        val list: JsValue = (request.body \ "encryptedPassphraseList").asOpt[JsValue].getOrElse(JsArray())
-        validateFuture(list, Reads.seq(EncryptedPassphrase.createReads)) {
-          list =>
-            c.setEncPassList(list).map {
-              case false => resServerError("unable to update")
-              case true  => resOK("updated")
-            }
+  def setEncryptedPassphraseList(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      Conversation.find(id).flatMap {
+        case None => Future(resNotFound("conversation"))
+        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+          val list: JsValue = (request.body \ "encryptedPassphraseList").asOpt[JsValue].getOrElse(JsArray())
+          validateFuture(list, Reads.seq(EncryptedPassphrase.createReads)) {
+            list =>
+              c.setEncPassList(list).map {
+                case false => resServerError("unable to update")
+                case true  => resOK("updated")
+              }
+          }
         }
       }
-    }
+  }
+
+  case class AddPassCaptcha(passCaptcha: String)
+
+  object AddPassCaptcha {
+    implicit val format = Json.format[AddPassCaptcha]
+  }
+
+  def addPassCaptcha(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, AddPassCaptcha.format) {
+        apc =>
+          // check if converastion exists
+          Conversation.find(id).flatMap {
+            case None => Future(resNotFound("conversation"))
+            case Some(conversation) => conversation.hasMemberFutureResult(request.identity.id) {
+
+              // check if fileId exists
+              FileMeta.find(apc.passCaptcha).map {
+                case None => resNotFound("file")
+                case Some(f) =>
+                  conversation.setPassCaptcha(new MongoId(apc.passCaptcha))
+                  resOK()
+              }
+            }
+          }
+      }
   }
 }

@@ -498,6 +498,7 @@ Sending and reading messages
             "numberOfMessages": 3,
             "created": "22.01.2014 16:34:55",
             "lastUpdated": "22.01.2014 16:34:55",
+            "passCaptcha": "fileId",
             "recipients":
                    [
                        {
@@ -841,6 +842,27 @@ Sending and reading messages
          {
            "res": "OK",
          }
+
+## Add passCaptcha to conversation [/conversation/{id}/passCaptch]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "passCaptcha":"fileId"
+            }
+
++ Response 200
+
+             {
+                "res": "OK"
+             }
 
 
 ## Add message to conversation [/conversation/{id}/message]
