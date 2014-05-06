@@ -2,20 +2,17 @@ package services
 
 import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
-import org.w3c.dom.{ Element, Document, DOMImplementation }
+import org.w3c.dom.{ Document, DOMImplementation }
 import org.apache.batik.dom.GenericDOMImplementation
 import org.apache.batik.svggen.SVGGraphics2D
 import java.awt._
 import java.io._
 import play.api.{ Play, Logger }
 import org.apache.batik.transcoder._
-import org.apache.batik.transcoder.image.{ ImageTranscoder, PNGTranscoder }
-import javax.swing.border.StrokeBorder
+import org.apache.batik.transcoder.image.PNGTranscoder
 import org.apache.batik.dom.svg.SVGDOMImplementation
-import java.security.MessageDigest
 import helper.Utils
 import play.api.Play.current
-import org.apache.batik.dom.util.DOMUtilities
 import sun.misc.BASE64Encoder
 import models.{ ChunkMeta, FileMeta, FileChunk, Identity }
 
