@@ -9,7 +9,7 @@ import java.awt._
 import java.io._
 import play.api.{ Play, Logger }
 import org.apache.batik.transcoder._
-import org.apache.batik.transcoder.image.{ImageTranscoder, PNGTranscoder}
+import org.apache.batik.transcoder.image.{ ImageTranscoder, PNGTranscoder }
 import javax.swing.border.StrokeBorder
 import org.apache.batik.dom.svg.SVGDOMImplementation
 import java.security.MessageDigest
@@ -17,7 +17,7 @@ import helper.Utils
 import play.api.Play.current
 import org.apache.batik.dom.util.DOMUtilities
 import sun.misc.BASE64Encoder
-import models.{ChunkMeta, FileMeta, FileChunk, Identity}
+import models.{ ChunkMeta, FileMeta, FileChunk, Identity }
 
 /**
  * User: Björn Reimer
@@ -146,7 +146,7 @@ object AvatarGenerator {
 
     val imageSize: Int = Play.configuration.getInt("avatar.generator.png.size").get
     pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT, imageSize.toFloat)
-//    pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, imageSize)
+    //    pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, imageSize)
     pngTranscoder.transcode(input, output)
 
     baos.toByteArray
@@ -155,7 +155,7 @@ object AvatarGenerator {
   private def saveAvatar(png: Array[Byte], identity: Identity) = {
 
     val prefix = "data:image/png;base64,"
-    val base64: String = new BASE64Encoder().encode(png).replace("\n","")
+    val base64: String = new BASE64Encoder().encode(png).replace("\n", "")
 
     // Create Chunk and MetaData
     val chunk = FileChunk.create(prefix + base64)

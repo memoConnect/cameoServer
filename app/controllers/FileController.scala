@@ -81,7 +81,7 @@ object FileController extends ExtendedController {
                     // check if actual filesize matches the given filesize
                     val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
                     val totalSize = fileMeta.chunks.map(_.chunkSize).sum
-//                    Logger.debug("Actual: " + totalSize + " Submitted: " + fileMeta.fileSize + " Allowed: " + fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f))
+                    //                    Logger.debug("Actual: " + totalSize + " Submitted: " + fileMeta.fileSize + " Allowed: " + fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f))
 
                     totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
                       case false => Future(resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize))

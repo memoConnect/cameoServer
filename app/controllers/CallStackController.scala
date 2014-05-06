@@ -15,7 +15,7 @@ import play.api.libs.iteratee.{ Iteratee, Input }
 import play.api.libs.json.JsObject
 import scala.Some
 import scala.concurrent.duration._
- import play.api.Play.current
+import play.api.Play.current
 
 /**
  * User: Björn Reimer
@@ -60,7 +60,8 @@ object CallStackController extends ExtendedController {
   }
 
   def processCallStack() = Action.async(parse.tolerantJson) {
-    request => {
+    request =>
+      {
 
         validateFuture[CallStack](request.body, CallStack.reads) {
           callStack =>

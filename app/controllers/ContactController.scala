@@ -228,7 +228,7 @@ object ContactController extends ExtendedController {
                 case None           => Future(resNotFound("cameoId"))
                 case Some(identity) => executeFriendRequest(identity.id, sfr.message)
               }
-            }
+          }
       }
   }
 

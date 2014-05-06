@@ -46,7 +46,7 @@ object Utils {
     md5BigInteger(s).toString(16)
   }
 
-  def md5Long(s :String): Long = {
+  def md5Long(s: String): Long = {
     md5BigInteger(s).longValue()
   }
 
