@@ -1,10 +1,8 @@
 package models
 
 import play.api.libs.json._
-import helper.{ JsonHelper, IdHelper }
+import helper.IdHelper
 import java.util.Date
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
 import traits.Model
 import helper.MongoCollections._
 

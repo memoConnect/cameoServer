@@ -1,20 +1,13 @@
 package controllers
 
 import play.api.mvc._
-import services.Authentication._
 import play.api.libs.concurrent.Execution.Implicits._
-import helper.JsonHelper._
-import play.modules.reactivemongo.json.collection.JSONCollection
-import java.io.FileWriter
-import play.api.libs.json.{ Json, JsObject }
+import play.api.libs.json.Json
 import helper.DbAdminUtilities
-import play.api.{ Logger, Play }
+import play.api.Play
 import helper.ResultHelper._
-import scala.concurrent.Future
-import play.api.Logger
 import models.Account
 import play.api.Play.current
-import services.AvatarGenerator
 
 object Application extends Controller {
 

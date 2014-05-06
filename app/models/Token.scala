@@ -1,12 +1,10 @@
 package models
 
 import java.util.Date
-import traits.{ Model }
+import traits.Model
 import play.api.libs.json._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import reactivemongo.api.indexes.Index
-import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.IdHelper
 import helper.JsonHelper._
 import reactivemongo.core.commands.LastError

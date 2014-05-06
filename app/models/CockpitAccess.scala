@@ -1,9 +1,7 @@
 package models
 
-import java.util.Date
 import play.api.libs.json._
 import scala.concurrent.{ Future, ExecutionContext }
-import helper.JsonHelper._
 import helper.{ MongoCollections, IdHelper }
 import traits.Model
 import ExecutionContext.Implicits.global

@@ -4,7 +4,6 @@ import traits.{ CockpitEditable, CockpitAttribute, Model }
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import reactivemongo.api.indexes.IndexType
 import java.util.Date
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
@@ -14,17 +13,11 @@ import reactivemongo.core.commands.LastError
 import play.api.Play.current
 import helper.JsonHelper._
 import helper.MongoCollections._
-import scala.Some
-import play.api.libs.json.JsObject
 import constants.Messaging._
-import scala.Some
-import play.api.libs.json.JsObject
 import models.cockpit.attributes._
 import models.cockpit.attributes.CockpitAttributeFilter
 import scala.Some
 import models.cockpit.attributes.CockpitAttributeString
-import models.cockpit.attributes.CockpitAttributeSimpleList
-import models.cockpit.attributes.CockpitAttributeVerifiedString
 import play.api.libs.json.JsObject
 import models.cockpit.CockpitListFilter
 

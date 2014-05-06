@@ -3,7 +3,6 @@ package traits
 import play.api.libs.json._
 import play.api.mvc._
 import play.modules.reactivemongo.MongoController
-import models.Purl
 import scala.concurrent.Future
 import helper.ResultHelper._
 

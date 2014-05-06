@@ -1,7 +1,6 @@
 package helper
 
 import java.lang.NumberFormatException
-import play.api.Logger
 import sys.process.stringSeqToProcess
 import play.api.Play
 import play.api.Play.current

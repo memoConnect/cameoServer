@@ -11,16 +11,7 @@ import constants.Contacts._
 import reactivemongo.core.commands._
 import helper.JsonHelper._
 import models.cockpit._
-import play.api.libs.json.JsArray
-import scala.Some
-import play.api.libs.json.JsNumber
-import play.api.libs.json.JsObject
 import models.cockpit.attributes._
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsString
-import scala.Some
-import play.api.libs.json.JsNumber
-import play.api.libs.json.JsObject
 import helper.MongoCollections._
 import helper.IdHelper
 import constants.Messaging._

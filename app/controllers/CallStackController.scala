@@ -1,14 +1,11 @@
 package controllers
 
 import traits.ExtendedController
-
-import helper.CmActions.AuthAction
 import scala.concurrent.{ Await, ExecutionContext, Future }
 import helper.ResultHelper._
 import play.api.libs.json._
 import ExecutionContext.Implicits.global
-import play.api.libs.json.JsObject
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.mvc._
 import play.api.http.Writeable
 import play.api.libs.iteratee.{ Iteratee, Input }

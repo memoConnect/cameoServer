@@ -9,10 +9,7 @@ import scala.concurrent.Future
 import helper.ResultHelper._
 import helper.CmActions.AuthAction
 import scala.Some
-
-import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.ws.WS
 import services.AvatarGenerator
 
 /**

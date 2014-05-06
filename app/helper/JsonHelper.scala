@@ -4,12 +4,9 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import java.util.Date
-import reactivemongo.api.indexes.IndexType
 import reactivemongo.bson.BSONDocument
 import play.modules.reactivemongo.json.BSONFormats
 import models.{ MongoId, VerifiedString }
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
 import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.json.JsArray
 import play.api.libs.json.JsSuccess

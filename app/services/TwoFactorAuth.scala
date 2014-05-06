@@ -5,7 +5,6 @@ import scala.concurrent.{ ExecutionContext, Future }
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
 import ExecutionContext.Implicits.global
-import play.api.Logger
 
 /**
  * User: Björn Reimer

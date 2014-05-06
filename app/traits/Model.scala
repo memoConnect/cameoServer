@@ -2,9 +2,6 @@ package traits
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
-import java.text.SimpleDateFormat
-import org.mindrot.jbcrypt.BCrypt
-import java.util.TimeZone
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.concurrent.{ Await, ExecutionContext, Future }
 import ExecutionContext.Implicits.global

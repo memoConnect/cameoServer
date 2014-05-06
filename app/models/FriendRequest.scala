@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import play.api.libs.json.{ JsObject, Reads, Json, Format }
+import play.api.libs.json.{ JsObject, Json, Format }
 import helper.JsonHelper
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global

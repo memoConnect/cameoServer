@@ -8,7 +8,6 @@ import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
-import play.api.Logger
 import helper.JsonHelper._
 import reactivemongo.core.commands.LastError
 import constants.Contacts._

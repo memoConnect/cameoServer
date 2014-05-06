@@ -4,7 +4,6 @@ import traits.CockpitAttribute
 import play.api.libs.json._
 import play.api.libs.json.JsObject
 import scala.Some
-import play.api.Logger
 import models.MongoId
 
 case class CockpitAttributeFilter(name: String,

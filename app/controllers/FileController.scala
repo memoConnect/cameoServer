@@ -1,16 +1,13 @@
 package controllers
 
 import traits.ExtendedController
-import scala.util.Random
-import reactivemongo.bson.BSONObjectID
-import play.api.libs.json.{ Json, JsError }
+import play.api.libs.json.Json
 import models.{ ChunkMeta, FileChunk, FileMeta }
-import helper.{ Utils }
+import helper.Utils
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
-import play.api.mvc.Action
-import play.api.{ Play, Logger }
+import play.api.Play
 import ExecutionContext.Implicits.global
 import play.api.Play.current
 

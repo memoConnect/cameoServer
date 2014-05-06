@@ -2,10 +2,7 @@ package models
 
 import traits.Model
 import play.api.libs.json._
-import reactivemongo.api.indexes.IndexType
 import helper.IdHelper
-import scala.concurrent.Future
-import helper.JsonHelper._
 import helper.MongoCollections._
 
 /**

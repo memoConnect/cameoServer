@@ -1,6 +1,6 @@
 package controllers.cockpit
 
-import play.api.mvc.{ SimpleResult, Action }
+import play.api.mvc.SimpleResult
 import play.api.libs.json.{ Reads, Json }
 import scala.concurrent.{ ExecutionContext, Future }
 import models.{ CockpitAccess, MongoId, Account, Identity }

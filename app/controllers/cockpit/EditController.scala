@@ -1,6 +1,5 @@
 package controllers.cockpit
 
-import play.api.mvc.Action
 import play.api.mvc.BodyParsers.parse
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
@@ -9,7 +8,6 @@ import ExecutionContext.Implicits.global
 import play.api.libs.json.JsObject
 import models.cockpit.CockpitEdit
 import helper.CmActions._
-import play.api.Logger
 
 object EditController {
 

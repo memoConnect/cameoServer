@@ -1,15 +1,10 @@
 package controllers
 
 import play.api.libs.json.{ JsValue, Json }
-import traits.{ ExtendedController }
-import models.Conversation
-import play.api.libs.concurrent.Execution.Implicits._
-import helper.{ CheckHelper }
-import helper.CmActions.AuthAction
+import traits.ExtendedController
+import helper.CheckHelper
 import helper.ResultHelper._
 import play.api.mvc.Action
-import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat
-import scala.Some
 import scala.Some
 
 /**

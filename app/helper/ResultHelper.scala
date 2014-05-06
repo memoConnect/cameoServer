@@ -1,6 +1,5 @@
 package helper
 
-import play.api.mvc.Results
 import play.api.mvc.Results._
 import play.api.libs.json._
 import constants.Notifications._

@@ -4,15 +4,12 @@ import traits.ExtendedController
 
 import play.api.libs.json._
 import models._
-import helper.{ OutputLimits }
+import helper.OutputLimits
 import helper.CmActions.AuthAction
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.ResultHelper._
-import scala.Some
 import ExecutionContext.Implicits.global
 import constants.Contacts._
-import play.api.mvc.SimpleResult
-import play.api.Logger
 import scala.Some
 import play.api.mvc.SimpleResult
 import play.api.libs.json.JsObject

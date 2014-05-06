@@ -6,9 +6,8 @@ import models._
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 import helper.ResultHelper._
-import play.api.mvc.{ Result, Action, SimpleResult }
+import play.api.mvc.{ Action, SimpleResult }
 import scala.Some
-import play.api.Logger
 
 /**
  * User: Björn Reimer

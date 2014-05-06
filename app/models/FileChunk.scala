@@ -1,7 +1,5 @@
 package models
 
-import play.api.libs.json.Format
-import play.api.Play.current
 import helper.IdHelper
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
