@@ -126,7 +126,9 @@ object MessageEvolutions {
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
         val addEmptyFiles = __.json.update((__ \ 'plain \ 'files).json.put(JsArray()))
 
-        js.transform(addVersion andThen deleteFiles andThen moveMessageBody andThen addEmptyFiles)
+        js.transform(deleteFiles)
+
+        js.transform(addVersion andThen moveMessageBody andThen addEmptyFiles)
       }
   }
 
