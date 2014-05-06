@@ -17,16 +17,16 @@ import scala.Some
  */
 object ConversationController extends ExtendedController {
 
-  def createConversation = AuthAction()(parse.tolerantJson) {
+  def createConversation = AuthAction().async(parse.tolerantJson) {
     request =>
       {
-        validate[Conversation](request.body, Conversation.createReads) {
+        validateFuture[Conversation](request.body, Conversation.createReads) {
           c =>
             {
               // add creator of conversation to recipients
               val withCreator = c.copy(recipients = c.recipients :+ Recipient.create(request.identity.id))
               Conversation.col.insert(withCreator)
-              resOK(withCreator.toJson)
+              withCreator.toJsonWithIdentitiesResult()
             }
         }
       }
