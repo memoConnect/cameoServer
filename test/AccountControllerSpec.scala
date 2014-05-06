@@ -295,6 +295,7 @@ class AccountControllerSpec extends StartedApp {
 
       (data \ "avatar").asOpt[String] must beSome
       fileId = (data \ "avatar").as[String]
+      1 === 1
     }
 
     "check that avatar file meta exist" in {
