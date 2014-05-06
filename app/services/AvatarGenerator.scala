@@ -160,7 +160,7 @@ object AvatarGenerator {
     // Create Chunk and MetaData
     val chunk = FileChunk.create(prefix + base64)
     val chunkMeta = ChunkMeta.createFromChunk(0, chunk)
-    val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image")
+    val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png")
 
     // write to db
     FileChunk.col.insert(chunk)
