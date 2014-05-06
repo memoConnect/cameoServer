@@ -1,6 +1,6 @@
 package services
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{Future, ExecutionContext}
 import ExecutionContext.Implicits.global
 import org.w3c.dom.{ Element, Document, DOMImplementation }
 import org.apache.batik.dom.GenericDOMImplementation
@@ -53,7 +53,7 @@ object AvatarGenerator {
         new Color(r, b, g)
       }
 
-  def generate(identity: Identity) {
+  def generate(identity: Identity): Future[Boolean] = {
 
     // Get a DOMImplementation.
     val domImpl: DOMImplementation = GenericDOMImplementation.getDOMImplementation
@@ -152,7 +152,7 @@ object AvatarGenerator {
     baos.toByteArray
   }
 
-  private def saveAvatar(png: Array[Byte], identity: Identity) = {
+  private def saveAvatar(png: Array[Byte], identity: Identity): Future[Boolean] = {
 
     val prefix = "data:image/png;base64,"
     val base64: String = new BASE64Encoder().encode(png).replace("\n", "")
@@ -162,13 +162,14 @@ object AvatarGenerator {
     val chunkMeta = ChunkMeta.createFromChunk(0, chunk)
     val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png")
 
-    // write to db
-    FileChunk.col.insert(chunk)
-    FileMeta.col.insert(fileMeta)
-
-    // modify identity
-    identity.setAvatar(fileMeta.id)
-
-    Logger.info("avatar generated for id: " + identity.id)
+    // write to db and add to identity
+    for {
+      chunk <- FileChunk.col.insert(chunk)
+      meta <- FileMeta.col.insert(fileMeta)
+      setAvatar <- identity.setAvatar(fileMeta.id)
+    } yield {
+      Logger.info("avatar generated for id: " + identity.id)
+      chunk.ok && meta.ok && setAvatar
+    }
   }
 }

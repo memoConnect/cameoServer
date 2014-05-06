@@ -6,13 +6,14 @@ import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.{ Play, Logger }
 import scala.io.Source
-import models.{ GlobalState, MongoId }
+import models.{Identity, GlobalState, MongoId}
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import scala.concurrent.duration._
 import helper.MongoCollections._
 import play.api.Play.current
+import services.AvatarGenerator
 
 /**
  * User: Björn Reimer
@@ -97,7 +98,7 @@ object DbAdminUtilities {
     }
   }
 
-  val latestDbVersion = 3
+  val latestDbVersion = 4
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -250,5 +251,22 @@ object DbAdminUtilities {
 
   }
 
-  def migrations: Map[Int, Any => Future[Boolean]] = Map(0 -> migrateTokensWithIteratee, 1 -> migrateRecipients, 2 -> loginNamesToLowerCase)
+  def addAvatars: Any => Future[Boolean] = foo => {
+    Logger.info("adding Avatars")
+
+    val enumerator = identityCollection.find(Json.obj()).cursor[Identity].enumerate()
+
+    val iteratee: Iteratee[Identity, Boolean] = Iteratee.foldM(true) {
+      (result, identity) => AvatarGenerator.generate(identity).map(r => r && result)
+    }
+
+    enumerator.run(iteratee)
+
+  }
+
+  def migrations: Map[Int, Any => Future[Boolean]] = Map(
+    0 -> migrateTokensWithIteratee,
+    1 -> migrateRecipients,
+    2 -> loginNamesToLowerCase,
+    3 -> addAvatars)
 }
