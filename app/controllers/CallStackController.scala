@@ -72,8 +72,11 @@ object CallStackController extends ExtendedController {
               case true =>
                 val responses = callStack.requests.map {
                   call =>
+                    // todo: make this generic
+                    val path = "/api/v1" + call.path
+
                     // create new request
-                    val newRequestHeader: RequestHeader = request.copy(uri = call.path, path = call.path, method = call.method.toString)
+                    val newRequestHeader: RequestHeader = request.copy(uri = path, path = path, method = call.method.toString)
 
                     // get request handler from router
                     val handler: Option[Handler] = Play.current.routes.get.handlerFor(newRequestHeader)

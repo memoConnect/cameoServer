@@ -50,7 +50,7 @@ class CallStackControllerSpec extends StartedApp {
 
   case class Call(path: String, method: String, body: Option[JsObject], expectedStatus: Int, checkResult: JsObject => Result) {
     def toRequestJson: JsObject = Json.obj(
-      "path" -> (basePath + path),
+      "path" -> (path),
       "method" -> method) ++
       maybeEmptyJsValue("data", body)
   }
