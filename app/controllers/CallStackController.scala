@@ -16,6 +16,7 @@ import play.api.libs.json.JsObject
 import scala.Some
 import scala.concurrent.duration._
 import play.api.Play.current
+import play.core.parsers.FormUrlEncodedParser
 
 /**
  * User: Björn Reimer
@@ -62,7 +63,6 @@ object CallStackController extends ExtendedController {
   def processCallStack() = Action.async(parse.tolerantJson) {
     request =>
       {
-
         validateFuture[CallStack](request.body, CallStack.reads) {
           callStack =>
 
@@ -72,11 +72,13 @@ object CallStackController extends ExtendedController {
               case true =>
                 val responses = callStack.requests.map {
                   call =>
-                    // todo: make this generic
-                    val path = "/api/v1" + call.path
+                    // todo: dont hardcode /api/v1
+                    val path = "/api/v1" + call.path.split('?').take(1).mkString
 
                     // create new request
-                    val newRequestHeader: RequestHeader = request.copy(uri = path, path = path, method = call.method.toString)
+                    val rawQuery = call.path.split('?').drop(1).mkString
+                    val query = FormUrlEncodedParser.parse(rawQuery)
+                    val newRequestHeader: RequestHeader = request.copy(uri = path, path = path, method = call.method.toString, queryString = query)
 
                     // get request handler from router
                     val handler: Option[Handler] = Play.current.routes.get.handlerFor(newRequestHeader)

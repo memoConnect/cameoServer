@@ -11,7 +11,7 @@ import play.api.test.Helpers._
 import scala.concurrent.Future
 import scala.Some
 import scala.util.Random
-import testHelper.StartedApp
+import testHelper.{Stuff, StartedApp}
 import testHelper.Stuff._
 import testHelper.TestConfig._
 import helper.JsonHelper._
@@ -32,8 +32,6 @@ class CallStackControllerSpec extends StartedApp {
     val req = FakeRequest(POST, path).withJsonBody(body).withHeaders(tokenHeader(token))
     val res = route(req).get
     status(res) must equalTo(OK)
-
-//    Logger.debug("RES: " + contentAsJson(res))
 
     val responses = (contentAsJson(res) \ "data" \ "responses").as[Seq[JsObject]]
 
@@ -109,6 +107,16 @@ class CallStackControllerSpec extends StartedApp {
 
   val deleteContact = new Call("/contact/" + externalContact2, "DELETE", None, OK, js => 1 === 1)
 
+  val getConversations = new Call("/conversations?limit=5&offset=3", "GET", None, OK, {js =>
+    val data = (js \ "data").as[JsObject]
+
+    (data \ "conversations").asOpt[Seq[JsObject]] must beSome
+    val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+    (data \ "numberOfConversations").asOpt[Int] must beSome
+    conversations.length must beEqualTo(5)
+  })
+
   "CallStackController" should {
 
     "should return not Found on invalid path" in {
@@ -156,16 +164,22 @@ class CallStackControllerSpec extends StartedApp {
       testCallStack(stack, tokenExisting2)
     }
 
+    "should process request with query parameters" in {
+      val stack = Seq(getConversations)
+      testCallStack(stack, tokenExisting2)
+    }
+
     val all = Seq(invalidPath,
       invalidMethod,
       getIdentity,
       getPurl,
       sendMessage,
       invalidPostBody,
-      updateIdentity
+      updateIdentity,
+      getConversations
     )
 
-    val large = Seq.fill(7)("foo").flatMap(s => all)
+    val large = Seq.fill(6)("foo").flatMap(s => all)
 
     "should execute all in one call" in {
       testCallStack(all, tokenExisting)

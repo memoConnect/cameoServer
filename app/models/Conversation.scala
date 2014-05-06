@@ -133,7 +133,7 @@ case class Conversation(id: MongoId,
   }
 
   def setPassCaptcha(fileId: MongoId): Future[Boolean] = {
-    val set = Json.obj("$set" -> Json.obj("passCaptcha" -> fileId ))
+    val set = Json.obj("$set" -> Json.obj("passCaptcha" -> fileId))
     Conversation.col.update(query, set).map(_.updatedExisting)
   }
 
@@ -153,6 +153,7 @@ object Conversation extends Model[Conversation] {
     Reads.pure[Seq[Recipient]](Seq()) and
     Reads.pure[Seq[Message]](Seq()) and
     Reads.pure[Seq[EncryptedPassphrase]](Seq()) and
+    Reads.pure[Option[MongoId]](None) and
     Reads.pure[Date](new Date) and
     Reads.pure[Date](new Date) and
     Reads.pure[Int](docVersion)
@@ -166,6 +167,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("numberOfMessages" -> c.messages.length) ++
         Json.obj("encryptedPassphraseList" -> c.encPassList.map(_.toJson)) ++
         maybeEmptyString("subject", c.subject) ++
+        maybeEmptyJsValue("passCaptcha", c.passCaptcha.map(_.toJson)) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
@@ -197,7 +199,7 @@ object Conversation extends Model[Conversation] {
 
   def create: Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, None, Seq(), Seq(), Seq(), new Date, new Date, 0)
+    new Conversation(id, None, Seq(), Seq(), Seq(), None, new Date, new Date, 0)
   }
 
   def evolutions = Map(
@@ -205,7 +207,7 @@ object Conversation extends Model[Conversation] {
   )
 
   def createDefault(): Conversation = {
-    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), new Date, new Date, 0)
+    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), None, new Date, new Date, 0)
   }
 }
 
