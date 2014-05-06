@@ -15,8 +15,7 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2" % "2.3.7" % "test",
   "com.googlecode.libphonenumber" % "libphonenumber" % "5.9",
   "batik" % "batik-svggen" % "1.6-1",
-  "batik" % "batik-transcoder" % "1.6-1",
-  "jmagick" % "jmagick" % "6.6.9"
+  "batik" % "batik-transcoder" % "1.6-1"
 )
 
 play.Project.playScalaSettings

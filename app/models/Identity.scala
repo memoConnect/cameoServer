@@ -51,6 +51,7 @@ case class Identity(id: MongoId,
                     friendRequests: Seq[FriendRequest],
                     publicKeys: Seq[PublicKey],
                     ignoredIdentities: Seq[MongoId],
+                    avatar: Option[MongoId],
                     created: Date,
                     lastUpdated: Date,
                     docVersion: Int) {
@@ -186,6 +187,12 @@ case class Identity(id: MongoId,
   def getGroups: Seq[String] = {
     this.contacts.flatMap(_.groups).distinct
   }
+
+  def setAvatar(id: MongoId): Future[Boolean] = {
+    val set = Json.obj("$set" -> Json.obj("avatar" -> id))
+    Identity.col.update(query, set).map(_.ok)
+  }
+
 }
 
 object Identity extends Model[Identity] with CockpitEditable[Identity] {
@@ -209,6 +216,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Reads.pure[Seq[FriendRequest]](Seq()) and
     Reads.pure[Seq[PublicKey]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Option[MongoId]](None) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Int](docVersion))(Identity.apply _)
@@ -230,6 +238,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
           _.toJson
         }) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
+        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
   }
@@ -238,12 +247,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        //        maybeEmptyJsValue("email", i.email.map {
-        //          _.toJson
-        //        }) ++
-        //        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
-        //          _.toJson
-        //        }) ++
+        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         maybeEmptyString("displayName", i.displayName) ++
         Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
   }
@@ -270,6 +274,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       Seq(),
       Seq(),
       Seq(),
+      None,
       new Date,
       new Date,
       docVersion)
@@ -296,7 +301,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
     val query = Json.obj("$or" -> (toQueryOrEmpty("cameoId", cameoId) ++ toQueryOrEmpty("displayName", displayName)))
 
-    col.find(query).cursor[Identity].collect[Seq](upTo=250)
+    col.find(query).cursor[Identity].collect[Seq](upTo = 250)
   }
 
   def createDefault(): Identity = {

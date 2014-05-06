@@ -1,20 +1,23 @@
 package services
 
+import scala.concurrent.ExecutionContext
+import ExecutionContext.Implicits.global
 import org.w3c.dom.{ Element, Document, DOMImplementation }
 import org.apache.batik.dom.GenericDOMImplementation
 import org.apache.batik.svggen.SVGGraphics2D
 import java.awt._
 import java.io._
 import play.api.{ Play, Logger }
-import org.apache.batik.transcoder.{ TranscoderException, TranscoderOutput, TranscoderInput }
-import org.apache.batik.transcoder.image.PNGTranscoder
+import org.apache.batik.transcoder._
+import org.apache.batik.transcoder.image.{ImageTranscoder, PNGTranscoder}
 import javax.swing.border.StrokeBorder
 import org.apache.batik.dom.svg.SVGDOMImplementation
 import java.security.MessageDigest
 import helper.Utils
 import play.api.Play.current
-import magick.{ImageInfo, MagickImage}
 import org.apache.batik.dom.util.DOMUtilities
+import sun.misc.BASE64Encoder
+import models.{ChunkMeta, FileMeta, FileChunk, Identity}
 
 /**
  * User: Björn Reimer
@@ -50,7 +53,7 @@ object AvatarGenerator {
         new Color(r, b, g)
       }
 
-  def generate() {
+  def generate(identity: Identity) {
 
     // Get a DOMImplementation.
     val domImpl: DOMImplementation = GenericDOMImplementation.getDOMImplementation
@@ -60,14 +63,16 @@ object AvatarGenerator {
     val empty = domImpl.createDocument(svgNS, "svg", null)
 
     // create avatar description from username
-    val desc = createAvatarDesc("huuuphuup2")
+    val desc = createAvatarDesc(identity.cameoId)
 
     // render avatar into empty document
     val withAvatar = drawAvatar(empty, desc)
 
-    // write to file
-    val png = saveToPng(withAvatar)
+    // get png from generated svg
+    val png: Array[Byte] = getPng(withAvatar)
 
+    // save to db
+    saveAvatar(png, identity)
   }
 
   private def createAvatarDesc(seed: String): AvatarDescription = {
@@ -132,19 +137,38 @@ object AvatarGenerator {
     document
   }
 
+  private def getPng(svg: Document): Array[Byte] = {
+    val pngTranscoder = new PNGTranscoder()
+    val input = new TranscoderInput(svg)
 
-  private def saveToPng(svg: Document): File = {
-    val pngFile = File.createTempFile("fromSVG", ".png")
-    try {
-      val pngTranscoder = new PNGTranscoder()
-      val input = new TranscoderInput(svg)
-      val ostream = new FileOutputStream(pngFile)
-      val output = new TranscoderOutput(ostream)
-      pngTranscoder.transcode(input, output)
-    } catch {
-      case e: TranscoderException => Logger.error("Error transcoding svg to png", e)
-    }
-    pngFile
+    val baos = new ByteArrayOutputStream()
+    val output = new TranscoderOutput(baos)
+
+    val imageSize: Int = Play.configuration.getInt("avatar.generator.png.size").get
+    pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT, imageSize.toFloat)
+//    pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, imageSize)
+    pngTranscoder.transcode(input, output)
+
+    baos.toByteArray
   }
 
+  private def saveAvatar(png: Array[Byte], identity: Identity) = {
+
+    val prefix = "data:image/png;base64,"
+    val base64: String = new BASE64Encoder().encode(png).replace("\n","")
+
+    // Create Chunk and MetaData
+    val chunk = FileChunk.create(prefix + base64)
+    val chunkMeta = ChunkMeta.createFromChunk(0, chunk)
+    val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image")
+
+    // write to db
+    FileChunk.col.insert(chunk)
+    FileMeta.col.insert(fileMeta)
+
+    // modify identity
+    identity.setAvatar(fileMeta.id)
+
+    Logger.info("avatar generated for id: " + identity.id)
+  }
 }

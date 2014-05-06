@@ -24,7 +24,6 @@ object Application extends Controller {
 
   def index = Action {
     request =>
-      AvatarGenerator.generate()
       Ok(views.html.index())
   }
 
