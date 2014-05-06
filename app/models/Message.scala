@@ -136,7 +136,8 @@ object MessageEvolutions {
       val deleteFiles: Reads[JsObject] = (__ \ 'plain \ 'files).json.prune
       val addFileIds: Reads[JsObject] = __.json.update((__ \ 'plain \ 'fileIds).json.put(JsArray()))
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
-      js.transform(deleteFiles andThen addFileIds andThen addVersion)
+      js.transform(deleteFiles)
+      js.transform(addFileIds andThen addVersion)
     }
   }
 }
