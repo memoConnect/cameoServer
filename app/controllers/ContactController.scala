@@ -103,7 +103,7 @@ object ContactController extends ExtendedController {
   def getContacts(offset: Int, limit: Int) = AuthAction().async {
     request =>
 
-      // get all pending friendRequest, todo: this can be done more efficiently
+      // get all pending friendRequests, todo: this can be done more efficiently
       val query = Json.obj("friendRequests.identityId" -> request.identity.id)
       val futurePendingFriendRequests = Identity.col.find(query).cursor[Identity].collect[Seq]()
 

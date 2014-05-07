@@ -74,11 +74,11 @@ class SendMessageActor extends Actor {
               }
           }
 
-          // convert to a singe future and write status to message
-          Future.sequence(futureMessageStatus).map {
-            s =>
-              message.updateAllStatus(s)
-          }
+//          // convert to a singe future and write status to message
+//          Future.sequence(futureMessageStatus).map {
+//            s =>
+//              message.updateAllStatus(s)
+//          }
         }
 
       }

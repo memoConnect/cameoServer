@@ -51,7 +51,6 @@ case class Conversation(id: MongoId,
 
   def toJsonWithIdentities(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
     val recipients: Seq[Future[JsObject]] = this.recipients.map { _.toJsonWithIdentity }
-
     Future.sequence(recipients).map {
       r => this.toJson(offset, limit) ++ Json.obj("recipients" -> r)
     }

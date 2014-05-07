@@ -84,7 +84,7 @@ class SendMailActor extends Actor {
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
-        message.updateSingleStatus(ms)
+//        message.updateSingleStatus(ms)
       } else {
         // get identity of sender
         val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
@@ -111,7 +111,7 @@ class SendMailActor extends Actor {
         val messageStatus = sendMail(mail)
 
         if (messageStatus.status.equals(MESSAGE_STATUS_SEND)) {
-          message.updateSingleStatus(messageStatus.copy(identityId = toIdentity.id))
+//          message.updateSingleStatus(messageStatus.copy(identityId = toIdentity.id))
         } else {
           // try again
           lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])

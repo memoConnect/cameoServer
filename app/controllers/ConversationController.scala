@@ -17,8 +17,7 @@ import helper.ResultHelper._
 object ConversationController extends ExtendedController {
 
   def createConversation = AuthAction().async(parse.tolerantJson) {
-    request =>
-      {
+    request => {
         validateFuture[Conversation](request.body, Conversation.createReads) {
           c =>
             {
