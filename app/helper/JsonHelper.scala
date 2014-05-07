@@ -115,6 +115,21 @@ object JsonHelper {
 
   def arrayQuery(arrayName: String, id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
+  def limitArray(name: String, limit: Int, offset: Int): JsObject = {
+    limit match {
+      case 0 => Json.obj()
+      case _ => Json.obj("name" -> Json.obj("$slice" -> Seq(offset, limit)))
+    }
+  }
+
+  def limitArray(name: String, limit: Int): JsObject = {
+    limit match {
+      case 0 => Json.obj()
+      case _ => Json.obj("name"-> Json.obj("$slice" -> limit))
+    }
+
+  }
+
   def verifyMail: Reads[JsString] = Reads[JsString] {
     js =>
       js.validate[String].flatMap {

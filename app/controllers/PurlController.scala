@@ -30,11 +30,11 @@ object PurlController extends ExtendedController {
           t
         }
         //get conversation
-        Conversation.findByMessageId(purl.messageId).flatMap {
+        Conversation.findByMessageId(purl.messageId, limit, offset).flatMap {
           case None => Future(resNotFound("conversation"))
           case Some(conversation) =>
             // return result
-            conversation.toJsonWithIdentities(offset, limit).map {
+            conversation.toJsonWithIdentities.map {
               js =>
                 val res: JsObject =
                   Json.obj("conversation" -> js) ++
@@ -60,11 +60,11 @@ object PurlController extends ExtendedController {
                   case false => Future(resUnauthorized("This purl belongs to a different identity"))
                   case true =>
                     // get conversation
-                    Conversation.findByMessageId(purl.messageId).flatMap {
+                    Conversation.findByMessageId(purl.messageId, limit, offset).flatMap {
                       case None => Future(resNotFound("conversation"))
                       case Some(conversation) =>
                         // return result
-                        conversation.toJsonWithIdentities(offset, limit).map {
+                        conversation.toJsonWithIdentities.map {
                           js =>
                             val res: JsObject =
                               Json.obj("conversation" -> js) ++
