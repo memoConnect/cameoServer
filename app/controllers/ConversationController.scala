@@ -24,7 +24,7 @@ object ConversationController extends ExtendedController {
               // add creator of conversation to recipients
               val withCreator = c.copy(recipients = c.recipients :+ Recipient.create(request.identity.id))
               Conversation.col.insert(withCreator)
-              withCreator.toJsonWithIdentitiesResult()
+              withCreator.toJsonWithIdentitiesResult
             }
         }
       }
@@ -32,10 +32,10 @@ object ConversationController extends ExtendedController {
 
   def getConversation(id: String, offset: Int, limit: Int) = AuthAction(allowExternal = true).async {
     request =>
-      Conversation.find(id).flatMap {
+      Conversation.find(id, limit, offset).flatMap {
         case None => Future.successful(resNotFound("conversation"))
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.toJsonWithIdentitiesResult(offset, limit)
+          c.toJsonWithIdentitiesResult
         }
       }
   }

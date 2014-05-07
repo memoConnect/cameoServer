@@ -32,9 +32,7 @@ case class Conversation(id: MongoId,
                         lastUpdated: Date,
                         docVersion: Int) {
 
-  def toJson(offset: Int = 0, limit: Int = 0): JsObject = Json.toJson(this)(Conversation.outputWrites(offset, limit)).as[JsObject]
-
-  def toJson: JsObject = toJson(0, 0)
+  def toJson: JsObject = Json.toJson(this)(Conversation.outputWrites).as[JsObject]
 
   def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
 
@@ -49,15 +47,15 @@ case class Conversation(id: MongoId,
     this.toSummaryJsonWithRecipients.map { resOK(_) }
   }
 
-  def toJsonWithIdentities(offset: Int = 0, limit: Int = 0): Future[JsObject] = {
+  def toJsonWithIdentities: Future[JsObject] = {
     val recipients: Seq[Future[JsObject]] = this.recipients.map { _.toJsonWithIdentity }
     Future.sequence(recipients).map {
-      r => this.toJson(offset, limit) ++ Json.obj("recipients" -> r)
+      r => this.toJson ++ Json.obj("recipients" -> r)
     }
   }
 
-  def toJsonWithIdentitiesResult(offset: Int = 0, limit: Int = 0): Future[SimpleResult] = {
-    this.toJsonWithIdentities(offset, limit).map { resOK(_) }
+  def toJsonWithIdentitiesResult: Future[SimpleResult] = {
+    this.toJsonWithIdentities.map { resOK(_) }
   }
 
   def query = Json.obj("_id" -> this.id)
@@ -112,12 +110,7 @@ case class Conversation(id: MongoId,
   }
 
   def addMessage(message: Message): Future[LastError] = {
-    val set = Json.obj("$push" ->
-      Json.obj("messages" -> Json.obj(
-        "$each" -> Seq(message),
-        "$sort" -> Json.obj("created" -> 1),
-        "$slice" -> (-1) * (this.messages.length + 2))))
-
+    val set = Json.obj("$push" -> Json.obj("messages" -> message))
     Conversation.col.update(query, setLastUpdated(set))
   }
 
@@ -158,11 +151,11 @@ object Conversation extends Model[Conversation] {
     Reads.pure[Int](docVersion)
   )(Conversation.apply _)
 
-  def outputWrites(offset: Int, limit: Int) = Writes[Conversation] {
+  def outputWrites = Writes[Conversation] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
-        Json.obj("messages" -> OutputLimits.applyLimits(c.messages.map(_.toJson), offset, limit)) ++
+        Json.obj("messages" -> c.messages.map(_.toJson)) ++
         Json.obj("numberOfMessages" -> c.messages.length) ++
         Json.obj("encryptedPassphraseList" -> c.encPassList.map(_.toJson)) ++
         maybeEmptyString("subject", c.subject) ++
@@ -186,14 +179,26 @@ object Conversation extends Model[Conversation] {
         })
   }
 
-  def findByMessageId(id: MongoId): Future[Option[Conversation]] = {
-    col.find(arrayQuery("messages", id)).one[Conversation]
+  override def find(id: MongoId): Future[Option[Conversation]] = {
+     find(id, 1, 0)
+  }
+
+  def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {
+    find(new MongoId(id),limit,offset)
+  }
+
+  def find(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {
+    val query = Json.obj("_id" -> id)
+    col.find(query, limitArray("messages", limit, offset * -1)).one[Conversation]
+  }
+
+  def findByMessageId(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {
+    col.find(arrayQuery("messages", id), limitArray("messages", limit, offset * -1)).one[Conversation]
   }
 
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
     val query = Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> id)))
-    col.find(query).cursor[Conversation].collect[Seq]()
-    // TODO: Reimplement this and return conversation summaries using the aggregation framework
+    col.find(query, limitArray("messages", -1)).cursor[Conversation].collect[Seq]()
   }
 
   def create: Conversation = {
