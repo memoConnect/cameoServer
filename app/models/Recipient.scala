@@ -1,6 +1,6 @@
 package models
 
-import traits.Model
+import traits.{SubModel, Model}
 import play.api.libs.json.{ Format, JsObject, Writes, Json }
 import helper.JsonHelper._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -26,9 +26,12 @@ case class Recipient(identityId: MongoId) {
   }
 }
 
-object Recipient extends Model[Recipient] {
+object Recipient extends SubModel[Recipient, Conversation] {
 
-  def col = MongoCollections.conversationCollection
+  def parentModel = Conversation
+  def elementName = "recipients"
+
+  override val idName = "identityId"
 
   implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
@@ -48,12 +51,6 @@ object Recipient extends Model[Recipient] {
     new Recipient(new MongoId(identityId))
   }
 
-  override def save(js: JsObject): Future[LastError] = {
-    val id: MongoId = (js \ "_id").as[MongoId]
-    val query = arrayQuery("recipients", id)
-    val set = Json.obj("$set" -> Json.obj("recipients.$" -> js))
-    col.update(query, set)
-  }
 
   override def createDefault(): Recipient = {
     new Recipient(IdHelper.generateRecipientId())

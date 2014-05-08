@@ -16,7 +16,6 @@ import scala.concurrent.duration._
  * Date: 6/25/13
  * Time: 6:46 PM
  */
-//case class OutputLimits(offset: Int, limit: Int)
 
 trait Model[A] {
 
@@ -52,15 +51,15 @@ trait Model[A] {
    * Helper functions
    */
 
-  private def createMongoWrites[T](writes: Writes[T]): Writes[T] = Writes {
-    obj: T => Json.toJson[T](obj)(writes).transform(toMongoDates andThen toMongoId).getOrElse(Json.obj())
+  def createMongoWrites(writes: Writes[A]): Writes[A] = Writes {
+    obj: A => Json.toJson[A](obj)(writes).transform(toMongoDates andThen toMongoId).getOrElse(Json.obj())
   }
 
-  private def createMongoReads[T](reads: Reads[T]): Reads[T] = Reads {
+  def createMongoReads(reads: Reads[A]): Reads[A] = Reads {
     js =>
       try {
         js.transform(fromMongoDates andThen fromMongoId).map {
-          obj: JsValue => obj.as[T](reads)
+          obj: JsValue => obj.as[A](reads)
         }
       } catch {
         // try to apply evolutions
@@ -71,7 +70,7 @@ trait Model[A] {
           js.transform(readsWithEvolution).flatMap {
             newJs =>
               // try to serialise after evolutions and save to db
-              newJs.validate[T](fromMongoDates andThen fromMongoId andThen reads).map {
+              newJs.validate[A](fromMongoDates andThen fromMongoId andThen reads).map {
                 o =>
                   val futureRes: Future[Boolean] = save(newJs).map { _.ok }
                   val res = Await.result(futureRes, 10.minutes)
@@ -88,16 +87,13 @@ trait Model[A] {
       }
   }
 
-  def createMongoFormat[T](
-    reads: Reads[T],
-    writes: Writes[T]) = Format(createMongoReads(reads), createMongoWrites(writes))
+  def createMongoFormat( reads: Reads[A], writes: Writes[A]) = Format(createMongoReads(reads), createMongoWrites(writes))
 
   def getEvolutions(fromVersion: Int): Reads[JsObject] = {
     fromVersion match {
       case i if i == docVersion => __.json.pickBranch
-      case i if i < docVersion => {
+      case i if i < docVersion =>
         evolutions(i) andThen getEvolutions(i + 1)
-      }
     }
   }
 

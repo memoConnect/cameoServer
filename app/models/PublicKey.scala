@@ -1,7 +1,7 @@
 package models
 
 import play.api.libs.json._
-import traits.Model
+import traits.{SubModel, Model}
 import play.api.libs.json.Reads._
 import helper.{ MongoCollections, IdHelper }
 import play.api.libs.functional.syntax._
@@ -25,9 +25,11 @@ case class PublicKey(id: MongoId,
 
 }
 
-object PublicKey extends Model[PublicKey] {
+object PublicKey extends SubModel[PublicKey,Identity] {
 
-  val col = MongoCollections.identityCollection
+
+  def parentModel = Identity
+  def elementName = "publicKeys"
 
   implicit val mongoFormat: Format[PublicKey] = createMongoFormat(Json.reads[PublicKey], Json.writes[PublicKey])
 
@@ -50,13 +52,6 @@ object PublicKey extends Model[PublicKey] {
   def evolutions = Map(0 -> PublicKeyEvolutions.addKeySize)
 
   def docVersion = 1
-
-  override def save(js: JsObject): Future[LastError] = {
-    val id: MongoId = (js \ "_id").as[MongoId]
-    val query = arrayQuery("publicKeys", id)
-    val set = Json.obj("$set" -> js)
-    col.update(query, set)
-  }
 
   override def createDefault(): PublicKey = {
     new PublicKey(IdHelper.generatePublicKeyId, None, "", 0, docVersion)

@@ -204,12 +204,10 @@ object ContactController extends ExtendedController {
                       case false =>
                         val fr = new FriendRequest(request.identity.id, message, new Date)
                         other.addFriendRequest(fr).map {
-                          lastError =>
-                            if (lastError.updatedExisting) {
-                              resOK("request added")
-                            } else {
-                              resServerError("could not update")
-                            }
+                          case true =>
+                            resOK("request added")
+                          case false =>
+                            resServerError("could not update")
                         }
                     }
                 }
@@ -268,7 +266,7 @@ object ContactController extends ExtendedController {
                 }
               case FRIEND_REQUEST_IGNORE =>
                 // delete friend request and add identity to ignore list
-                request.identity.deleteFriendRequest(new MongoId(afr.identityId)).map(_.updatedExisting)
+                request.identity.deleteFriendRequest(new MongoId(afr.identityId))
                 request.identity.addIgnored(new MongoId(afr.identityId))
                 Future(resOK())
               case _ => Future(resBadRequest("invalid answer type"))

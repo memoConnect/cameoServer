@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.Model
+import traits.{SubModel, Model}
 import play.api.libs.json._
 import helper.{ MongoCollections, IdHelper }
 import play.api.libs.functional.syntax._
@@ -51,9 +51,11 @@ case class Message(id: MongoId,
 //  }
 }
 
-object Message extends Model[Message] {
+object Message extends SubModel[Message,Conversation] {
 
-  val col = MongoCollections.conversationCollection
+  def parentModel = Conversation
+  def elementName = "messages"
+
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
   def docVersion = 3
@@ -77,21 +79,6 @@ object Message extends Model[Message] {
         Json.obj("plain" -> m.plain.map(_.toJson)) ++
         Json.obj("encrypted" -> m.encrypted) ++
         addCreated(m.created)
-  }
-
-  override def find(id: MongoId): Future[Option[Message]] = {
-    val projection = Json.obj("messages" -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
-    Conversation.col.find(arrayQuery("messages", id), projection).one[JsValue].map {
-      case None     => None
-      case Some(js) => Some((js \ "messages")(0).as[Message])
-    }
-  }
-
-  override def save(js: JsObject): Future[LastError] = {
-    val id: MongoId = (js \ "_id").as[MongoId]
-    val query = arrayQuery("messages", id)
-    val set = Json.obj("$set" -> Json.obj("messages.$" -> js))
-    col.update(query, set)
   }
 
   def findConversation(id: MongoId): Future[Option[Conversation]] = {
