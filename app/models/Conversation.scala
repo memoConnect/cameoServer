@@ -10,7 +10,7 @@ import play.api.libs.json.Reads._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import ExecutionContext.Implicits.global
 import reactivemongo.core.commands.LastError
-import play.api.mvc.SimpleResult
+import play.api.mvc.Result
 import helper.ResultHelper._
 import helper.JsonHelper._
 import helper.MongoCollections._
@@ -43,7 +43,7 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def toSummaryJsonWithIdentitiesResult: Future[SimpleResult] = {
+  def toSummaryJsonWithIdentitiesResult: Future[Result] = {
     this.toSummaryJsonWithIdentities.map { resOK(_) }
   }
 
@@ -54,7 +54,7 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def toJsonWithIdentitiesResult: Future[SimpleResult] = {
+  def toJsonWithIdentitiesResult: Future[Result] = {
     this.toJsonWithIdentities.map { resOK(_) }
   }
 
@@ -92,7 +92,7 @@ case class Conversation(id: MongoId,
     this.recipients.exists(_.identityId.equals(identityId))
   }
 
-  def hasMemberFutureResult(identityId: MongoId)(action: Future[SimpleResult]): Future[SimpleResult] = {
+  def hasMemberFutureResult(identityId: MongoId)(action: Future[Result]): Future[Result] = {
     if (this.hasMember(identityId)) {
       action
     } else {
@@ -100,7 +100,7 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def hasMemberResult(identityId: MongoId)(action: SimpleResult): SimpleResult = {
+  def hasMemberResult(identityId: MongoId)(action: Result): Result = {
     if (this.hasMember(identityId)) {
       action
     } else {

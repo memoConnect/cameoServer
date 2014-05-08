@@ -1,12 +1,16 @@
-import sys.process.stringSeqToProcess
-
 name := "cameoServer"
+
+lazy val root = (project in file(".")).enablePlugins(PlayScala)
+
+scalaVersion := "2.10.4"
 
 resolvers += "Sonatype Snapshots" at "http://oss.sonatype.org/content/repositories/snapshots/"
 
 libraryDependencies ++= Seq(
   jdbc,
   anorm,
+  cache,
+  ws,
   "org.reactivemongo" %% "play2-reactivemongo" % "0.10.2",
   "org.mindrot" % "jbcrypt" % "0.3m",
   "info.schleichardt" %% "play-embed-mongo" % "0.2",
@@ -18,11 +22,7 @@ libraryDependencies ++= Seq(
   "batik" % "batik-transcoder" % "1.6-1"
 )
 
-play.Project.playScalaSettings
-
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
 
 // disable reverse route to get rid of some useless compiler warnings
-generateReverseRouter := false
-
-com.typesafe.sbt.SbtAtmosPlay.atmosPlaySettings
+//generateReverseRouter := false

@@ -11,7 +11,7 @@ import helper.ResultHelper._
 import ExecutionContext.Implicits.global
 import constants.Contacts._
 import scala.Some
-import play.api.mvc.SimpleResult
+import play.api.mvc.Result
 import play.api.libs.json.JsObject
 import java.util.Date
 import play.api.Logger
@@ -26,7 +26,7 @@ object ContactController extends ExtendedController {
   def addContact() = AuthAction().async(parse.tolerantJson) {
     request =>
 
-      def addExternalContact(js: JsObject): Future[SimpleResult] = {
+      def addExternalContact(js: JsObject): Future[Result] = {
         validateFuture(js, Identity.createReads) { identity =>
           Identity.col.insert(identity).flatMap { error =>
             error.ok match {
@@ -37,7 +37,7 @@ object ContactController extends ExtendedController {
         }
       }
 
-      def addInternalContact(identityId: String): Future[SimpleResult] = {
+      def addInternalContact(identityId: String): Future[Result] = {
         // check if the user already has this contact
         request.identity.contacts.exists(_.identityId.toString.equals(identityId)) match {
           case true => Future(resKO("identity is already in address book"))
@@ -51,7 +51,7 @@ object ContactController extends ExtendedController {
         }
       }
 
-      def createContact(identityId: MongoId, contactType: String): Future[SimpleResult] = {
+      def createContact(identityId: MongoId, contactType: String): Future[Result] = {
         validateFuture(request.body, Contact.createReads(identityId, contactType)) {
           contact =>
             {
@@ -185,7 +185,7 @@ object ContactController extends ExtendedController {
   // todo: set maximum size of friend request message
   def sendFriendRequest = AuthAction().async(parse.tolerantJson) {
     request =>
-      def executeFriendRequest(receiver: MongoId, message: Option[String]): Future[SimpleResult] = {
+      def executeFriendRequest(receiver: MongoId, message: Option[String]): Future[Result] = {
         // check if the other identity is already in contacts
         request.identity.contacts.exists(_.identityId.equals(receiver)) match {
           case true => Future(resKO("identity is already in address book"))

@@ -6,7 +6,7 @@ import helper.{ MongoCollections, IdHelper }
 import traits.{SubModel, Model}
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
-import play.api.mvc.SimpleResult
+import play.api.mvc.Result
 import helper.ResultHelper._
 import helper.JsonHelper._
 import reactivemongo.core.commands.LastError
@@ -43,7 +43,7 @@ case class Contact(id: MongoId,
           Json.obj("contactType" -> contactType)
     }
 
-  def toJsonWithIdentityResult: Future[SimpleResult] = {
+  def toJsonWithIdentityResult: Future[Result] = {
     this.toJsonWithIdentity.map(
       js => resOK(js))
   }

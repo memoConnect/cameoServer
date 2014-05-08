@@ -1,6 +1,6 @@
 package controllers.cockpit
 
-import play.api.mvc.SimpleResult
+import play.api.mvc.Result
 import play.api.libs.json.{ Reads, Json }
 import scala.concurrent.{ ExecutionContext, Future }
 import models.{ CockpitAccess, MongoId, Account, Identity }
@@ -47,7 +47,7 @@ object ListController extends ExtendedController {
       }
   }
 
-  def checkAccessList(accountId: Option[MongoId])(action: Future[SimpleResult]): Future[SimpleResult] = {
+  def checkAccessList(accountId: Option[MongoId])(action: Future[Result]): Future[Result] = {
     accountId match {
       case None => Future(resUnauthorized("no account"))
       case Some(id) =>
