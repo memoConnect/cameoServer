@@ -56,64 +56,45 @@ case class Identity(id: MongoId,
   private val query = Json.obj("_id" -> this.id)
 
   def addContact(contact: Contact): Future[Boolean] = {
-
     // check if this identity is already a contact
     this.contacts.find(_.identityId.equals(contact.identityId)) match {
       case Some(c) => Future(true)
       case None =>
-        val set = Json.obj("$push" -> Json.obj("contacts" -> Json.obj("$each" -> Seq(contact))))
-        Identity.col.update(query, set).map {
-          _.updatedExisting
-        }
+        Contact.append(this.id, contact).map (_.updatedExisting)
     }
   }
 
   def deleteContact(contactId: MongoId): Future[Boolean] = {
-    val query = Json.obj("_id" -> this.id)
-    val set = Json.obj("$pull" ->
-      Json.obj("contacts" -> Json.obj("_id" -> contactId)))
-    Identity.col.update(query, set).map {
-      _.updatedExisting
-    }
+    Contact.delete(this.id, contactId).map (_.updatedExisting)
   }
 
-  def addAsset(assetId: MongoId): Future[LastError] = {
+  def addAsset(assetId: MongoId): Future[Boolean] = {
     val set = Json.obj("$addToSet" -> Json.obj("assets" -> assetId))
-    Identity.col.update(query, set)
+    Identity.col.update(query, set).map(_.updatedExisting)
   }
 
-  def addToken(token: Token): Future[LastError] = {
-    val set = Json.obj("$addToSet" -> Json.obj("tokens" -> token))
-    Identity.col.update(query, set)
+  def addToken(token: Token): Future[Boolean] = {
+    Token.appendUnique(this.id, token).map(_.updatedExisting)
   }
 
-  def deleteToken(tokenId: MongoId): Future[LastError] = {
-    val set = Json.obj("$pull" -> Json.obj("$elemMatch" -> Json.obj("tokens" -> tokenId)))
-    Identity.col.update(query, set)
+  def deleteToken(tokenId: MongoId): Future[Boolean] = {
+    Token.delete(this.id, tokenId).map(_.updatedExisting)
   }
 
-  def addFriendRequest(friendRequest: FriendRequest): Future[LastError] = {
-    val set = Json.obj("$addToSet" -> Json.obj("friendRequests" -> friendRequest))
-    Identity.col.update(query, set)
+  def addFriendRequest(friendRequest: FriendRequest): Future[Boolean] = {
+    FriendRequest.appendUnique(this.id, friendRequest).map(_.updatedExisting)
   }
 
-  def deleteFriendRequest(identityId: MongoId): Future[LastError] = {
-    val set = Json.obj("$pull" -> Json.obj("friendRequests" -> Json.obj("identityId" -> identityId)))
-    Identity.col.update(query, set)
+  def deleteFriendRequest(identityId: MongoId): Future[Boolean] = {
+    FriendRequest.delete(this.id, identityId).map(_.updatedExisting)
   }
 
   def addPublicKey(publicKey: PublicKey): Future[Boolean] = {
-    val set = Json.obj("$addToSet" -> Json.obj("publicKeys" -> publicKey))
-    Identity.col.update(query, set).map {
-      _.ok
-    }
+    PublicKey.appendUnique(this.id, publicKey).map(_.updatedExisting)
   }
 
   def deletePublicKey(id: MongoId): Future[Boolean] = {
-    val set = Json.obj("$pull" -> Json.obj("publicKeys" -> Json.obj("_id" -> id)))
-    Identity.col.update(query, set).map {
-      _.updatedExisting
-    }
+    PublicKey.delete(this.id, id).map(_.updatedExisting)
   }
 
   def editPublicKey(id: MongoId, update: PublicKeyUpdate): Future[Boolean] = {

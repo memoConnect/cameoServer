@@ -5,7 +5,7 @@ import play.api.libs.json.Reads._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.concurrent.{ Await, ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import models.{Conversation, MongoId}
+import models.{ Conversation, MongoId }
 import play.api.Logger
 import helper.JsonHelper._
 import reactivemongo.core.commands.LastError
@@ -17,10 +17,12 @@ import scala.concurrent.duration._
  * Time: 6:46 PM
  */
 
-trait SubModel[A,B] extends Model[A] {
+trait SubModel[A, B] extends Model[A] {
 
   def parentModel: Model[B]
   def elementName: String
+
+  val idName: String = "_id"
   val col = parentModel.col
 
   override def find(id: MongoId): Future[Option[A]] = {
@@ -38,19 +40,39 @@ trait SubModel[A,B] extends Model[A] {
     parentModel.col.update(query, set)
   }
 
-  def delete(parentId: MongoId, id: MongoId): Future[LastError] = {
-    val query = Json.obj("_id" -> id)
-    val set = Json.obj("$pull" ->
-      Json.obj(elementName -> Json.obj("_id" -> id)))
+  def appendUnique(parentId: MongoId, appendees: Seq[A]): Future[LastError] = {
+    val query = Json.obj("_id" -> parentId)
+    val set = Json.obj("$addToSet" -> Json.obj(elementName -> Json.obj("$each" -> appendees)))
     parentModel.col.update(query, set)
   }
 
-  def delete(parentId: String, id: String): Future[LastError] = delete(new MongoId(parentId),new MongoId(id))
+  def appendUnique(parentId: MongoId, appendee: A): Future[LastError] = {
+    appendUnique(parentId, Seq(appendee))
+  }
+
+  def append(parentId: MongoId, appendees: Seq[A]): Future[LastError] = {
+    val query = Json.obj("_id" -> parentId)
+    val set = Json.obj("$push" -> Json.obj(elementName -> Json.obj("$each" -> appendees)))
+    parentModel.col.update(query, set)
+  }
+
+  def append(parentId: MongoId, appendee: A): Future[LastError] = {
+    append(parentId, Seq(appendee))
+  }
+
+  def delete(parentId: MongoId, id: MongoId): Future[LastError] = {
+    val query = Json.obj("_id" -> parentId)
+    val set = Json.obj("$pull" ->
+      Json.obj(elementName -> Json.obj(idName -> id)))
+    parentModel.col.update(query, set)
+  }
+
+  def delete(parentId: String, id: String): Future[LastError] = delete(new MongoId(parentId), new MongoId(id))
 
   override def delete(id: MongoId): Future[LastError] = {
-    val query = Json.obj(elementName + "._id" -> id)
+    val query = Json.obj(elementName + "." + idName -> id)
     val set = Json.obj("$pull" ->
-      Json.obj(elementName -> Json.obj("_id" -> id)))
+      Json.obj(elementName -> Json.obj(idName -> id)))
     parentModel.col.update(query, set)
   }
 }

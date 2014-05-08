@@ -33,6 +33,7 @@ object FriendRequest extends SubModel[FriendRequest,Identity]{
 
   def parentModel = Identity
   def elementName = "friendRequests"
+  override val idName = "identityId"
 
   implicit val mongoFormat: Format[FriendRequest] = Json.format[FriendRequest]
 

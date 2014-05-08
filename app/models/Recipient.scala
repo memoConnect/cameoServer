@@ -31,6 +31,8 @@ object Recipient extends SubModel[Recipient, Conversation] {
   def parentModel = Conversation
   def elementName = "recipients"
 
+  override val idName = "identityId"
+
   implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
   def docVersion = 0
@@ -48,6 +50,7 @@ object Recipient extends SubModel[Recipient, Conversation] {
   def create(identityId: String): Recipient = {
     new Recipient(new MongoId(identityId))
   }
+
 
   override def createDefault(): Recipient = {
     new Recipient(IdHelper.generateRecipientId())

@@ -36,15 +36,15 @@ case class Conversation(id: MongoId,
 
   def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
 
-  def toSummaryJsonWithRecipients: Future[JsObject] = {
+  def toSummaryJsonWithIdentities: Future[JsObject] = {
     val recipients: Seq[Future[JsObject]] = this.recipients.map { _.toJsonWithIdentity }
     Future.sequence(recipients).map {
       r => this.toSummaryJson ++ Json.obj("recipients" -> r)
     }
   }
 
-  def toSummaryJsonWithRecipientsResult: Future[SimpleResult] = {
-    this.toSummaryJsonWithRecipients.map { resOK(_) }
+  def toSummaryJsonWithIdentitiesResult: Future[SimpleResult] = {
+    this.toSummaryJsonWithIdentities.map { resOK(_) }
   }
 
   def toJsonWithIdentities: Future[JsObject] = {
@@ -77,16 +77,11 @@ case class Conversation(id: MongoId,
   }
 
   def addRecipients(recipients: Seq[Recipient]): Future[Boolean] = {
-    val set = Json.obj("$addToSet" ->
-      Json.obj("recipients" ->
-        Json.obj("$each" -> recipients)))
-    Conversation.col.update(query, set).map { _.updatedExisting }
+    Recipient.appendUnique(this.id, recipients).map(_.updatedExisting)
   }
 
-  def deleteRecipient(recipient: Recipient): Future[Boolean] = {
-    val set = Json.obj("$pull" ->
-      Json.obj("recipients" -> recipient))
-    Conversation.col.update(query, set).map { _.updatedExisting }
+  def deleteRecipient(identityId: MongoId): Future[Boolean] = {
+   Recipient.delete(this.id, identityId).map(_.updatedExisting)
   }
 
   def hasMember(identityId: MongoId): Boolean = {
@@ -112,10 +107,6 @@ case class Conversation(id: MongoId,
   def addMessage(message: Message): Future[LastError] = {
     val set = Json.obj("$push" -> Json.obj("messages" -> message))
     Conversation.col.update(query, setLastUpdated(set))
-  }
-
-  def getMessage(messageId: MongoId): Option[Message] = {
-    this.messages.find(_.id.equals(messageId))
   }
 
   def setEncPassList(list: Seq[EncryptedPassphrase]): Future[Boolean] = {
