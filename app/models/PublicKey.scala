@@ -25,11 +25,11 @@ case class PublicKey(id: MongoId,
 
 }
 
-object PublicKey extends SubModel[PublicKey] {
+object PublicKey extends SubModel[PublicKey,Identity] {
 
 
-  def parentModel: Model = Identity
-  def elementName: String = "publicKeys"
+  def parentModel = Identity
+  def elementName = "publicKeys"
 
   implicit val mongoFormat: Format[PublicKey] = createMongoFormat(Json.reads[PublicKey], Json.writes[PublicKey])
 

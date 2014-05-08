@@ -17,9 +17,9 @@ import scala.concurrent.duration._
  * Time: 6:46 PM
  */
 
-trait SubModel[A] extends Model[A] {
+trait SubModel[A,B] extends Model[A] {
 
-  def parentModel: Model
+  def parentModel: Model[B]
   def elementName: String
   val col = parentModel.col
 

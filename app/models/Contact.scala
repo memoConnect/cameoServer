@@ -74,10 +74,10 @@ case class Contact(id: MongoId,
 
 }
 
-object Contact extends SubModel[Contact] {
+object Contact extends SubModel[Contact, Identity] {
 
-  def parentModel: Model = Identity
-  def elementName: String = "contacts"
+  def parentModel = Identity
+  def elementName = "contacts"
 
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 

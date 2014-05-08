@@ -21,10 +21,10 @@ case class Token(id: MongoId,
   def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
 }
 
-object Token extends SubModel[Token] {
+object Token extends SubModel[Token,Identity] {
 
-  def parentModel: Model = Identity
-  def elementName: String = "tokens"
+  def parentModel = Identity
+  def elementName = "tokens"
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 

@@ -43,7 +43,7 @@ object FileMeta extends Model[FileMeta] {
 
   def col = fileMetaCollection
 
-  implicit val mongoFormat: Format[FileMeta] = createMongoFormat[FileMeta](Json.reads[FileMeta], Json.writes[FileMeta])
+  implicit val mongoFormat: Format[FileMeta] = createMongoFormat(Json.reads[FileMeta], Json.writes[FileMeta])
 
   def docVersion = 0
 

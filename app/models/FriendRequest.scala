@@ -29,10 +29,10 @@ case class FriendRequest(identityId: MongoId,
   }
 }
 
-object FriendRequest extends SubModel[FriendRequest]{
+object FriendRequest extends SubModel[FriendRequest,Identity]{
 
-  def parentModel: Model = Identity
-  def elementName: String = "friendRequests"
+  def parentModel = Identity
+  def elementName = "friendRequests"
 
   implicit val mongoFormat: Format[FriendRequest] = Json.format[FriendRequest]
 

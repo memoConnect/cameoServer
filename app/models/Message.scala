@@ -51,10 +51,10 @@ case class Message(id: MongoId,
 //  }
 }
 
-object Message extends SubModel[Message] {
+object Message extends SubModel[Message,Conversation] {
 
-  def parentModel: Model = Conversation
-  def elementName: String = "messages"
+  def parentModel = Conversation
+  def elementName = "messages"
 
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
