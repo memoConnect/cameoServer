@@ -1,7 +1,7 @@
 package models
 
 import play.api.libs.json._
-import traits.Model
+import traits.{SubModel, Model}
 import helper.{ IdHelper, MongoCollections }
 import helper.JsonHelper._
 import play.api.libs.json.JsObject
@@ -24,9 +24,10 @@ case class EncryptedPassphrase(id: MongoId,
 
 }
 
-object EncryptedPassphrase extends Model[EncryptedPassphrase] {
+object EncryptedPassphrase extends SubModel[EncryptedPassphrase] {
 
-  val col = MongoCollections.conversationCollection
+  def parentModel: Model = Conversation
+  def elementName: String = "encPassList"
 
   implicit val mongoFormat: Format[EncryptedPassphrase] = createMongoFormat(Json.reads[EncryptedPassphrase], Json.writes[EncryptedPassphrase])
 
@@ -47,14 +48,8 @@ object EncryptedPassphrase extends Model[EncryptedPassphrase] {
 
   def docVersion = 0
 
-  override def save(js: JsObject): Future[LastError] = {
-    val id: MongoId = (js \ "_id").as[MongoId]
-    val query = arrayQuery("encryptedPassphrases", id)
-    val set = Json.obj("$set" -> js)
-    col.update(query, set)
-  }
-
   override def createDefault(): EncryptedPassphrase = {
     new EncryptedPassphrase(IdHelper.generateMongoId(), "", "", 0)
   }
+
 }

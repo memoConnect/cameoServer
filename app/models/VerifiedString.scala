@@ -21,6 +21,7 @@ case class VerifiedString(isVerified: Boolean,
   def toJson: JsObject = Json.toJson(this)(VerifiedString.outputWrites).as[JsObject]
 }
 
+// todo: this should not extend model
 object VerifiedString extends Model[VerifiedString] {
 
   val col = MongoCollections.identityCollection

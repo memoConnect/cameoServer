@@ -16,7 +16,6 @@ import scala.concurrent.duration._
  * Date: 6/25/13
  * Time: 6:46 PM
  */
-//case class OutputLimits(offset: Int, limit: Int)
 
 trait Model[A] {
 

@@ -3,7 +3,7 @@ package models
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import helper.{ MongoCollections, IdHelper }
-import traits.Model
+import traits.{SubModel, Model}
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.mvc.SimpleResult
@@ -74,9 +74,10 @@ case class Contact(id: MongoId,
 
 }
 
-object Contact extends Model[Contact] {
+object Contact extends SubModel[Contact] {
 
-  val col = MongoCollections.identityCollection
+  def parentModel: Model = Identity
+  def elementName: String = "contacts"
 
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
@@ -102,14 +103,7 @@ object Contact extends Model[Contact] {
     new Contact(contactId, groups, identityId, docVersion)
   }
 
-  override def save(js: JsObject): Future[LastError] = {
-    val id: MongoId = (js \ "_id").as[MongoId]
-    val query = arrayQuery("contacts", id)
-    val set = Json.obj("$set" -> Json.obj("contacts.$" -> js))
-    col.update(query, set)
-  }
-
-  /*
+   /*
    * Evolutions
    */
 
@@ -126,6 +120,7 @@ object Contact extends Model[Contact] {
   override def createDefault(): Contact = {
     new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), docVersion)
   }
+
 }
 
 case class ContactUpdate(groups: Option[Seq[String]],

@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.Model
+import traits.{SubModel, Model}
 import play.api.libs.json._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
@@ -21,9 +21,10 @@ case class Token(id: MongoId,
   def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
 }
 
-object Token extends Model[Token] {
+object Token extends SubModel[Token] {
 
-  val col = MongoCollections.identityCollection
+  def parentModel: Model = Identity
+  def elementName: String = "tokens"
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
@@ -37,17 +38,9 @@ object Token extends Model[Token] {
         addCreated(t.created)
   }
 
-  override def createDefault(): Token = {
+  def createDefault(): Token = {
     new Token(
       IdHelper.generateAccessToken(),
       new Date)
   }
-
-  override def save(js: JsObject): Future[LastError] = {
-    val id: MongoId = (js \ "_id").as[MongoId]
-    val query = arrayQuery("tokens", id)
-    val set = Json.obj("$set" -> Json.obj("tokens.$" -> js))
-    col.update(query, set)
-  }
-
 }
