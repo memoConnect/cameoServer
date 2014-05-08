@@ -235,7 +235,7 @@ class FileControllerSpec extends StartedApp {
       val header: Seq[(String, String)] = Seq(
         ("X-File-Name", fileName),
         ("X-Max-Chunks", chunks.size.toString),
-        ("X-File-Size", (chunks.map(_.size).sum / 2).toString ),
+        ("X-File-Size", (chunks.map(_.size).sum / 10).toString ),
         ("X-File-Type", fileType)) :+
         tokenHeader(tokenExisting2)
 
