@@ -71,6 +71,10 @@ case class Conversation(id: MongoId,
     js ++ Json.obj("$set" -> set)
   }
 
+  def getMessage(messageId: MongoId): Option[Message] = {
+    this.messages.find(_.id.equals(messageId))
+  }
+
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
     val set = Json.obj("$set" -> maybeEmptyString("subject", conversationUpdate.subject))
     Conversation.col.update(query, set).map { _.ok }
