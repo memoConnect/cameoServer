@@ -14,6 +14,7 @@ import scala.Some
 import play.api.mvc.SimpleResult
 import play.api.libs.json.JsObject
 import java.util.Date
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -119,10 +120,13 @@ object ContactController extends ExtendedController {
         futureContacts <- Future.sequence(request.identity.contacts.map(_.toJsonWithIdentity))
       } yield {
         val all = futureContacts ++ futurePendingContacts
-        val sorted = all.sortBy(
+        // remove all empty element (they result from deleted identities)
+        val nonEmpty = all.filterNot(_.equals(Json.obj()))
+        val sorted = nonEmpty.sortBy(
           js =>
             (js \ "identity" \ "displayName").asOpt[String]
-              .getOrElse((js \ "identity" \ "cameoId").as[String])
+              .getOrElse((js \ "identity" \ "cameoId").asOpt[String]
+              .getOrElse({Logger.error("invalid identity: " + js );"xxx"}))
               .toLowerCase
         )
         val limited = OutputLimits.applyLimits(sorted, offset, limit)
