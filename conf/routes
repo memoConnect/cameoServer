@@ -4,7 +4,7 @@
 GET            /api/v1                                                 controllers.Application.index
 
 # CALL STACK
-POST    /api/v1/callStack       controllers.CallStackController.processCallStack()
+POST           /api/v1/callStack                                       controllers.CallStackController.processCallStack()
 
 # ACCOUNT
 POST           /api/v1/account                                         controllers.AccountController.createAccount
@@ -74,6 +74,10 @@ GET            /api/v1/verify/:id                                      controlle
 
 # PURLS
 GET            /api/v1/purl/:id                                        controllers.PurlController.getPurl(id: String, offset: Int ?= 0, limit: Int ?= 0)
+
+# EVENTS
+POST           /api/v1/eventSubscription                               controllers.EventController.newSubscription()
+GET            /api/v1/eventSubscription/:id                           controllers.EventController.getSubscription(id)
 
 # Services
 POST           /api/v1/services/checkPhoneNumber                       controllers.ServicesController.checkPhoneNumber

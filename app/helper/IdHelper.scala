@@ -54,6 +54,10 @@ object IdHelper {
     new MongoId(randomString(defaultLength))
   }
 
+  def generateEventSubscriptionId(): MongoId = {
+    new MongoId(randomString(defaultLength))
+  }
+
   def generateReservationSecret(): MongoId = {
     new MongoId(randomString(defaultLength))
   }

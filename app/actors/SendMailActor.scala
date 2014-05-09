@@ -32,11 +32,10 @@ class SendMailActor extends Actor {
     val secretKey = Play.configuration.getString("aws.secretKey")
 
     val status: MessageStatus = accessKey.isEmpty || secretKey.isEmpty match {
-      case true => {
+      case true =>
         Logger.warn("No AWS credentials")
         new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "No Credentials")
-      }
-      case false => {
+      case false =>
         val credentials = new BasicAWSCredentials(accessKey.get, secretKey.get)
         val client = new AmazonSimpleEmailServiceClient(credentials)
         client.setEndpoint("email.eu-west-1.amazonaws.com")
@@ -61,7 +60,6 @@ class SendMailActor extends Actor {
             new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "Error sending Mail, Could not connect to Amazon")
           }
         }
-      }
     }
 
     Logger.info("SendMailActor: Send Mail. STATUS: " + status)
@@ -69,13 +67,12 @@ class SendMailActor extends Actor {
   }
 
   def receive = {
-    case (mail: MailMessage, tryCount: Int) => {
+    case (mail: MailMessage, tryCount: Int) =>
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         Logger.error("Max try count of message reached: " + mail)
       } else {
         sendMail(mail)
       }
-    }
 
     case (message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, tryCount: Int) =>
 

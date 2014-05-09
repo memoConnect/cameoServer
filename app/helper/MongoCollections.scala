@@ -8,6 +8,7 @@ import scala.concurrent.ExecutionContext
 import ExecutionContext.Implicits.global
 import reactivemongo.bson.BSONDocument
 import play.api.libs.json.Json
+import play.api.Play
 
 /**
  * User: Björn Reimer
@@ -53,6 +54,14 @@ object MongoCollections {
     // expire after 10 min
     val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> (10 * 60))).get
     col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
+    col
+  }
+  lazy val eventSubscriptionCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("eventSubscriptions")
+    // expire subscriptions
+    val expireAfter = Play.configuration.getInt("events.subscription.expire.period").get
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
+    col.indexesManager.ensure(Index(List("lastAccessed" -> IndexType.Ascending), options = options))
     col
   }
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
