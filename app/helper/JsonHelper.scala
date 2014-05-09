@@ -27,12 +27,14 @@ object JsonHelper {
   // converts dates to mongo format ($date)
   val toMongoDates: Reads[JsObject] = {
     __.json.update((__ \ 'created \ '$date).json.copyFrom((__ \ 'created).json.pick[JsNumber]) or emptyObj) andThen
-      __.json.update((__ \ 'lastUpdated \ '$date).json.copyFrom((__ \ 'lastUpdated).json.pick[JsNumber]) or emptyObj)
+      __.json.update((__ \ 'lastUpdated \ '$date).json.copyFrom((__ \ 'lastUpdated).json.pick[JsNumber]) or emptyObj) andThen
+      __.json.update((__ \ 'lastAccessed \ '$date).json.copyFrom((__ \ 'lastAccessed).json.pick[JsNumber]) or emptyObj)
   }
 
   val fromMongoDates: Reads[JsObject] = {
     __.json.update((__ \ 'created).json.copyFrom((__ \ 'created \ '$date).json.pick[JsNumber]) or emptyObj) andThen
-      __.json.update((__ \ 'lastUpdated).json.copyFrom((__ \ 'lastUpdated \ '$date).json.pick[JsNumber]) or emptyObj)
+      __.json.update((__ \ 'lastUpdated).json.copyFrom((__ \ 'lastUpdated \ '$date).json.pick[JsNumber]) or emptyObj) andThen
+      __.json.update((__ \ 'lastAccessed).json.copyFrom((__ \ 'lastAccessed \ '$date).json.pick[JsNumber]) or emptyObj)
   }
 
   // converts id to _id
