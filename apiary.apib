@@ -1537,14 +1537,51 @@ this API method could be used to monitor the app server
 
 ### GET
 
-+ Request
-
-        {
-            "res": "OK|KO"
-        }
-
 + Response 200
 
         {
             "res": "OK|KO"
         }
+
+
+# Group Events
+
+## get event subscription [/api/v1/eventSubscription]
+
+### POST
+
++ Request
+
+        {
+
+        }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "events": [],
+            "id": "ytySRPheyFdYVPv6kpnv"
+          }
+        }
+
+## get events from subscriptions [/api/v1/eventSubscription/{id}]
+
+Events will be deleted after each call
+
+### GET
+
+
++ Response 200
+
+        {
+                  "res": "OK",
+                  "data": {
+                    "events": [
+                                {eventObject},
+                                {eventObject}
+                                ],
+                    "id": "ytySRPheyFdYVPv6kpnv"
+                  }
+                }
