@@ -37,6 +37,8 @@ class IdentityControllerSpec extends StartedApp {
   var pubKeyId2 = ""
   val pubKeySize2 = 2048
 
+  val externalContactDisplayName = "generic Display Name 15y"
+
   "IdentityController" should {
 
     "Get the identity behind a token" in {
@@ -328,7 +330,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("search" -> genericDisplayName, "fields" -> Seq("displayName"), "excludeContacts" -> true)
+      val json = Json.obj("search" -> internalContactCameoId, "fields" -> Seq("cameoId"), "excludeContacts" -> true)
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -337,16 +339,14 @@ class IdentityControllerSpec extends StartedApp {
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.length must beGreaterThan(0)
-
-      data.find(js => (js \ "id").as[String].equals(existingContactIdentityId)) must beNone
+      data.length must beEqualTo(0)
     }
 
     "Include contacts to search on demand" in {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("search" -> genericDisplayName, "fields" -> Seq("displayName"), "excludeContacts" -> false)
+      val json = Json.obj("search" -> internalContactCameoId, "fields" -> Seq("cameoId"), "excludeContacts" -> false)
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -356,7 +356,21 @@ class IdentityControllerSpec extends StartedApp {
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
       data.length must beGreaterThan(0)
-      data.find(js => (js \ "id").as[String].equals(existingContactIdentityId)) must beSome
+      data.find(js => (js \ "id").as[String].equals(internalContactIdentityId)) must beSome
+    }
+
+    "should not find external contacts" in {
+
+      val path = basePath + "/identity/search"
+      val json = Json.obj("search" -> externalContactDisplayName, "fields" -> Seq("displayName"))
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must equalTo(0)
     }
 
     "add public key to identity" in {

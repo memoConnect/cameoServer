@@ -58,12 +58,12 @@ case class Identity(id: MongoId,
     this.contacts.find(_.identityId.equals(contact.identityId)) match {
       case Some(c) => Future(true)
       case None =>
-        Contact.append(this.id, contact).map (_.updatedExisting)
+        Contact.append(this.id, contact).map(_.updatedExisting)
     }
   }
 
   def deleteContact(contactId: MongoId): Future[Boolean] = {
-    Contact.delete(this.id, contactId).map (_.updatedExisting)
+    Contact.delete(this.id, contactId).map(_.updatedExisting)
   }
 
   def addAsset(assetId: MongoId): Future[Boolean] = {
@@ -262,7 +262,10 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       }
     }
 
-    val query = Json.obj("$or" -> (toQueryOrEmpty("cameoId", cameoId) ++ toQueryOrEmpty("displayName", displayName)))
+    val query = Json.obj(
+      "$or" -> (toQueryOrEmpty("cameoId", cameoId) ++ toQueryOrEmpty("displayName", displayName)),
+      "accountId" -> Json.obj("$exists" -> true)
+    )
 
     col.find(query).cursor[Identity].collect[Seq](upTo = 250)
   }

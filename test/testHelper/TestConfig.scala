@@ -50,8 +50,6 @@ object TestConfig {
   val invalidPhoneNumbers = Seq("abcd", "+4912345123451234512345", "", "+!\"§$%&/()=")
   val invalidEmails = Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43")
 
-  val genericDisplayName = "generic Display Name"
-  val existingContactIdentityId = "DOLkwAfL8zuMsh9JcXy4"
 
   val purlExtern = "MSaKlj4hJP"
   val purlExtern2 = "PkFWPuCiBB"
@@ -62,6 +60,7 @@ object TestConfig {
   val purlConversationId = "OM9QeJ4RfJcdscyo52g4"
 
   val internalContactId = "RJaMVpSkdhMRXc0DqnfT"
+  val internalContactCameoId = "9kxZWFFbOCh0K9DZoHrv"
   val internalContactIdentityId = "l4ytByiHOw0iJ0LA2hpz"
 
   val externalContact2 = "EVFrPIr2oPpyVaUZGQjV"
