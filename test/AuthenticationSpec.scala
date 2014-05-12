@@ -60,7 +60,9 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/api/v1/conversation/$id<[^/]+>/summary"),
       (POST, "/api/v1/conversation/$id<[^/]+>/message"),
       (GET, "/api/v1/message/$id<[^/]+>"),
-      (GET, "/api/v1/identity")
+      (GET, "/api/v1/identity"),
+      (GET, "/api/v1/file/$id<[^/]+>"),
+      (GET, "/api/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>")
     )
 
     // all routes not specified as nonAuth, allowExternal or twoFactorAuth are assumed to be auth
@@ -77,7 +79,11 @@ class AuthenticationSpec extends StartedApp {
     )
 
     // add random ids to routes
-    def addIds(str: String) = str.replaceAll("\\$[^\\>]+", randomLengthString(16)).replace(">", "")
+    def addIds(str: String) =
+      str
+        .replaceAll("\\$chunkIndex\\<\\[\\^\\/\\]\\+>", random.nextInt(15).toString)
+        .replaceAll("\\$[^\\>]+", randomLengthString(16)).replace(">", "")
+
     val authRoutesWithIds = filteredAuthRoutes.map { r =>
       (r._1, addIds(r._2))
     }

@@ -103,7 +103,7 @@ object FileController extends ExtendedController {
       }
   }
 
-  def getFile(id: String) = AuthAction().async {
+  def getFile(id: String) = AuthAction(allowExternal = true).async {
     request =>
       FileMeta.find(id).map {
         case None => resNotFound("file")
@@ -112,7 +112,7 @@ object FileController extends ExtendedController {
       }
   }
 
-  def getFileChunk(id: String, chunkIndex: String) = AuthAction().async {
+  def getFileChunk(id: String, chunkIndex: String) = AuthAction(allowExternal = true).async {
     request =>
       Utils.safeStringToInt(chunkIndex) match {
         case None => Future(resBadRequest("chunkIndex is not a number"))
