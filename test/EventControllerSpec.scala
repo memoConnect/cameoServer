@@ -3,6 +3,8 @@ import play.api.libs.json.{ Json, JsObject }
 import play.api.{ Logger, Play }
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
+import scala.annotation.tailrec
+import scala.concurrent.Future
 import testHelper.{ TestConfig, StartedApp }
 import testHelper.Stuff._
 import testHelper.TestConfig._
@@ -77,7 +79,7 @@ class EventControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      subscriptionId = (data \ "id").as[String]
+      subscription2Id = (data \ "id").as[String]
       (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
     }
 
@@ -105,9 +107,7 @@ class EventControllerSpec extends StartedApp {
 
     "Events should appear in both subscriptions" in {
 
-      Thread.sleep(250)
-
-      Seq(subscriptionId, subscription2Id).map { id =>
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
         val path = basePath + "/eventSubscription/" + id
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
@@ -116,24 +116,26 @@ class EventControllerSpec extends StartedApp {
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
-        (data \ "id").asOpt[String] must beSome(subscriptionId)
+        (data \ "id").asOpt[String] must beSome(id)
         (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](3))
 
         val events = (data \ "events").as[Seq[JsObject]]
 
-        val newMessage = events.filter(e => (e \ "type").as[String].equals("conversation:new-message"))
-        newMessage.length must equalTo(3)
-        newMessage.map { js =>
-          (js \ "conversationId").asOpt[String] must beSome(conversationId)
-          (js \ "message").asOpt[JsObject] must beSome
-          (js \ "message" \ "plain" \ "text").asOpt[String] must beSome(text)
+        val newMessageEvents = events.filter(e =>
+          (e \ "type").as[String].equals("conversation:new-message") &&
+            (e \ "content" \ "conversationId").asOpt[String].getOrElse("foo").equals(conversationId))
+        newMessageEvents.length must greaterThanOrEqualTo(3)
+        newMessageEvents.map { js =>
+          (js \ "content" \ "conversationId").asOpt[String] must beSome(conversationId)
+          (js \ "content" \ "message").asOpt[JsObject] must beSome
+          (js \ "content" \ "message" \ "plain" \ "text").asOpt[String] must beSome(text)
         }
       }
-      1===1
+      1 === 1
     }
 
     "Events should be cleared" in {
-      Seq(subscriptionId, subscription2Id).map { id =>
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
         val path = basePath + "/eventSubscription/" + id
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get

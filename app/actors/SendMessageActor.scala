@@ -42,7 +42,7 @@ class SendMessageActor extends Actor {
             recipient =>
               {
                 // send event
-                eventRouter ! NewMessage(conversationId, recipient.identityId, message)
+                eventRouter ! NewMessage(recipient.identityId, conversationId, message)
 
                 // dont send back to sender
                 if (!recipient.identityId.equals(fromIdentity.id)) {

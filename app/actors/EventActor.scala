@@ -19,7 +19,7 @@ case class NewMessage(identityId: MongoId, conversationId: MongoId, message: Mes
 
   def toEventJson: JsObject =
     Json.obj(
-      "conversationId" -> conversationId,
+      "conversationId" -> conversationId.toJson,
       "message" -> message.toJson
     )
 }

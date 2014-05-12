@@ -3,18 +3,33 @@ package models
 import java.util.Date
 import traits.Model
 import scala.concurrent.{ ExecutionContext, Future }
-import helper.{ OutputLimits, IdHelper }
+import helper.{MongoCollections, OutputLimits, IdHelper}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import ExecutionContext.Implicits.global
-import reactivemongo.core.commands.LastError
+import reactivemongo.core.commands._
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
 import helper.JsonHelper._
 import helper.MongoCollections._
 import play.api.Logger
+import reactivemongo.bson.{BSONNull, BSONString, BSONDocument}
+import play.modules.reactivemongo.json.BSONFormats._
+import play.api.libs.json.JsArray
+import play.modules.reactivemongo.json.collection.JSONCollection
+import scala.Some
+import play.api.mvc.SimpleResult
+import play.api.libs.json.JsNumber
+import play.api.libs.json.JsObject
+import play.api.libs.json.JsArray
+import play.modules.reactivemongo.json.collection.JSONCollection
+import scala.Some
+import play.api.mvc.SimpleResult
+import play.api.libs.json.JsNumber
+import reactivemongo.core.commands.Unwind
+import play.api.libs.json.JsObject
 
 /**
  * User: Björn Reimer
@@ -34,12 +49,21 @@ case class Conversation(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Conversation.outputWrites).as[JsObject]
 
-  def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
+  def toSummaryJson: Future[JsObject] =
+    getMessageCount.map { count =>
+      Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
+      Json.obj("numberOfMessages" -> count)
+    }
 
   def toSummaryJsonWithIdentities: Future[JsObject] = {
     val recipients: Seq[Future[JsObject]] = this.recipients.map { _.toJsonWithIdentity }
-    Future.sequence(recipients).map {
-      r => this.toSummaryJson ++ Json.obj("recipients" -> r)
+
+    for {
+      recipientsWithIdentities <- Future.sequence(recipients)
+      summary <- this.toSummaryJson
+    } yield {
+      summary ++
+      Json.obj( "recipients" -> recipientsWithIdentities)
     }
   }
 
@@ -73,6 +97,25 @@ case class Conversation(id: MongoId,
 
   def getMessage(messageId: MongoId): Option[Message] = {
     this.messages.find(_.id.equals(messageId))
+  }
+
+  def getMessageCount: Future[Int] = {
+
+    val pipeline: Seq[PipelineOperator] = Seq(
+      Match(toBson(query).get),
+      Unwind("messages"),
+      Group(BSONNull)(("count", SumValue(1))))
+
+    val command = Aggregate(Conversation.col.name, pipeline)
+
+    MongoCollections.mongoDB.command(command).map{
+      res => res.headOption match {
+        case None => 0
+        case Some(bson) =>
+          val js = Json.toJson(bson)
+          ( js \ "count").as[Int]
+      }
+    }
   }
 
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
@@ -163,15 +206,9 @@ object Conversation extends Model[Conversation] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         addLastUpdated(c.lastUpdated) ++
-        Json.obj("numberOfMessages" -> c.messages.length) ++
         maybeEmptyString("subject", c.subject) ++
         Json.obj("encryptedPassphraseList" -> c.encPassList.map(_.toJson)) ++
-        Json.obj("messages" -> {
-          c.messages.lastOption match {
-            case Some(m) => Seq(m.toJson)
-            case None    => Seq()
-          }
-        })
+        Json.obj("messages" -> c.messages.map(_.toJson))
   }
 
   override def find(id: MongoId): Future[Option[Conversation]] = {
@@ -184,16 +221,16 @@ object Conversation extends Model[Conversation] {
 
   def find(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {
     val query = Json.obj("_id" -> id)
-    col.find(query, limitArray("messages", limit, offset * -1)).one[Conversation]
+    col.find(query, limitArray("messages", limit, offset, startBottom = true)).one[Conversation]
   }
 
   def findByMessageId(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {
-    col.find(arrayQuery("messages", id), limitArray("messages", limit, offset * -1)).one[Conversation]
+    col.find(arrayQuery("messages", id), limitArray("messages", limit, offset, startBottom = true)).one[Conversation]
   }
 
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
     val query = Json.obj("recipients" -> Json.obj("identityId" -> id))
-    col.find(query, limitArray("messages", -1)).cursor[Conversation].collect[Seq]()
+    col.find(query, limitArray("messages", 1, 0, startBottom = true)).cursor[Conversation].collect[Seq]()
   }
 
   def create: Conversation = {

@@ -14,6 +14,7 @@ import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json.JsObject
 import scala.Some
 import scala.util.{Success, Failure}
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -54,6 +55,7 @@ object EventSubscription extends Model[EventSubscription] {
   def pushEvent(identityId: MongoId, events: Seq[Event]): Future[Boolean] = {
     val query = Json.obj("identityId" -> identityId)
     val set = Json.obj("$push" -> Json.obj("events" -> Json.obj("$each" -> events)))
+
     col.update(query, set, multi = true).map{_.ok}
   }
   def pushEvent(identityId: MongoId, event: Event): Future[Boolean]= {
