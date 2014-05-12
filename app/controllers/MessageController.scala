@@ -35,7 +35,7 @@ object MessageController extends ExtendedController {
           {
             Conversation.find(id).flatMap {
               case None => Future(resNotFound("conversation"))
-              case Some(conversation) => {
+              case Some(conversation) =>
                 // only members can add message to conversation
                 conversation.hasMemberFutureResult(request.identity.id) {
                   conversation.addMessage(message)
@@ -44,7 +44,6 @@ object MessageController extends ExtendedController {
                   sendMessageActor ! (message, conversation.recipients, conversation.subject.getOrElse(""))
                   Future(resOK(message.toJson))
                 }
-              }
             }
           }
       }

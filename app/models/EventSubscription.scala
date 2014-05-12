@@ -2,14 +2,18 @@ package models
 
 import java.util.Date
 import traits.Model
-import play.api.libs.json.{ Json, Format, JsObject, Reads }
+import play.api.libs.json._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.{ IdHelper, MongoCollections }
 import scala.concurrent.{ExecutionContext, Future}
-import reactivemongo.core.commands.{Count, LastError}
-import reactivemongo.bson.BSONDocument
+import reactivemongo.core.commands.{Update, FindAndModify, Count, LastError}
+import reactivemongo.bson.{BSONArray, BSONDocument}
 import play.modules.reactivemongo.json.BSONFormats._
 import ExecutionContext.Implicits.global
+import play.modules.reactivemongo.json.collection.JSONCollection
+import play.api.libs.json.JsObject
+import scala.Some
+import scala.util.{Success, Failure}
 
 /**
  * User: Björn Reimer
@@ -45,6 +49,29 @@ object EventSubscription extends Model[EventSubscription] {
     val query: BSONDocument = BSONDocument("identityId" -> toBSON(Json.toJson(identityId)).get)
     MongoCollections.mongoDB.command[Int](Count(col.name, Some(query)))
   }
+
+  // push events to all event queues of an identity
+  def pushEvent(identityId: MongoId, events: Seq[Event]): Future[Boolean] = {
+    val query = Json.obj("identityId" -> identityId)
+    val set = Json.obj("$push" -> Json.obj("events" -> Json.obj("$each" -> events)))
+    col.update(query, set, multi = true).map{_.ok}
+  }
+
+  def findAndClear(id: MongoId): Future[Option[EventSubscription]] = {
+    val query = BSONDocument("_id" -> toBSON(Json.toJson(id)).get)
+    val set = BSONDocument("$set" -> BSONDocument("events" -> BSONArray()))
+    val command = FindAndModify(
+      col.name,
+      query,
+      Update(set, fetchNewObject = false))
+
+    MongoCollections.mongoDB.command(command).map {
+      maybeBson => maybeBson.map {
+        bson => Json.toJson(bson).as[EventSubscription]
+      }
+    }
+  }
+
 
   def createDefault(): EventSubscription = new EventSubscription(IdHelper.generateEventSubscriptionId(), Seq(), new Date,new MongoId(""), docVersion)
 

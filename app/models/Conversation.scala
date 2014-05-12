@@ -85,7 +85,7 @@ case class Conversation(id: MongoId,
   }
 
   def deleteRecipient(identityId: MongoId): Future[Boolean] = {
-   Recipient.delete(this.id, identityId).map(_.updatedExisting)
+    Recipient.delete(this.id, identityId).map(_.updatedExisting)
   }
 
   def hasMember(identityId: MongoId): Boolean = {
@@ -175,11 +175,11 @@ object Conversation extends Model[Conversation] {
   }
 
   override def find(id: MongoId): Future[Option[Conversation]] = {
-     find(id, 1, 0)
+    find(id, 1, 0)
   }
 
   def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {
-    find(new MongoId(id),limit,offset)
+    find(new MongoId(id), limit, offset)
   }
 
   def find(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {

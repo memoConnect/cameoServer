@@ -15,22 +15,24 @@ import scala.Some
  * Date: 6/12/13
  * Time: 5:36 PM
  */
+
+case class SendMessage(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
+
 class SendMessageActor extends Actor {
 
   def receive = {
 
-    case (message: Message, recipients: Seq[Recipient], subject: String) => {
+    case SendMessage(message, conversationId, recipients, subject) =>
 
       Logger.info("SendMessageActor: Processing message with id " + message.id)
 
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
-        case None => {
+        case None =>
           val error = "Could not find fromIdentityID " + message.fromIdentityId
           Logger.error(error)
           new MessageStatus(message.fromIdentityId, MESSAGE_STATUS_ERROR, error)
-        }
-        case Some(fromIdentity: Identity) => {
+        case Some(fromIdentity: Identity) =>
 
           // create actors
           lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
@@ -39,18 +41,16 @@ class SendMessageActor extends Actor {
           val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
             recipient =>
               {
-
+                eventRouter ! NewMessage(conversationId, recipients, message)
                 // dont send back to sender
                 if (!recipient.identityId.equals(fromIdentity.id)) {
                   Identity.find(recipient.identityId).map {
-                    case None => {
+                    case None =>
                       val error = "Could not find identityID " + recipient.identityId
                       Logger.error(error)
                       new MessageStatus(recipient.identityId, MESSAGE_STATUS_ERROR, error)
-                    }
-                    case Some(toIdentity) => {
+                    case Some(toIdentity) =>
                       Logger.debug("SendMessageActor: Message " + message.id + " Sending to identity " + toIdentity.id)
-
 
                       toIdentity.preferredMessageType match {
                         case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)
@@ -66,9 +66,7 @@ class SendMessageActor extends Actor {
                           }
                         // TODO case _ => sendFailActor ! (message, identity)
                       }
-                      eventRouter ! NewMessage(conversationId = "foo", message)
                       new MessageStatus(recipient.identityId, MESSAGE_STATUS_QUEUED, toIdentity.preferredMessageType)
-                    }
 
                   }
                 } else {
@@ -77,14 +75,12 @@ class SendMessageActor extends Actor {
               }
           }
 
-//          // convert to a singe future and write status to message
-//          Future.sequence(futureMessageStatus).map {
-//            s =>
-//              message.updateAllStatus(s)
-//          }
-        }
+        //          // convert to a singe future and write status to message
+        //          Future.sequence(futureMessageStatus).map {
+        //            s =>
+        //              message.updateAllStatus(s)
+        //          }
 
       }
-    }
   }
 }
