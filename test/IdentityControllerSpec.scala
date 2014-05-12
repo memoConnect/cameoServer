@@ -330,7 +330,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("search" -> internalContactCameoId, "fields" -> Seq("cameoId"), "excludeContacts" -> true)
+      val json = Json.obj("search" -> internalContact2CameoId, "fields" -> Seq("cameoId"), "excludeContacts" -> true)
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -346,7 +346,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val path = basePath + "/identity/search"
 
-      val json = Json.obj("search" -> internalContactCameoId, "fields" -> Seq("cameoId"), "excludeContacts" -> false)
+      val json = Json.obj("search" -> internalContact2CameoId, "fields" -> Seq("cameoId"), "excludeContacts" -> false)
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -356,7 +356,7 @@ class IdentityControllerSpec extends StartedApp {
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
       data.length must beGreaterThan(0)
-      data.find(js => (js \ "id").as[String].equals(internalContactIdentityId)) must beSome
+      data.find(js => (js \ "id").as[String].equals(internalContact2IdentityId)) must beSome
     }
 
     "should not find external contacts" in {

@@ -60,8 +60,10 @@ object TestConfig {
   val purlConversationId = "OM9QeJ4RfJcdscyo52g4"
 
   val internalContactId = "RJaMVpSkdhMRXc0DqnfT"
-  val internalContactCameoId = "9kxZWFFbOCh0K9DZoHrv"
   val internalContactIdentityId = "l4ytByiHOw0iJ0LA2hpz"
+
+  val internalContact2CameoId = "RliVyZSsiG4e7pSVRuz2"
+  val internalContact2IdentityId = "Q9nauLdsCOMhcmXmlL4p"
 
   val externalContact2 = "EVFrPIr2oPpyVaUZGQjV"
 
