@@ -14,7 +14,7 @@ import scala.Some
 import java.lang.NumberFormatException
 import play.api.libs.concurrent.Akka
 import akka.actor.Props
-import actors.SendMessageActor
+import actors.{SendMessage, SendMessageActor}
 import play.api.Play.current
 
 /**
@@ -35,16 +35,15 @@ object MessageController extends ExtendedController {
           {
             Conversation.find(id).flatMap {
               case None => Future(resNotFound("conversation"))
-              case Some(conversation) => {
+              case Some(conversation) =>
                 // only members can add message to conversation
                 conversation.hasMemberFutureResult(request.identity.id) {
                   conversation.addMessage(message)
                   // initiate new actor for each request
                   val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
-                  sendMessageActor ! (message, conversation.recipients, conversation.subject.getOrElse(""))
+                  sendMessageActor ! SendMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
                   Future(resOK(message.toJson))
                 }
-              }
             }
           }
       }

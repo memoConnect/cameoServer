@@ -62,6 +62,7 @@ object MongoCollections {
     val expireAfter = Play.configuration.getInt("events.subscription.expire.period").get
     val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
     col.indexesManager.ensure(Index(List("lastAccessed" -> IndexType.Ascending), options = options))
+    col.indexesManager.ensure(Index(List("identityId" -> IndexType.Ascending)))
     col
   }
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")

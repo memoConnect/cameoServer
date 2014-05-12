@@ -243,6 +243,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       docVersion)
   }
 
+  // todo: add projection to exclude contacts when not needed
   def findByToken(tokenId: MongoId): Future[Option[Identity]] = {
     val query = Json.obj("tokens" -> Json.obj("$elemMatch" -> Json.obj("_id" -> tokenId)))
     col.find(query).one[Identity]

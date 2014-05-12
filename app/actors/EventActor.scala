@@ -1,8 +1,11 @@
 package actors
 
 import akka.actor.Actor
-import models.Message
+import models._
 import play.api.Logger
+import play.api.libs.json.{Writes, Json, JsObject}
+import play.api.libs.json.JsObject
+import traits.EventMessage
 
 /**
  * User: Björn Reimer
@@ -10,14 +13,22 @@ import play.api.Logger
  * Time: 13:28
  */
 
-case class NewMessage(conversationId: String, message: Message)
+case class NewMessage(identityId: MongoId, conversationId: MongoId, message: Message) extends EventMessage {
 
+  def eventType = "conversation:new-message"
+
+  def toEventJson: JsObject =
+    Json.obj(
+      "conversationId" -> conversationId.toJson,
+      "message" -> message.toJson
+    )
+}
 
 class EventActor extends Actor {
 
   def receive() = {
-    case NewMessage(conversationId, message) =>
-      Logger.info("new message!")
+    case msg: NewMessage =>
+      EventSubscription.pushEvent(msg.identityId, msg.toEvent)
   }
 
 }

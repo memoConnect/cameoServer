@@ -2,7 +2,7 @@ package controllers
 
 import play.api.mvc.Controller
 import helper.CmActions.AuthAction
-import models.EventSubscription
+import models.{MongoId, EventSubscription}
 import helper.ResultHelper._
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.Play
@@ -32,7 +32,7 @@ object EventController extends Controller {
 
   def getSubscription(id: String) = AuthAction().async {
     request =>
-      EventSubscription.find(id).map {
+      EventSubscription.findAndClear(MongoId(id)).map {
         case None               => resNotFound("subscription id")
         case Some(subscription) => resOK(subscription.toJson)
       }
