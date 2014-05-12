@@ -22,12 +22,12 @@ package object actors {
     }
   }
 
-  def eventRouter: ActorRef = {
-
-    val props = RoundRobinRouter(5).props(Props[RequestActor]), "requestRouter"
-
-
-    system.actorOf()
-  }
+//  def eventRouter: ActorRef = {
+//
+//    val props = RoundRobinRouter(5).props(Props[RequestActor]), "requestRouter"
+//
+//
+//    system.actorOf()
+//  }
 
 }

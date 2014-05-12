@@ -1,24 +1,6 @@
 package testHelper
 
 import play.api.test.FakeApplication
-import testHelper.Stuff._
-import play.api.test.FakeApplication
-import play.api.{Logger, Play, GlobalSettings}
-import akka.actor.Props
-import actors.SendSmsActor
-import info.schleichardt.play.embed.mongo.DynamicEmbedMongoPort
-import play.api.mvc.EssentialAction
-import play.api.http.HeaderNames._
-import play.api.test.FakeApplication
-import scala.Some
-import scala.concurrent.{Await, Future}
-import helper.MongoCollections._
-import play.api.test.FakeApplication
-import scala.Some
-import play.api.libs.json.{JsValue, Json}
-import helper.DbAdminUtilities
-import models.GlobalState
-import scala.concurrent.duration._
 
 /**
  * User: Björn Reimer

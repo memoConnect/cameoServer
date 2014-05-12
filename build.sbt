@@ -9,7 +9,7 @@ libraryDependencies ++= Seq(
   anorm,
   "org.reactivemongo" %% "play2-reactivemongo" % "0.10.2",
   "org.mindrot" % "jbcrypt" % "0.3m",
-  "info.schleichardt" %% "play-embed-mongo" % "0.2",
+  "info.schleichardt" %% "play-2-embed-mongo" % "0.5.0",
   "com.amazonaws" % "aws-java-sdk" % "1.3.21",
   "javax.mail" % "mail" % "1.4.7",
   "org.specs2" %% "specs2" % "2.3.7" % "test",
