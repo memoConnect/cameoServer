@@ -51,6 +51,7 @@ class SendMessageActor extends Actor {
                     case Some(toIdentity) => {
                       Logger.debug("SendMessageActor: Message " + message.id + " Sending to identity " + toIdentity.id)
 
+
                       toIdentity.preferredMessageType match {
                         case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)
                         case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, subject, 0)
@@ -65,8 +66,10 @@ class SendMessageActor extends Actor {
                           }
                         // TODO case _ => sendFailActor ! (message, identity)
                       }
+                      eventRouter ! NewMessage(conversationId = "foo", message)
                       new MessageStatus(recipient.identityId, MESSAGE_STATUS_QUEUED, toIdentity.preferredMessageType)
                     }
+
                   }
                 } else {
                   Future.successful(new MessageStatus(recipient.identityId, MESSAGE_STATUS_NONE, "sender"))

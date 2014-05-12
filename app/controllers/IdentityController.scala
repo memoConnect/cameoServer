@@ -86,7 +86,7 @@ object IdentityController extends ExtendedController {
                     !request.identity.id.equals(identity.id) && !matchesContact
                   })
                   val limited = OutputLimits.applyLimits(filtered, offset, limit)
-                  resOK(limited.map { i => i.toPublicSummaryJson })
+                  resOK(limited.map { i => i.toPublicJson })
               }
           }
       }

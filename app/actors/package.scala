@@ -22,12 +22,9 @@ package object actors {
     }
   }
 
-//  def eventRouter: ActorRef = {
-//
-//    val props = RoundRobinRouter(5).props(Props[RequestActor]), "requestRouter"
-//
-//
-//    system.actorOf()
-//  }
+  lazy val eventRouter: ActorRef = {
+    val props = Props[EventActor].withRouter(RoundRobinRouter(nrOfInstances = 5))
+    Akka.system.actorOf(props, "event_router")
+  }
 
 }

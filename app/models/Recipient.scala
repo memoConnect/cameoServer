@@ -21,7 +21,7 @@ case class Recipient(identityId: MongoId) {
   def toJsonWithIdentity: Future[JsObject] = {
     Identity.find(this.identityId).map {
       case None    => Json.obj()
-      case Some(i) => Json.obj("identity" -> i.toPublicSummaryJson) ++ this.toJson
+      case Some(i) => Json.obj("identity" -> i.toPublicJson) ++ this.toJson
     }
   }
 }
