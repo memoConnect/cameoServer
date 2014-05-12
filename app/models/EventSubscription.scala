@@ -56,6 +56,9 @@ object EventSubscription extends Model[EventSubscription] {
     val set = Json.obj("$push" -> Json.obj("events" -> Json.obj("$each" -> events)))
     col.update(query, set, multi = true).map{_.ok}
   }
+  def pushEvent(identityId: MongoId, event: Event): Future[Boolean]= {
+    pushEvent(identityId, Seq(event))
+  }
 
   def findAndClear(id: MongoId): Future[Option[EventSubscription]] = {
     val query = BSONDocument("_id" -> toBSON(Json.toJson(id)).get)
@@ -71,7 +74,6 @@ object EventSubscription extends Model[EventSubscription] {
       }
     }
   }
-
 
   def createDefault(): EventSubscription = new EventSubscription(IdHelper.generateEventSubscriptionId(), Seq(), new Date,new MongoId(""), docVersion)
 

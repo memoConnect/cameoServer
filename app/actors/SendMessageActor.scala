@@ -41,7 +41,9 @@ class SendMessageActor extends Actor {
           val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
             recipient =>
               {
-                eventRouter ! NewMessage(conversationId, recipients, message)
+                // send event
+                eventRouter ! NewMessage(conversationId, recipient.identityId, message)
+
                 // dont send back to sender
                 if (!recipient.identityId.equals(fromIdentity.id)) {
                   Identity.find(recipient.identityId).map {
