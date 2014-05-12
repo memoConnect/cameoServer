@@ -192,7 +192,7 @@ object Conversation extends Model[Conversation] {
   }
 
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
-    val query = Json.obj("recipients" -> Json.obj("$elemMatch" -> Json.obj("identityId" -> id)))
+    val query = Json.obj("recipients" -> Json.obj("identityId" -> id))
     col.find(query, limitArray("messages", -1)).cursor[Conversation].collect[Seq]()
   }
 

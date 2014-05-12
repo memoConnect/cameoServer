@@ -120,14 +120,14 @@ object JsonHelper {
   def limitArray(name: String, limit: Int, offset: Int): JsObject = {
     limit match {
       case 0 => Json.obj()
-      case _ => Json.obj("name" -> Json.obj("$slice" -> Seq(offset, limit)))
+      case _ => Json.obj(name -> Json.obj("$slice" -> Seq(offset, limit)))
     }
   }
 
   def limitArray(name: String, limit: Int): JsObject = {
     limit match {
       case 0 => Json.obj()
-      case _ => Json.obj("name"-> Json.obj("$slice" -> limit))
+      case _ => Json.obj(name -> Json.obj("$slice" -> limit))
     }
 
   }
