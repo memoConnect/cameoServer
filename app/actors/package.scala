@@ -1,5 +1,7 @@
 import actors.testActors.SendSmsTestActor
-import akka.actor.Props
+import akka.actor.{ActorRef, Props}
+import akka.routing.{RoundRobinRouter, SmallestMailboxRouter}
+import play.api.libs.concurrent.Akka
 import play.api.{ Logger, Play }
 import play.api.Play.current
 
@@ -18,6 +20,14 @@ package object actors {
     } else {
       Props[SendSmsActor]
     }
+  }
+
+  def eventRouter: ActorRef = {
+
+    val props = RoundRobinRouter(5).props(Props[RequestActor]), "requestRouter"
+
+
+    system.actorOf()
   }
 
 }
