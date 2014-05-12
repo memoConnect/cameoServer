@@ -49,8 +49,6 @@ case class Identity(id: MongoId,
 
   def toPrivateJson: JsObject = Json.toJson(this)(Identity.privateWrites).as[JsObject]
 
-  def toPublicSummaryJson: JsObject = Json.toJson(this)(Identity.publicSummaryWrites).as[JsObject]
-
   def toPublicJson: JsObject = Json.toJson(this)(Identity.publicWrites).as[JsObject]
 
   private val query = Json.obj("_id" -> this.id)
@@ -222,14 +220,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         maybeEmptyString("displayName", i.displayName) ++
         Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
-  }
-
-  def publicSummaryWrites: Writes[Identity] = Writes {
-    i =>
-      Json.obj("id" -> i.id.toJson) ++
-        Json.obj("cameoId" -> i.cameoId) ++
-        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
-        maybeEmptyString("displayName", i.displayName)
   }
 
   def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Identity = {

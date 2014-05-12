@@ -14,13 +14,9 @@ import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Play.current
 import helper.MongoCollections._
-import info.schleichardt.play.embed.mongo.DynamicEmbedMongoPort
 import scala.collection.JavaConverters._
 
-object Global extends GlobalSettings with DynamicEmbedMongoPort {
-
-  // tell reactive mongo the port of the memory database created by embed mongo
-  override def additionalEmbedMongoPortSettings(port: Int) = Map("mongodb.servers" -> List(s"localhost:$port").asJava)
+object Global extends GlobalSettings {
 
   // wrap action to modify the headers of every request
   override def doFilter(action: EssentialAction): EssentialAction = EssentialAction {
