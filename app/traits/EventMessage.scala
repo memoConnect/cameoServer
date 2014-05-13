@@ -1,7 +1,7 @@
 package traits
 
 import play.api.libs.json.JsObject
-import models.Event
+import models.{MongoId, Event}
 
 /**
  * User: Björn Reimer
@@ -10,15 +10,17 @@ import models.Event
  */
 trait EventMessage {
 
+  def identityId: MongoId
+
   def eventType: String
 
-  def toEventJson: JsObject
+  def toEventContent: JsObject
 
   def toEvent: Event = {
     Event(
       helper.IdHelper.generateEventId(),
       this.eventType,
-      this.toEventJson
+      this.toEventContent
     )
   }
 

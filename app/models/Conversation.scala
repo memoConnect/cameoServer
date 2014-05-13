@@ -63,7 +63,7 @@ case class Conversation(id: MongoId,
       summary <- this.toSummaryJson
     } yield {
       summary ++
-      Json.obj( "recipients" -> recipientsWithIdentities)
+        Json.obj("recipients" -> recipientsWithIdentities)
     }
   }
 
@@ -194,7 +194,6 @@ object Conversation extends Model[Conversation] {
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
-        Json.obj("numberOfMessages" -> c.messages.length) ++
         Json.obj("encryptedPassphraseList" -> c.encPassList.map(_.toJson)) ++
         maybeEmptyString("subject", c.subject) ++
         maybeEmptyJsValue("passCaptcha", c.passCaptcha.map(_.toJson)) ++
@@ -212,7 +211,7 @@ object Conversation extends Model[Conversation] {
   }
 
   override def find(id: MongoId): Future[Option[Conversation]] = {
-    find(id, 1, 0)
+    find(id, -1, 0)
   }
 
   def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {
@@ -221,16 +220,17 @@ object Conversation extends Model[Conversation] {
 
   def find(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {
     val query = Json.obj("_id" -> id)
-    col.find(query, limitArray("messages", limit, offset, startBottom = true)).one[Conversation]
+    val projection = limitArray("messages", limit, offset)
+    col.find(query, projection).one[Conversation]
   }
 
   def findByMessageId(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {
-    col.find(arrayQuery("messages", id), limitArray("messages", limit, offset, startBottom = true)).one[Conversation]
+    col.find(arrayQuery("messages", id), limitArray("messages", limit, offset)).one[Conversation]
   }
 
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
     val query = Json.obj("recipients" -> Json.obj("identityId" -> id))
-    col.find(query, limitArray("messages", 1, 0, startBottom = true)).cursor[Conversation].collect[Seq]()
+    col.find(query, limitArray("messages", -1, 0)).cursor[Conversation].collect[Seq]()
   }
 
   def create: Conversation = {

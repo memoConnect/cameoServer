@@ -14,6 +14,7 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -117,19 +118,20 @@ object JsonHelper {
 
   def arrayQuery(arrayName: String, id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
-  def limitArray(name: String, limit: Int, offset: Int, startBottom: Boolean = false): JsObject = {
+  def limitArray(name: String, limit: Int, offset: Int): JsObject = {
 
     // this is not very elegant, but there seems to be no way to get offset without limit in mongodb...
-    def infiniteLimit = Int.MaxValue
+    def infiniteLimit = 100000
 
-    (limit, offset, startBottom) match {
-      case (0, 0, _) => Json.obj()
-      case (0, _, false) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, infiniteLimit)))
-      case (0, _, true) => Json.obj(name -> Json.obj("$slice" -> Seq(-1 * offset, infiniteLimit)))
-      case (_ , 0, false) => Json.obj(name -> Json.obj("$slice" -> limit))
-      case (_ , 0, true) => Json.obj(name -> Json.obj("$slice" -> -1 * limit))
-      case (_ , _, false) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, limit)))
-      case (_ , _, true) => Json.obj(name -> Json.obj("$slice" -> Seq(-1 * offset, limit)))
+    (limit, offset) match {
+      // no restrictions
+      case (0, 0) => Json.obj()
+      // offset only
+      case (0, _) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, infiniteLimit)))
+      // limit only
+      case (_ , 0) => Json.obj(name -> Json.obj("$slice" -> limit))
+      // offset and limit
+      case (_ , _) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, limit)))
     }
   }
 

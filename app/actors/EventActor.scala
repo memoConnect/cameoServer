@@ -17,17 +17,23 @@ case class NewMessage(identityId: MongoId, conversationId: MongoId, message: Mes
 
   def eventType = "conversation:new-message"
 
-  def toEventJson: JsObject =
-    Json.obj(
+  def toEventContent = Json.obj(
       "conversationId" -> conversationId.toJson,
       "message" -> message.toJson
     )
 }
 
+case class NewFriendRequest(identityId: MongoId, friendRequest: FriendRequest) extends EventMessage {
+  
+  def eventType = "friendRequest:new"
+  
+  def toEventContent = friendRequest.toJson
+}
+
 class EventActor extends Actor {
 
   def receive() = {
-    case msg: NewMessage =>
+    case msg: EventMessage =>
       EventSubscription.pushEvent(msg.identityId, msg.toEvent)
   }
 
