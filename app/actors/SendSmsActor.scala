@@ -33,8 +33,14 @@ class SendSmsActor extends Actor {
       }
       case false => {
 
-        val postBody = Json.obj("api_key" -> JsString(key.get), "api_secret" -> JsString(secret.get),
-          "from" -> sms.from, "to" -> sms.to, "text" -> sms.body)
+        val postBody =
+          Json.obj(
+            "api_key" -> JsString(key.get),
+            "api_secret" -> JsString(secret.get),
+            "from" -> sms.from,
+            "to" -> sms.to,
+            "text" -> sms.body
+          )
 
         val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 

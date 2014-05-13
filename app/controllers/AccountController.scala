@@ -55,15 +55,17 @@ object AccountController extends ExtendedController {
                         // create identity and add it to account
                         val identity = Identity.create(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
                         Identity.col.insert(identity)
+
                         // generate default avatar
                         AvatarGenerator.generate(identity)
 
-                        val account2 = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
+                        // add identity to account
+                        val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
 
-                        Account.col.insert(account2).flatMap {
+                        Account.col.insert(accountWithIdentity).flatMap {
                           lastError =>
                             if (lastError.ok) {
-                              account2.toJsonWithIdentities.map { resOK(_) }
+                              accountWithIdentity.toJsonWithIdentities.map { resOK(_) }
                             } else {
                               Future(resServerError("MongoError: " + lastError))
                             }

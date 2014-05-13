@@ -3,7 +3,7 @@ package models
 import java.util.Date
 import traits.Model
 import scala.concurrent.{ ExecutionContext, Future }
-import helper.{MongoCollections, IdHelper}
+import helper.{ MongoCollections, IdHelper }
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -35,6 +35,7 @@ case class Conversation(id: MongoId,
                         messages: Seq[Message],
                         encPassList: Seq[EncryptedPassphrase],
                         passCaptcha: Option[MongoId],
+                        numberOfMessages: Option[Int],
                         created: Date,
                         lastUpdated: Date,
                         docVersion: Int) {
@@ -44,7 +45,7 @@ case class Conversation(id: MongoId,
   def toSummaryJson: Future[JsObject] =
     getMessageCount.map { count =>
       Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
-      Json.obj("numberOfMessages" -> count)
+        Json.obj("numberOfMessages" -> count)
     }
 
   def toSummaryJsonWithIdentities: Future[JsObject] = {
@@ -100,13 +101,14 @@ case class Conversation(id: MongoId,
 
     val command = Aggregate(Conversation.col.name, pipeline)
 
-    MongoCollections.mongoDB.command(command).map{
-      res => res.headOption match {
-        case None => 0
-        case Some(bson) =>
-          val js = Json.toJson(bson)
-          ( js \ "count").as[Int]
-      }
+    MongoCollections.mongoDB.command(command).map {
+      res =>
+        res.headOption match {
+          case None => 0
+          case Some(bson) =>
+            val js = Json.toJson(bson)
+            (js \ "count").as[Int]
+        }
     }
   }
 
@@ -176,6 +178,7 @@ object Conversation extends Model[Conversation] {
     Reads.pure[Seq[Message]](Seq()) and
     Reads.pure[Seq[EncryptedPassphrase]](Seq()) and
     Reads.pure[Option[MongoId]](None) and
+    Reads.pure[Option[Int]](None) and
     Reads.pure[Date](new Date) and
     Reads.pure[Date](new Date) and
     Reads.pure[Int](docVersion)
@@ -227,7 +230,7 @@ object Conversation extends Model[Conversation] {
 
   def create: Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, None, Seq(), Seq(), Seq(), None, new Date, new Date, 0)
+    new Conversation(id, None, Seq(), Seq(), Seq(), None, None, new Date, new Date, 0)
   }
 
   def evolutions = Map(
@@ -235,7 +238,7 @@ object Conversation extends Model[Conversation] {
   )
 
   def createDefault(): Conversation = {
-    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), None, new Date, new Date, 0)
+    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), None, None, new Date, new Date, 0)
   }
 }
 

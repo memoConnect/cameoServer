@@ -7,9 +7,10 @@ import helper.Utils
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
-import play.api.Play
+import play.api.{ Logger, Play }
 import ExecutionContext.Implicits.global
 import play.api.Play.current
+import play.api.mvc.{Headers, SimpleResult, Request}
 
 /**
  * User: Björn Reimer
@@ -103,34 +104,49 @@ object FileController extends ExtendedController {
       }
   }
 
+  // checks if request contains If-None-Match header
+  def checkEtag(headers: Headers)(action: => Future[SimpleResult]): Future[SimpleResult] = {
+    headers.get("If-None-Match") match {
+      case Some(s) =>
+        // always return not modified(304), since files never change (for now)
+        Future(resNotModified())
+      case None =>
+        action
+    }
+  }
+
   def getFile(id: String) = AuthAction(allowExternal = true).async {
     request =>
-      FileMeta.find(id).map {
-        case None => resNotFound("file")
-        case Some(fileMeta) =>
-          resOK(fileMeta.toJson)
+      checkEtag(request.headers) {
+        FileMeta.find(id).map {
+          case None => resNotFound("file")
+          case Some(fileMeta) =>
+            resOKWithCache(fileMeta.toJson, id)
+        }
       }
   }
 
   def getFileChunk(id: String, chunkIndex: String) = AuthAction(allowExternal = true).async {
     request =>
-      Utils.safeStringToInt(chunkIndex) match {
-        case None => Future(resBadRequest("chunkIndex is not a number"))
-        case Some(i) =>
+      checkEtag(request.headers) {
+        Utils.safeStringToInt(chunkIndex) match {
+          case None => Future(resBadRequest("chunkIndex is not a number"))
+          case Some(i) =>
 
-          // check if file exists
-          FileMeta.find(id).flatMap {
-            case None => Future(resNotFound("file"))
-            case Some(fileMeta) =>
-              fileMeta.chunks.find(_.index == i) match {
-                case None => Future(resNotFound("chunk index"))
-                case Some(meta) =>
-                  FileChunk.find(meta.chunkId).map {
-                    case None        => resServerError("unable to retrieve chunk")
-                    case Some(chunk) => resOK(chunk.toJson)
-                  }
-              }
-          }
+            // check if file exists
+            FileMeta.find(id).flatMap {
+              case None => Future(resNotFound("file"))
+              case Some(fileMeta) =>
+                fileMeta.chunks.find(_.index == i) match {
+                  case None => Future(resNotFound("chunk index"))
+                  case Some(meta) =>
+                    FileChunk.find(meta.chunkId).map {
+                      case None        => resServerError("unable to retrieve chunk")
+                      case Some(chunk) => resOKWithCache(chunk.toJson, meta.chunkId.toString)
+                    }
+                }
+            }
+        }
       }
   }
 }
