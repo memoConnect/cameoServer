@@ -26,8 +26,8 @@ class EventControllerSpec extends StartedApp {
 
     "Get a new subscription Id" in {
       val path = basePath + "/eventSubscription"
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(Json.obj())
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -55,7 +55,7 @@ class EventControllerSpec extends StartedApp {
     "Only allow limited amount per user" in {
       val max = Play.configuration.getInt("events.subscription.user.limit").get + 1
       val path = basePath + "/eventSubscription"
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(Json.obj())
 
       (1 to max).seq.foreach { i =>
         val res = route(req).get
@@ -71,7 +71,7 @@ class EventControllerSpec extends StartedApp {
     "Get another event subscription" in {
       val path = basePath + "/eventSubscription"
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(Json.obj())
       val res = route(req).get
 
       status(res) must equalTo(OK)
