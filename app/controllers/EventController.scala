@@ -16,12 +16,24 @@ import ExecutionContext.Implicits.global
  */
 object EventController extends Controller {
 
-  def newSubscription() = AuthAction().async {
+  def newSubscription() = AuthAction().async(parse.tolerantJson) {
     request =>
+      // check if a secret is used to disable max subscription
+      val limitEnabled: Boolean = Play.configuration.getString("events.subscription.debug.secret") match {
+        case None => true
+        case Some("disabled") => true
+        case Some(str) =>
+          // check if there is a secret in the body
+          (request.body \ "secret").asOpt[String] match {
+            case Some(secret) if secret.equals(str) => false
+            case _ => true
+          }
+      }
+
       // check if maximum number for this user is exceeded
       val max = Play.configuration.getInt("events.subscription.user.limit").get
       EventSubscription.countUserSubscriptions(request.identity.id).map {
-        case i if i >= max =>
+        case i if limitEnabled && i >= max =>
           resBadRequest("max number of subscription reached")
         case _ =>
           val subscription = EventSubscription.create(request.identity.id)

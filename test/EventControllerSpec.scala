@@ -105,7 +105,7 @@ class EventControllerSpec extends StartedApp {
       }
     }
 
-    "Events should appear in both subscriptions" in {
+    "new-message events should appear in both subscriptions" in {
 
       Seq(subscriptionId, subscription2Id).seq.map { id =>
         val path = basePath + "/eventSubscription/" + id
@@ -117,7 +117,7 @@ class EventControllerSpec extends StartedApp {
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
         (data \ "id").asOpt[String] must beSome(id)
-        (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](3))
+        (data \ "events").asOpt[Seq[JsObject]] must beSome
 
         val events = (data \ "events").as[Seq[JsObject]]
 
@@ -146,8 +146,59 @@ class EventControllerSpec extends StartedApp {
         (data \ "id").asOpt[String] must beSome(id)
         (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
       }
-
     }
+
+    "Send FriendRequest" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> identityExisting, "message" -> "moep")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting3)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "friendRequest event should appear in both subscriptions" in {
+
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "id").asOpt[String] must beSome(id)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome
+
+        val events = (data \ "events").as[Seq[JsObject]]
+        val newMessageEvents = events.filter(e =>
+          (e \ "type").as[String].equals("friendRequest:new") &&
+            (e \ "content" \ "identityId").asOpt[String].getOrElse("foo").equals(identityExisting3))
+        newMessageEvents.length must equalTo(1)
+        newMessageEvents.map { js =>
+          (js \ "content" \ "message").asOpt[String] must beSome
+        }
+      }
+      1 === 1
+    }
+
+    "Events should be cleared" in {
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+        (data \ "id").asOpt[String] must beSome(id)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
+      }
+    }
+
   }
 
 }

@@ -8,9 +8,3 @@
 {"_id":{"mongoId":"GV18aKiuA9DyOD9vK8HF"},"created":{"$date":1392301163410},"email":"dbfill@bjrm.de","identities":[{"mongoId":"Q9nauLdsCOMhcmXmlL4p"}],"lastUpdated":{"$date":1392301163410},"loginName":"jfg00ve6","password":"$2a$10$L882BXnOE2ESz5uV.SAJc.g7zpncvkTxN7V3p1fz7f4W71mfflD32","phoneNumber":"+491744560277"}
 {"_id":{"mongoId":"NA0ZeMYuszQih0Shq8Te"},"created":{"$date":1392301152729},"email":"dbfill@bjrm.de","identities":[{"mongoId":"2Kurw70t9TXg4iPfCWAw"}],"lastUpdated":{"$date":1392301152729},"loginName":"maeuydwg","password":"$2a$10$6eKASe0xUidN3a8jz1VcqeRj/A1OhXzJjnJVctjrd9T6ckIJi7j8S","phoneNumber":"+491744560277"}
 {"_id":{"mongoId":"b5aEqgoDyFys1bTlP1gA"},"created":{"$date":1392301163391},"email":"dbfill@bjrm.de","identities":[{"mongoId":"yJlmc8gVKBfwixUWPH2z"}],"lastUpdated":{"$date":1392301163391},"loginName":"eisazpdr","password":"$2a$10$j9cIBRXPDtYrt.WCcHdWsuRD0Gi4CIHHej032busKqAwGIn6piVQ.","phoneNumber":"+491744560277"}
-{"loginName":"delfrIN1","password":"","identities":[],"created":{"$date":1398249552012},"lastUpdated":{"$date":1398249552012},"_id":{"mongoId":"xjnLsrKdmJt03gi4gEFu"}}
-{"loginName":"Nr1ypCSL","password":"","identities":[],"created":{"$date":1398249553793},"lastUpdated":{"$date":1398249553793},"_id":{"mongoId":"yauNx45YDHF88MbShCO3"}}
-{"loginName":"eLaosRv9","password":"","identities":[],"created":{"$date":1398249559119},"lastUpdated":{"$date":1398249559119},"_id":{"mongoId":"9Lhf8w0iZCjvXZS1ct43"}}
-{"loginName":"ikah6ahx","password":"","identities":[],"created":{"$date":1398249561640},"lastUpdated":{"$date":1398249561640},"_id":{"mongoId":"GM4T96Va3A1qTDE0KCsk"}}
-{"loginName":"NzqQ5YxQ","password":"","identities":[],"created":{"$date":1398249583335},"lastUpdated":{"$date":1398249583335},"_id":{"mongoId":"7Nv6KnyvjiA8HL3NN4q5"}}
-{"loginName":"RLsXx7T3","password":"","identities":[],"created":{"$date":1398249731106},"lastUpdated":{"$date":1398249731106},"_id":{"mongoId":"oPoqKI2B3zEnkhA6iyKO"}}

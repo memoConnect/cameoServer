@@ -15,6 +15,7 @@ import play.api.mvc.SimpleResult
 import play.api.libs.json.JsObject
 import java.util.Date
 import play.api.Logger
+import actors.NewFriendRequest
 
 /**
  * User: Björn Reimer
@@ -205,6 +206,7 @@ object ContactController extends ExtendedController {
                         val fr = new FriendRequest(request.identity.id, message, new Date)
                         other.addFriendRequest(fr).map {
                           case true =>
+                            actors.eventRouter ! NewFriendRequest(receiver, fr)
                             resOK("request added")
                           case false =>
                             resServerError("could not update")

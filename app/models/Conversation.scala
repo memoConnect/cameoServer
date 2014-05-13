@@ -3,26 +3,18 @@ package models
 import java.util.Date
 import traits.Model
 import scala.concurrent.{ ExecutionContext, Future }
-import helper.{MongoCollections, OutputLimits, IdHelper}
+import helper.{MongoCollections, IdHelper}
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.modules.reactivemongo.json.collection.JSONCollection
 import ExecutionContext.Implicits.global
 import reactivemongo.core.commands._
-import play.api.mvc.SimpleResult
 import helper.ResultHelper._
 import helper.JsonHelper._
 import helper.MongoCollections._
 import play.api.Logger
-import reactivemongo.bson.{BSONNull, BSONString, BSONDocument}
+import reactivemongo.bson.BSONNull
 import play.modules.reactivemongo.json.BSONFormats._
-import play.api.libs.json.JsArray
-import play.modules.reactivemongo.json.collection.JSONCollection
-import scala.Some
-import play.api.mvc.SimpleResult
-import play.api.libs.json.JsNumber
-import play.api.libs.json.JsObject
 import play.api.libs.json.JsArray
 import play.modules.reactivemongo.json.collection.JSONCollection
 import scala.Some
