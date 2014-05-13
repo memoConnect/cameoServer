@@ -1576,12 +1576,18 @@ Events will be deleted after each call
 + Response 200
 
         {
-                  "res": "OK",
-                  "data": {
-                    "events": [
-                                {eventObject},
-                                {eventObject}
-                                ],
-                    "id": "ytySRPheyFdYVPv6kpnv"
-                  }
-                }
+         "res": "OK",
+         "data": {
+           "events": [
+             {
+               "type": "conversation:new-message",
+               "content": {
+                 "conversationId": "O5DjLp2CZ6Q3BVroM4mX",
+                 "message": {message object}
+               }
+             }
+           ],
+           "id": "QvySbPNwtdKPXm5SUami"
+         }
+        }
+        
