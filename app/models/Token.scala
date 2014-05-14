@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.{SubModel, Model}
+import traits.{ SubModel, Model }
 import play.api.libs.json._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
@@ -21,7 +21,7 @@ case class Token(id: MongoId,
   def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
 }
 
-object Token extends SubModel[Token,Identity] {
+object Token extends SubModel[Token, Identity] {
 
   def parentModel = Identity
   def elementName = "tokens"

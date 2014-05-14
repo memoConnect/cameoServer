@@ -77,7 +77,7 @@ class SendSmsActor extends Actor {
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
-//        message.updateSingleStatus(ms)
+        //        message.updateSingleStatus(ms)
       } else {
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)

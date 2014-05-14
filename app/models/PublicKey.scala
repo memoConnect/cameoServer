@@ -1,7 +1,7 @@
 package models
 
 import play.api.libs.json._
-import traits.{SubModel, Model}
+import traits.{ SubModel, Model }
 import play.api.libs.json.Reads._
 import helper.{ MongoCollections, IdHelper }
 import play.api.libs.functional.syntax._
@@ -25,8 +25,7 @@ case class PublicKey(id: MongoId,
 
 }
 
-object PublicKey extends SubModel[PublicKey,Identity] {
-
+object PublicKey extends SubModel[PublicKey, Identity] {
 
   def parentModel = Identity
   def elementName = "publicKeys"

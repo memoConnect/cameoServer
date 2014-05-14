@@ -3,7 +3,7 @@ package actors
 import akka.actor.Actor
 import models._
 import play.api.Logger
-import play.api.libs.json.{Writes, Json, JsObject}
+import play.api.libs.json.{ Writes, Json, JsObject }
 import play.api.libs.json.JsObject
 import traits.EventMessage
 
@@ -18,15 +18,15 @@ case class NewMessage(identityId: MongoId, conversationId: MongoId, message: Mes
   def eventType = "conversation:new-message"
 
   def toEventContent = Json.obj(
-      "conversationId" -> conversationId.toJson,
-      "message" -> message.toJson
-    )
+    "conversationId" -> conversationId.toJson,
+    "message" -> message.toJson
+  )
 }
 
 case class NewFriendRequest(identityId: MongoId, friendRequest: FriendRequest) extends EventMessage {
-  
+
   def eventType = "friendRequest:new"
-  
+
   def toEventContent = friendRequest.toJson
 }
 

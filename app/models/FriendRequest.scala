@@ -1,11 +1,11 @@
 package models
 
 import java.util.Date
-import play.api.libs.json.{Reads, JsObject, Json, Format}
+import play.api.libs.json.{ Reads, JsObject, Json, Format }
 import helper.JsonHelper
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import traits.{SubModel, Model}
+import traits.{ SubModel, Model }
 
 /**
  * User: Björn Reimer
@@ -29,7 +29,7 @@ case class FriendRequest(identityId: MongoId,
   }
 }
 
-object FriendRequest extends SubModel[FriendRequest,Identity]{
+object FriendRequest extends SubModel[FriendRequest, Identity] {
 
   def parentModel = Identity
   def elementName = "friendRequests"

@@ -1,7 +1,7 @@
 package models
 
 import java.util.Date
-import traits.{SubModel, Model}
+import traits.{ SubModel, Model }
 import play.api.libs.json._
 import helper.{ MongoCollections, IdHelper }
 import play.api.libs.functional.syntax._
@@ -25,33 +25,33 @@ case class Message(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
 
-//  def updateAllStatus(messageStatus: Seq[MessageStatus]) = {
-//    val update = Json.obj("$set" -> Json.obj("messages.$.messageStatus" -> messageStatus))
-//    Conversation.col.update(arrayQuery("messages", this.id), update)
-//  }
-//
-//  def updateSingleStatus(status: MessageStatus): Future[Boolean] = {
-//    // first remove old status (mongo cant update nested arrays...)
-//    val query = arrayQuery("messages", this.id)
-//    val set = Json.obj("$pull" -> Json.obj("messages.$.messageStatus" -> Json.obj("identityId" -> status.identityId)))
-//
-//    Message.col.update(query, set).flatMap {
-//      lastError =>
-//        lastError.ok match {
-//          case false => Future(false)
-//          case true => {
-//            // write new message status
-//            val set2 = Json.obj("$push" -> Json.obj("messages.$.messageStatus" -> status))
-//            Message.col.update(query, set2).map {
-//              _.ok
-//            }
-//          }
-//        }
-//    }
-//  }
+  //  def updateAllStatus(messageStatus: Seq[MessageStatus]) = {
+  //    val update = Json.obj("$set" -> Json.obj("messages.$.messageStatus" -> messageStatus))
+  //    Conversation.col.update(arrayQuery("messages", this.id), update)
+  //  }
+  //
+  //  def updateSingleStatus(status: MessageStatus): Future[Boolean] = {
+  //    // first remove old status (mongo cant update nested arrays...)
+  //    val query = arrayQuery("messages", this.id)
+  //    val set = Json.obj("$pull" -> Json.obj("messages.$.messageStatus" -> Json.obj("identityId" -> status.identityId)))
+  //
+  //    Message.col.update(query, set).flatMap {
+  //      lastError =>
+  //        lastError.ok match {
+  //          case false => Future(false)
+  //          case true => {
+  //            // write new message status
+  //            val set2 = Json.obj("$push" -> Json.obj("messages.$.messageStatus" -> status))
+  //            Message.col.update(query, set2).map {
+  //              _.ok
+  //            }
+  //          }
+  //        }
+  //    }
+  //  }
 }
 
-object Message extends SubModel[Message,Conversation] {
+object Message extends SubModel[Message, Conversation] {
 
   def parentModel = Conversation
   def elementName = "messages"
@@ -65,7 +65,7 @@ object Message extends SubModel[Message,Conversation] {
   def createReads(fromIdentityId: MongoId) = (
     Reads.pure[MongoId](IdHelper.generateMessageId()) and
     Reads.pure[MongoId](fromIdentityId) and
-//    Reads.pure[Seq[MessageStatus]](Seq()) and
+    //    Reads.pure[Seq[MessageStatus]](Seq()) and
     (__ \ 'plain).readNullable[PlainMessagePart](PlainMessagePart.createReads) and
     (__ \ 'encrypted).readNullable[String] and
     Reads.pure[Date](new Date) and
@@ -119,13 +119,13 @@ object MessageEvolutions {
 
   val filesToFileIds: Reads[JsObject] = Reads {
     js =>
-    {
-      val deleteFiles: Reads[JsObject] = (__ \ 'plain \ 'files).json.prune
-      val addFileIds: Reads[JsObject] = __.json.update((__ \ 'plain \ 'fileIds).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
-      js.transform(deleteFiles)
-      js.transform(addFileIds andThen addVersion)
-    }
+      {
+        val deleteFiles: Reads[JsObject] = (__ \ 'plain \ 'files).json.prune
+        val addFileIds: Reads[JsObject] = __.json.update((__ \ 'plain \ 'fileIds).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+        js.transform(deleteFiles)
+        js.transform(addFileIds andThen addVersion)
+      }
   }
 }
 

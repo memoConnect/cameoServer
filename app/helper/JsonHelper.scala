@@ -129,9 +129,9 @@ object JsonHelper {
       // offset only
       case (0, _) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, infiniteLimit)))
       // limit only
-      case (_ , 0) => Json.obj(name -> Json.obj("$slice" -> limit))
+      case (_, 0) => Json.obj(name -> Json.obj("$slice" -> limit))
       // offset and limit
-      case (_ , _) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, limit)))
+      case (_, _) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, limit)))
     }
   }
 

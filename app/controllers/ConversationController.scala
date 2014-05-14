@@ -17,7 +17,8 @@ import helper.ResultHelper._
 object ConversationController extends ExtendedController {
 
   def createConversation = AuthAction().async(parse.tolerantJson) {
-    request => {
+    request =>
+      {
         validateFuture[Conversation](request.body, Conversation.createReads) {
           c =>
             {
@@ -50,33 +51,34 @@ object ConversationController extends ExtendedController {
           c.hasMemberFutureResult(request.identity.id) {
 
             validateFuture[Seq[String]](request.body \ "recipients", Reads.seq[String]) {
-              recipientIds => {
-                // check if one of the identities is already a member of this conversation
-                recipientIds.forall(id => !c.hasMember(new MongoId(id))) match {
-                  case false => Future(resKO("At least one identity is already a member of this conversation"))
-                  case true =>
+              recipientIds =>
+                {
+                  // check if one of the identities is already a member of this conversation
+                  recipientIds.forall(id => !c.hasMember(new MongoId(id))) match {
+                    case false => Future(resKO("At least one identity is already a member of this conversation"))
+                    case true =>
 
-                    // check if all recipients are in the users address book
-                    recipientIds.forall(recipient => request.identity.contacts.exists(_.identityId.id.equals(recipient))) match {
-                      case false => Future(resKO("At least one identity is not a contact"))
-                      case true =>
+                      // check if all recipients are in the users address book
+                      recipientIds.forall(recipient => request.identity.contacts.exists(_.identityId.id.equals(recipient))) match {
+                        case false => Future(resKO("At least one identity is not a contact"))
+                        case true =>
 
-                        // check if all recipients exist
-                        val maybeIdentities = Future.sequence(recipientIds.map(Identity.find))
-                        val futureResult: Future[Boolean] = maybeIdentities.map {
-                          i => i.forall(_.isDefined)
-                        }
-                        futureResult.flatMap {
-                          case false => Future(resBadRequest("At least one identityId is invalid"))
-                          case true =>
-                            c.addRecipients(recipientIds.map(Recipient.create)).map {
-                                case true => resOK("updated")
+                          // check if all recipients exist
+                          val maybeIdentities = Future.sequence(recipientIds.map(Identity.find))
+                          val futureResult: Future[Boolean] = maybeIdentities.map {
+                            i => i.forall(_.isDefined)
+                          }
+                          futureResult.flatMap {
+                            case false => Future(resBadRequest("At least one identityId is invalid"))
+                            case true =>
+                              c.addRecipients(recipientIds.map(Recipient.create)).map {
+                                case true  => resOK("updated")
                                 case false => resServerError("update failed")
-                            }
-                        }
-                    }
+                              }
+                          }
+                      }
+                  }
                 }
-              }
             }
           }
       }
@@ -88,8 +90,8 @@ object ConversationController extends ExtendedController {
         case None => Future(resNotFound("conversation"))
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.deleteRecipient(new MongoId(rid)).map {
-              case false => resNotFound("recipient")
-              case true => resOK()
+            case false => resNotFound("recipient")
+            case true  => resOK()
           }
         }
       }

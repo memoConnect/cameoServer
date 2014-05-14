@@ -34,12 +34,11 @@ object ResultHelper {
   def resOK(data: String): SimpleResult = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
   // 5 weeks
-  val expire = 60*60*24*7*5
+  val expire = 60 * 60 * 24 * 7 * 5
   def resOKWithCache(data: JsValue, etag: String): SimpleResult =
     resOK(data)
       .withHeaders(("ETAG", etag))
-      .withHeaders(("Cache-Control", "max-age="+expire))
-
+      .withHeaders(("Cache-Control", "max-age=" + expire))
 
   def resNotModified(): SimpleResult = NotModified
 

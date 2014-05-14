@@ -1,7 +1,7 @@
 package models
 
 import play.api.libs.json._
-import traits.{SubModel, Model}
+import traits.{ SubModel, Model }
 import helper.{ IdHelper, MongoCollections }
 import helper.JsonHelper._
 import play.api.libs.json.JsObject
@@ -24,7 +24,7 @@ case class EncryptedPassphrase(id: MongoId,
 
 }
 
-object EncryptedPassphrase extends SubModel[EncryptedPassphrase,Conversation] {
+object EncryptedPassphrase extends SubModel[EncryptedPassphrase, Conversation] {
 
   def parentModel = Conversation
   def elementName = "encPassList"

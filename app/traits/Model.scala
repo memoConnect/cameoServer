@@ -87,7 +87,7 @@ trait Model[A] {
       }
   }
 
-  def createMongoFormat( reads: Reads[A], writes: Writes[A]) = Format(createMongoReads(reads), createMongoWrites(writes))
+  def createMongoFormat(reads: Reads[A], writes: Writes[A]) = Format(createMongoReads(reads), createMongoWrites(writes))
 
   def getEvolutions(fromVersion: Int): Reads[JsObject] = {
     fromVersion match {

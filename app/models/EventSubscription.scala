@@ -5,15 +5,15 @@ import traits.Model
 import play.api.libs.json._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.{ IdHelper, MongoCollections }
-import scala.concurrent.{ExecutionContext, Future}
-import reactivemongo.core.commands.{Update, FindAndModify, Count, LastError}
-import reactivemongo.bson.{BSONArray, BSONDocument}
+import scala.concurrent.{ ExecutionContext, Future }
+import reactivemongo.core.commands.{ Update, FindAndModify, Count, LastError }
+import reactivemongo.bson.{ BSONArray, BSONDocument }
 import play.modules.reactivemongo.json.BSONFormats._
 import ExecutionContext.Implicits.global
 import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json.JsObject
 import scala.Some
-import scala.util.{Success, Failure}
+import scala.util.{ Success, Failure }
 import play.api.Logger
 
 /**
@@ -25,7 +25,7 @@ case class EventSubscription(id: MongoId,
                              events: Seq[Event],
                              lastAccessed: Date,
                              identityId: MongoId,
-                             docVersion: Int)  {
+                             docVersion: Int) {
   def toJson: JsObject = Json.obj(
     "events" -> events.map(_.toJson),
     "id" -> id.toJson)
@@ -55,9 +55,9 @@ object EventSubscription extends Model[EventSubscription] {
   def pushEvent(identityId: MongoId, events: Seq[Event]): Future[Boolean] = {
     val query = Json.obj("identityId" -> identityId)
     val set = Json.obj("$push" -> Json.obj("events" -> Json.obj("$each" -> events)))
-    col.update(query, set, multi = true).map{_.ok}
+    col.update(query, set, multi = true).map { _.ok }
   }
-  def pushEvent(identityId: MongoId, event: Event): Future[Boolean]= {
+  def pushEvent(identityId: MongoId, event: Event): Future[Boolean] = {
     pushEvent(identityId, Seq(event))
   }
 
@@ -70,13 +70,14 @@ object EventSubscription extends Model[EventSubscription] {
       Update(set, fetchNewObject = false))
 
     MongoCollections.mongoDB.command(command).map {
-      maybeBson => maybeBson.map {
-        bson => Json.toJson(bson).as[EventSubscription]
-      }
+      maybeBson =>
+        maybeBson.map {
+          bson => Json.toJson(bson).as[EventSubscription]
+        }
     }
   }
 
-  def createDefault(): EventSubscription = new EventSubscription(IdHelper.generateEventSubscriptionId(), Seq(), new Date,new MongoId(""), docVersion)
+  def createDefault(): EventSubscription = new EventSubscription(IdHelper.generateEventSubscriptionId(), Seq(), new Date, new MongoId(""), docVersion)
 
   def docVersion: Int = 0
   def evolutions: Map[Int, Reads[JsObject]] = Map()

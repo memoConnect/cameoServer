@@ -2,9 +2,9 @@ package controllers
 
 import play.api.mvc.Controller
 import helper.CmActions.AuthAction
-import models.{MongoId, EventSubscription}
+import models.{ MongoId, EventSubscription }
 import helper.ResultHelper._
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import play.api.Play
 import play.api.Play.current
 import ExecutionContext.Implicits.global
@@ -20,13 +20,13 @@ object EventController extends Controller {
     request =>
       // check if a secret is used to disable max subscription
       val limitEnabled: Boolean = Play.configuration.getString("events.subscription.debug.secret") match {
-        case None => true
+        case None             => true
         case Some("disabled") => true
         case Some(str) =>
           // check if there is a secret in the body
           (request.body \ "secret").asOpt[String] match {
             case Some(secret) if secret.equals(str) => false
-            case _ => true
+            case _                                  => true
           }
       }
 

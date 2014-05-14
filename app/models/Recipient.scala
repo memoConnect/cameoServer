@@ -1,6 +1,6 @@
 package models
 
-import traits.{SubModel, Model}
+import traits.{ SubModel, Model }
 import play.api.libs.json.{ Format, JsObject, Writes, Json }
 import helper.JsonHelper._
 import scala.concurrent.{ ExecutionContext, Future }
@@ -50,7 +50,6 @@ object Recipient extends SubModel[Recipient, Conversation] {
   def create(identityId: String): Recipient = {
     new Recipient(new MongoId(identityId))
   }
-
 
   override def createDefault(): Recipient = {
     new Recipient(IdHelper.generateRecipientId())

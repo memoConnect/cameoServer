@@ -1,6 +1,6 @@
 package services
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import org.w3c.dom.{ Document, DOMImplementation }
 import org.apache.batik.dom.GenericDOMImplementation

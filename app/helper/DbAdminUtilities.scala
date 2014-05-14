@@ -6,7 +6,7 @@ import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.{ Play, Logger }
 import scala.io.Source
-import models.{Identity, GlobalState, MongoId}
+import models.{ Identity, GlobalState, MongoId }
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json._
 import play.api.libs.json.Reads._

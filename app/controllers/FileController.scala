@@ -10,7 +10,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import play.api.{ Logger, Play }
 import ExecutionContext.Implicits.global
 import play.api.Play.current
-import play.api.mvc.{Headers, SimpleResult, Request}
+import play.api.mvc.{ Headers, SimpleResult, Request }
 
 /**
  * User: Björn Reimer
