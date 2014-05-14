@@ -38,7 +38,7 @@ class CockpitControllerSpec extends StartedApp {
 
       Thread.sleep(300)
 
-      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
+      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("CameoAuth"))
 
       val smsKey = (sms(0) \ "body").as[String]
 
@@ -92,7 +92,7 @@ class CockpitControllerSpec extends StartedApp {
 
       Thread.sleep(300)
 
-      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
+      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("CameoAuth"))
 
       val smsKey = (sms(0) \ "body").as[String]
 

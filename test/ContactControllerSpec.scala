@@ -532,7 +532,9 @@ class ContactControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.length must beEqualTo(0)
+      data.count(js =>
+        (js \ "identityId").as[String].equals(identityExisting2)
+      ) must beEqualTo(0)
     }
 
     "refuse to send friend request to identity that is already in contacts" in {

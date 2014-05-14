@@ -35,7 +35,7 @@ class TwoFactorControllerSpec extends StartedApp {
 
       Thread.sleep(500)
 
-      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("Two Factor"))
+      val sms = TestValueStore.getValues("sms").filter(js => (js \ "from").asOpt[String].getOrElse("").contains("CameoAuth"))
       sms.size must beEqualTo(1)
 
       (sms(0) \ "body").asOpt[String] must beSome
