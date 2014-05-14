@@ -19,9 +19,7 @@ import play.api.libs.concurrent.Akka
  */
 class SendSmsActor extends Actor {
 
-  def sendSms(sms: SmsMessage): Future[MessageStatus] = {
-
-    Logger.info("SendSMSActor: To: " + sms.to + " Content: " + sms.body)
+  def sendSms(sms: SmsMessage) = {
 
     val key = Play.configuration.getString("nexmo.key")
     val secret = Play.configuration.getString("nexmo.secret")
@@ -44,31 +42,28 @@ class SendSmsActor extends Actor {
 
         val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 
-//        Logger.debug("request send: " + postBody)
-
         response.map {
           nexmoResponse =>
             {
-//              Logger.debug("future resolved: " + nexmoResponse)
-              val messageStatus: MessageStatus = {
-                if (nexmoResponse.status < 300) {
-                  val jsResponse = nexmoResponse.json
-                  val messageReport = (jsResponse \ "messages")(0).asOpt[JsValue].get
-                  if ((messageReport \ "status").as[Int] == 0) {
-                    val s = "SMS Send. Id: " + (messageReport \ "message-id").asOpt[String].getOrElse("none") + " Network:" + (messageReport \ "network").asOpt[String].getOrElse("none")
-                    new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, s)
-                  } else {
-                    val s = "Error sending SMS message. Response: " + jsResponse.toString
-                    new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
+              nexmoResponse.status match {
+                case s if s < 300 =>
+                  val msg = (nexmoResponse.json \ "messages")(0).asOpt[JsValue].getOrElse(Json.obj())
+                  (msg \ "status").asOpt[String] match {
+                    case Some("0") =>
+                      val id = (msg \ "message-id").asOpt[String].getOrElse("none")
+                      val cost = (msg \ "message-price").asOpt[String].getOrElse("none")
+                      Logger.info(
+                        "SendSMSActor: Sent SMS to " + sms.to +
+                          " from " + sms.from +
+                          " content: " + sms.body +
+                          " NexmoId: " + id +
+                          " cost: " + cost)
+                    case _ =>
+                      Logger.error("SendSMSActor: error sending sms: " + msg)
                   }
-                } else {
-                  val s = "Error connecting to Nexmo: " + nexmoResponse.statusText
-                  new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, s)
-                }
+                case s =>
+                  Logger.error("SendSMSActor: error connection to nexmo: " + nexmoResponse.json)
               }
-
-              Logger.info("SendSMSActor: Sent SMS to " + sms.to + " from " + sms.from + " STATUS: " + messageStatus)
-              messageStatus
             }
         }
       }
@@ -110,18 +105,7 @@ class SendSmsActor extends Actor {
 
         val sms = new SmsMessage(from, to, bodyWithFooter)
 
-        sendSms(sms).map {
-          messageStatus =>
-            {
-              if (messageStatus.status.equals(MESSAGE_STATUS_SEND)) {
-//                message.updateSingleStatus(messageStatus.copy(identityId = toIdentity.id))
-              } else {
-                // try again
-                lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
-                sendSmsActor ! (message, fromIdentity, toIdentity, tryCount + 1)
-              }
-            }
-        }
+        sendSms(sms)
       }
 
     case (sms: SmsMessage, tryCount: Int) => {
