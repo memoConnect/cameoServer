@@ -16,6 +16,7 @@ import play.api.libs.json.JsObject
 import java.util.Date
 import play.api.Logger
 import actors.NewFriendRequest
+import services.AvatarGenerator
 
 /**
  * User: Björn Reimer
@@ -32,7 +33,9 @@ object ContactController extends ExtendedController {
           Identity.col.insert(identity).flatMap { error =>
             error.ok match {
               case false => Future(resServerError("could not save new identity"))
-              case true  => createContact(identity.id, CONTACT_TYPE_EXTERNAL)
+              case true =>
+                AvatarGenerator.generate(identity)
+                createContact(identity.id, CONTACT_TYPE_EXTERNAL)
             }
           }
         }
@@ -127,7 +130,7 @@ object ContactController extends ExtendedController {
           js =>
             (js \ "identity" \ "displayName").asOpt[String]
               .getOrElse((js \ "identity" \ "cameoId").asOpt[String]
-              .getOrElse({Logger.error("invalid identity: " + js );"xxx"}))
+                .getOrElse({ Logger.error("invalid identity: " + js); "xxx" }))
               .toLowerCase
         )
         val limited = OutputLimits.applyLimits(sorted, offset, limit)

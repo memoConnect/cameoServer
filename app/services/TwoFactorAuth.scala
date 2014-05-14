@@ -18,7 +18,7 @@ object TwoFactorAuth {
     identity.phoneNumber match {
       case Some(VerifiedString(_, number, _)) => {
         val key = TwoFactorSmsKey.create(identity.id)
-        val sms = new SmsMessage("Cameo Two Factor Auth", number, key.toString)
+        val sms = new SmsMessage("CameoAuth", number, key.toString)
         val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
         sendSmsActor ! (sms, 0)
         None

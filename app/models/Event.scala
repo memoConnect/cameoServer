@@ -10,13 +10,13 @@ import play.modules.reactivemongo.json.collection.JSONCollection
  * Time: 13:15
  */
 case class Event(id: MongoId,
-                 eventType: String,
-                 content: JsObject) {
+                 eventName: String,
+                 data: JsObject) {
 
   def toJson: JsObject =
     Json.obj(
-      "type" -> this.eventType,
-      "content" -> this.content)
+      "name" -> this.eventName,
+      "data" -> this.data)
 
 }
 

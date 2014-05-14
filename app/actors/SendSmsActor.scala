@@ -44,9 +44,12 @@ class SendSmsActor extends Actor {
 
         val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 
+//        Logger.debug("request send: " + postBody)
+
         response.map {
           nexmoResponse =>
             {
+//              Logger.debug("future resolved: " + nexmoResponse)
               val messageStatus: MessageStatus = {
                 if (nexmoResponse.status < 300) {
                   val jsResponse = nexmoResponse.json

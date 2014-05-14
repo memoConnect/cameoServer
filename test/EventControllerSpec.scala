@@ -122,13 +122,13 @@ class EventControllerSpec extends StartedApp {
         val events = (data \ "events").as[Seq[JsObject]]
 
         val newMessageEvents = events.filter(e =>
-          (e \ "type").as[String].equals("conversation:new-message") &&
-            (e \ "content" \ "conversationId").asOpt[String].getOrElse("foo").equals(conversationId))
+          (e \ "name").as[String].equals("conversation:new-message") &&
+            (e \ "data" \ "conversationId").asOpt[String].getOrElse("foo").equals(conversationId))
         newMessageEvents.length must greaterThanOrEqualTo(3)
         newMessageEvents.map { js =>
-          (js \ "content" \ "conversationId").asOpt[String] must beSome(conversationId)
-          (js \ "content" \ "message").asOpt[JsObject] must beSome
-          (js \ "content" \ "message" \ "plain" \ "text").asOpt[String] must beSome(text)
+          (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
+          (js \ "data" \ "message").asOpt[JsObject] must beSome
+          (js \ "data" \ "message" \ "plain" \ "text").asOpt[String] must beSome(text)
         }
       }
       1 === 1
@@ -175,11 +175,11 @@ class EventControllerSpec extends StartedApp {
 
         val events = (data \ "events").as[Seq[JsObject]]
         val newMessageEvents = events.filter(e =>
-          (e \ "type").as[String].equals("friendRequest:new") &&
-            (e \ "content" \ "identityId").asOpt[String].getOrElse("foo").equals(identityExisting3))
+          (e \ "name").as[String].equals("friendRequest:new") &&
+        (e \ "data" \ "identityId").asOpt[String].getOrElse("foo").equals(identityExisting3))
         newMessageEvents.length must equalTo(1)
         newMessageEvents.map { js =>
-          (js \ "content" \ "message").asOpt[String] must beSome
+          (js \ "data" \ "message").asOpt[String] must beSome
         }
       }
       1 === 1
