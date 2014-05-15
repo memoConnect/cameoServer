@@ -139,6 +139,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
+  // this should be included in put conversation
   def setEncryptedPassphraseList(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
       Conversation.find(id).flatMap {
@@ -153,33 +154,6 @@ object ConversationController extends ExtendedController {
               }
           }
         }
-      }
-  }
-
-  case class AddPassCaptcha(passCaptcha: String)
-
-  object AddPassCaptcha {
-    implicit val format = Json.format[AddPassCaptcha]
-  }
-
-  def addPassCaptcha(id: String) = AuthAction().async(parse.tolerantJson) {
-    request =>
-      validateFuture(request.body, AddPassCaptcha.format) {
-        apc =>
-          // check if conversation exists
-          Conversation.find(id).flatMap {
-            case None => Future(resNotFound("conversation"))
-            case Some(conversation) => conversation.hasMemberFutureResult(request.identity.id) {
-
-              // check if fileId exists
-              FileMeta.find(apc.passCaptcha).map {
-                case None => resNotFound("file")
-                case Some(f) =>
-                  conversation.setPassCaptcha(new MongoId(apc.passCaptcha))
-                  resOK()
-              }
-            }
-          }
       }
   }
 }

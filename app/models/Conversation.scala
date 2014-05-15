@@ -113,7 +113,11 @@ case class Conversation(id: MongoId,
   }
 
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
-    val set = Json.obj("$set" -> maybeEmptyString("subject", conversationUpdate.subject))
+    val set =
+      Json.obj("$set" -> (
+        maybeEmptyString("subject", conversationUpdate.subject) ++
+        maybeEmptyJsValue("passCaptcha", conversationUpdate.passCaptcha.map(str => Json.toJson(MongoId(str)))))
+      )
     Conversation.col.update(query, set).map { _.ok }
   }
 
@@ -242,7 +246,8 @@ object Conversation extends Model[Conversation] {
   }
 }
 
-case class ConversationUpdate(subject: Option[String])
+case class ConversationUpdate(subject: Option[String],
+                              passCaptcha: Option[String])
 
 object ConversationUpdate {
   implicit val format: Format[ConversationUpdate] = Json.format[ConversationUpdate]

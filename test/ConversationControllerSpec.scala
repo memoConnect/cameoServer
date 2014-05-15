@@ -499,22 +499,22 @@ class ConversationControllerSpec extends StartedApp {
     }
 
     "add passCaptcha to convesation" in {
-      val path = basePath + "/conversation/" + cidExisting + "/passCaptcha"
+      val path = basePath + "/conversation/" + cidExisting
 
       val json = Json.obj("passCaptcha" -> passCaptchaId)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
     }
 
     "refuse non-member to add passCaptcha to conversation" in {
-      val path = basePath + "/conversation/" + cidExisting + "/passCaptcha"
+      val path = basePath + "/conversation/" + cidExisting
 
       val json = Json.obj("passCaptcha" -> passCaptchaId)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(UNAUTHORIZED)

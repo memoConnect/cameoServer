@@ -31,7 +31,6 @@ DELETE         /api/v1/conversation/:id/recipient/:rid                 controlle
 GET            /api/v1/conversation/:id/summary                        controllers.ConversationController.getConversationSummary(id: String)
 POST           /api/v1/conversation/:id/encryptedPassphraseList        controllers.ConversationController.setEncryptedPassphraseList(id: String)
 GET            /api/v1/conversations                                   controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0)
-POST           /api/v1/conversation/:id/passCaptcha                    controllers.ConversationController.addPassCaptcha(id)
 
 
 # MESSAGES

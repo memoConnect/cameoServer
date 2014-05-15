@@ -23,7 +23,7 @@ object TwoFactorAuth {
         sendSmsActor ! (sms, 0)
         None
       }
-      case _ => Some("identity has no phonenumber")
+      case _ => Some("identity has no phone number")
     }
   }
 

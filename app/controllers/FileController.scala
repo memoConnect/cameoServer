@@ -19,6 +19,7 @@ import play.api.mvc.{ Headers, SimpleResult, Request }
  */
 object FileController extends ExtendedController {
 
+  //todo: allow submission of first file chunk with this call
   def uploadFile = AuthAction().async {
     request =>
 
