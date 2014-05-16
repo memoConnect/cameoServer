@@ -31,3 +31,4 @@ conf/version*
 *.log
 /UPDATING
 /public/
+/public

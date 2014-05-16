@@ -195,7 +195,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
         Json.obj("encryptedPassphraseList" -> c.encPassList.map(_.toJson)) ++
         maybeEmptyString("subject", c.subject) ++
-        maybeEmptyJsValue("passCaptcha", c.passCaptcha.map(_.toJson)) ++
+        maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString)) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
@@ -206,7 +206,9 @@ object Conversation extends Model[Conversation] {
         addLastUpdated(c.lastUpdated) ++
         maybeEmptyString("subject", c.subject) ++
         Json.obj("encryptedPassphraseList" -> c.encPassList.map(_.toJson)) ++
-        Json.obj("messages" -> c.messages.map(_.toJson))
+        Json.obj("messages" -> c.messages.map(_.toJson)) ++
+        maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
+
   }
 
   override def find(id: MongoId): Future[Option[Conversation]] = {
