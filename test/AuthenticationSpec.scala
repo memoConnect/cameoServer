@@ -34,20 +34,20 @@ class AuthenticationSpec extends StartedApp {
     val allRoutes = app.routes.get.documentation.map { r => (r._1, r._2) }
 
     val nonAuthRoutes: Seq[(String, String)] = Seq(
-      (POST, "/api/v1/services/checkEmailAddress"),
-      (POST, "/api/v1/services/checkPhoneNumber"),
-      // (POST, "/api/v1/identity/search"),
-      (POST, "/api/v1/account"),
-      (POST, "/api/v1/account/check"),
-      (GET, "/api/v1/token"),
-      (GET, "/api/v1"),
-      (GET, "/api/v1/purl/AthaUuGR"),
-      (GET, "/api/v1/identity/$id<[^/]+>"),
-      (GET, "/api/v1/verify/$id<[^/]+>"),
+      (POST, "/a/v1/services/checkEmailAddress"),
+      (POST, "/a/v1/services/checkPhoneNumber"),
+      // (POST, "/a/v1/identity/search"),
+      (POST, "/a/v1/account"),
+      (POST, "/a/v1/account/check"),
+      (GET, "/a/v1/token"),
+      (GET, "/a/v1"),
+      (GET, "/a/v1/purl/AthaUuGR"),
+      (GET, "/a/v1/identity/$id<[^/]+>"),
+      (GET, "/a/v1/verify/$id<[^/]+>"),
       (GET, "/v/$id<[^/]+>"),
       (GET, "/p/$id<[^/]+>"),
-      (GET, "/api/v1/purl/$id<[^/]+>"),
-      (POST, "/api/v1/callStack")
+      (GET, "/a/v1/purl/$id<[^/]+>"),
+      (POST, "/a/v1/callStack")
     )
 
     val twoFactorAuthRoutes: Seq[(String, String)] =
@@ -56,13 +56,13 @@ class AuthenticationSpec extends StartedApp {
 
     // routes allowed for tokens of external users
     val allowExternalRoutes: Seq[(String, String)] = Seq(
-      (GET, "/api/v1/conversation/$id<[^/]+>"),
-      (GET, "/api/v1/conversation/$id<[^/]+>/summary"),
-      (POST, "/api/v1/conversation/$id<[^/]+>/message"),
-      (GET, "/api/v1/message/$id<[^/]+>"),
-      (GET, "/api/v1/identity"),
-      (GET, "/api/v1/file/$id<[^/]+>"),
-      (GET, "/api/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>")
+      (GET, "/a/v1/conversation/$id<[^/]+>"),
+      (GET, "/a/v1/conversation/$id<[^/]+>/summary"),
+      (POST, "/a/v1/conversation/$id<[^/]+>/message"),
+      (GET, "/a/v1/message/$id<[^/]+>"),
+      (GET, "/a/v1/identity"),
+      (GET, "/a/v1/file/$id<[^/]+>"),
+      (GET, "/a/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>")
     )
 
     // all routes not specified as nonAuth, allowExternal or twoFactorAuth are assumed to be auth
@@ -74,7 +74,7 @@ class AuthenticationSpec extends StartedApp {
         r._2.startsWith("/dl") ||
         r._2.startsWith("/cockpit") ||
         r._2.equals("/") ||
-        r._2.startsWith("/api/v1/util") ||
+        r._2.startsWith("/a/v1/util") ||
         r._1.equals("OPTIONS")
     )
 
