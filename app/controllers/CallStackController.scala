@@ -70,7 +70,7 @@ object CallStackController extends ExtendedController {
                 val responses = callStack.requests.map {
                   call =>
                     // todo: dont hardcode /api/v1
-                    val path = "/api/v1" + call.path.split('?').take(1).mkString
+                    val path = "/a/v1" + call.path.split('?').take(1).mkString
 
                     // create new request
                     val rawQuery = call.path.split('?').drop(1).mkString
