@@ -31,7 +31,7 @@ class AuthenticationSpec extends StartedApp {
 
   "Authentication" should {
 
-    val allRoutes = app.routes.get.documentation.map { r => (r._1, r._2) }
+    val allRoutes = app.routes.get.documentation.map { r => (r._1, r._2) }.filterNot(_._1.equals("OPTIONS"))
 
     val nonAuthRoutes: Seq[(String, String)] = Seq(
       (POST, "/a/v1/services/checkEmailAddress"),
