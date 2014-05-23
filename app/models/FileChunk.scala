@@ -13,7 +13,7 @@ import ExecutionContext.Implicits.global
  */
 object FileChunk {
 
-  def col = fileChunkBsonCollection
+  def col = fileChunkCollection
 
   def insert(id: String, data: Array[Byte]): Future[LastError] = {
     val bson: BSONDocument = BSONDocument(

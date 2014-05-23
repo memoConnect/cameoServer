@@ -75,7 +75,8 @@ class AuthenticationSpec extends StartedApp {
         r._2.startsWith("/c") ||
         r._2.equals("/") ||
         r._2.startsWith("/a/v1/util") ||
-        r._1.equals("OPTIONS")
+        r._1.equals("OPTIONS") ||
+        (r._1.equals("POST") && r._2.startsWith("/a/v1/file/$id<[^/]+>"))
     )
 
     // add random ids to routes

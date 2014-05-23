@@ -73,7 +73,6 @@ object MongoCollections {
   lazy val cockpitAccessCollection: JSONCollection = mongoDB.collection[JSONCollection]("cockpitAccess")
 
   // chunks are directly saved as BSON
-  lazy val fileChunkCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileChunks")
-  lazy val fileChunkBsonCollection: BSONCollection = mongoDB.collection[BSONCollection]("fileChunks")
+  lazy val fileChunkCollection: BSONCollection = mongoDB.collection[BSONCollection]("fileChunks")
 
 }

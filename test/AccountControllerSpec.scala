@@ -325,9 +325,9 @@ class AccountControllerSpec extends StartedApp {
       val res = route(req).get
 
       status(res) must equalTo(OK)
-      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val raw = contentAsBytes(res)
 
-      (data \ "chunk").asOpt[String] must beSome(startWith("data:image/png;base64,"))
+      raw.length must beGreaterThan(100)
     }
   }
 }
