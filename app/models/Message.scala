@@ -1,14 +1,13 @@
 package models
 
 import java.util.Date
-import traits.{ SubModel, Model }
+import traits.SubModel
 import play.api.libs.json._
-import helper.{ MongoCollections, IdHelper }
+import helper.IdHelper
 import play.api.libs.functional.syntax._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import helper.JsonHelper._
-import reactivemongo.core.commands.LastError
 
 /**
  * User: Björn Reimer

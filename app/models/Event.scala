@@ -1,8 +1,7 @@
 package models
 
 import play.api.libs.json.{ Json, Format, Reads, JsObject }
-import traits.{ SubModel, Model }
-import play.modules.reactivemongo.json.collection.JSONCollection
+import traits.SubModel
 
 /**
  * User: Björn Reimer

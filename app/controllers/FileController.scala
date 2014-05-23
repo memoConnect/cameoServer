@@ -3,14 +3,18 @@ package controllers
 import traits.ExtendedController
 import play.api.libs.json.Json
 import models.{ ChunkMeta, FileChunk, FileMeta }
-import helper.Utils
+import helper.{ MongoCollections, IdHelper, Utils }
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import scala.concurrent.{ ExecutionContext, Future }
-import play.api.{ Logger, Play }
+import play.api.Play
 import ExecutionContext.Implicits.global
 import play.api.Play.current
-import play.api.mvc.{ Headers, SimpleResult, Request }
+import play.api.mvc.{ BodyParser, Headers, SimpleResult }
+import play.api.libs.iteratee.Iteratee
+import reactivemongo.bson.{ Subtype, BSONBinary, BSONDocument }
+import scala.util.control.NonFatal
+import scala.util.control.Exception._
 
 /**
  * User: Björn Reimer
@@ -19,7 +23,6 @@ import play.api.mvc.{ Headers, SimpleResult, Request }
  */
 object FileController extends ExtendedController {
 
-  //todo: allow submission of first file chunk with this call
   def uploadFile = AuthAction().async {
     request =>
 
@@ -40,7 +43,6 @@ object FileController extends ExtendedController {
       headerInvalid match {
         case true => Future(resBadRequest("header content missing or invalid"))
         case false =>
-
           // check filesize
           fileSize.get.toInt <= Play.configuration.getInt("files.size.max").get match {
             case false => Future(resBadRequest(Json.obj("maxFileSize" -> Play.configuration.getInt("files.size.max").get)))
@@ -51,55 +53,57 @@ object FileController extends ExtendedController {
                   case false => resServerError("could not save chunk")
                   case true  => resOK(fileMeta.toJson)
                 }
-
               }
           }
       }
   }
 
-  def uploadFileChunks(id: String) = AuthAction().async(parse.tolerantJson(512 * 1024)) {
+  val binaryToMongoParser: BodyParser[ChunkMeta] = BodyParser("binaryToMongoParser") {
+
+    requestHeader =>
+      case object InvalidIndexException extends RuntimeException
+
+      Iteratee.consume[Array[Byte]]().map { bytes =>
+        allCatch[ChunkMeta].either {
+          requestHeader.headers.get("X-Index").flatMap(Utils.safeStringToInt) match {
+            case None => throw InvalidIndexException
+            case Some(index) =>
+              val bson = BSONDocument(
+                "data" -> BSONBinary(bytes, Subtype.GenericBinarySubtype)
+              )
+              MongoCollections.fileChunkBsonCollection.insert(bson)
+              new ChunkMeta(index, IdHelper.generateChunkId, bytes.length)
+          }
+        }.left.map {
+          case InvalidIndexException =>
+            resBadRequest("invalid chunk index")
+          case NonFatal(e) =>
+            resBadRequest(e.toString)
+          case t => throw t
+        }
+      }
+
+
+  }
+
+  def uploadFileChunks(id: String) = AuthAction().async(binaryToMongoParser) {
     request =>
       {
-        val chunkIndex = request.headers.get("X-Index")
-
-        val headerInvalid = {
-          chunkIndex.isEmpty ||
-            Utils.safeStringToInt(chunkIndex.get).isEmpty
-        }
-
-        headerInvalid match {
-          case true => Future(resBadRequest("header content missing or invalid"))
-          case false =>
-            validateFuture(request.body, FileChunk.createReads) {
-              chunk =>
-                // check if the give fileId exists
-                FileMeta.find(id).flatMap {
-                  case None => Future(resNotFound("file"))
-                  case Some(fileMeta) =>
-
-                    // check if actual filesize matches the given filesize
-                    val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
-                    val totalSize = fileMeta.chunks.map(_.chunkSize).sum
-                    //                    Logger.debug("Actual: " + totalSize + " Submitted: " + fileMeta.fileSize + " Allowed: " + fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f))
-
-                    totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
-                      case false => Future(resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize))
-                      case true =>
-                        val futureResult: Future[(Boolean, Boolean)] = for {
-                          le1 <- fileMeta.addChunk(new ChunkMeta(chunkIndex.get.toInt, chunk.id, chunk.chunk.size))
-                          le2 <- FileChunk.col.insert(chunk)
-                        } yield {
-                          (le1.ok, le2.ok)
-                        }
-                        futureResult.map {
-                          case (false, false) => resServerError("could not save chunk and metadata")
-                          case (true, false)  => resServerError("could not update metadata")
-                          case (false, true)  => resServerError("could not save chunk")
-                          case (true, true)   => resOK()
-
-                        }
-                    }
-                }
+        // check if the give fileId exists
+        FileMeta.find(id).map {
+          case None =>
+            // delete chunk
+            FileChunk.delete(request.body.chunkId)
+            resNotFound("file")
+          case Some(fileMeta) =>
+            // check if actual filesize matches the given filesize
+            val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
+            val totalSize = fileMeta.chunks.map(_.chunkSize).sum + request.body.chunkSize
+            totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
+              case false => resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize)
+              case true =>
+                fileMeta.addChunk(request.body)
+                resOK()
             }
         }
       }

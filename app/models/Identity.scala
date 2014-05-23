@@ -8,7 +8,6 @@ import play.api.libs.json.Reads._
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import constants.Contacts._
-import reactivemongo.core.commands._
 import helper.JsonHelper._
 import models.cockpit._
 import models.cockpit.attributes._

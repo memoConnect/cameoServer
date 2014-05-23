@@ -5,7 +5,7 @@ import play.api.libs.json.{ Reads, JsObject, Json, Format }
 import helper.JsonHelper
 import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
-import traits.{ SubModel, Model }
+import traits.SubModel
 
 /**
  * User: Björn Reimer
