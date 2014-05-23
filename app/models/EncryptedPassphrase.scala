@@ -4,7 +4,7 @@ import play.api.libs.json._
 import traits.SubModel
 import helper.IdHelper
 import play.api.libs.json.JsObject
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
 import play.api.libs.functional.syntax._
 

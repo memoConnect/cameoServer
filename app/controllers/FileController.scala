@@ -2,7 +2,7 @@ package controllers
 
 import traits.ExtendedController
 import play.api.libs.json.Json
-import models.{FileChunk, ChunkMeta, FileMeta}
+import models.{ FileChunk, ChunkMeta, FileMeta }
 import helper.{ MongoCollections, IdHelper, Utils }
 import helper.CmActions.AuthAction
 import helper.ResultHelper._

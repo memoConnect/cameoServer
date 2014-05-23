@@ -40,7 +40,6 @@ object ResultHelper {
       .withHeaders(("ETAG", etag))
       .withHeaders(("Cache-Control", "max-age=" + expire))
 
-
   def resNotModified(): SimpleResult = NotModified
 
   // OK but could not fullfill request
