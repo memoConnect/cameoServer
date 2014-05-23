@@ -35,10 +35,11 @@ object ResultHelper {
 
   // 5 weeks
   val expire = 60 * 60 * 24 * 7 * 5
-  def resOKWithCache(data: JsValue, etag: String): SimpleResult =
-    resOK(data)
+  def resOKWithCache(data: Array[Byte], etag: String): SimpleResult =
+    Ok(data)
       .withHeaders(("ETAG", etag))
       .withHeaders(("Cache-Control", "max-age=" + expire))
+
 
   def resNotModified(): SimpleResult = NotModified
 

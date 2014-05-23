@@ -2,7 +2,7 @@ package controllers
 
 import traits.ExtendedController
 import play.api.libs.json.Json
-import models.{ ChunkMeta, FileChunk, FileMeta }
+import models.{FileChunk, ChunkMeta, FileMeta}
 import helper.{ MongoCollections, IdHelper, Utils }
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
@@ -68,11 +68,9 @@ object FileController extends ExtendedController {
           requestHeader.headers.get("X-Index").flatMap(Utils.safeStringToInt) match {
             case None => throw InvalidIndexException
             case Some(index) =>
-              val bson = BSONDocument(
-                "data" -> BSONBinary(bytes, Subtype.GenericBinarySubtype)
-              )
-              MongoCollections.fileChunkBsonCollection.insert(bson)
-              new ChunkMeta(index, IdHelper.generateChunkId, bytes.length)
+              val chunkMeta = new ChunkMeta(index, IdHelper.generateChunkId, bytes.length)
+              FileChunk.insert(chunkMeta.chunkId.id, bytes)
+              chunkMeta
           }
         }.left.map {
           case InvalidIndexException =>
@@ -82,8 +80,6 @@ object FileController extends ExtendedController {
           case t => throw t
         }
       }
-
-
   }
 
   def uploadFileChunks(id: String) = AuthAction().async(binaryToMongoParser) {
@@ -92,8 +88,7 @@ object FileController extends ExtendedController {
         // check if the give fileId exists
         FileMeta.find(id).map {
           case None =>
-            // delete chunk
-            FileChunk.delete(request.body.chunkId)
+            FileChunk.delete(request.body.chunkId.id)
             resNotFound("file")
           case Some(fileMeta) =>
             // check if actual filesize matches the given filesize
@@ -126,7 +121,7 @@ object FileController extends ExtendedController {
         FileMeta.find(id).map {
           case None => resNotFound("file")
           case Some(fileMeta) =>
-            resOKWithCache(fileMeta.toJson, id)
+            resOK(fileMeta.toJson)
         }
       }
   }
@@ -137,7 +132,6 @@ object FileController extends ExtendedController {
         Utils.safeStringToInt(chunkIndex) match {
           case None => Future(resBadRequest("chunkIndex is not a number"))
           case Some(i) =>
-
             // check if file exists
             FileMeta.find(id).flatMap {
               case None => Future(resNotFound("file"))
@@ -145,9 +139,10 @@ object FileController extends ExtendedController {
                 fileMeta.chunks.find(_.index == i) match {
                   case None => Future(resNotFound("chunk index"))
                   case Some(meta) =>
-                    FileChunk.find(meta.chunkId).map {
-                      case None        => resServerError("unable to retrieve chunk")
-                      case Some(chunk) => resOKWithCache(chunk.toJson, meta.chunkId.toString)
+                    FileChunk.find(meta.chunkId.id).map {
+                      case None => resServerError("unable to retrieve chunk")
+                      case Some(data) =>
+                        resOKWithCache(data, meta.chunkId.toString)
                     }
                 }
             }

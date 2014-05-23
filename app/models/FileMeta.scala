@@ -83,9 +83,5 @@ case class ChunkMeta(index: Int, chunkId: MongoId, chunkSize: Int) {
 
 object ChunkMeta {
   implicit val mongoFormat: Format[ChunkMeta] = Json.format[ChunkMeta]
-
-  def createFromChunk(index: Int, chunk: FileChunk): ChunkMeta = {
-    new ChunkMeta(index, chunk.id, chunk.chunk.size)
-  }
 }
 
