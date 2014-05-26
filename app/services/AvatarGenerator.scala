@@ -11,7 +11,7 @@ import play.api.{ Play, Logger }
 import org.apache.batik.transcoder._
 import org.apache.batik.transcoder.image.PNGTranscoder
 import org.apache.batik.dom.svg.SVGDOMImplementation
-import helper.Utils
+import helper.{ IdHelper, Utils }
 import play.api.Play.current
 import sun.misc.BASE64Encoder
 import models.{ ChunkMeta, FileMeta, FileChunk, Identity }
@@ -151,17 +151,16 @@ object AvatarGenerator {
 
   private def saveAvatar(png: Array[Byte], identity: Identity): Future[Boolean] = {
 
-    val prefix = "data:image/png;base64,"
-    val base64: String = new BASE64Encoder().encode(png).replace("\n", "")
+    //    val prefix = "data:image/png;base64,"
+    //    val base64: String = new BASE64Encoder().encode(png).replace("\n", "")
 
     // Create Chunk and MetaData
-    val chunk = FileChunk.create(prefix + base64)
-    val chunkMeta = ChunkMeta.createFromChunk(0, chunk)
+    val chunkMeta = new ChunkMeta(0, IdHelper.generateChunkId, png.size)
     val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png")
 
     // write to db and add to identity
     for {
-      chunk <- FileChunk.col.insert(chunk)
+      chunk <- FileChunk.insert(chunkMeta.chunkId.id, png)
       meta <- FileMeta.col.insert(fileMeta)
       setAvatar <- identity.setAvatar(fileMeta.id)
     } yield {

@@ -29,7 +29,6 @@ object DbAdminUtilities {
     identityCollection,
     purlCollection,
     globalStateCollection,
-    fileChunkCollection,
     fileMetaCollection,
     verificationCollection,
     twoFactorTokenCollection,

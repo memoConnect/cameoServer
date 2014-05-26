@@ -14,7 +14,6 @@ import play.api.libs.json.JsObject
 import play.api.libs.json.JsString
 import scala.Some
 import play.api.libs.json.JsNumber
-import play.api.Logger
 
 /**
  * User: Björn Reimer

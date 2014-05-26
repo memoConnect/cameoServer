@@ -14,7 +14,6 @@ import scala.concurrent.{ Await, Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.Play.current
 import helper.MongoCollections._
-import scala.collection.JavaConverters._
 
 object Global extends GlobalSettings {
 
