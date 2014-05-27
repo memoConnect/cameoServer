@@ -1,10 +1,10 @@
 import play.api.test._
-import play.api.libs.json.{JsValue, Json, JsObject}
+import play.api.libs.json.{ JsValue, Json, JsObject }
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
 import testHelper.Stuff._
 import scala.concurrent.ExecutionContext
-import play.api.{Play, Logger, GlobalSettings}
+import play.api.{ Play, Logger, GlobalSettings }
 import testHelper.{ StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
@@ -33,7 +33,7 @@ class FileControllerSpec extends StartedApp {
       val header: Seq[(String, String)] = Seq(
         ("X-File-Name", fileName),
         ("X-Max-Chunks", chunks.size.toString),
-        ("X-File-Size", chunks.map(_.size).sum.toString ),
+        ("X-File-Size", chunks.map(_.size).sum.toString),
         ("X-File-Type", fileType)) :+
         tokenHeader(tokenExisting2)
 
@@ -53,35 +53,61 @@ class FileControllerSpec extends StartedApp {
       (data \ "fileType").asOpt[String] must beSome(fileType)
     }
 
-    "upload the other chunks" in {
+    "upload chunks" in {
       val path = basePath + "/file/" + fileId
 
       chunks.zipWithIndex.map {
         case (chunk, i) =>
 
-          val json = Json.obj("chunk" -> chunk)
+          val body: Array[Byte] = chunk.getBytes
 
           val header: Seq[(String, String)] = Seq(
             ("X-Index", i.toString)) :+
             tokenHeader(tokenExisting2)
 
-          val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+          val req = FakeRequest(POST, path).withHeaders(header: _*).withRawBody(body)
           val res = route(req).get
 
           status(res) must equalTo(OK)
       }
     }
 
+    "detect missing chunk header" in {
+      val path = basePath + "/file/" + fileId
+
+      val body: Array[Byte] = chunks(1).getBytes
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withRawBody(body)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "detect invalid chunk header" in {
+      val path = basePath + "/file/" + fileId
+
+      val body: Array[Byte] = chunks(1).getBytes
+
+      val header: Seq[(String, String)] = Seq(
+        ("X-Index", "moep")) :+
+        tokenHeader(tokenExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withRawBody(body)
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
     "refuse upload to chunks to invalid fileId" in {
       val path = basePath + "/file/" + "asdfasdf"
 
-      val json = Json.obj("chunk" -> chunks(1))
+      val body = chunks(1).getBytes
 
       val header: Seq[(String, String)] = Seq(
         ("X-Index", "2")) :+
         tokenHeader(tokenExisting2)
 
-      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withRawBody(body)
       val res = route(req).get
 
       status(res) must equalTo(NOT_FOUND)
@@ -121,9 +147,11 @@ class FileControllerSpec extends StartedApp {
 
           status(res) must equalTo(OK)
 
-          val data = (contentAsJson(res) \ "data").as[JsObject]
+          val raw = contentAsBytes(res)
 
-          (data \ "chunk").asOpt[String] must beSome(chunks(i))
+          val string = new String(raw)
+
+          string must beEqualTo(chunks(i))
         }
       }
     }
@@ -131,13 +159,13 @@ class FileControllerSpec extends StartedApp {
     "overwrite existing chunk" in {
       val path = basePath + "/file/" + fileId
 
-      val json = Json.obj("chunk" -> newChunk)
+      val body = newChunk.getBytes
 
       val header: Seq[(String, String)] = Seq(
         ("X-Index", newChunkIndex.toString)) :+
         tokenHeader(tokenExisting2)
 
-      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withRawBody(body)
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -152,9 +180,9 @@ class FileControllerSpec extends StartedApp {
 
       status(res) must equalTo(OK)
 
-      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val raw = contentAsBytes(res)
 
-      (data \ "chunk").asOpt[String] must beSome(newChunk)
+      raw must equalTo(raw)
     }
 
     "check that there is only one chunk for each index" in {
@@ -176,27 +204,25 @@ class FileControllerSpec extends StartedApp {
 
     "refuse to return non existing chunk" in {
       chunks.zipWithIndex.map {
-        case (chunk, i) => {
+        case (chunk, i) =>
           val path = basePath + "/file/" + fileId + "/15"
 
           val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
           val res = route(req).get
 
           status(res) must equalTo(NOT_FOUND)
-        }
       }
     }
 
     "detect non-numerical chunk index" in {
       chunks.zipWithIndex.map {
-        case (chunk, i) => {
+        case (chunk, i) =>
           val path = basePath + "/file/" + fileId + "/d"
 
           val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
           val res = route(req).get
 
           status(res) must equalTo(BAD_REQUEST)
-        }
       }
     }
 
@@ -217,7 +243,7 @@ class FileControllerSpec extends StartedApp {
       val header: Seq[(String, String)] = Seq(
         ("X-File-Name", fileName),
         ("X-Max-Chunks", chunks.size.toString),
-        ("X-File-Size", (maxSize + 10).toString ),
+        ("X-File-Size", (maxSize + 10).toString),
         ("X-File-Type", fileType)) :+
         tokenHeader(tokenExisting2)
 
@@ -235,7 +261,7 @@ class FileControllerSpec extends StartedApp {
       val header: Seq[(String, String)] = Seq(
         ("X-File-Name", fileName),
         ("X-Max-Chunks", chunks.size.toString),
-        ("X-File-Size", (chunks.map(_.size).sum / 10).toString ),
+        ("X-File-Size", (chunks.map(_.size).sum / 10).toString),
         ("X-File-Type", fileType)) :+
         tokenHeader(tokenExisting2)
 

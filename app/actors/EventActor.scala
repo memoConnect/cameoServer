@@ -2,9 +2,7 @@ package actors
 
 import akka.actor.Actor
 import models._
-import play.api.Logger
-import play.api.libs.json.{ Writes, Json, JsObject }
-import play.api.libs.json.JsObject
+import play.api.libs.json.Json
 import traits.EventMessage
 
 /**

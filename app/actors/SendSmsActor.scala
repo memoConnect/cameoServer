@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.{ Props, Actor }
+import akka.actor.Actor
 import play.api.{ Play, Logger }
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
@@ -10,7 +10,6 @@ import scala.concurrent.Future
 import models._
 import constants.Messaging._
 import play.api.libs.json.JsString
-import play.api.libs.concurrent.Akka
 
 /**
  * User: Björn Reimer

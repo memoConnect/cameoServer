@@ -2,14 +2,13 @@ package models
 
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
-import helper.{ MongoCollections, IdHelper }
-import traits.{ SubModel, Model }
+import helper.IdHelper
+import traits.SubModel
 import scala.concurrent.{ Future, ExecutionContext }
 import ExecutionContext.Implicits.global
 import play.api.mvc.SimpleResult
 import helper.ResultHelper._
 import helper.JsonHelper._
-import reactivemongo.core.commands.LastError
 import constants.Contacts._
 
 /**

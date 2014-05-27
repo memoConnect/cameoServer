@@ -3,18 +3,16 @@ package models
 import java.util.Date
 import traits.Model
 import play.api.libs.json._
-import play.modules.reactivemongo.json.collection.JSONCollection
 import helper.{ IdHelper, MongoCollections }
 import scala.concurrent.{ ExecutionContext, Future }
-import reactivemongo.core.commands.{ Update, FindAndModify, Count, LastError }
+import reactivemongo.core.commands.{ Update, FindAndModify, Count }
 import reactivemongo.bson.{ BSONArray, BSONDocument }
 import play.modules.reactivemongo.json.BSONFormats._
 import ExecutionContext.Implicits.global
 import play.modules.reactivemongo.json.collection.JSONCollection
 import play.api.libs.json.JsObject
 import scala.Some
-import scala.util.{ Success, Failure }
-import play.api.Logger
+import scala.util.Success
 
 /**
  * User: Björn Reimer
