@@ -151,16 +151,17 @@ object AvatarGenerator {
 
   private def saveAvatar(png: Array[Byte], identity: Identity): Future[Boolean] = {
 
-    //    val prefix = "data:image/png;base64,"
-    //    val base64: String = new BASE64Encoder().encode(png).replace("\n", "")
+    val prefix = "data:image/png;base64,"
+    val base64: String = new BASE64Encoder().encode(png).replace("\n", "")
+    val data: Array[Byte] = (prefix + base64).getBytes
 
     // Create Chunk and MetaData
-    val chunkMeta = new ChunkMeta(0, IdHelper.generateChunkId, png.size)
+    val chunkMeta = new ChunkMeta(0, IdHelper.generateChunkId, data.size)
     val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png")
 
     // write to db and add to identity
     for {
-      chunk <- FileChunk.insert(chunkMeta.chunkId.id, png)
+      chunk <- FileChunk.insert(chunkMeta.chunkId.id, data)
       meta <- FileMeta.col.insert(fileMeta)
       setAvatar <- identity.setAvatar(fileMeta.id)
     } yield {
