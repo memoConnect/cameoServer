@@ -54,7 +54,7 @@ object VerificationController extends Controller with ExtendedController {
               if (i.email.map {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
-                val identityUpdate = IdentityUpdate.create(email = Some(i.email.get.copy(isVerified = true)))
+                val identityUpdate = IdentityUpdate(email = Some(i.email.get.copy(isVerified = true)))
                 i.update(identityUpdate)
                 resOK("verified")
               } else {
@@ -65,7 +65,7 @@ object VerificationController extends Controller with ExtendedController {
               if (i.phoneNumber.map {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
-                val identityUpdate = IdentityUpdate.create(phoneNumber = Some(i.phoneNumber.get.copy(isVerified = true)))
+                val identityUpdate = IdentityUpdate(phoneNumber = Some(i.phoneNumber.get.copy(isVerified = true)))
                 i.update(identityUpdate)
                 resOK("verified")
               } else {

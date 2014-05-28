@@ -92,7 +92,7 @@ object JsonHelper {
     }
   }
 
-  def getNewValueString(old: Option[String], newValue: String): Option[String] = {
+  def getNewValue[A](old: Option[A], newValue: A): Option[A] = {
     if (old.isDefined && old.get.equals(newValue)) {
       None
     } else {

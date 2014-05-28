@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.Action
+import play.api.mvc.{ SimpleResult, Action }
 import play.api.libs.json._
 import traits.ExtendedController
 import models._
@@ -34,6 +34,7 @@ object AccountController extends ExtendedController {
 
   def createAccount = Action.async(parse.tolerantJson) {
     request =>
+
       val jsBody: JsValue = request.body
 
       validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
@@ -41,6 +42,19 @@ object AccountController extends ExtendedController {
           validateFuture[Account](jsBody, Account.createReads) {
             account =>
               {
+                def createAccountWithIdentity(identity: Identity): Future[SimpleResult] = {
+                  val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
+                  Account.col.insert(accountWithIdentity).flatMap {
+                    lastError =>
+                      lastError.ok match {
+                        case true =>
+                          accountWithIdentity.toJsonWithIdentities.map(resOK)
+                        case false =>
+                          Future(resServerError("MongoError: " + lastError))
+                      }
+                  }
+                }
+
                 AccountReservation.checkReserved(account.loginName.toLowerCase).flatMap {
                   case None => Future(resBadRequest("this loginName is not reserved"))
                   case Some(secret) =>
@@ -48,27 +62,37 @@ object AccountController extends ExtendedController {
                     secret.equals(additionalValues.reservationSecret) match {
                       case false => Future(resBadRequest("invalid reservation secret"))
                       case true =>
-
-                        // everything is ok, we can create the account now
+                        // delete reservation secret
                         AccountReservation.deleteReserved(account.loginName.toLowerCase)
 
-                        // create identity and add it to account
-                        val identity = Identity.createAndInsert(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
+                        // check if there is a token
+                        request.headers.get("Authorization") match {
+                          case None =>
+                            // no token, create new identity
+                            Identity.createAndInsert(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
+                              .flatMap(createAccountWithIdentity)
 
-                        // add identity to account
-                        val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
+                          case Some(token) =>
+                            // there is a token, check if it belongs to an external user
+                            Identity.findByToken(new MongoId(token)).flatMap {
+                              case None => Future(resBadRequest("invalid token"))
+                              case Some(identity) =>
+                                val update = IdentityUpdate(account.phoneNumber.map(VerifiedString.create),
+                                  account.email.map(VerifiedString.create),
+                                  additionalValues.displayName,
+                                  Some(account.loginName),
+                                  Some(account.id))
 
-                        Account.col.insert(accountWithIdentity).flatMap {
-                          lastError =>
-                            if (lastError.ok) {
-                              accountWithIdentity.toJsonWithIdentities.map { resOK(_) }
-                            } else {
-                              Future(resServerError("MongoError: " + lastError))
+                                identity.update(update).flatMap {
+                                  case false => Future(resServerError("unable to update identity"))
+                                  case true  => createAccountWithIdentity(identity)
+                                }
                             }
                         }
                     }
                 }
               }
+
           }
       }
   }
