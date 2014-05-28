@@ -24,11 +24,15 @@ class AccountControllerSpec extends StartedApp {
 
   val login = "superMoep"
   val login2 = "monsterMoep"
+  val loginExternal = "superMonsterMoep"
   val pass = randomString(8)
   val displayName = "MOEP"
   val mail = validEmails(0)
   val tel = validPhoneNumbers(0)._1
   val cleanedTel = validPhoneNumbers(0)._2
+  val displayName2 = "MOEP2"
+  val mail2 = validEmails(1)
+  val tel2 = validPhoneNumbers(1)._2
   var identityId = ""
   var token = ""
   var regSec = ""
@@ -328,6 +332,125 @@ class AccountControllerSpec extends StartedApp {
       val raw = contentAsBytes(res)
 
       raw.length must beGreaterThan(100)
+    }
+
+    var externalToken = ""
+    "get purl object for external user" in {
+
+      val path = basePath + "/purl/" + purlExtern2
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      externalToken = (data \ "token").as[String]
+
+      1 === 1
+    }
+
+    var regSecExternal = ""
+    "Reserve Login for external user" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> loginExternal)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      regSecExternal = (data \ "reservationSecret").as[String]
+
+      1 === 1
+    }
+
+    "register user with token of external user" in {
+
+      val path = basePath + "/account"
+      val json = createUser(loginExternal, pass, Some(tel2), Some(mail2)) ++
+        Json.obj("reservationSecret" -> regSecExternal) ++
+        Json.obj("displayName" -> displayName2)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(externalToken))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val identity = (data \ "identities")(0).as[JsObject]
+
+      (identity \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
+      (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(tel2)
+      (identity \ "email" \ "value").asOpt[String] must beSome(mail2)
+      (identity \ "displayName").asOpt[String] must beSome(displayName2)
+
+    }
+
+    "get token of new account" in {
+
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExternal + ":" + pass).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      (contentAsJson(res) \ "data").asOpt[JsObject] must beSome
+    }
+
+    "get identity of new account" in {
+
+      val path = basePath + "/identity/" + purlExtern2IdentitityId
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      Logger.debug("RES: " + contentAsString(res))
+
+      (data \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
+      (data \ "cameoId").asOpt[String] must beSome(loginExternal)
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "displayName").asOpt[String] must beSome(displayName2)
+    }
+
+    "Reserve another login" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> (loginExternal + "moep"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      regSecExternal = (data \ "reservationSecret").as[String]
+
+      1 === 1
+    }
+
+    "refuse to register with token of internal user" in {
+
+      val path = basePath + "/account"
+      val json = createUser(loginExternal, pass, Some(tel2), Some(mail2)) ++
+        Json.obj("reservationSecret" -> regSecExternal) ++
+        Json.obj("displayName" -> displayName2)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(BAD_REQUEST)
     }
   }
 }

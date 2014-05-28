@@ -50,6 +50,16 @@ class PurlControllerSpec extends StartedApp {
       (identity \ "id").asOpt[String] must beSome(purlExternIdentitityId)
     }
 
+    "refuse to return purl object to external user that is not part of the conversation any more" in {
+
+      val path = basePath + "/purl/" + purlExternInvalid
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      status(res) must equalTo(UNAUTHORIZED)
+    }
+
     "get purl object for external user with token" in {
       val path = basePath + "/purl/" + purlExtern
 
@@ -87,6 +97,8 @@ class PurlControllerSpec extends StartedApp {
       (identity \ "id").asOpt[String] must beSome(purlExternIdentitityId)
       (data \ "token").asOpt[String] must beSome(purlExternToken)
     }
+
+
 
     "get purl object of internal user with token" in {
 
@@ -140,6 +152,7 @@ class PurlControllerSpec extends StartedApp {
 
       status(res) must equalTo(UNAUTHORIZED)
     }
+
 
   }
 }

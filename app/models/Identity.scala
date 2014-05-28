@@ -21,6 +21,7 @@ import play.api.libs.json.JsNumber
 import models.cockpit.attributes.CockpitAttributeString
 import models.cockpit.attributes.CockpitAttributeVerifiedString
 import play.api.libs.json.JsObject
+import services.AvatarGenerator
 
 /**
  * User: Björn Reimer
@@ -130,17 +131,19 @@ case class Identity(id: MongoId,
       getNewValueVerifiedString(this.phoneNumber, _)
     }
     val newDisplayName = update.displayName.flatMap {
-      getNewValueString(this.displayName, _)
+      getNewValue(this.displayName, _)
+    }
+    val newCameoId = update.cameoId
+    val newAccountId = update.accountId.flatMap {
+      getNewValue(this.accountId, _)
     }
 
     val setValues = {
-      maybeEmptyJsValue("email", newMail.map {
-        Json.toJson(_)
-      }) ++
-        maybeEmptyJsValue("phoneNumber", newPhoneNumber.map {
-          Json.toJson(_)
-        }) ++
-        maybeEmptyString("displayName", newDisplayName)
+      maybeEmptyJsValue("email", newMail.map(Json.toJson(_))) ++
+        maybeEmptyJsValue("phoneNumber", newPhoneNumber.map(Json.toJson(_))) ++
+        maybeEmptyString("displayName", newDisplayName) ++
+        maybeEmptyString("cameoId", newCameoId) ++
+        maybeEmptyJsValue("accountId", newAccountId.map(Json.toJson(_)))
     }
     val set = Json.obj("$set" -> setValues)
 
@@ -221,7 +224,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
   }
 
-  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Identity = {
+  private def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
       accountId,
@@ -240,6 +243,23 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       new Date,
       new Date,
       docVersion)
+  }
+
+  def createAndInsert(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Future[Identity] = {
+
+    val identity = create(accountId, cameoId, email, phoneNumber, displayName)
+
+    // insert into db
+    Identity.col.insert(identity).map { le =>
+
+      // generate default avatar
+      AvatarGenerator.generate(identity)
+
+      // add support user
+      //identity.addSupportUser
+
+      identity
+    }
   }
 
   // todo: add projection to exclude contacts when not needed
@@ -316,21 +336,21 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
 }
 
-case class IdentityUpdate(phoneNumber: Option[VerifiedString],
-                          email: Option[VerifiedString],
-                          displayName: Option[String])
+case class IdentityUpdate(phoneNumber: Option[VerifiedString] = None,
+                          email: Option[VerifiedString] = None,
+                          displayName: Option[String] = None,
+                          cameoId: Option[String] = None,
+                          accountId: Option[MongoId] = None)
 
 object IdentityUpdate {
 
   implicit val reads: Reads[IdentityUpdate] = (
     (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
     (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ "displayName").readNullable[String]
+    (__ \ "displayName").readNullable[String] and
+    Reads.pure(None) and
+    Reads.pure(None)
   )(IdentityUpdate.apply _)
-
-  def create(phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None, displayName: Option[String] = None): IdentityUpdate = {
-    new IdentityUpdate(phoneNumber, email, displayName)
-  }
 }
 
 object IdentityEvolutions {

@@ -55,9 +55,10 @@ object TestConfig {
 
 
   val purlExtern = "MSaKlj4hJP"
-  val purlExtern2 = "PkFWPuCiBB"
-  val purlExtern3 = "agirsrEN3j"
+  val purlExtern2 = "V3Ml6hzqX9"
+  val purlExternInvalid = "V3Ml6hzqX7"
   val purlExternIdentitityId = "GhEWGfy3Jqx8BRP1pITO"
+  val purlExtern2IdentitityId = "B0F6gKOnoDVTI57dVyBU"
   val purlIntern = "V3Ml6hzqX8"
   val purlIntern2 = "u02iLiIeQu"
   val purlConversationId = "OM9QeJ4RfJcdscyo52g4"

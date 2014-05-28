@@ -14,6 +14,7 @@ import scala.concurrent.duration._
 import helper.MongoCollections._
 import play.api.Play.current
 import services.AvatarGenerator
+import play.modules.reactivemongo.ReactiveMongoPlugin
 
 /**
  * User: Björn Reimer
@@ -34,7 +35,7 @@ object DbAdminUtilities {
     twoFactorTokenCollection,
     twoFactorSmsKeyCollection,
     cockpitAccessCollection
-  )
+  ) :+ ReactiveMongoPlugin.db.collection[JSONCollection](fileChunkCollection.name)
 
   def findColByName(name: String): Option[JSONCollection] = {
     collections.find(_.name.equals(name))

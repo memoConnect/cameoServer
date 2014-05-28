@@ -33,15 +33,18 @@ object PurlController extends ExtendedController {
         Conversation.findByMessageId(purl.messageId, limit, offset).flatMap {
           case None => Future(resNotFound("conversation"))
           case Some(conversation) =>
-            // return result
-            conversation.toJsonWithIdentities.map {
-              js =>
-                val res: JsObject =
-                  Json.obj("conversation" -> js) ++
-                    Json.obj("identity" -> identity.toPrivateJson) ++
-                    Json.obj("token" -> token.id.toJson)
+            conversation.hasMemberFutureResult(identity.id) {
 
-                resOK(res)
+              // return result
+              conversation.toJsonWithIdentities.map {
+                js =>
+                  val res: JsObject =
+                    Json.obj("conversation" -> js) ++
+                      Json.obj("identity" -> identity.toPrivateJson) ++
+                      Json.obj("token" -> token.id.toJson)
+
+                  resOK(res)
+              }
             }
         }
       }
@@ -63,13 +66,15 @@ object PurlController extends ExtendedController {
                     Conversation.findByMessageId(purl.messageId, limit, offset).flatMap {
                       case None => Future(resNotFound("conversation"))
                       case Some(conversation) =>
-                        // return result
-                        conversation.toJsonWithIdentities.map {
-                          js =>
-                            val res: JsObject =
-                              Json.obj("conversation" -> js) ++
-                                Json.obj("identity" -> identity.toPrivateJson)
-                            resOK(res)
+                        conversation.hasMemberFutureResult(identity.id) {
+                          // return result
+                          conversation.toJsonWithIdentities.map {
+                            js =>
+                              val res: JsObject =
+                                Json.obj("conversation" -> js) ++
+                                  Json.obj("identity" -> identity.toPrivateJson)
+                              resOK(res)
+                          }
                         }
                     }
                 }
