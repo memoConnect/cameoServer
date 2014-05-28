@@ -53,11 +53,7 @@ object AccountController extends ExtendedController {
                         AccountReservation.deleteReserved(account.loginName.toLowerCase)
 
                         // create identity and add it to account
-                        val identity = Identity.create(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
-                        Identity.col.insert(identity)
-
-                        // generate default avatar
-                        AvatarGenerator.generate(identity)
+                        val identity = Identity.createAndInsert(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
 
                         // add identity to account
                         val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)

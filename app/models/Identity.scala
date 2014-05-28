@@ -21,6 +21,7 @@ import play.api.libs.json.JsNumber
 import models.cockpit.attributes.CockpitAttributeString
 import models.cockpit.attributes.CockpitAttributeVerifiedString
 import play.api.libs.json.JsObject
+import services.AvatarGenerator
 
 /**
  * User: Björn Reimer
@@ -221,8 +222,9 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
   }
 
-  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Identity = {
-    new Identity(
+def createAndInsert(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Future[Identity] = {
+    
+  val identity = new Identity(
       IdHelper.generateIdentityId(),
       accountId,
       displayName,
@@ -240,6 +242,18 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       new Date,
       new Date,
       docVersion)
+
+      // insert into db
+      Identity.col.insert(identity).map{ le =>
+
+        // generate default avatar
+        AvatarGenerator.generate(identity)
+
+        // add support user
+        identity.addSupportUser
+
+        identity
+      }
   }
 
   // todo: add projection to exclude contacts when not needed
@@ -271,7 +285,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   def createDefault(): Identity = {
-    Identity.create(None, IdHelper.generateCameoId, None, None)
+    Identity.createAndInsert(None, IdHelper.generateCameoId, None, None)
   }
 
   def docVersion = 7
