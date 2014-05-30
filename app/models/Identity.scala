@@ -23,7 +23,7 @@ import models.cockpit.attributes.CockpitAttributeString
 import models.cockpit.attributes.CockpitAttributeVerifiedString
 import play.api.libs.json.JsObject
 import services.AvatarGenerator
-import play.api.Play
+import play.api.{ Logger, Play }
 
 /**
  * User: Björn Reimer
@@ -167,20 +167,36 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set).map(_.ok)
   }
 
-  def addSupportContact: Future[Boolean] = {
-    // get identity id of support user from config
-    Play.configuration.getString("support.contact.identityId") match {
-      case None => Future(false)
-      case Some(supportId) =>
-        Identity.find(supportId).flatMap {
-          case None => Future(false)
-          case Some(supportIdentity) =>
-            val contact = Contact.create(supportIdentity.id, Seq())
-            this.addContact(contact)
-        }
-    }
-  }
+  def addSupport(): Future[Boolean] = {
+    (Play.configuration.getString("support.contact.identityId"),
+      Play.configuration.getString("support.conversation.subject"),
+      Play.configuration.getString("support.conversation.body")) match {
+        case (Some(supportId), subject, Some(messageText)) =>
+          Identity.find(supportId).flatMap {
+            case None => Future(false)
+            case Some(supportIdentity) =>
+              val contact = Contact.create(supportIdentity.id, Seq())
+              val conversation = Conversation.create(subject, Seq(supportIdentity.id, this.id).map(Recipient.create))
+              val message = Message.create(new MongoId(supportId), messageText)
 
+              // create new conversation
+              Conversation.col.insert(conversation).flatMap { le =>
+                for {
+                  // add contact and message
+                  contactOk <- this.addContact(contact)
+                  messageOk <- conversation.addMessage(message)
+                } yield {
+                  contactOk && messageOk
+                }
+              }
+          }
+
+        case _ =>
+          // config is not sufficient, do nothing
+          Logger.error("Inital Support Contact not configured")
+          Future(false)
+      }
+  }
 
 }
 
@@ -271,9 +287,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
       // generate default avatar
       AvatarGenerator.generate(identity)
-
-      // add support user
-      identity.addSupportContact
 
       identity
     }

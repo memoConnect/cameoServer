@@ -44,6 +44,10 @@ object AccountController extends ExtendedController {
               {
                 def createAccountWithIdentity(identity: Identity): Future[SimpleResult] = {
                   val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
+
+                  // add support user
+                  identity.addSupport
+
                   Account.col.insert(accountWithIdentity).flatMap {
                     lastError =>
                       lastError.ok match {
@@ -77,11 +81,15 @@ object AccountController extends ExtendedController {
                             Identity.findByToken(new MongoId(token)).flatMap {
                               case None => Future(resBadRequest("invalid token"))
                               case Some(identity) =>
-                                val update = IdentityUpdate(account.phoneNumber.map(VerifiedString.create),
+                                val update = IdentityUpdate(
+                                  account.phoneNumber.map(VerifiedString.create),
                                   account.email.map(VerifiedString.create),
                                   additionalValues.displayName,
                                   Some(account.loginName),
-                                  Some(account.id))
+                                  Some(account.id)
+                                )
+
+                                identity.addSupport
 
                                 identity.update(update).flatMap {
                                   case false => Future(resServerError("unable to update identity"))
@@ -92,7 +100,6 @@ object AccountController extends ExtendedController {
                     }
                 }
               }
-
           }
       }
   }
@@ -138,12 +145,11 @@ object AccountController extends ExtendedController {
                   newLoginName => resKO(Json.obj("alternative" -> newLoginName))
                 }
                 // not reserved, reserve it and return reservation Secret
-                case None => {
+                case None =>
                   AccountReservation.reserve(lowerLogin).map {
                     res =>
                       resOK(res.toJson)
                   }
-                }
               }
             }
           } else {

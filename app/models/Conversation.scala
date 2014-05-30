@@ -149,9 +149,9 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def addMessage(message: Message): Future[LastError] = {
+  def addMessage(message: Message): Future[Boolean] = {
     val set = Json.obj("$push" -> Json.obj("messages" -> message))
-    Conversation.col.update(query, setLastUpdated(set))
+    Conversation.col.update(query, setLastUpdated(set)).map(_.updatedExisting)
   }
 
   def setEncPassList(list: Seq[EncryptedPassphrase]): Future[Boolean] = {
@@ -174,19 +174,6 @@ object Conversation extends Model[Conversation] {
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
 
   def docVersion = 1
-
-  def createReads = (
-    Reads.pure[MongoId](IdHelper.generateConversationId()) and
-    (__ \ 'subject).readNullable[String] and
-    Reads.pure[Seq[Recipient]](Seq()) and
-    Reads.pure[Seq[Message]](Seq()) and
-    Reads.pure[Seq[EncryptedPassphrase]](Seq()) and
-    Reads.pure[Option[MongoId]](None) and
-    Reads.pure[Option[Int]](None) and
-    Reads.pure[Date](new Date) and
-    Reads.pure[Date](new Date) and
-    Reads.pure[Int](docVersion)
-  )(Conversation.apply _)
 
   def outputWrites = Writes[Conversation] {
     c =>
@@ -234,9 +221,9 @@ object Conversation extends Model[Conversation] {
     col.find(query, limitArray("messages", -1, 0)).cursor[Conversation].collect[Seq]()
   }
 
-  def create: Conversation = {
+  def create(subject: Option[String] = None, recipients: Seq[Recipient] = Seq()): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, None, Seq(), Seq(), Seq(), None, None, new Date, new Date, 0)
+    new Conversation(id, subject, recipients, Seq(), Seq(), None, None, new Date, new Date, 0)
   }
 
   def evolutions = Map(

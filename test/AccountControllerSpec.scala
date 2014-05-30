@@ -8,7 +8,7 @@ import scala.Some
 import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
-import play.api.Logger
+import play.api.{Play, Logger}
 import testHelper.{ TestConfig, StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
@@ -286,6 +286,7 @@ class AccountControllerSpec extends StartedApp {
       (data \ "email" \ "value").asOpt[String] must beSome(mail)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(cleanedTel)
     }
+
     var fileId = ""
     "automatically create avatar for new identity" in {
       val path = basePath + "/identity"
@@ -332,6 +333,40 @@ class AccountControllerSpec extends StartedApp {
       val raw = contentAsBytes(res)
 
       raw.length must beGreaterThan(100)
+    }
+
+    "automatically add support as contact" in {
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(1)
+
+      (data(0) \ "identityId").asOpt[String] must beEqualTo(Play.configuration.getString("support.contact.identityId"))
+    }
+
+    var conversationId = ""
+    "automatically add talk with support" in {
+      val path = basePath + "/conversations"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(1)
+      (conversations(0) \ "subject").asOpt[String] must beEqualTo(Play.configuration.getString("support.conversation.subject"))
+
+      val message = (conversations(0) \ "messages")(0).as[JsObject]
+      (message \ "plain" \ "text").asOpt[String] must beEqualTo(Play.configuration.getString("support.conversation.body"))
     }
 
     var externalToken = ""
@@ -415,8 +450,6 @@ class AccountControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      Logger.debug("RES: " + contentAsString(res))
 
       (data \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
       (data \ "cameoId").asOpt[String] must beSome(loginExternal)

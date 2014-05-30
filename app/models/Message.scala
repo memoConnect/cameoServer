@@ -84,6 +84,10 @@ object Message extends SubModel[Message, Conversation] {
     Conversation.col.find(arrayQuery("messages", id)).one[Conversation]
   }
 
+  def create(fromId: MongoId, text: String): Message = {
+    new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, new Date, docVersion)
+  }
+
   override def createDefault(): Message = {
     new Message(IdHelper.generateMessageId(), MongoId(""), None, None, new Date, docVersion)
   }
@@ -143,5 +147,9 @@ object PlainMessagePart {
     (__ \ 'text).readNullable[String] and
     ((__ \ 'fileIds).read[Seq[MongoId]](Reads.seq(MongoId.createReads)) or Reads.pure[Seq[MongoId]](Seq()))
   )(PlainMessagePart.apply _)
+
+  def create(text: String): PlainMessagePart = {
+    new PlainMessagePart(Some(text), Seq())
+  }
 }
 
