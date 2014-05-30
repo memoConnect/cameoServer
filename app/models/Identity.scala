@@ -1,5 +1,6 @@
 package models
 
+import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
 import java.util.Date
@@ -22,6 +23,7 @@ import models.cockpit.attributes.CockpitAttributeString
 import models.cockpit.attributes.CockpitAttributeVerifiedString
 import play.api.libs.json.JsObject
 import services.AvatarGenerator
+import play.api.Play
 
 /**
  * User: Björn Reimer
@@ -165,6 +167,21 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set).map(_.ok)
   }
 
+  def addSupportContact: Future[Boolean] = {
+    // get identity id of support user from config
+    Play.configuration.getString("support.contact.identityId") match {
+      case None => Future(false)
+      case Some(supportId) =>
+        Identity.find(supportId).flatMap {
+          case None => Future(false)
+          case Some(supportIdentity) =>
+            val contact = Contact.create(supportIdentity.id, Seq())
+            this.addContact(contact)
+        }
+    }
+  }
+
+
 }
 
 object Identity extends Model[Identity] with CockpitEditable[Identity] {
@@ -256,7 +273,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       AvatarGenerator.generate(identity)
 
       // add support user
-      //identity.addSupportUser
+      identity.addSupportContact
 
       identity
     }
