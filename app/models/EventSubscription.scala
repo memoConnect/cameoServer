@@ -27,6 +27,12 @@ case class EventSubscription(id: MongoId,
   def toJson: JsObject = Json.obj(
     "events" -> events.map(_.toJson),
     "id" -> id.toJson)
+
+  def resetTimeout(): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$set" -> Json.obj("lastAccessed" -> new Date))
+    EventSubscription.col.update(query, set).map(_.updatedExisting)
+  }
 }
 
 object EventSubscription extends Model[EventSubscription] {
@@ -59,6 +65,7 @@ object EventSubscription extends Model[EventSubscription] {
     pushEvent(identityId, Seq(event))
   }
 
+  // get all events for subscriptions and clear them
   def findAndClear(id: MongoId): Future[Option[EventSubscription]] = {
     val query = BSONDocument("_id" -> toBSON(Json.toJson(id)).get)
     val set = BSONDocument("$set" -> BSONDocument("events" -> BSONArray()))

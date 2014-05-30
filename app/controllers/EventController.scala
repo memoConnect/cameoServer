@@ -45,9 +45,10 @@ object EventController extends Controller {
   def getSubscription(id: String) = AuthAction().async {
     request =>
       EventSubscription.findAndClear(MongoId(id)).map {
-        // todo: update last accessed
-        case None               => resNotFound("subscription id")
-        case Some(subscription) => resOK(subscription.toJson)
+        case None => resNotFound("subscription id")
+        case Some(subscription) =>
+          subscription.resetTimeout()
+          resOK(subscription.toJson)
       }
   }
 }
