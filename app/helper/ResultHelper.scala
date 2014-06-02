@@ -4,7 +4,7 @@ import play.api.mvc.Results._
 import play.api.libs.json._
 import constants.Notifications._
 import play.api.libs.json.JsObject
-import play.api.mvc.SimpleResult
+import play.api.mvc.Result
 
 /**
  * User: Björn Reimer
@@ -17,74 +17,74 @@ object ResultHelper {
   val CAMEO_ERROR_CODE = 232
 
   // OK
-  def resOK(): SimpleResult = Ok(Json.obj("res" -> "OK"))
+  def resOK(): Result = Ok(Json.obj("res" -> "OK"))
 
-  def resOK(data: JsValue): SimpleResult =
+  def resOK(data: JsValue): Result =
     Ok(Json.obj("res" -> "OK") ++
       Json.obj("data" -> data))
   //      ++
   //      addMessagesOrEmpty(notifications))
 
-  def resOK(data: Seq[JsValue]): SimpleResult =
+  def resOK(data: Seq[JsValue]): Result =
     Ok(Json.obj("res" -> "OK") ++
       Json.obj("data" -> data))
   //      ++
   //      addMessagesOrEmpty(notifications))
 
-  def resOK(data: String): SimpleResult = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
+  def resOK(data: String): Result = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
   // 5 weeks
   val expire = 60 * 60 * 24 * 7 * 5
-  def resOKWithCache(data: Array[Byte], etag: String): SimpleResult =
+  def resOKWithCache(data: Array[Byte], etag: String): Result =
     Ok(data)
       .withHeaders(("ETAG", etag))
       .withHeaders(("Cache-Control", "max-age=" + expire))
 
-  def resNotModified(): SimpleResult = NotModified
+  def resNotModified(): Result = NotModified
 
   // OK but could not fullfill request
-  def resKO(data: JsValue): SimpleResult =
+  def resKO(data: JsValue): Result =
     Status(232)(Json.obj("res" -> "KO")
       ++ Json.obj("data" -> data))
   //      ++
   //      addMessagesOrEmpty(notifications))
 
-  def resKO(): SimpleResult =
+  def resKO(): Result =
     Status(232)(Json.obj("res" -> "KO"))
   //      ++
   //      addMessagesOrEmpty(notifications))
 
-  def resKO(error: String): SimpleResult =
+  def resKO(error: String): Result =
     Status(232)(Json.obj("res" -> "KO")
       ++ Json.obj("error" -> error))
   //      ++
   //      addMessagesOrEmpty(notifications))
 
-  def resKO(notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resKO(notifications: Seq[UserNotification] = Seq()): Result =
     Status(232)(
       Json.obj("res" -> "KO") ++
         addMessagesOrEmpty(notifications))
 
   // Bad Request
-  def resBadRequest(error: String): SimpleResult = {
+  def resBadRequest(error: String): Result = {
     BadRequest(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error))
   }
 
-  def resBadRequest(error: JsObject): SimpleResult = {
+  def resBadRequest(error: JsObject): Result = {
     BadRequest(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> error))
   }
 
-  def resBadRequest(notifications: Seq[UserNotification] = Seq()): SimpleResult =
+  def resBadRequest(notifications: Seq[UserNotification] = Seq()): Result =
     BadRequest(
       Json.obj("res" -> "KO") ++
         addMessagesOrEmpty(notifications))
 
   // NotFound
-  def resNotFound(what: String, notifications: Seq[UserNotification] = Seq()): SimpleResult = {
+  def resNotFound(what: String, notifications: Seq[UserNotification] = Seq()): Result = {
     NotFound(
       Json.obj("res" -> "KO") ++
         Json.obj("error" -> (what + " not found")) ++
@@ -93,11 +93,11 @@ object ResultHelper {
   }
 
   // Not Authorized
-  def resUnauthorized(): SimpleResult = {
+  def resUnauthorized(): Result = {
     Unauthorized(Json.obj("res" -> "KO"))
   }
 
-  def resUnauthorized(error: String, twoFactorRequired: Boolean = false): SimpleResult = {
+  def resUnauthorized(error: String, twoFactorRequired: Boolean = false): Result = {
     val add = twoFactorRequired match {
       case false => Json.obj()
       case true  => Json.obj("twoFactorRequired" -> true)
@@ -110,7 +110,7 @@ object ResultHelper {
   }
 
   // Server Error
-  def resServerError(error: String): SimpleResult = {
+  def resServerError(error: String): Result = {
     InternalServerError(
       Json.obj("res" -> "KO") ++ Json.obj("error" -> error)
     )

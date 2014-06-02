@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.{ SimpleResult, Action }
+import play.api.mvc.{Result, SimpleResult, Action}
 import play.api.libs.json._
 import traits.ExtendedController
 import models._
@@ -42,7 +42,7 @@ object AccountController extends ExtendedController {
           validateFuture[Account](jsBody, Account.createReads) {
             account =>
               {
-                def createAccountWithIdentity(identity: Identity): Future[SimpleResult] = {
+                def createAccountWithIdentity(identity: Identity): Future[Result] = {
                   val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
 
                   // add support user

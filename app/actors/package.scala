@@ -1,6 +1,6 @@
 import actors.testActors.SendSmsTestActor
 import akka.actor.{ ActorRef, Props }
-import akka.routing.RoundRobinRouter
+import akka.routing.RoundRobinPool
 import play.api.libs.concurrent.Akka
 import play.api.{ Logger, Play }
 import play.api.Play.current
@@ -23,7 +23,7 @@ package object actors {
   }
 
   lazy val eventRouter: ActorRef = {
-    val props = Props[EventActor].withRouter(RoundRobinRouter(nrOfInstances = 5))
+    val props = RoundRobinPool(5).props(Props[EventActor])
     Akka.system.actorOf(props, "event_router")
   }
 

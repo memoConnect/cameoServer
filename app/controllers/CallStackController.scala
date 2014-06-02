@@ -81,7 +81,7 @@ object CallStackController extends ExtendedController {
                     val handler: Option[Handler] = Play.current.routes.get.handlerFor(newRequestHeader)
 
                     // execute request, feed body using default writable for json
-                    def doRequest(implicit w: Writeable[JsObject]): Option[Future[SimpleResult]] = {
+                    def doRequest(implicit w: Writeable[JsObject]): Option[Future[Result]] = {
                       handler.flatMap {
                         case a: EssentialAction => Some(
                           Play.current.global.doFilter(a)(newRequestHeader)

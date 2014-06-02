@@ -14,7 +14,7 @@ import helper.ResultHelper._
 
 trait ExtendedController extends Controller with MongoController {
 
-  def validate[T](js: JsValue, reads: Reads[T])(action: ((T => SimpleResult))): SimpleResult = {
+  def validate[T](js: JsValue, reads: Reads[T])(action: ((T => Result))): Result = {
     js.validate(reads).map {
       action
     }.recoverTotal {
@@ -22,7 +22,7 @@ trait ExtendedController extends Controller with MongoController {
     }
   }
 
-  def validateFuture[T](js: JsValue, reads: Reads[T])(action: ((T => Future[SimpleResult]))): Future[SimpleResult] = {
+  def validateFuture[T](js: JsValue, reads: Reads[T])(action: ((T => Future[Result]))): Future[Result] = {
     js.validate(reads).map {
       action
     }.recoverTotal {

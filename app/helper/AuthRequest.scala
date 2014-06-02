@@ -18,18 +18,18 @@ class TwoFactorAuthRequest[A](val identity: Identity, request: Request[A]) exten
 object CmActions {
 
   def AuthAction(allowExternal: Boolean = false) = new ActionBuilder[AuthRequest] {
-    def invokeBlock[A](request: Request[A], block: AuthRequest[A] => Future[SimpleResult]) =
+    def invokeBlock[A](request: Request[A], block: AuthRequest[A] => Future[Result]) =
       doAuthAction(allowExternal, request, block)
   }
 
   def TwoFactorAuthAction() = new ActionBuilder[TwoFactorAuthRequest] {
-    def invokeBlock[A](request: Request[A], block: TwoFactorAuthRequest[A] => Future[SimpleResult]) = {
+    def invokeBlock[A](request: Request[A], block: TwoFactorAuthRequest[A] => Future[Result]) = {
       // do normal Auth and then try to elevate it to two factor auth
       doAuthAction(allowExternal = false, request, elevate(block))
     }
   }
 
-  def doAuthAction[A](allowExternal: Boolean, request: Request[A], block: AuthRequest[A] => Future[SimpleResult]) = {
+  def doAuthAction[A](allowExternal: Boolean, request: Request[A], block: AuthRequest[A] => Future[Result]) = {
     // check if a token is passed
     request.headers.get(REQUEST_TOKEN_HEADER_KEY) match {
       case None => Future.successful(resUnauthorized(REQUEST_TOKEN_MISSING))
@@ -48,7 +48,7 @@ object CmActions {
   }
 
   // elevate  authLevel from regular to twoFactor, return error if not authorized
-  def elevate[A](block: TwoFactorAuthRequest[A] => Future[SimpleResult]): (AuthRequest[A] => Future[SimpleResult]) = {
+  def elevate[A](block: TwoFactorAuthRequest[A] => Future[Result]): (AuthRequest[A] => Future[Result]) = {
     authRequest =>
       authRequest.headers.get(REQUEST_TWO_FACTOR_TOKEN_HEADER_KEY) match {
         case None => Future.successful(resUnauthorized(REQUEST_TWO_FACTOR_TOKEN_MISSING, twoFactorRequired = true))

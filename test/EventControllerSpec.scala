@@ -103,6 +103,8 @@ class EventControllerSpec extends StartedApp {
         val res2 = route(req2).get
         status(res2) must equalTo(OK)
       }
+
+      1===1
     }
 
     "new-message events should appear in both subscriptions" in {

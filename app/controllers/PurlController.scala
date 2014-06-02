@@ -6,7 +6,7 @@ import models._
 import play.api.libs.concurrent.Execution.Implicits._
 import scala.concurrent.Future
 import helper.ResultHelper._
-import play.api.mvc.{ Action, SimpleResult }
+import play.api.mvc.{ Action, Result }
 import scala.Some
 
 /**
@@ -22,7 +22,7 @@ object PurlController extends ExtendedController {
    */
   def getPurl(id: String, offset: Int = 0, limit: Int = 0) = Action.async {
     request =>
-      def externalUserResponse(identity: Identity, purl: Purl): Future[SimpleResult] = {
+      def externalUserResponse(identity: Identity, purl: Purl): Future[Result] = {
         // check if we need to generate a new token
         val token = identity.tokens.headOption.getOrElse {
           val t = Token.createDefault()
@@ -49,7 +49,7 @@ object PurlController extends ExtendedController {
         }
       }
 
-      def getPurlWithToken(purl: Purl, token: String): Future[SimpleResult] = {
+      def getPurlWithToken(purl: Purl, token: String): Future[Result] = {
         // get identity behind purl
         Identity.find(purl.identityId).flatMap {
           case None => Future(resNotFound("purl"))
@@ -82,7 +82,7 @@ object PurlController extends ExtendedController {
         }
       }
 
-      def getPurlWithoutToken(purl: Purl): Future[SimpleResult] = {
+      def getPurlWithoutToken(purl: Purl): Future[Result] = {
         // check if identity is an external user
         Identity.find(purl.identityId).flatMap {
           case None => Future(resNotFound("identity"))

@@ -10,7 +10,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import play.api.Play
 import ExecutionContext.Implicits.global
 import play.api.Play.current
-import play.api.mvc.{ BodyParser, Headers, SimpleResult }
+import play.api.mvc.{Result, BodyParser, Headers, SimpleResult}
 import play.api.libs.iteratee.Iteratee
 import reactivemongo.bson.{ Subtype, BSONBinary, BSONDocument }
 import scala.util.control.NonFatal
@@ -105,7 +105,7 @@ object FileController extends ExtendedController {
   }
 
   // checks if request contains If-None-Match header
-  def checkEtag(headers: Headers)(action: => Future[SimpleResult]): Future[SimpleResult] = {
+  def checkEtag(headers: Headers)(action: => Future[Result]): Future[Result] = {
     headers.get("If-None-Match") match {
       case Some(s) =>
         // always return not modified(304), since files never change (for now)
