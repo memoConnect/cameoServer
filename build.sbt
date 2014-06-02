@@ -1,3 +1,5 @@
+import play.PlayScala
+
 name := "cameoServer"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
@@ -22,6 +24,3 @@ libraryDependencies ++= Seq(
 )
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
-
-// disable reverse route to get rid of some useless compiler warnings
-//generateReverseRouter := false

@@ -104,6 +104,8 @@ class EventControllerSpec extends StartedApp {
         status(res2) must equalTo(OK)
       }
 
+      Thread.sleep(300)
+
       1===1
     }
 
@@ -126,7 +128,7 @@ class EventControllerSpec extends StartedApp {
         val newMessageEvents = events.filter(e =>
           (e \ "name").as[String].equals("conversation:new-message") &&
             (e \ "data" \ "conversationId").asOpt[String].getOrElse("foo").equals(conversationId))
-        newMessageEvents.length must greaterThanOrEqualTo(3)
+        newMessageEvents.length must greaterThanOrEqualTo(numberOfMessages)
         newMessageEvents.map { js =>
           (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
           (js \ "data" \ "message").asOpt[JsObject] must beSome
@@ -162,7 +164,6 @@ class EventControllerSpec extends StartedApp {
     }
 
     "friendRequest event should appear in both subscriptions" in {
-
       Seq(subscriptionId, subscription2Id).seq.map { id =>
         val path = basePath + "/eventSubscription/" + id
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -200,7 +201,5 @@ class EventControllerSpec extends StartedApp {
         (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
       }
     }
-
   }
-
 }
