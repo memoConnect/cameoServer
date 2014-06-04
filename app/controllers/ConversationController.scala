@@ -20,23 +20,27 @@ object ConversationController extends ExtendedController {
   object CreateConversationRequest { implicit val format = Json.format[CreateConversationRequest] }
 
   def createConversation = AuthAction().async(parse.tolerantJson) {
-    request => {
+    request =>
+      {
         validateFuture[CreateConversationRequest](request.body, CreateConversationRequest.format) {
           ccr =>
             val conversation = Conversation.create(ccr.subject, Seq(Recipient.create(request.identity.id)))
-            Conversation.col.insert(conversation).map{
+            Conversation.col.insert(conversation).map {
               le => resOK(conversation.toJson)
             }
         }
       }
   }
 
-  def getConversation(id: String, offset: Int, limit: Int, keyId: Option[String]) = AuthAction(allowExternal = true).async {
+  def getConversation(id: String, offset: Int, limit: Int, maybeKeyId: Option[String]) = AuthAction(allowExternal = true).async {
     request =>
       Conversation.find(id, limit, offset).map {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
-          resOK(c.toJson)
+          maybeKeyId match {
+            case None        => resOK(c.toJson)
+            case Some(keyId) => resOK(c.toJsonWithKey(keyId))
+          }
         }
       }
   }
