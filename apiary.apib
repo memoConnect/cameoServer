@@ -502,22 +502,9 @@ Sending and reading messages
             "recipients":
                    [
                        {
-                           "identity":
-                           {
-                               "id": "N2HKgBdxxnWBGxlYY7Dn",
-                               "cameoId": "pZGwMwXoa38yDVaW07re",
-                               "displayName": "NoName"
-                           },
-                           "identityId": "N2HKgBdxxnWBGxlYY7Dn",
-                           "encryptedKey":"blob"
+                           "identityId": "N2HKgBdxxnWBGxlYY7Dn"
                        },
                        {
-                           "identity":
-                           {
-                               "id": "Tya0cZiaYFhFOBS2RNP1",
-                               "cameoId": "ED1IwNQJ1gpKeu5zQnuL",
-                               "displayName": "NoName"
-                           },
                            "identityId": "Tya0cZiaYFhFOBS2RNP1"
                        }
                    ]
@@ -541,7 +528,13 @@ Sending and reading messages
     + Body
 
                 {
-                    "subject":"new subject"
+                  "subject": "new subject",
+                  "passCaptcha": "fileID",
+                  "aePassphrase": "someEncryptedString",
+                  "eaPassphraseList": [
+                    "keyId": "some Id",
+                    "encryptedPassphrase": "someEncryptedString"
+                  ]
                 }
 
 + Response 200
@@ -613,27 +606,12 @@ Sending and reading messages
                     ],
                     "recipients": [
                       {
-                        "identity": {
-                          "id": "N2HKgBdxxnWBGxlYY7Dn",
-                          "cameoId": "bwyVeVnCvuO",
-                          "displayName": "NoName"
-                        },
                         "identityId": "N2HKgBdxxnWBGxlYY7Dn"
                       },
                       {
-                        "identity": {
-                          "id": "GhEWGfy3Jqx8BRP1pITO",
-                          "cameoId": "KN5Ws0zFwzXc38H",
-                          "displayName": "NoName"
-                        },
                         "identityId": "GhEWGfy3Jqx8BRP1pITO"
                       },
                       {
-                        "identity": {
-                          "id": "g9PWZY7xKNbeCO6LPNnx",
-                          "cameoId": "KG5mSGTY8l3",
-                          "displayName": "NoName"
-                        },
                         "identityId": "g9PWZY7xKNbeCO6LPNnx"
                       }
                     ]
@@ -660,43 +638,18 @@ Sending and reading messages
                     ],
                     "recipients": [
                       {
-                        "identity": {
-                          "id": "N2HKgBdxxnWBGxlYY7Dn",
-                          "cameoId": "bwyVeVnCvuO",
-                          "displayName": "NoName"
-                        },
                         "identityId": "N2HKgBdxxnWBGxlYY7Dn"
                       },
                       {
-                        "identity": {
-                          "id": "tfy8ZdsGVWlUI98igv2S",
-                          "cameoId": "0FZzLdfrRZC9r5VQZ3Fs",
-                          "displayName": "NoName"
-                        },
                         "identityId": "tfy8ZdsGVWlUI98igv2S"
                       },
                       {
-                        "identity": {
-                          "id": "Tya0cZiaYFhFOBS2RNP1",
-                          "cameoId": "FSkoFBVtbiYv1mm9PHO4",
-                          "displayName": "NoName"
-                        },
                         "identityId": "Tya0cZiaYFhFOBS2RNP1"
                       },
                       {
-                        "identity": {
-                          "id": "xiDoJmuua853krSS5SeZ",
-                          "cameoId": "lILg8itaxWLo3sRIKXRX",
-                          "displayName": "NoName"
-                        },
                         "identityId": "xiDoJmuua853krSS5SeZ"
                       },
                       {
-                        "identity": {
-                          "id": "2Kurw70t9TXg4iPfCWAw",
-                          "cameoId": "ozGUT9TcV9KAHYisBvau",
-                          "displayName": "NoName"
-                        },
                         "identityId": "2Kurw70t9TXg4iPfCWAw"
                       }
                     ]
@@ -723,19 +676,9 @@ Sending and reading messages
                     ],
                     "recipients": [
                       {
-                        "identity": {
-                          "id": "N2HKgBdxxnWBGxlYY7Dn",
-                          "cameoId": "bwyVeVnCvuO",
-                          "displayName": "NoName"
-                        },
                         "identityId": "N2HKgBdxxnWBGxlYY7Dn"
                       },
                       {
-                        "identity": {
-                          "id": "2Kurw70t9TXg4iPfCWAw",
-                          "cameoId": "zswZpOudfb5Ba0ZFD4dX",
-                          "displayName": "NoName"
-                        },
                         "identityId": "2Kurw70t9TXg4iPfCWAw"
                       }
                     ]
@@ -762,27 +705,12 @@ Sending and reading messages
                     ],
                     "recipients": [
                       {
-                        "identity": {
-                          "id": "N2HKgBdxxnWBGxlYY7Dn",
-                          "cameoId": "bwyVeVnCvuO",
-                          "displayName": "NoName"
-                        },
                         "identityId": "N2HKgBdxxnWBGxlYY7Dn"
                       },
                       {
-                        "identity": {
-                          "id": "tfy8ZdsGVWlUI98igv2S",
-                          "cameoId": "KN83LYOAzHjc96bDv4Cs",
-                          "displayName": "NoName"
-                        },
                         "identityId": "tfy8ZdsGVWlUI98igv2S"
                       },
                       {
-                        "identity": {
-                          "id": "xiDoJmuua853krSS5SeZ",
-                          "cameoId": "MP7Dwzau6IWktgKDrBgT",
-                          "displayName": "NoName"
-                        },
                         "identityId": "xiDoJmuua853krSS5SeZ"
                       }
                     ]
@@ -842,28 +770,6 @@ Sending and reading messages
          {
            "res": "OK",
          }
-
-## Add passCaptcha to conversation [/conversation/{id}/passCaptch]
-
-### POST
-
-+ Request
-    + Headers
-
-            Authorization: {token}
-
-    + Body
-
-            {
-                "passCaptcha":"fileId"
-            }
-
-+ Response 200
-
-             {
-                "res": "OK"
-             }
-
 
 ## Add message to conversation [/conversation/{id}/message]
 
