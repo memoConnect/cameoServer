@@ -64,27 +64,39 @@ trait Model[A] {
       } catch {
         // try to apply evolutions
         case JsResultException(e) =>
-          val currentDocVersion = (js \ "docVersion").asOpt[Int].getOrElse(0)
-          val readsWithEvolution = getEvolutions(currentDocVersion)
 
-          js.transform(readsWithEvolution).flatMap {
-            newJs =>
-              // try to serialise after evolutions and save to db
-              newJs.validate[A](fromMongoDates andThen fromMongoId andThen reads).map {
-                o =>
-                  val futureRes: Future[Boolean] = save(newJs).map { _.ok }
-                  val res = Await.result(futureRes, 10.minutes)
-                  res match {
-                    case false =>
-                      Logger.error("Error saving DB evolution: " + newJs)
-                    case true =>
-                      Logger.info("DB migration successfull")
+          // get whole object
+          val id: MongoId = (js \ "_id").as[MongoId]
+          val futureResult = col.find(Json.obj("_id" -> id)).one[JsObject]
+
+          // unfortunately we need to lock until we find the object...
+          Await.result(futureResult, 1.minute) match {
+            case None => throw new RuntimeException("could not find object")
+            case Some(all) =>
+              val currentDocVersion = (all \ "docVersion").asOpt[Int].getOrElse(0)
+              val readsWithEvolution = getEvolutions(currentDocVersion)
+
+              all.transform(readsWithEvolution).flatMap {
+                newJs =>
+                  // try to serialise after evolutions and save to db
+                  newJs.validate[A](fromMongoDates andThen fromMongoId andThen reads).map {
+                    o =>
+                      val futureRes: Future[Boolean] = save(newJs).map {
+                        _.ok
+                      }
+                      val res = Await.result(futureRes, 10.minutes)
+                      res match {
+                        case false =>
+                          Logger.error("Error saving DB evolution: " + newJs)
+                        case true =>
+                          Logger.info("DB migration successfull")
+                      }
+                      o
                   }
-                  o
               }
-
           }
       }
+
   }
 
   def createMongoFormat(reads: Reads[A], writes: Writes[A]) = Format(createMongoReads(reads), createMongoWrites(writes))

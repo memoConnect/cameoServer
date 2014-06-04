@@ -33,7 +33,7 @@ object MessageController extends ExtendedController {
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
           {
-            Conversation.find(id).flatMap {
+            Conversation.find(id, -1, 0).flatMap {
               case None => Future(resNotFound("conversation"))
               case Some(conversation) =>
                 // only members can add message to conversation

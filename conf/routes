@@ -24,12 +24,11 @@ DELETE         /a/v1/identity/publicKey/:id                          controllers
 
 # CONVERSATIONS
 POST           /a/v1/conversation                                    controllers.ConversationController.createConversation()
-GET            /a/v1/conversation/:id                                controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0)
+GET            /a/v1/conversation/:id                                controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0, keyId: Option[String])
 PUT            /a/v1/conversation/:id                                controllers.ConversationController.updateConversation(id)
 POST           /a/v1/conversation/:id/recipient                      controllers.ConversationController.addRecipients(id)
 DELETE         /a/v1/conversation/:id/recipient/:rid                 controllers.ConversationController.deleteRecipient(id, rid)
 GET            /a/v1/conversation/:id/summary                        controllers.ConversationController.getConversationSummary(id: String)
-POST           /a/v1/conversation/:id/encryptedPassphraseList        controllers.ConversationController.setEncryptedPassphraseList(id: String)
 GET            /a/v1/conversations                                   controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0)
 
 
