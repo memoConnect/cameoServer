@@ -46,7 +46,6 @@ class PurlControllerSpec extends StartedApp {
       (conversation \ "recipients").asOpt[Seq[JsObject]] must beSome
       val r = (conversation \ "recipients")(0).as[JsObject]
       (r \ "identityId").asOpt[String] must beSome
-      (r \ "identity").asOpt[JsObject] must beSome
       (identity \ "id").asOpt[String] must beSome(purlExternIdentitityId)
     }
 

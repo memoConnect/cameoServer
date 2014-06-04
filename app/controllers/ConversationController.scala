@@ -24,18 +24,19 @@ object ConversationController extends ExtendedController {
         validateFuture[CreateConversationRequest](request.body, CreateConversationRequest.format) {
           ccr =>
             val conversation = Conversation.create(ccr.subject, Seq(Recipient.create(request.identity.id)))
-            Conversation.col.insert(conversation)            
-            conversation.toJsonWithIdentitiesResult
+            Conversation.col.insert(conversation).map{
+              le => resOK(conversation.toJson)
+            }
         }
       }
   }
 
-  def getConversation(id: String, offset: Int, limit: Int) = AuthAction(allowExternal = true).async {
+  def getConversation(id: String, offset: Int, limit: Int, keyId: Option[String]) = AuthAction(allowExternal = true).async {
     request =>
-      Conversation.find(id, limit, offset).flatMap {
-        case None => Future.successful(resNotFound("conversation"))
-        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.toJsonWithIdentitiesResult
+      Conversation.find(id, limit, offset).map {
+        case None => resNotFound("conversation")
+        case Some(c) => c.hasMemberResult(request.identity.id) {
+          resOK(c.toJson)
         }
       }
   }
@@ -43,7 +44,7 @@ object ConversationController extends ExtendedController {
   def addRecipients(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
 
-      Conversation.find(new MongoId(id)).flatMap {
+      Conversation.find(new MongoId(id), -1, 0).flatMap {
         case None => Future.successful(resNotFound("conversation"))
         case Some(c) =>
 
@@ -85,7 +86,7 @@ object ConversationController extends ExtendedController {
 
   def deleteRecipient(id: String, rid: String) = AuthAction().async {
     request =>
-      Conversation.find(id).flatMap {
+      Conversation.find(id, -1, 0).flatMap {
         case None => Future(resNotFound("conversation"))
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.deleteRecipient(new MongoId(rid)).map {
@@ -98,10 +99,10 @@ object ConversationController extends ExtendedController {
 
   def getConversationSummary(id: String) = AuthAction(allowExternal = true).async {
     request =>
-      Conversation.find(id).flatMap {
+      Conversation.find(id, -1, 0).flatMap {
         case None => Future(resNotFound("conversation"))
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.toSummaryJsonWithIdentitiesResult
+          c.toSummaryJson.map(resOK(_))
         }
       }
   }
@@ -113,7 +114,7 @@ object ConversationController extends ExtendedController {
           // TODO: this can be done more efficiently with the aggregation framework in mongo
           val sorted = list.sortBy(_.lastUpdated).reverse
           val limited = OutputLimits.applyLimits(sorted, offset, limit)
-          val futureJson = Future.sequence(limited.map(_.toSummaryJsonWithIdentities))
+          val futureJson = Future.sequence(limited.map(_.toSummaryJson))
           futureJson.map {
             json =>
               val res = Json.obj("conversations" -> json, "numberOfConversations" -> list.length)
@@ -124,9 +125,9 @@ object ConversationController extends ExtendedController {
 
   def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, ConversationUpdate.format) {
+      validateFuture(request.body, ConversationUpdate.createReads) {
         cu =>
-          Conversation.find(id).flatMap {
+          Conversation.find(id, -1, 0).flatMap {
             case None => Future(resNotFound("conversation"))
             case Some(c) => c.hasMemberFutureResult(request.identity.id) {
               c.update(cu).map {
@@ -135,24 +136,6 @@ object ConversationController extends ExtendedController {
               }
             }
           }
-      }
-  }
-
-  // this should be included in put conversation
-  def setEncryptedPassphraseList(id: String) = AuthAction().async(parse.tolerantJson) {
-    request =>
-      Conversation.find(id).flatMap {
-        case None => Future(resNotFound("conversation"))
-        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          val list: JsValue = (request.body \ "encryptedPassphraseList").asOpt[JsValue].getOrElse(JsArray())
-          validateFuture(list, Reads.seq(EncryptedPassphrase.createReads)) {
-            list =>
-              c.setEncPassList(list).map {
-                case false => resServerError("unable to update")
-                case true  => resOK("updated")
-              }
-          }
-        }
       }
   }
 }

@@ -30,21 +30,15 @@ object PurlController extends ExtendedController {
           t
         }
         //get conversation
-        Conversation.findByMessageId(purl.messageId, limit, offset).flatMap {
-          case None => Future(resNotFound("conversation"))
+        Conversation.findByMessageId(purl.messageId, limit, offset).map {
+          case None => resNotFound("conversation")
           case Some(conversation) =>
-            conversation.hasMemberFutureResult(identity.id) {
-
-              // return result
-              conversation.toJsonWithIdentities.map {
-                js =>
-                  val res: JsObject =
-                    Json.obj("conversation" -> js) ++
-                      Json.obj("identity" -> identity.toPrivateJson) ++
-                      Json.obj("token" -> token.id.toJson)
-
-                  resOK(res)
-              }
+            conversation.hasMemberResult(identity.id) {
+              val res: JsObject =
+                Json.obj("conversation" -> conversation.toJson) ++
+                  Json.obj("identity" -> identity.toPrivateJson) ++
+                  Json.obj("token" -> token.id.toJson)
+              resOK(res)
             }
         }
       }
@@ -63,18 +57,15 @@ object PurlController extends ExtendedController {
                   case false => Future(resUnauthorized("This purl belongs to a different identity"))
                   case true =>
                     // get conversation
-                    Conversation.findByMessageId(purl.messageId, limit, offset).flatMap {
-                      case None => Future(resNotFound("conversation"))
+                    Conversation.findByMessageId(purl.messageId, limit, offset).map {
+                      case None => resNotFound("conversation")
                       case Some(conversation) =>
-                        conversation.hasMemberFutureResult(identity.id) {
+                        conversation.hasMemberResult(identity.id) {
                           // return result
-                          conversation.toJsonWithIdentities.map {
-                            js =>
-                              val res: JsObject =
-                                Json.obj("conversation" -> js) ++
-                                  Json.obj("identity" -> identity.toPrivateJson)
-                              resOK(res)
-                          }
+                          val res: JsObject =
+                            Json.obj("conversation" -> conversation.toJson) ++
+                              Json.obj("identity" -> identity.toPrivateJson)
+                          resOK(res)
                         }
                     }
                 }
