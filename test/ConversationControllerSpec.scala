@@ -422,7 +422,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val path = basePath + "/conversation/" + cidExisting
 
-      val json = Json.obj("sePassphraseList" -> encryptedPassphrase.map{
+      val json = Json.obj("aePassphraseList" -> encryptedPassphrase.map{
         case (k,e) => Json.obj("keyId" -> k, "encryptedPassphrase" -> e)}
       )
 
@@ -441,8 +441,8 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "sePassphraseList").asOpt[Seq[JsObject]] must beSome
-      val encPasses = (data \ "sePassphraseList").as[Seq[JsObject]]
+      (data \ "aePassphraseList").asOpt[Seq[JsObject]] must beSome
+      val encPasses = (data \ "aePassphraseList").as[Seq[JsObject]]
 
       encPasses.length must beEqualTo(3)
 
@@ -483,7 +483,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val path = basePath + "/conversation/" + cidExisting
 
-      val json = Json.obj("sePassphraseList" -> encryptedPassphrase.map{
+      val json = Json.obj("aePassphraseList" -> encryptedPassphrase.map{
         case (k,e) => Json.obj("keyId" -> k, "encryptedPassphrase" -> (e + "moep"))}
       )
 
@@ -528,11 +528,11 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "passCaptcha").asOpt[String] must beSome(passCaptchaId)
     }
 
-    val aePassphrase = "moepmoepmeopENCRYPTED"
-    "add aePassphrase to conversation" in {
+    val sePassphrase = "moepmoepmeopENCRYPTED"
+    "add sePassphrase to conversation" in {
       val path = basePath + "/conversation/" + cidExisting
 
-      val json = Json.obj("aePassphrase" -> aePassphrase)
+      val json = Json.obj("sePassphrase" -> sePassphrase)
 
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -540,10 +540,10 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "refuse non-member to add aePassphrase to conversation" in {
+    "refuse non-member to add sePassphrase to conversation" in {
       val path = basePath + "/conversation/" + cidExisting
 
-      val json = Json.obj("aePassphrase" -> (aePassphrase + "moep"))
+      val json = Json.obj("sePassphrase" -> (sePassphrase + "moep"))
 
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
@@ -551,7 +551,7 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(UNAUTHORIZED)
     }
 
-    "aePassphrase should be returned with conversation" in {
+    "sePassphrase should be returned with conversation" in {
       val path = basePath + "/conversation/" + cidExisting
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -561,7 +561,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "aePassphrase").asOpt[String] must beSome(aePassphrase)
+      (data \ "sePassphrase").asOpt[String] must beSome(sePassphrase)
     }
 
   }
