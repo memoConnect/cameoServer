@@ -16,14 +16,11 @@ import helper.ResultHelper._
  */
 object ConversationController extends ExtendedController {
 
-  case class CreateConversationRequest(subject: Option[String])
-  object CreateConversationRequest { implicit val format = Json.format[CreateConversationRequest] }
-
-  def createConversation = AuthAction().async(parse.tolerantJson) {
+    def createConversation = AuthAction().async(parse.tolerantJson) {
     request => {
-        validateFuture[CreateConversationRequest](request.body, CreateConversationRequest.format) {
-          ccr =>
-            val conversation = Conversation.create(ccr.subject, Seq(Recipient.create(request.identity.id)))
+        validateFuture[ConversationUpdate](request.body, ConversationUpdate.format) {
+          c =>
+            val conversation = Conversation.create(c.subject, Seq(Recipient.create(request.identity.id)), c.passCaptcha, c.aePassphraseList, c.sePassphrase)
             Conversation.col.insert(conversation).map{
               le => resOK(conversation.toJson)
             }

@@ -163,6 +163,7 @@ object Conversation extends Model[Conversation] {
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
   }
 
+
   def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {
     find(new MongoId(id), limit, offset)
   }
@@ -182,9 +183,13 @@ object Conversation extends Model[Conversation] {
     col.find(query, limitArray("messages", -1, 0)).cursor[Conversation].collect[Seq]()
   }
 
-  def create(subject: Option[String] = None, recipients: Seq[Recipient] = Seq()): Conversation = {
+  def create(subject: Option[String] = None,
+             recipients: Seq[Recipient] = Seq(),
+             passCaptcha: Option[String] = None,
+             aePassphraseList: Option[Seq[EncryptedPassphrase]] = None,
+             sePassphrase: Option[String] = None): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, subject, recipients, Seq(), Seq(), None, None, None, new Date, new Date, 0)
+    new Conversation(id, subject, recipients, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), None, new Date, new Date, 0)
   }
 
   def evolutions = Map(
