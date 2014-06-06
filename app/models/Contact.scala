@@ -119,7 +119,6 @@ object Contact extends SubModel[Contact, Identity] {
   override def createDefault(): Contact = {
     new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), docVersion)
   }
-
 }
 
 case class ContactUpdate(groups: Option[Seq[String]],

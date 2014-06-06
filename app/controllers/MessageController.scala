@@ -27,7 +27,6 @@ object MessageController extends ExtendedController {
   /**
    * Actions
    */
-
   def createMessage(id: String) = AuthAction(allowExternal = true).async(parse.tolerantJson) {
     request =>
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
