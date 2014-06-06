@@ -44,17 +44,27 @@ case class Conversation(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Conversation.outputWrites).as[JsObject]
 
-  def toJsonWithKey(keyId: String): JsObject = {
-    val list = sePassphraseList.filter(_.keyId.equals(keyId))
-    this.toJson ++ Json.obj("sePassphraseList" -> list.map(_.toJson))
+  def getPassphraseList(keyIds: Seq[String]): JsObject = {
+    val list = sePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId))
+    Json.obj("aePassphraseList" -> list.map(_.toJson))
   }
 
+  def toJsonWithKey(keyIds: Seq[String]): JsObject = {
+    this.toJson ++ getPassphraseList(keyIds)
+  }
 
   def toSummaryJson: Future[JsObject] =
     getMessageCount.map { count =>
       Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
         Json.obj("numberOfMessages" -> count)
     }
+
+  def toSummaryJsonWithKey(keyIds: Seq[String]): Future[JsObject] = {
+    this.toSummaryJson.map { js =>
+      js ++ getPassphraseList(keyIds)
+    }
+
+  }
 
   def query = Json.obj("_id" -> this.id)
 
@@ -119,14 +129,14 @@ case class Conversation(id: MongoId,
 
   def hasMemberResult(identityId: MongoId)(action: => Result): Result = {
     this.hasMember(identityId) match {
-      case true => action
+      case true  => action
       case false => resUnauthorized("identity is not a member of the conversation")
     }
   }
 
   def hasMemberFutureResult(identityId: MongoId)(action: => Future[Result]): Future[Result] = {
     this.hasMember(identityId) match {
-      case true => action
+      case true  => action
       case false => Future(resUnauthorized("identity is not a member of the conversation"))
     }
   }
@@ -165,6 +175,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         maybeEmptyString("subject", c.subject) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
+        maybeEmptyString("aePassphrase", c.aePassphrase) ++
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
   }
 
