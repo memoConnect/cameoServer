@@ -9,6 +9,8 @@ import helper.CmActions.AuthAction
 import play.api.libs.json._
 import helper.ResultHelper._
 import play.api.mvc.Result
+import scala.Some
+import play.api.mvc.Result
 
 /**
  * User: Björn Reimer
@@ -20,25 +22,30 @@ object ConversationController extends ExtendedController {
   def createConversation = AuthAction().async(parse.tolerantJson) {
     request =>
       {
+        def insertConversation(conversation: Conversation): Future[Result] = {
+          Conversation.col.insert(conversation).map {
+            le => resOK(conversation.toJson)
+          }
+        }
+
         validateFuture[ConversationUpdate](request.body, ConversationUpdate.format) {
           c =>
             val conversation = Conversation.create(c.subject, Seq(Recipient.create(request.identity.id)), c.passCaptcha, c.aePassphraseList, c.sePassphrase)
 
             // check if there are recipients
-            val withRecipients = (request.body \ "recipients").asOpt[Seq[String]] match {
-              case None => conversation
+            (request.body \ "recipients").asOpt[Seq[String]] match {
+              case None => insertConversation(conversation)
               case Some(recipientIds) =>
                 checkRecipients(recipientIds, conversation, request.identity) match {
-                  case None => conversation
-                  case Some(recipients) => conversation.copy(recipients = recipients ++ conversation.recipients)
+                  case None => Future(resBadRequest("Invalid recipients. Not in contact book."))
+                  case Some(recipients) =>
+                    val withRecipients = conversation.copy(recipients = recipients ++ conversation.recipients)
+                    insertConversation(withRecipients)
                 }
-            }
-
-            Conversation.col.insert(withRecipients).map {
-              le => resOK(withRecipients.toJson)
             }
         }
       }
+
   }
 
   def getConversation(id: String, offset: Int, limit: Int, keyId: Option[String]) = AuthAction(allowExternal = true).async {

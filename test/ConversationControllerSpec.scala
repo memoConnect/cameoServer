@@ -119,6 +119,48 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "subject").asOpt[String] must beNone
     }
 
+    var cidNew2 = ""
+    "Create new conversation with recipients" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> validRecipients)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      cidNew2 = (data \ "id").as[String]
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
+    }
+
+    "Get the created conversation" in {
+      val path = basePath + "/conversation/" + cidNew2
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
+    }
+
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
 
