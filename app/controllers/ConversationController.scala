@@ -59,8 +59,8 @@ object ConversationController extends ExtendedController {
   }
 
   def checkRecipients(recipientIds: Seq[String], conversation: Conversation, identity: Identity): Option[Seq[Recipient]] = {
-    // remove all recipients that are already a member of this conversation
-    val filtered = recipientIds.filterNot(id => conversation.recipients.exists(_.identityId.equals(id)))
+    // remove all recipients that are already a member of this conversation and the sender himself
+    val filtered = recipientIds.filterNot(id => conversation.recipients.exists(_.identityId.id.equals(id)) || id.equals(identity.id.id))
 
     // check if all recipients are in the users address book
     filtered.forall(recipient => identity.contacts.exists(_.identityId.id.equals(recipient))) match {
