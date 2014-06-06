@@ -306,7 +306,7 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "refuse to add duplicate recipient to conversation" in {
+    "try to add duplicate recipient to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/recipient"
 
       val json = Json.obj("recipients" -> Seq(validRecipients(0)))
@@ -314,7 +314,7 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-      status(res) must equalTo(232)
+      status(res) must equalTo(OK)
     }
 
     "refuse to add recipient that is not in own address book" in {

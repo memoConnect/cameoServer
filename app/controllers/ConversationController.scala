@@ -8,6 +8,7 @@ import helper.OutputLimits
 import helper.CmActions.AuthAction
 import play.api.libs.json._
 import helper.ResultHelper._
+import play.api.mvc.Result
 
 /**
  * User: Björn Reimer
@@ -16,13 +17,25 @@ import helper.ResultHelper._
  */
 object ConversationController extends ExtendedController {
 
-    def createConversation = AuthAction().async(parse.tolerantJson) {
-    request => {
+  def createConversation = AuthAction().async(parse.tolerantJson) {
+    request =>
+      {
         validateFuture[ConversationUpdate](request.body, ConversationUpdate.format) {
           c =>
             val conversation = Conversation.create(c.subject, Seq(Recipient.create(request.identity.id)), c.passCaptcha, c.aePassphraseList, c.sePassphrase)
-            Conversation.col.insert(conversation).map{
-              le => resOK(conversation.toJson)
+
+            // check if there are recipients
+            val withRecipients = (request.body \ "recipients").asOpt[Seq[String]] match {
+              case None => conversation
+              case Some(recipientIds) =>
+                checkRecipients(recipientIds, conversation, request.identity) match {
+                  case None => conversation
+                  case Some(recipients) => conversation.copy(recipients = recipients ++ conversation.recipients)
+                }
+            }
+
+            Conversation.col.insert(withRecipients).map {
+              le => resOK(withRecipients.toJson)
             }
         }
       }
@@ -38,43 +51,32 @@ object ConversationController extends ExtendedController {
       }
   }
 
+  def checkRecipients(recipientIds: Seq[String], conversation: Conversation, identity: Identity): Option[Seq[Recipient]] = {
+    // remove all recipients that are already a member of this conversation
+    val filtered = recipientIds.filterNot(id => conversation.recipients.exists(_.identityId.equals(id)))
+
+    // check if all recipients are in the users address book
+    filtered.forall(recipient => identity.contacts.exists(_.identityId.id.equals(recipient))) match {
+      case false => None
+      case true  => Some(filtered.map(Recipient.create))
+    }
+  }
+
   def addRecipients(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-
       Conversation.find(new MongoId(id), -1, 0).flatMap {
         case None => Future.successful(resNotFound("conversation"))
-        case Some(c) =>
-
-          c.hasMemberFutureResult(request.identity.id) {
-
+        case Some(conversation) =>
+          conversation.hasMemberFutureResult(request.identity.id) {
             validateFuture[Seq[String]](request.body \ "recipients", Reads.seq[String]) {
               recipientIds =>
-                {
-                  // check if one of the identities is already a member of this conversation
-                  recipientIds.forall(id => !c.hasMember(new MongoId(id))) match {
-                    case false => Future(resKO("At least one identity is already a member of this conversation"))
-                    case true =>
-
-                      // check if all recipients are in the users address book
-                      recipientIds.forall(recipient => request.identity.contacts.exists(_.identityId.id.equals(recipient))) match {
-                        case false => Future(resKO("At least one identity is not a contact"))
-                        case true =>
-
-                          // check if all recipients exist
-                          val maybeIdentities = Future.sequence(recipientIds.map(Identity.find))
-                          val futureResult: Future[Boolean] = maybeIdentities.map {
-                            i => i.forall(_.isDefined)
-                          }
-                          futureResult.flatMap {
-                            case false => Future(resBadRequest("At least one identityId is invalid"))
-                            case true =>
-                              c.addRecipients(recipientIds.map(Recipient.create)).map {
-                                case true  => resOK("updated")
-                                case false => resServerError("update failed")
-                              }
-                          }
-                      }
-                  }
+                checkRecipients(recipientIds, conversation, request.identity) match {
+                  case Some(recipients) =>
+                    conversation.addRecipients(recipients).map {
+                      case true  => resOk("updated")
+                      case false => resServerError("update failed")
+                    }
+                  case None => Future(resKo("invalid recipient list"))
                 }
             }
           }
@@ -129,7 +131,7 @@ object ConversationController extends ExtendedController {
             case Some(c) => c.hasMemberFutureResult(request.identity.id) {
               c.update(cu).map {
                 case false => resServerError("could not update")
-                case true  => resOK("updated")
+                case true  => resOk("updated")
               }
             }
           }

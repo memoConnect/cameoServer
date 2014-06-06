@@ -83,7 +83,7 @@ object ListController extends ExtendedController {
         case Some(obj) => obj.delete(id).map {
           _.ok match {
             case false => resServerError("could not delete")
-            case true  => resOK("deleted")
+            case true  => resOk("deleted")
           }
         }
       }

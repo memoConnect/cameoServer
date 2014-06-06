@@ -48,7 +48,7 @@ object IdentityController extends ExtendedController {
           {
             request.identity.update(identityUpdate).map {
               case false => resServerError("nothing updated")
-              case true  => resOK("updated")
+              case true  => resOk("updated")
 
             }
           }
@@ -109,7 +109,7 @@ object IdentityController extends ExtendedController {
         pku =>
           request.identity.editPublicKey(new MongoId(id), pku).map {
             case false => resServerError("not updated")
-            case true  => resOK("updated")
+            case true  => resOk("updated")
           }
       }
   }
@@ -118,7 +118,7 @@ object IdentityController extends ExtendedController {
     request =>
       request.identity.deletePublicKey(new MongoId(id)).map {
         case false => resServerError("unable to delete")
-        case true  => resOK("deleted")
+        case true  => resOk("deleted")
       }
   }
 
