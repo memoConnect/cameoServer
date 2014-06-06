@@ -119,6 +119,48 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "subject").asOpt[String] must beNone
     }
 
+    var cidNew2 = ""
+    "Create new conversation with recipients" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> validRecipients)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      cidNew2 = (data \ "id").as[String]
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
+    }
+
+    "Get the created conversation" in {
+      val path = basePath + "/conversation/" + cidNew2
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
+    }
+
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
 
@@ -306,7 +348,7 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "refuse to add duplicate recipient to conversation" in {
+    "try to add duplicate recipient to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/recipient"
 
       val json = Json.obj("recipients" -> Seq(validRecipients(0)))
@@ -314,7 +356,7 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-      status(res) must equalTo(232)
+      status(res) must equalTo(OK)
     }
 
     "refuse to add recipient that is not in own address book" in {
@@ -421,9 +463,8 @@ class ConversationControllerSpec extends StartedApp {
 
       val path = basePath + "/conversation/" + cidExisting
 
-      val json = Json.obj("aePassphraseList" -> encryptedPassphrase.map {
-        case (k, e) => Json.obj("keyId" -> k, "encryptedPassphrase" -> e)
-      }
+      val json = Json.obj("aePassphraseList" -> encryptedPassphrase.map{
+        case (k,e) => Json.obj("keyId" -> k, "encryptedPassphrase" -> e)}
       )
 
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
@@ -441,7 +482,6 @@ class ConversationControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "aePassphraseList").asOpt[Seq[JsObject]] must beSome
-      (data \ "aePassphraseList").as[Seq[JsObject]].length must beEqualTo(0)
     }
 
     "return one encrypted passphrase when one keyid is given" in {
@@ -524,9 +564,8 @@ class ConversationControllerSpec extends StartedApp {
 
       val path = basePath + "/conversation/" + cidExisting
 
-      val json = Json.obj("aePassphraseList" -> encryptedPassphrase.map {
-        case (k, e) => Json.obj("keyId" -> k, "encryptedPassphrase" -> (e + "moep"))
-      }
+      val json = Json.obj("aePassphraseList" -> encryptedPassphrase.map{
+        case (k,e) => Json.obj("keyId" -> k, "encryptedPassphrase" -> (e + "moep"))}
       )
 
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
@@ -570,24 +609,11 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "passCaptcha").asOpt[String] must beSome(passCaptchaId)
     }
 
-    "passCaptcha should be returned with conversation summary" in {
-      val path = basePath + "/conversation/" + cidExisting + "/summary"
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "passCaptcha").asOpt[String] must beSome(passCaptchaId)
-    }
-
-    val aePassphrase = "moepmoepmeopENCRYPTED"
-    "add aePassphrase to conversation" in {
+    val sePassphrase = "moepmoepmeopENCRYPTED"
+    "add sePassphrase to conversation" in {
       val path = basePath + "/conversation/" + cidExisting
 
-      val json = Json.obj("aePassphrase" -> aePassphrase)
+      val json = Json.obj("sePassphrase" -> sePassphrase)
 
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -595,10 +621,10 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "refuse non-member to add aePassphrase to conversation" in {
+    "refuse non-member to add sePassphrase to conversation" in {
       val path = basePath + "/conversation/" + cidExisting
 
-      val json = Json.obj("aePassphrase" -> (aePassphrase + "moep"))
+      val json = Json.obj("sePassphrase" -> (sePassphrase + "moep"))
 
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res = route(req).get
@@ -606,7 +632,7 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(UNAUTHORIZED)
     }
 
-    "aePassphrase should be returned with conversation" in {
+    "sePassphrase should be returned with conversation" in {
       val path = basePath + "/conversation/" + cidExisting
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -616,7 +642,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "aePassphrase").asOpt[String] must beSome(aePassphrase)
+      (data \ "sePassphrase").asOpt[String] must beSome(sePassphrase)
     }
 
     "aePassphrase should be returned with conversation summary" in {
@@ -629,7 +655,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "aePassphrase").asOpt[String] must beSome(aePassphrase)
+      (data \ "sePassphrase").asOpt[String] must beSome(sePassphrase)
     }
 
   }

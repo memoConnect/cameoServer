@@ -34,8 +34,8 @@ case class Conversation(id: MongoId,
                         subject: Option[String],
                         recipients: Seq[Recipient],
                         messages: Seq[Message],
-                        sePassphraseList: Seq[EncryptedPassphrase],
-                        aePassphrase: Option[String],
+                        aePassphraseList: Seq[EncryptedPassphrase],
+                        sePassphrase: Option[String],
                         passCaptcha: Option[MongoId],
                         numberOfMessages: Option[Int],
                         created: Date,
@@ -45,7 +45,7 @@ case class Conversation(id: MongoId,
   def toJson: JsObject = Json.toJson(this)(Conversation.outputWrites).as[JsObject]
 
   def getPassphraseList(keyIds: Seq[String]): JsObject = {
-    val list = sePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId))
+    val list = aePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId))
     Json.obj("aePassphraseList" -> list.map(_.toJson))
   }
 
@@ -108,8 +108,8 @@ case class Conversation(id: MongoId,
       Json.obj("$set" -> (
         maybeEmptyString("subject", conversationUpdate.subject) ++
         maybeEmptyJsValue("passCaptcha", conversationUpdate.passCaptcha.map(str => Json.toJson(MongoId(str)))) ++
-        maybeEmptyString("aePassphrase", conversationUpdate.aePassphrase) ++
-        maybeEmptyJsValue("sePassphraseList", conversationUpdate.sePassphraseList.map(Json.toJson(_)))
+        maybeEmptyString("sePassphrase", conversationUpdate.sePassphrase) ++
+        maybeEmptyJsValue("aePassphraseList", conversationUpdate.aePassphraseList.map(Json.toJson(_)))
       ))
     Conversation.col.update(query, set).map { _.ok }
   }
@@ -154,14 +154,15 @@ object Conversation extends Model[Conversation] {
 
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
 
-  def docVersion = 2
+  def docVersion = 3
 
   def outputWrites = Writes[Conversation] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
-        maybeEmptyString("aePassphrase", c.aePassphrase) ++
+        Json.obj("aePassphraseList" -> c.aePassphraseList.map(_.toJson)) ++
+        maybeEmptyString("sePassphrase", c.sePassphrase) ++
         maybeEmptyString("subject", c.subject) ++
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString)) ++
         addCreated(c.created) ++
@@ -175,9 +176,10 @@ object Conversation extends Model[Conversation] {
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         maybeEmptyString("subject", c.subject) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
-        maybeEmptyString("aePassphrase", c.aePassphrase) ++
+        maybeEmptyString("sePassphrase", c.sePassphrase) ++
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
   }
+
 
   def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {
     find(new MongoId(id), limit, offset)
@@ -198,14 +200,19 @@ object Conversation extends Model[Conversation] {
     col.find(query, limitArray("messages", -1, 0)).cursor[Conversation].collect[Seq]()
   }
 
-  def create(subject: Option[String] = None, recipients: Seq[Recipient] = Seq()): Conversation = {
+  def create(subject: Option[String] = None,
+             recipients: Seq[Recipient] = Seq(),
+             passCaptcha: Option[String] = None,
+             aePassphraseList: Option[Seq[EncryptedPassphrase]] = None,
+             sePassphrase: Option[String] = None): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, subject, recipients, Seq(), Seq(), None, None, None, new Date, new Date, 0)
+    new Conversation(id, subject, recipients, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), None, new Date, new Date, 0)
   }
 
   def evolutions = Map(
     0 -> ConversationEvolutions.addEncPassList,
-    1 -> ConversationEvolutions.renameEncPassList
+    1 -> ConversationEvolutions.renameEncPassList,
+    2 -> ConversationEvolutions.fixNameMixup
   )
 
   def createDefault(): Conversation = {
@@ -215,8 +222,8 @@ object Conversation extends Model[Conversation] {
 
 case class ConversationUpdate(subject: Option[String],
                               passCaptcha: Option[String],
-                              sePassphraseList: Option[Seq[EncryptedPassphrase]],
-                              aePassphrase: Option[String])
+                              aePassphraseList: Option[Seq[EncryptedPassphrase]],
+                              sePassphrase: Option[String])
 
 object ConversationUpdate {
   implicit val format: Format[ConversationUpdate] = Json.format[ConversationUpdate]
@@ -224,8 +231,8 @@ object ConversationUpdate {
   val createReads: Reads[ConversationUpdate] = (
     (__ \ "subject").readNullable[String] and
     (__ \ "passCaptcha").readNullable[String] and
-    (__ \ "sePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
-    (__ \ "aePassphrase").readNullable[String]
+    (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
+    (__ \ "sePassphrase").readNullable[String]
   )(ConversationUpdate.apply _)
 }
 
@@ -246,6 +253,18 @@ object ConversationEvolutions {
         val rename = __.json.update((__ \ 'sePassphraseList).json.copyFrom((__ \ 'encPassList).json.pick)) andThen (__ \ 'encPassList).json.prune
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
         js.transform(rename andThen addVersion)
+      }
+  }
+
+  val fixNameMixup: Reads[JsObject] = Reads {
+    js =>
+      {
+        {
+          val renameAePassphraseList = __.json.update((__ \ 'aePassphraseList).json.copyFrom((__ \ 'sePassphraseList).json.pick)) andThen (__ \ 'sePassphraseList).json.prune
+          val removeAePassphrase = (__ \ 'aePassphrase).json.prune
+          val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+          js.transform(renameAePassphraseList andThen removeAePassphrase andThen addVersion)
+        }
       }
   }
 

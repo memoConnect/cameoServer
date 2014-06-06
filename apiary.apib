@@ -401,7 +401,7 @@ Returns all existing cameoIds that contain the string
         }
 
 
-# Group Messanging
+# Group Messaging
 Sending and reading messages
 
 ## Start a new Conversation [/conversation]
@@ -416,7 +416,17 @@ Sending and reading messages
     + Body
     
             {
-                "subject":"Test Conversation 1 (optional)"
+              "subject": "new subject",
+              "passCaptcha": "fileID",
+              "aePassphrase": "someEncryptedString",
+              "eaPassphraseList": [
+                "keyId": "some Id",
+                "encryptedPassphrase": "someEncryptedString"
+              ]
+              "recipients": [
+                "identityId1",
+                "identityId2"
+              ]
             }
 
 + Response 200

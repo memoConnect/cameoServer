@@ -31,7 +31,7 @@ object ResultHelper {
   //      ++
   //      addMessagesOrEmpty(notifications))
 
-  def resOK(data: String): Result = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
+  def resOk(data: String): Result = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
   // 5 weeks
   val expire = 60 * 60 * 24 * 7 * 5
@@ -54,7 +54,7 @@ object ResultHelper {
   //      ++
   //      addMessagesOrEmpty(notifications))
 
-  def resKO(error: String): Result =
+  def resKo(error: String): Result =
     Status(232)(Json.obj("res" -> "KO")
       ++ Json.obj("error" -> error))
   //      ++

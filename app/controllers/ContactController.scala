@@ -44,7 +44,7 @@ object ContactController extends ExtendedController {
       def addInternalContact(identityId: String): Future[Result] = {
         // check if the user already has this contact
         request.identity.contacts.exists(_.identityId.toString.equals(identityId)) match {
-          case true => Future(resKO("identity is already in address book"))
+          case true => Future(resKo("identity is already in address book"))
           case false =>
             // check if identity exists
             Identity.find(new MongoId(identityId)).flatMap {
@@ -88,7 +88,7 @@ object ContactController extends ExtendedController {
           validateFuture(request.body, ContactUpdate.format) {
             contactUpdate =>
               contact.update(contactUpdate).map {
-                case true  => resOK("updated")
+                case true  => resOk("updated")
                 case false => resBadRequest("cannot update")
               }
           }
@@ -147,7 +147,7 @@ object ContactController extends ExtendedController {
         case Some(c) =>
           request.identity.deleteContact(c.id).map {
             case false => resBadRequest("unable to delete")
-            case true  => resOK("deleted")
+            case true  => resOk("deleted")
           }
       }
   }
@@ -192,7 +192,7 @@ object ContactController extends ExtendedController {
       def executeFriendRequest(receiver: MongoId, message: Option[String]): Future[Result] = {
         // check if the other identity is already in contacts
         request.identity.contacts.exists(_.identityId.equals(receiver)) match {
-          case true => Future(resKO("identity is already in address book"))
+          case true => Future(resKo("identity is already in address book"))
           case false =>
             // check if identityId exists
             Identity.find(receiver).flatMap {
@@ -204,13 +204,13 @@ object ContactController extends ExtendedController {
                   case false =>
                     // check if there already is a friend request of this identity
                     other.friendRequests.exists(_.identityId.equals(request.identity.id)) match {
-                      case true => Future(resKO("friendRequest already exists"))
+                      case true => Future(resKo("friendRequest already exists"))
                       case false =>
                         val fr = new FriendRequest(request.identity.id, message, new Date)
                         other.addFriendRequest(fr).map {
                           case true =>
                             actors.eventRouter ! NewFriendRequest(receiver, fr)
-                            resOK("request added")
+                            resOk("request added")
                           case false =>
                             resServerError("could not update")
                         }
@@ -264,8 +264,8 @@ object ContactController extends ExtendedController {
                       le2 <- request.identity.addContact(Contact.create(otherIdentity.id))
                     } yield {
                       le1 && le2 match {
-                        case true  => resOK("added contacts")
-                        case false => resKO("duplicate entries")
+                        case true  => resOk("added contacts")
+                        case false => resKo("duplicate entries")
                       }
                     }
                 }

@@ -56,7 +56,7 @@ object VerificationController extends Controller with ExtendedController {
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
                 val identityUpdate = IdentityUpdate(email = Some(i.email.get.copy(isVerified = true)))
                 i.update(identityUpdate)
-                resOK("verified")
+                resOk("verified")
               } else {
                 resUnauthorized("mail has changed")
               }
@@ -67,7 +67,7 @@ object VerificationController extends Controller with ExtendedController {
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
                 val identityUpdate = IdentityUpdate(phoneNumber = Some(i.phoneNumber.get.copy(isVerified = true)))
                 i.update(identityUpdate)
-                resOK("verified")
+                resOk("verified")
               } else {
                 resUnauthorized("phonenumber has changed")
               }
