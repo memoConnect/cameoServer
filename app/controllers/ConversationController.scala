@@ -28,7 +28,7 @@ object ConversationController extends ExtendedController {
           }
         }
 
-        validateFuture[ConversationUpdate](request.body, ConversationUpdate.format) {
+        validateFuture[ConversationUpdate](request.body, ConversationUpdate.createReads) {
           c =>
             val conversation = Conversation.create(c.subject, Seq(Recipient.create(request.identity.id)), c.passCaptcha, c.aePassphraseList, c.sePassphrase)
 
