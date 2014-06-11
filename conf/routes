@@ -135,5 +135,10 @@ GET            /m/                                                  controllers.
 GET            /m                                                   controllers.Application.redirect(url = "/m/")
 GET            /m/*file                                             controllers.Assets.at(path="/public/app", file)
 
+## Docs
+GET            /d/                                                   controllers.Assets.at(path="/public/docs", file="index.html")
+GET            /d                                                    controllers.Application.redirect(url = "/d/")
+GET            /d/*file                                              controllers.Assets.at(path="/public/docs", file)
+
 # Redirect / to /app
-GET            /                                                    controllers.Application.redirect(url = "/m/")
+GET            /                                            controllers.Application.redirect(url = "/m/")
