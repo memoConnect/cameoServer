@@ -50,10 +50,13 @@ object ConversationController extends ExtendedController {
 
   def getConversation(id: String, offset: Int, limit: Int, keyId: List[String]) = AuthAction(allowExternal = true).async {
     request =>
-      Conversation.find(id, limit, offset).map {
-        case None => resNotFound("conversation")
-        case Some(c) => c.hasMemberResult(request.identity.id) {
-          resOK(c.toJsonWithKey(keyId))
+      Conversation.find(id, limit, offset).flatMap {
+        case None => Future(resNotFound("conversation"))
+        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+          c.getMissingPassphrases.map {
+            missingPasshrases =>
+              resOK(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
+          }
         }
       }
   }
@@ -139,6 +142,22 @@ object ConversationController extends ExtendedController {
               c.update(cu).map {
                 case false => resServerError("could not update")
                 case true  => resOk("updated")
+              }
+            }
+          }
+      }
+  }
+
+  def addAePassphrase(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      Conversation.find(new MongoId(id), -1, 0).flatMap {
+        case None => Future.successful(resNotFound("conversation"))
+        case Some(conversation) =>
+          conversation.hasMemberFutureResult(request.identity.id) {
+            validateFuture(request.body \ "aePassphraseList", Reads.seq(EncryptedPassphrase.createReads)) {
+              conversation.addAePassphrases(_).map {
+                case true  => resOk("updated")
+                case false => resServerError("unable to update")
               }
             }
           }

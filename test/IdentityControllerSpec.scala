@@ -425,7 +425,7 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
       val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
 
-      pubKeys.length must beEqualTo(2)
+      pubKeys.length must beGreaterThanOrEqualTo(2)
 
       val key1: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)).get
       (key1 \ "id").asOpt[String] must beSome(pubKeyId)

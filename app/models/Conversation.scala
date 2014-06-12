@@ -146,6 +146,27 @@ case class Conversation(id: MongoId,
     Conversation.col.update(query, setLastUpdated(set)).map(_.updatedExisting)
   }
 
+  def addAePassphrases(aePassphrases: Seq[EncryptedPassphrase]): Future[Boolean] = {
+    EncryptedPassphrase.appendUnique(this.id, aePassphrases).map(_.updatedExisting)
+  }
+
+  case class MissingPassphrase(identityId: String, keyId: String)
+  object MissingPassphrase { implicit val format = Json.format[MissingPassphrase] }
+
+  def getMissingPassphrases: Future[Seq[MissingPassphrase]] = {
+
+    // get keyIds of all recipients. Todo: this takes quite a lot of db lookups, reduce!
+    val futureKeys: Seq[Future[Seq[MissingPassphrase]]] = this.recipients.map {
+      recipient =>
+        Identity.find(recipient.identityId).map {
+          case None => Seq()
+          case Some(identity) =>
+            val filtered = identity.publicKeys.filterNot(pubKey => this.aePassphraseList.exists(_.keyId.equals(pubKey.id.id)))
+            filtered.map(pubKey => new MissingPassphrase(identity.id.id, pubKey.id.id))
+        }
+    }
+    Future.sequence(futureKeys).map(_.flatten)
+  }
 }
 
 object Conversation extends Model[Conversation] {
@@ -179,7 +200,6 @@ object Conversation extends Model[Conversation] {
         maybeEmptyString("sePassphrase", c.sePassphrase) ++
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
   }
-
 
   def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {
     find(new MongoId(id), limit, offset)

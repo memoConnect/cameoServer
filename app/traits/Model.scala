@@ -10,6 +10,7 @@ import play.api.Logger
 import helper.JsonHelper._
 import reactivemongo.core.commands.LastError
 import scala.concurrent.duration._
+import reactivemongo.api.ReadPreference
 
 /**
  * User: Björn Reimer

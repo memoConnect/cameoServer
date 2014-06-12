@@ -25,7 +25,7 @@ case class EncryptedPassphrase(id: MongoId,
 object EncryptedPassphrase extends SubModel[EncryptedPassphrase, Conversation] {
 
   def parentModel = Conversation
-  def elementName = "encPassList"
+  def elementName = "aePassphraseList"
 
   implicit val mongoFormat: Format[EncryptedPassphrase] = createMongoFormat(Json.reads[EncryptedPassphrase], Json.writes[EncryptedPassphrase])
 

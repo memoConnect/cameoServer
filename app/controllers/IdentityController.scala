@@ -49,7 +49,6 @@ object IdentityController extends ExtendedController {
             request.identity.update(identityUpdate).map {
               case false => resServerError("nothing updated")
               case true  => resOk("updated")
-
             }
           }
       }

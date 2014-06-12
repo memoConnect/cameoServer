@@ -27,6 +27,7 @@ POST           /a/v1/conversation                                    controllers
 GET            /a/v1/conversation/:id                                controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
 PUT            /a/v1/conversation/:id                                controllers.ConversationController.updateConversation(id)
 POST           /a/v1/conversation/:id/recipient                      controllers.ConversationController.addRecipients(id)
+POST           /a/v1/conversation/:id/aePassphrase                   controllers.ConversationController.addAePassphrase(id)
 DELETE         /a/v1/conversation/:id/recipient/:rid                 controllers.ConversationController.deleteRecipient(id, rid)
 GET            /a/v1/conversation/:id/summary                        controllers.ConversationController.getConversationSummary(id: String, keyId: List[String])
 GET            /a/v1/conversations                                   controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
