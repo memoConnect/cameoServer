@@ -11,6 +11,7 @@ import helper.CmActions.AuthAction
 import scala.Some
 import play.api.libs.json.Reads._
 import services.AvatarGenerator
+import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -48,6 +49,8 @@ object AccountController extends ExtendedController {
                   // add support user
                   identity.addSupport
 
+
+                  Logger.debug("Account: " + Json.toJson(accountWithIdentity))
                   Account.col.insert(accountWithIdentity).flatMap {
                     lastError =>
                       lastError.ok match {

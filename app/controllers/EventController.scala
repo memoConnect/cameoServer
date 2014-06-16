@@ -5,9 +5,10 @@ import helper.CmActions.AuthAction
 import models.{ MongoId, EventSubscription }
 import helper.ResultHelper._
 import scala.concurrent.ExecutionContext
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 import ExecutionContext.Implicits.global
+import play.api.libs.json.Json
 
 /**
  * User: Björn Reimer
@@ -37,6 +38,8 @@ object EventController extends Controller {
           resBadRequest("max number of subscription reached")
         case _ =>
           val subscription = EventSubscription.create(request.identity.id)
+          val json = Json.toJson(subscription)
+          Logger.debug("Subscription: " + json)
           EventSubscription.col.insert(subscription)
           resOK(subscription.toJson)
       }
@@ -47,7 +50,6 @@ object EventController extends Controller {
       EventSubscription.findAndClear(MongoId(id)).map {
         case None => resNotFound("subscription id")
         case Some(subscription) =>
-          subscription.resetTimeout()
           resOK(subscription.toJson)
       }
   }

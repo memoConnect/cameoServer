@@ -6,7 +6,7 @@ import play.api.libs.json._
 import helper.{ IdHelper, MongoCollections }
 import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands.{ Update, FindAndModify, Count }
-import reactivemongo.bson.{ BSONArray, BSONDocument }
+import reactivemongo.bson.{BSONDateTime, BSONArray, BSONDocument}
 import play.modules.reactivemongo.json.BSONFormats._
 import ExecutionContext.Implicits.global
 import play.modules.reactivemongo.json.collection.JSONCollection
@@ -27,12 +27,6 @@ case class EventSubscription(id: MongoId,
   def toJson: JsObject = Json.obj(
     "events" -> events.map(_.toJson),
     "id" -> id.toJson)
-
-  def resetTimeout(): Future[Boolean] = {
-    val query = Json.obj("_id" -> this.id)
-    val set = Json.obj("$set" -> Json.obj("lastAccessed" -> new Date))
-    EventSubscription.col.update(query, set).map(_.updatedExisting)
-  }
 }
 
 object EventSubscription extends Model[EventSubscription] {
@@ -68,7 +62,8 @@ object EventSubscription extends Model[EventSubscription] {
   // get all events for subscriptions and clear them
   def findAndClear(id: MongoId): Future[Option[EventSubscription]] = {
     val query = BSONDocument("_id" -> toBSON(Json.toJson(id)).get)
-    val set = BSONDocument("$set" -> BSONDocument("events" -> BSONArray()))
+    val set = BSONDocument("$set" -> BSONDocument("events" -> BSONArray()), "lastAccessed" -> BSONDateTime((new Date).getTime))
+
     val command = FindAndModify(
       col.name,
       query,
