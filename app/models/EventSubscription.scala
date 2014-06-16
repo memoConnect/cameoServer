@@ -3,7 +3,7 @@ package models
 import java.util.Date
 import traits.Model
 import play.api.libs.json._
-import helper.{ IdHelper, MongoCollections }
+import helper.{JsonHelper, IdHelper, MongoCollections}
 import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands.{ Update, FindAndModify, Count }
 import reactivemongo.bson.{BSONDateTime, BSONArray, BSONDocument}
@@ -62,12 +62,13 @@ object EventSubscription extends Model[EventSubscription] {
   // get all events for subscriptions and clear them
   def findAndClear(id: MongoId): Future[Option[EventSubscription]] = {
     val query = BSONDocument("_id" -> toBSON(Json.toJson(id)).get)
-    val set = BSONDocument("$set" -> BSONDocument("events" -> BSONArray()), "lastAccessed" -> BSONDateTime((new Date).getTime))
+    val set = Json.obj("$set" -> Json.obj("events" -> JsArray(), "lastAccessed" -> Json.obj("$date" -> new Date)))
+    val setBson = JsonHelper.toBson(set).get
 
     val command = FindAndModify(
       col.name,
       query,
-      Update(set, fetchNewObject = false))
+      Update(setBson, fetchNewObject = false))
 
     MongoCollections.mongoDB.command(command).map {
       maybeBson =>

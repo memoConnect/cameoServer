@@ -49,8 +49,6 @@ object AccountController extends ExtendedController {
                   // add support user
                   identity.addSupport
 
-
-                  Logger.debug("Account: " + Json.toJson(accountWithIdentity))
                   Account.col.insert(accountWithIdentity).flatMap {
                     lastError =>
                       lastError.ok match {

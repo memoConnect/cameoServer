@@ -38,8 +38,6 @@ object EventController extends Controller {
           resBadRequest("max number of subscription reached")
         case _ =>
           val subscription = EventSubscription.create(request.identity.id)
-          val json = Json.toJson(subscription)
-          Logger.debug("Subscription: " + json)
           EventSubscription.col.insert(subscription)
           resOK(subscription.toJson)
       }
