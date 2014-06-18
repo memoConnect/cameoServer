@@ -1,42 +1,43 @@
 package models
 
 import java.util.Date
-import traits.{OutputLimits, Model, MongoHelper}
+import traits.SubModel
 import play.api.libs.json._
-import scala.concurrent.{ExecutionContext, Future}
-import ExecutionContext.Implicits.global
-import reactivemongo.api.indexes.{IndexType, Index}
+import scala.concurrent.Future
+import helper.IdHelper
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer
  * Date: 6/26/13
  * Time: 9:31 PM
  */
-case class Token(
-                  token: String,
-                  username: Option[String],
-                  purl: Option[String],
-                  isAdmin: Boolean,
-                  created: Date
-                  )
+case class Token(id: MongoId,
+                 created: Date) {
 
-object Token extends MongoHelper with Model[Token] {
+  def toJson: JsValue = Json.toJson(this)(Token.outputWrites)
+}
 
-  tokenCollection.indexesManager.ensure(Index(List("token" -> IndexType.Ascending), unique = true, sparse = true))
+object Token extends SubModel[Token, Identity] {
 
-  implicit val collection = tokenCollection
+  def parentModel = Identity
+  def elementName = "tokens"
+
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
-  def inputReads = Json.reads[Token]
+  def docVersion = 0
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)) = Writes[Token] {
+  def evolutions = Map()
+
+  def outputWrites = Writes[Token] {
     t =>
-      Json.obj("token" -> t.token) ++
+      Json.obj("token" -> t.id.toJson) ++
         addCreated(t.created)
   }
 
-  def find(token: String): Future[Option[Token]] = {
-    val query = Json.obj("token" -> token)
-    collection.find(query).one[Token]
+  def createDefault(): Token = {
+    new Token(
+      IdHelper.generateAccessToken(),
+      new Date)
   }
 }

@@ -1,0 +1,1514 @@
+FORMAT: 1A
+HOST: http://cameo.io
+
+# Cameo API
+new and improved ;)
+
+
+# Group Authentication
+
+## Create new Token [/api/v1/token]
+
+### GET
+
++ Headers
+
+            Authorization: Basic
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "token": "FPqYIrbvPdTmxUE5fb2TIRfy1Gmy7JS1OxfdIhNJ",
+            "created": "22.01.2014 16:34:54"
+          }
+        }
+
+## Delete Token [/api/token/{token}]
+
+### DELETE
+
++ Parameters
+    + token
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "deletedToken": "34AmUnliV2SXqj9vOTfHDiymmu5XF9B7KGEVV126"
+          }
+        }
+
+
+# Group Accounts
+Account Management
+
+## Check Username [/account/check]
+
+
+### POST
+
++ Request (application/json)
+
+        {
+            "loginName":"testtest"
+        }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "loginName": "testtest",
+            "reservationSecret": "VaXdx3xAAzk3cTXvdDlC"
+          }
+        }
+
++ Response 232
+
+        {
+          "res": "KO",
+          "data": {
+            "alternative": "testtest_1",
+          }
+        }
+
+## Create Account [/account]
+
+### POST
+
++ Request (application/json)
+
+        {
+          "loginName": "testtest",
+          "password": "password",
+          "email": "mail",
+          "phoneNumber": "12335",
+          "reservationSecret":"VaXdx3xAAzk3cTXvdDlC"
+        }
+
++ Response 200 (application/json)
+
+        {
+          "res": "OK",
+          "data": {
+            "loginName": "test",
+            "identities": [
+              "ZVtXkxMmPj4WtLYea8ci"
+            ],
+            "phoneNumber": "12335",
+            "email": "mail",
+            "created": "22.01.2014 16:34:54",
+            "lastUpdated": "22.01.2014 16:34:54"
+        }
+
+
+## Get Account details [/account/{loginName}]
+
+### GET
+
++ Parameters
+    + loginName
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "loginName": "test",
+            "identities": [
+              "ZVtXkxMmPj4WtLYea8ci"
+            ],
+            "phoneNumber": "12335",
+            "email": "mail",
+            "created": "22.01.2014 16:34:54",
+            "lastUpdated": "22.01.2014 16:34:54"
+        }
+
+### delete a Account [DELETE]
+
++ Parameters
+    + loginName
+    
++ Request
+    + Headers
+    
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "deleted Account": "test1"
+          }
+        }
+
+## Verification [/verify]
+
+Send a verification mail/sms. Both parameters in the JSON are optional.
+
+### POST
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    + Body
+    
+            {
+              "verifyPhoneNumber": true,
+              "verifyEmail": true
+            }
+
++ Response 200
+
+        {
+          "res": "OK"
+        }
+
+
+## Confirm Verification [/verify/{secret}]
+
+### GET
+
++ Parameters
+    + secret ... The secret that is contained in the verification link
+
++ Response 200
+
+        {
+            "res": "OK",
+            "data": "verified"
+        }
+
+## Get public information of identity [/identity/{id}]
+
+### GET
+
++ Parameters
+    + id ... Identity Id
+
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+             "id": "ZVtXkxMmPj4WtLYea8ci"
+             "cameoId": "testtest",
+             "publicKeys": [
+               {
+                 "id": "4TXpnSAa6IPNGdbLX7Mh",
+                 "name": "some Name",
+                 "key": "theKey"
+               }
+             ]
+          }
+        }
+        
+        
+## Manage your identity [/identity]
+
+### GET
+Get your identity
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "N2HKgBdxxnWBGxlYY7Dn",
+            "userKey": "whEGDKfdkIt7Ex6YDWVhjeE53hO8u2aXXyTDvzru",
+            "cameoId": "kfhgtS400HpC4NPP4jHJ",
+            "email": {
+              "value": "dbfill@bjrm.de",
+              "isVerified": false
+            },
+            "phoneNumber": {
+              "value": "+491744560277",
+              "isVerified": false
+            },
+            "preferredMessageType": "default",
+            "publicKeys": [
+              {
+                "id": "4TXpnSAa6IPNGdbLX7Mh",
+                "name": "some Name",
+                "key": "theKey"
+              }
+            ],
+            "userType": "internal",
+            "created": "13.02.2014 15:19:12",
+            "lastUpdated": "13.02.2014 15:19:12"
+          }
+        }
+
+
+### PUT
+Edit your identity. All values are optional. Only values contained in the json will be modified.
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
+    + Body
+
+            {
+              "phoneNumber": "+49123456789",
+              "email": "mail",
+              "displayName": "newNick"
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "5WtjLmPMEFYVzsn62DrP",
+            "displayName": "newNick",
+            "userKey": "pSkgMI2ithOxLfsPpWD0XuEcKjEK6Prn9oPZ3Xp1",
+            "email": {
+              "value": "mail",
+              "isVerified": false
+            },
+            "phoneNumber": {
+              "value": "+49123456789",
+              "isVerified": false
+            },
+            "preferredMessageType": "default",
+            "created": "06.02.2014 15:51:46",
+            "lastUpdated": "06.02.2014 15:51:46"
+          }
+        }
+
+
+## Add public key to identity [/identity/publicKey]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "name":"some Name",
+                "key":"theKey",
+                "keySize:"(int) keySize"
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "4TXpnSAa6IPNGdbLX7Mh",
+            "name": "some Name",
+            "key": "theKey",
+            "size": "keySize"
+          }
+        }
+
+
+## Manage public keys [/identity/publicKey/{id}]
+
++   Parameters
+    + id ... Id of the public key
+
+
+### PUT
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "name":"new Name (optional)",
+                "key":"new key (optional)",
+                "size":"new key size (otional)"
+            }
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data":"updated"
+        }
+
+
+### DELETE
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data":"deleted"
+        }
+
+
+
+## Search for cameoIds [/identity/search{?offset,limit}]
+
+### POST
+Returns all existing cameoIds that contain the string
+
++ Request
+
+        {
+            "search":"searchTerm",
+            "fields":["cameoId","displayName"],
+            "excludeContacts": false
+        }
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data": [
+                {
+                    "id":"vCXqmtXycssTuENaa3rh",
+                    "cameoId":"oOqn9Nj3lDQeMGLFdHM5",
+                    "displayName":"NoName"
+                }
+            ]
+        }
+
+
+# Group Messaging
+Sending and reading messages
+
+## Start a new Conversation [/conversation]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+    
+    + Body
+    
+            {
+              "subject": "new subject",
+              "passCaptcha": "fileID",
+              "aePassphrase": "someEncryptedString",
+              "eaPassphraseList": [
+                "keyId": "some Id",
+                "encryptedPassphrase": "someEncryptedString"
+              ]
+              "recipients": [
+                "identityId1",
+                "identityId2"
+              ]
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "WvbpPu2X8btdAOpA4IRF",
+            "recipients": [],
+            "messages": [],
+            "numberOfMessages": 0,
+            "created": "22.01.2014 16:34:55",
+            "lastUpdated": "22.01.2014 16:34:55"
+          }
+        }
+
+## Get Conversation [/conversation/{id}{?offset,limit}]
+
+### GET
+
++ Parameters
+    + id ... Conversation id
+    + offset (optional) ... First message to be returned
+    + limit  (optional)... Max number of messages returned
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "WvbpPu2X8btdAOpA4IRF",
+            "messages": [
+              {
+                "id": "vwUmVfjkn5lXXwXGvxzS",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [],
+                "created": "22.01.2014 16:34:55",
+                "encrypted": "blob",
+                "plain": {
+                  "text": "text",
+                  "files": [
+                    "fileId"
+                  ]
+                }
+              },
+              {
+                "id": "vwUmVfjkn5lXXwXGvxzS",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [],
+                "created": "22.01.2014 16:34:55",
+                "encrypted": "blob",
+                "plain": {
+                  "text": "text",
+                  "files": [
+                    "fileId"
+                  ]
+                }
+              },
+              {
+                "id": "vwUmVfjkn5lXXwXGvxzS",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [],
+                "created": "22.01.2014 16:34:55",
+                "encrypted": "blob",
+                "plain": {
+                  "text": "text",
+                  "files": [
+                    "fileId"
+                  ]
+                }
+              }
+            ],
+            "numberOfMessages": 3,
+            "created": "22.01.2014 16:34:55",
+            "lastUpdated": "22.01.2014 16:34:55",
+            "passCaptcha": "fileId",
+            "recipients":
+                   [
+                       {
+                           "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                       },
+                       {
+                           "identityId": "Tya0cZiaYFhFOBS2RNP1"
+                       }
+                   ]
+          }
+        }
+
+
+## Edit Conversation [/conversation/{id}]
+
+### PUT
+
++ Parameters
+    + id ... Conversation id
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+                {
+                  "subject": "new subject",
+                  "passCaptcha": "fileID",
+                  "aePassphrase": "someEncryptedString",
+                  "eaPassphraseList": [
+                    "keyId": "some Id",
+                    "encryptedPassphrase": "someEncryptedString"
+                  ]
+                }
+
++ Response 200
+
+                {
+                    "res":"OK",
+                    "data":"updated"
+                }
+
+## Get Conversation summary [/conversation/{id}/summary]
+
+### GET
+
++ Parameters
+    + id ... Conversation id
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "rQHQZHv4ARDXRmnEzJ92",
+            "lastUpdated": "13.02.2014 15:19:23",
+            "numberOfMessages": 100,
+            "lastMessage": "PjSYoF7Kc5 NpoOVkhlm0hO5VcqD9Pk1wayVoH7Hk9rx63UW"
+          }
+        }
+
+
+## Get all conversations of user [/conversations]
+
+### GET
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+            {
+              "res": "OK",
+              "data": {
+                "conversations": [
+                  {
+                    "id": "OM9QeJ4RfJcdscyo52g4",
+                    "lastUpdated": "21.02.2014 12:51:31",
+                    "numberOfMessages": 3,
+                    "messages": [
+                      {
+                        "id": "vwUmVfjkn5lXXwXGvxzS",
+                        "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                        "messageStatus": [],
+                        "created": "22.01.2014 16:34:55",
+                        "encrypted": "blob",
+                        "plain": {
+                          "text": "text",
+                          "files": [
+                            "fileId"
+                          ]
+                        }
+                      }
+                    ],
+                    "recipients": [
+                      {
+                        "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                      },
+                      {
+                        "identityId": "GhEWGfy3Jqx8BRP1pITO"
+                      },
+                      {
+                        "identityId": "g9PWZY7xKNbeCO6LPNnx"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "9YNtlNZ2LHcAvzqd42EE",
+                    "lastUpdated": "13.02.2014 15:19:13",
+                    "numberOfMessages": 100,
+                    "subject": "some 1337 subject hlPVY",
+                    "messages": [
+                      {
+                        "id": "vwUmVfjkn5lXXwXGvxzS",
+                        "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                        "messageStatus": [],
+                        "created": "22.01.2014 16:34:55",
+                        "encrypted": "blob",
+                        "plain": {
+                          "text": "text",
+                          "files": [
+                            "fileId"
+                          ]
+                        }
+                      }
+                    ],
+                    "recipients": [
+                      {
+                        "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                      },
+                      {
+                        "identityId": "tfy8ZdsGVWlUI98igv2S"
+                      },
+                      {
+                        "identityId": "Tya0cZiaYFhFOBS2RNP1"
+                      },
+                      {
+                        "identityId": "xiDoJmuua853krSS5SeZ"
+                      },
+                      {
+                        "identityId": "2Kurw70t9TXg4iPfCWAw"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "Me6e7EG0wnshvnrvYTrb",
+                    "lastUpdated": "13.02.2014 15:19:13",
+                    "numberOfMessages": 100,
+                    "subject": "some 1337 subject OTngs",
+                    "messages": [
+                      {
+                        "id": "vwUmVfjkn5lXXwXGvxzS",
+                        "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                        "messageStatus": [],
+                        "created": "22.01.2014 16:34:55",
+                        "encrypted": "blob",
+                        "plain": {
+                          "text": "text",
+                          "files": [
+                            "fileId"
+                          ]
+                        }
+                      }
+                    ],
+                    "recipients": [
+                      {
+                        "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                      },
+                      {
+                        "identityId": "2Kurw70t9TXg4iPfCWAw"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "fUd6U62SWV2maTOEHEbQ",
+                    "lastUpdated": "13.02.2014 15:19:13",
+                    "numberOfMessages": 99,
+                    "subject": "some 1337 subject SnY6l",
+                    "messages": [
+                      {
+                        "id": "vwUmVfjkn5lXXwXGvxzS",
+                        "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                        "messageStatus": [],
+                        "created": "22.01.2014 16:34:55",
+                        "encrypted": "blob",
+                        "plain": {
+                          "text": "text",
+                          "files": [
+                            "fileId"
+                          ]
+                        }
+                      }
+                    ],
+                    "recipients": [
+                      {
+                        "identityId": "N2HKgBdxxnWBGxlYY7Dn"
+                      },
+                      {
+                        "identityId": "tfy8ZdsGVWlUI98igv2S"
+                      },
+                      {
+                        "identityId": "xiDoJmuua853krSS5SeZ"
+                      }
+                    ]
+                  }
+                ],
+                "numberOfConversations": 4
+              }
+            }
+
+
+## Add new Recipient to Conversation [/conversation/{id}/recipient]
+
+### POST
+
++ Parameters
+    + id ... Conversation id
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+              "recipients": [
+                "s29FpU4TFhxXOdRGfzLk",
+                "V8SXRiE4o1lfN2WmGf0S",
+                "j07EKjJiGOXdfx2wqs0N"
+              ]
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "updated"
+        }
+
+## Recipients in the conversation conversation [/conversation/{id}/recipient/{recipientId}]
+
+### DELETE
+
++ Parameters
+    + id ... Conversation id
+    + recipientId ... Recipient to be deleted
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+         {
+           "res": "OK",
+         }
+
+## Add message to conversation [/conversation/{id}/message]
+
+### POST
+
++ Parameters
+    + id ... Conversation id
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+    + Body
+    
+            {
+              "encrypted": "blob",
+              "plain": {
+                "text": "text",
+                "files": [
+                  "fileId"
+                ]
+              }
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "vwUmVfjkn5lXXwXGvxzS",
+            "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+            "messageStatus": [],
+            "created": "22.01.2014 16:34:55",
+            "encrypted": "blob",
+            "plain": {
+              "text": "text",
+              "files": [
+                "fileId"
+              ]
+            }
+          }
+        }
+
+
+## Get single Message [/message/{id}]
+
+### GET
+
++ Parameters
+    + id ... Message id
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            {
+              "id": "vwUmVfjkn5lXXwXGvxzS",
+              "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+              "messageStatus": [],
+              "created": "22.01.2014 16:34:55",
+              "encrypted": "blob",
+              "plain": {
+                "text": "text",
+                "files": [
+                  "fileId"
+                ]
+              }
+            }
+          }
+        }
+
+# Group Files
+Handle file up and download
+
+## Upload new file [/file]
+
+### POST
+
++ Request
+    + Headers
+
+            X-File-Name: FileName
+            X-Max-Chunks: Total number of chunks
+            X-File-Size: FileSize in Bytes
+            X-File-Type: FileType
+
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "q06ga9DepomdWCdLzuDX",
+            "chunks": [
+              0
+            ],
+            "fileName": "some_name",
+            "maxChunks": 10,
+            "fileSize": 1234567,
+            "fileType": "some_type",
+            "created": "21.02.2014 12:20:28"
+          }
+        }
+
+## Chunk upload [/file/{id}]
+
++ Parameters
+    + id ... fileId
+
+### POST
+Add chunk to file
+
++ Request
+    + Headers
+
+            X-Index: Chunk index
+
+
+    + Body
+
+             {
+                 "chunk":"some blob"
+             }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "q06ga9DepomdWCdLzuDX",
+            "chunks": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "fileName": "some_name",
+            "maxChunks": 10,
+            "fileSize": 1234567,
+            "fileType": "some_type",
+            "created": "21.02.2014 12:20:28"
+          }
+        }
+
+### GET
+Get meta-information of a file
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "q06ga9DepomdWCdLzuDX",
+            "chunks": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "fileName": "some_name",
+            "maxChunks": 10,
+            "fileSize": 1234567,
+            "fileType": "some_type",
+            "created": "21.02.2014 12:20:28"
+          }
+        }
+
+## Download chunk [/file/{id}/{chunkIndex}]
+Download chunks of a file
+
++ Parameters
+    + id ... fileId
+    + chunkIndex ... index of the chunk to download
+
+### GET
+
++ Response 200
+
+        {
+            "chunk":"some blob"
+        }
+
+# Group Purl
+
+## Use a purl [/purl/{secret}]
+
++ Parameters
+    + secret ... The secret in the purl
+
+### GET
+
++ Response 200
+
+        {
+            "conversation":"conversation object",
+            "identity":"identity object",
+            "token":"temporary token for external users"
+        }
+
+
+# Group Contacts
+Manage your Contacts
+
+## Add Contact [/contact]
+
+### POST
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+    + Body
+    
+            {
+              "identity": {
+                "displayName": "Ulrich",
+                "email": "c@mail.de",
+                "phoneNumber": "+491234567890",
+                "preferredMessageType": "sms/mail/default"
+              },
+              "groups": [
+                "friends",
+                "job"
+              ]
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "SnPjHLilBf3NcmeHLLBp",
+            "groups": [
+              "friends",
+              "job"
+            ],
+            "identity": {
+              "id": "V8SXRiE4o1lfN2WmGf0S",
+              "displayName": "Ulrich",
+              "userKey": "FdlZ5ixQjo73aufdAclttOctkfHkwy7sTtQ9vp7B",
+              "contacts": [],
+              "email": "c@mail.de",
+              "phoneNumber": "+49174560277",
+              "preferredMessageType": "sms",
+              "created": "22.01.2014 16:34:55",
+              "lastUpdated": "22.01.2014 16:34:55"
+            }
+          }
+        }
+
+
+## Get all contacts [/contacts{?offset,limit}]
+
+### GET
+
++ Parameters
+    + offset (optional) ... First contact to be returned
+    + limit  (optional)... Max number of contacts returned
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": [
+            {
+              "id": "SnPjHLilBf3NcmeHLLBp",
+              "groups": [
+                "friends",
+                "job"
+              ],
+              "identityId": "V8SXRiE4o1lfN2WmGf0S",
+              "identity": {
+                "id": "V8SXRiE4o1lfN2WmGf0S",
+                "displayName": "Ulrich",
+                "userKey": "FdlZ5ixQjo73aufdAclttOctkfHkwy7sTtQ9vp7B",
+                "contacts": [],
+                "email": "c@mail.de",
+                "phoneNumber": "+49123456789",
+                "preferredMessageType": "sms",
+                "created": "22.01.2014 16:34:55",
+                "lastUpdated": "22.01.2014 16:34:55"
+              }
+            },
+            {
+              "id": "VnEppGR3bqvtE11dDl9U",
+              "groups": [
+                "friends"
+              ],
+              "identityId": "j07EKjJiGOXdfx2wqs0N",
+              "identity": {
+                "id": "j07EKjJiGOXdfx2wqs0N",
+                "displayName": "Aaron",
+                "userKey": "Su4NDX8W8FAcWmwPPm6Ord0tLYaZP60yE6Mpnczi",
+                "contacts": [],
+                "email": "contact2@mail.de",
+                "phoneNumber": "+491234567892",
+                "preferredMessageType": "default",
+                "created": "22.01.2014 16:34:55",
+                "lastUpdated": "22.01.2014 16:34:55"
+              }
+            }
+          ]
+        }
+
+## Single Contact [/contact/{id}]
+
+### GET
+
++ Parameters
+    + id ... Contact id
+    
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "SnPjHLilBf3NcmeHLLBp",
+            "groups": [
+              "friends",
+              "job"
+            ],
+            "identityId": "V8SXRiE4o1lfN2WmGf0S",
+            "identity": {
+              "id": "V8SXRiE4o1lfN2WmGf0S",
+              "displayName": "Ulrich",
+              "userKey": "FdlZ5ixQjo73aufdAclttOctkfHkwy7sTtQ9vp7B",
+              "contacts": [],
+              "email": "c@mail.de",
+              "phoneNumber": "+123456789",
+              "preferredMessageType": "sms",
+              "created": "22.01.2014 16:34:55",
+              "lastUpdated": "22.01.2014 16:34:55"
+            }
+          }
+        }
+        
+        
+### DELETE
+
++ Parameters
+    + id ... Contact id
+    
++ Request
+    + Headers
+
+            Authorization: {token}
+            
++ Response 200
+
+        {
+          "res": "OK"
+        }
+
+
+### PUT
+Edit a contact. All values are optional. Only values contained in the json will be modified.
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
+    + Body
+
+            {
+              "groups": ["group1","group2"]
+              "phoneNumber": "+49123456789",
+              "email": "mail",
+              "displayName": "newNick"
+            }
+
++ Response 200
+
+        {
+          "res": "OK"
+        }
+
+
+## Get all contact groups [/contact-groups]
+
+### GET
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": [
+            "friends",
+            "job"
+          ]
+        }
+
+## Get all contacts from a group [/contact-group/{groupName}{?offset,limit}]
+
+### GET
+
++ Parameters
+    + groupName ... Name of the group
+    + offset (optional) ... First contact to be returned
+    + limit  (optional)... Max number of contacts returned
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": [
+            {
+              "id": "SnPjHLilBf3NcmeHLLBp",
+              "groups": [
+                "friends",
+                "job"
+              ],
+              "identityId": "V8SXRiE4o1lfN2WmGf0S",
+              "identity": {
+                "id": "V8SXRiE4o1lfN2WmGf0S",
+                "displayName": "Ulrich",
+                "userKey": "FdlZ5ixQjo73aufdAclttOctkfHkwy7sTtQ9vp7B",
+                "contacts": [],
+                "email": "c@mail.de",
+                "phoneNumber": "+49123456789",
+                "preferredMessageType": "sms",
+                "created": "22.01.2014 16:34:55",
+                "lastUpdated": "22.01.2014 16:34:55"
+              }
+            },
+            {
+              "id": "VnEppGR3bqvtE11dDl9U",
+              "groups": [
+                "friends"
+              ],
+              "identityId": "j07EKjJiGOXdfx2wqs0N",
+              "identity": {
+                "id": "j07EKjJiGOXdfx2wqs0N",
+                "displayName": "Aaron",
+                "userKey": "Su4NDX8W8FAcWmwPPm6Ord0tLYaZP60yE6Mpnczi",
+                "contacts": [],
+                "email": "contact2@mail.de",
+                "phoneNumber": "+491234567892",
+                "preferredMessageType": "default",
+                "created": "22.01.2014 16:34:55",
+                "lastUpdated": "22.01.2014 16:34:55"
+              }
+            }
+          ]
+        }
+        
+## Get Frienship Requests [/friendRequests]
+
+### GET
+Returns all Friendship Requests for one identity
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+            "res": "OK"
+            "data": {
+                [
+                    {
+                        "idenityId":"NyGAvBnLeR3mLEYdofgf",
+                        "idenity":
+                            {
+                                "id":"NyGAvBnLeR3mLEYdofgf",
+                                "cameoId":"ovkTHfPA1XKx9lmQJ5cR",
+                                "displayName":"NoName"
+                            },
+                        "message":"friend request message",
+                        "created":"timestamp"
+                    }
+                ]
+            }
+        }
+
+## Send Friendship Request [/friendRequest]
+
+### POST
+Send a Friendship Request to an other identity. Either the identityID or the cameoId can be used as identifier.
+
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    + Body
+    
+            {
+              "identityId":"adfaasdv46abghart",
+              "cameoId":"test",
+              "message":"some message (optional)"
+            }
+ 
++ Response 200
+
+        {
+            "res":"OK"
+        }
+
+
+## Answer Friendship Request  [/friendRequest/answer]
+
+### POST
+Accept or Reject FriendshipRequests
+
++ Request
+    + Headers
+
+            Authorization: {token}
+            
+    + Body
+    
+            {
+              "identityId":"adfaasdv46abghart",
+              "type": "accept || reject"
+            }
+
++ Response 200
+
+        {
+            "res": "OK"
+        }
+
+# Group Services
+
+## check phoneNumber [/api/v1/services/checkPhoneNumber]
+
+phoneNumber as a String that should be verified, default country code is german. country codes will be added in response.
+
+### POST
+
++ Request
+
+        {
+            "phoneNumber" : "01732312123123123"
+        }
+
++ Response 200
+
+        {
+            "res": "OK",
+            "data": {
+                "status": "ok",
+                "phoneNumber": "+491732312123123123"
+            }
+        }
+
++ Response 400
+
+        {
+            "res": "KO",
+            "error": "The string supplied did not seem to be a phone number. > invalidPhoneNumber"
+        }
+
+## check emailAddresses [/api/v1/services/checkEmailAddress]
+
+check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$"""
+
+### POST
+
++ Request
+
+        {
+            "emailAddress" : "a-b.c_d@a-b.c_d.co"
+        }
+
++ Response 200
+
+        {
+            "res": "OK"
+        }
+
++ Response 400
+
+        {
+            "res": "KO"
+        }
+        
+# Group Util
+
+## call stack [/api/v1/callStack]
+
+Allows batch processing of requests.
+
+### POST
+
++ Request
+
+        {
+          "requests": [
+            {
+              "method": "get",
+              "path": "/api/v1/identity",
+              "data": {}
+            }
+          ]
+        }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "responses": [
+              {
+                "body": {
+                  "res": "OK",
+                  "data": {
+                    "id": "N2HKgBdxxnWBGxlYY7Dn",
+                    "displayName": "Moeper2",
+                    "userKey": "whEGDKfdkIt7Ex6YDWVhjeE53hO8u2aXXyTDvzru",
+                    "cameoId": "bwyVeVnCvuO",
+                    "email": {
+                      "value": "test@cameo.io",
+                      "isVerified": false
+                    },
+                    "phoneNumber": {
+                      "value": "+49123456789",
+                      "isVerified": false
+                    },
+                    "preferredMessageType": "default",
+                    "publicKeys": [],
+                    "userType": "internal",
+                    "created": 1392301152706,
+                    "lastUpdated": 1392301152706
+                  }
+                },
+                "status": 200
+              }
+            ]
+          }
+        }
+
+## check app [/api/v1/util/checkApp]
+
+this API method could be used to monitor the app server
+
+### GET
+
++ Response 200
+
+        {
+            "res": "OK|KO"
+        }
+
+
+# Group Events
+
+## get event subscription [/api/v1/eventSubscription]
+
+### POST
+
++ Request
+
+        {
+
+        }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "events": [],
+            "id": "ytySRPheyFdYVPv6kpnv"
+          }
+        }
+
+## get events from subscriptions [/api/v1/eventSubscription/{id}]
+
+Events will be deleted after each call
+
+### GET
+
+
++ Response 200
+
+        {
+         "res": "OK",
+         "data": {
+           "events": [
+             {
+               "type": "conversation:new-message",
+               "content": {
+                 "conversationId": "O5DjLp2CZ6Q3BVroM4mX",
+                 "message": {message object}
+               }
+             },
+             {
+               "type": "friendRequest:new",
+               "content": { friendRequest object }
+               }
+             }
+           ],
+           "id": "QvySbPNwtdKPXm5SUami"
+         }
+        }
+        

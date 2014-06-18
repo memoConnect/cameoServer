@@ -2,15 +2,20 @@ package controllers
 
 import play.api.libs.json._
 
-import helper.IdHelper
-import scala.None
+import helper.CmActions.AuthAction
 import traits.ExtendedController
-import play.api.Logger
 import models._
+import helper.ResultHelper._
+import scala.concurrent.{ ExecutionContext, Future }
+import ExecutionContext.Implicits.global
 import java.util.Date
-import scala.concurrent.Future
+import play.api.libs.functional.syntax._
 import scala.Some
-
+import java.lang.NumberFormatException
+import play.api.libs.concurrent.Akka
+import akka.actor.Props
+import actors.{ SendMessage, SendMessageActor }
+import play.api.Play.current
 
 /**
  * User: Björn Reimer
@@ -20,138 +25,172 @@ import scala.Some
 object MessageController extends ExtendedController {
 
   /**
-   * Helper
-   */
-
-  // check if we need to create a new conversation
-  def makeSureConversationExists(implicit message: Message): Future[String] = {
-    message.conversationId match {
-      case None => {
-        //create new conversation
-        val conversation: Conversation = new Conversation(IdHelper.generateConversationId(), new Date,
-          new Date, Seq(), Seq(), None)
-
-        conversationCollection.insert(conversation).map {
-          lastError => conversation.conversationId
-        }
-      }
-      case Some(c) => Future(c)
-    }
-  }
-
-  // create message object and add message to conversation
-  def addMessageToConversation(conversationId: String, tokenObject: Token, recipients: Seq[Recipient])
-                              (implicit message: Message): Future[Message] = {
-    val from: Future[(String, String)] = tokenObject.username match {
-      case None => {
-        // get name from purl
-        Purl.find(tokenObject.purl.get).map {
-          purl => (purl.get.name.getOrElse("no Name"), purl.get.recipientId)
-        }
-      }
-      case Some(username) =>
-        Future(username, "") // TODO: find recipientId of user
-    }
-
-    from.map {
-      case (name, id) => {
-        val newMessage = message.copy(from = name, fromRecipientId = Some(id), conversationId = Some(conversationId),
-          recipients = Some(recipients))
-        Conversation.addMessage(newMessage)
-        newMessage
-      }
-    }
-  }
-
-  // merges the new list of recipients into the existing avoiding duplication of Kolibri Users.
-  def compareRecipients(oldRecipients: Seq[Recipient], newRecipients: Seq[Recipient]): Seq[Recipient] = {
-    newRecipients match {
-      case Nil => Nil
-      case head :: rest => {
-        if (head.messageType.equals("otherUser") && oldRecipients.exists(r => r.messageType.equals("otherUser") &&
-          r.sendTo.equals(head.sendTo))) {
-          compareRecipients(oldRecipients, rest)
-        } else {
-          head +: compareRecipients(oldRecipients, rest)
-        }
-      }
-    }
-  }
-
-  // get recipients from conversations and add the ones from the message
-  def addRecipientsToConversation(conversationId: String, tokenObject: Token)
-                                 (implicit message: Message): Future[Seq[Recipient]] = {
-
-    Conversation.find(conversationId).map {
-      case None => Seq()
-      case Some(c) => {
-        val messageRecipients = tokenObject.username match {
-          case None => message.recipients.getOrElse(Seq())
-          case Some(u) => new Recipient(IdHelper.generateRecipientId(), tokenObject.username.get, "otherUser",
-            tokenObject.username.get, None, None) +: message.recipients.getOrElse(Seq())
-        }
-        val newRecipients: Seq[Recipient] = compareRecipients(c.recipients, messageRecipients)
-
-        // save new recipients to conversation
-        val query = Json.obj("conversationId" -> conversationId)
-        val set = Json.obj("$pushAll" -> Json.obj("recipients" -> newRecipients))
-        conversationCollection.update(query, set) map {
-          lastError => if (lastError.inError) {
-            Logger.error("MessageController: Error saving recipients. " + lastError.stringify)
-          }
-        }
-        newRecipients ++ c.recipients
-      }
-    }
-  }
-
-  /**
    * Actions
    */
-  def sendMessage = authenticatePOST(hasToBeRegistered = false) {
-    (tokenObject: Token, request) =>
-      val jsBody: JsValue = request.body
-
-      jsBody.validate[Message](Message.inputReads).map {
-        implicit message => {
-
-          // execute steps asynchronously
-          val newMessage = for {
-            conversationId <- makeSureConversationExists
-            allRecipients <- addRecipientsToConversation(conversationId, tokenObject)
-            newMessage <- addMessageToConversation(conversationId, tokenObject, allRecipients)
-
-          } yield newMessage
-
-          // send response
-          Async {
-            newMessage.map {
-              m => {
-                // add conversation to user if registered
-                if (tokenObject.username.isDefined) {
-                  User.addConversation(m.conversationId.get, tokenObject.username.get)
+  def createMessage(id: String) = AuthAction(allowExternal = true).async(parse.tolerantJson) {
+    request =>
+      validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
+        message =>
+          {
+            Conversation.find(id, -1, 0).flatMap {
+              case None => Future(resNotFound("conversation"))
+              case Some(conversation) =>
+                // only members can add message to conversation
+                conversation.hasMemberFutureResult(request.identity.id) {
+                  conversation.addMessage(message)
+                  // initiate new actor for each request
+                  val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
+                  sendMessageActor ! SendMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
+                  Future(resOK(message.toJson))
                 }
+            }
+          }
+      }
+  }
 
-                actors.sendMessageActor ! m
+  def getMessage(id: String) = AuthAction(allowExternal = true).async {
+    (request) =>
+      Message.findConversation(new MongoId(id)).map {
+        case None => resNotFound("message")
+        case Some(c) =>
+          c.hasMemberResult(request.identity.id) {
+            c.getMessage(new MongoId(id)) match {
+              case None    => resServerError("unable to get message from conversation")
+              case Some(m) => resOK(m.toJson)
+            }
+          }
+      }
+  }
 
-                Ok(resOK(Message.toJson(m)))
-              }
+  case class FilterRules(fromIdentities: Option[Seq[String]],
+                         toIdentities: Option[Seq[String]],
+                         fromGroups: Option[Seq[String]],
+                         toGroups: Option[Seq[String]],
+                         startDate: Option[Date],
+                         endDate: Option[Date])
+
+  object FilterRules {
+
+    val dateReads: Reads[Date] = Reads {
+      js =>
+        js.asOpt[String] match {
+          case None =>
+            JsError()
+          case Some(s) => {
+            try {
+              JsSuccess(new Date(s.toLong * 1000))
+            } catch {
+              case e: NumberFormatException => JsError()
             }
           }
         }
-      }.recoverTotal(e => BadRequest(resKO(JsError.toFlatJson(e))))
+    }
+
+    implicit val reads: Reads[FilterRules] = (
+      (__ \ 'fromIdentities).readNullable[Seq[String]] and
+      (__ \ 'toIdentities).readNullable[Seq[String]] and
+      (__ \ 'fromGroups).readNullable[Seq[String]] and
+      (__ \ 'fromGroups).readNullable[Seq[String]] and
+      (__ \ 'startDate).readNullable[Date](dateReads) and
+      (__ \ 'endDate).readNullable[Date](dateReads)
+    )(FilterRules.apply _)
+
   }
 
-  def getMessage(messageId: String, token: String) = authenticateGET(token) {
-    (tokenObject: Token, request) =>
-      Async {
-        val message = Message.find(messageId)
-        message.map {
-          case None => NotFound(resKO("messageId not found"))
-          case Some(m) => Ok(resOK(Message.toJson(m)))
-        }
-      }
+  def filter(offset: Int = 0, varLimit: Int = 0, count: String = "false") = AuthAction().async(parse.tolerantJson) {
+    request => Future(Ok(""))
+
+    //      // set default limit
+    //      val limit = if (varLimit < 1) 150 else varLimit
+    //      val mongoDB = ReactiveMongoPlugin.db
+    //
+    //      implicit val dateReads: Reads[Date] = Reads.IsoDateReads
+    //
+    //      validateFuture[FilterRules](request.body, FilterRules.reads) {
+    //        fr =>
+    //          {
+    //            def collectIdentities(ids: Option[Seq[String]], groups: Option[Seq[String]]): Seq[MongoId] = {
+    //              ids.getOrElse(Seq()).map(s => new MongoId(s)) ++
+    //                groups.getOrElse(Seq()).flatMap {
+    //                  group =>
+    //                    request.identity.getGroup(group).map {
+    //                      _.identityId
+    //                    }
+    //                }
+    //            }
+    //
+    //            // create pipeline
+    //            val conversations = Conversation.findByIdentityId(request.identity.id).map{_.map{_.id}}
+    //            val from: Seq[MongoId] = collectIdentities(fr.fromIdentities, fr.fromGroups)
+    //            val to: Seq[MongoId] = collectIdentities(fr.toIdentities, fr.toGroups)
+    //            //            val startDate: Date = new Date(fr.startDate)
+    //
+    //            def createMatch(ids: Seq[MongoId], matchFunction: (MongoId => JsObject)): Match = {
+    //              if (ids.size < 1) {
+    //                Match(toBson(Json.obj()).get)
+    //              } else {
+    //                val matchJson = Json.obj("$or" -> ids.map(matchFunction))
+    //                Match(toBson(matchJson).get)
+    //              }
+    //            }
+    //
+    //            def createDateMatch(dateOpt: Option[Date], matchOperator: String): Seq[Match] = {
+    //              dateOpt match {
+    //                case None => Seq()
+    //                case Some(date) => {
+    //                  val d = BSONDateTime(date.getTime)
+    //                  val doc = BSONDocument(("messages.created", BSONDocument((matchOperator, d))))
+    //                  Seq(Match(doc))
+    //                }
+    //              }
+    //            }
+    //
+    //            val basePipeline: Seq[PipelineOperator] = Seq(
+    //              createMatch(conversations, id => Json.obj("_id" -> id)),
+    //              Unwind("messages"),
+    //              Project(("messages", BSONInteger(1)), ("_id", BSONInteger(-1))),
+    //              createMatch(from, id => Json.obj("messages.fromIdentityId" -> id)),
+    //              createMatch(to, id => Json.obj("messages.messageStatus.identityId" -> id))) ++
+    //              createDateMatch(fr.startDate, "$gt") ++
+    //              createDateMatch(fr.endDate, "$lt")
+    //
+    //            if (count.equalsIgnoreCase("true")) {
+    //              val pipeline = basePipeline ++
+    //                Seq(Group(BSONString("result"))(("count", SumValue(1))))
+    //
+    //              val aggregationCommand = Aggregate(Conversation.col.name, pipeline)
+    //
+    //              mongoDB.command(aggregationCommand).map {
+    //                res =>
+    //
+    //                  val result = res.force.toList.headOption
+    //
+    //                  if (result.isEmpty) {
+    //                    resOK("0")
+    //                  } else {
+    //                    val count = (Json.toJson(result.get) \ "count").as[Int]
+    //                    resOK(count.toString)
+    //                  }
+    //              }
+    //
+    //            } else {
+    //              val pipeline = basePipeline ++
+    //                Seq(
+    //                  Sort(Seq(Ascending("messages.created"))),
+    //                  Skip(offset),
+    //                  Limit(limit)
+    //                )
+    //
+    //              val aggregationCommand = Aggregate(Conversation.col.name, pipeline)
+    //
+    //              mongoDB.command(aggregationCommand).map {
+    //                res =>
+    //                  val messages: Seq[JsValue] = res.force.toList.map(Json.toJson(_))
+    //                  resOK(messages.map(js => (js \ "messages").as[Message].toJson))
+    //              }
+    //            }
+    //          }
+    //      }
   }
-
-
 }
+

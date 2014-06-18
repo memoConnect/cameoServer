@@ -1,10 +1,13 @@
 package controllers
 
-import play.api.mvc._
-import play.api.libs.json.Json
-import traits.{OutputLimits, ExtendedController}
-import models.{Conversation, Purl}
-import play.api.Logger
+import play.api.libs.json.{ JsObject, Json }
+import traits.ExtendedController
+import models._
+import play.api.libs.concurrent.Execution.Implicits._
+import scala.concurrent.Future
+import helper.ResultHelper._
+import play.api.mvc.{ Action, Result }
+import scala.Some
 
 /**
  * User: Björn Reimer
@@ -14,62 +17,83 @@ import play.api.Logger
 
 object PurlController extends ExtendedController {
 
-
   /**
    * Actions
    */
-  def getPurl(purl: String, offset: Int, limit: Int, token: String) = Action {
+  def getPurl(id: String, offset: Int = 0, limit: Int = 0) = Action.async {
     request =>
-      Async {
-        // define output limits for conversation
-        implicit val outputLimits = OutputLimits(offset, limit)
-
-        Purl.find(purl).map {
-          case None => NotFound(resKO("The purl does not exist"))
-          case Some(purlObject) => {
-            Async {
-              // get the conversation
-              Conversation.find(purlObject.conversationId).map {
-                case None => {
-                  val er = "The conversation in the purl not exist"
-                  Logger.error(er)
-                  NotFound(resKO(er))
-                }
-                case Some(conversation) => {
-
-                  // check if the user behind this purl is registered or anon
-                  if (purlObject.username.isDefined) {
-                    // registered user, check if the token is right
-                    Async {
-                      models.Token.find(token).map {
-                        case None => {
-                          Unauthorized(resKO(Json.obj("context" -> Purl.toJson(purlObject)), "no/invalid token"))
-                        }
-                        case Some(tokenObject) => {
-                          if (tokenObject.username.getOrElse("invalid").equals(purlObject.username.get)) {
-                            val res = Json.obj("context" -> Purl.toJson(purlObject),
-                              "conversation" -> Conversation.toJson
-                              (conversation))
-                            Ok(resOK(res))
-                          } else {
-                            Unauthorized(resKO(Json.obj("context" -> Purl.toJson(purlObject)), "token not authorized"))
-                          }
-                        }
-                      }
-                    }
-                  } else {
-                    // anon user, we don't care about the token
-                    val res = Json.obj("context" -> Purl.toJson(purlObject), "conversation" -> Conversation.toJson
-                      (conversation))
-                    Ok(resOK(res))
-                  }
-                }
-              }
+      def externalUserResponse(identity: Identity, purl: Purl): Future[Result] = {
+        // check if we need to generate a new token
+        val token = identity.tokens.headOption.getOrElse {
+          val t = Token.createDefault()
+          identity.addToken(t)
+          t
+        }
+        //get conversation
+        Conversation.findByMessageId(purl.messageId, limit, offset).map {
+          case None => resNotFound("conversation")
+          case Some(conversation) =>
+            conversation.hasMemberResult(identity.id) {
+              val res: JsObject =
+                Json.obj("conversation" -> conversation.toJson) ++
+                  Json.obj("identity" -> identity.toPrivateJson) ++
+                  Json.obj("token" -> token.id.toJson)
+              resOK(res)
             }
-          }
         }
       }
+
+      def getPurlWithToken(purl: Purl, token: String): Future[Result] = {
+        // get identity behind purl
+        Identity.find(purl.identityId).flatMap {
+          case None => Future(resNotFound("purl"))
+          case Some(identity) =>
+            // check if the identity has an account
+            identity.accountId match {
+              case None => externalUserResponse(identity, purl)
+              case Some(a) =>
+                // purl belongs to a registered user, check we have the right token
+                identity.tokens.exists(_.id.id.equals(token)) match {
+                  case false => Future(resUnauthorized("This purl belongs to a different identity"))
+                  case true =>
+                    // get conversation
+                    Conversation.findByMessageId(purl.messageId, limit, offset).map {
+                      case None => resNotFound("conversation")
+                      case Some(conversation) =>
+                        conversation.hasMemberResult(identity.id) {
+                          // return result
+                          val res: JsObject =
+                            Json.obj("conversation" -> conversation.toJson) ++
+                              Json.obj("identity" -> identity.toPrivateJson)
+                          resOK(res)
+                        }
+                    }
+                }
+            }
+        }
+      }
+
+      def getPurlWithoutToken(purl: Purl): Future[Result] = {
+        // check if identity is an external user
+        Identity.find(purl.identityId).flatMap {
+          case None => Future(resNotFound("identity"))
+          case Some(identity) =>
+            identity.accountId match {
+              case Some(a) => Future(resUnauthorized("This purl belongs to a registered user, pleas supply token"))
+              case None    => externalUserResponse(identity, purl)
+            }
+        }
+      }
+
+      Purl.find(id).flatMap {
+        case None => Future(resNotFound("purl"))
+        case Some(purl) =>
+
+          // check if we have an authentication header
+          request.headers.get("Authorization") match {
+            case None        => getPurlWithoutToken(purl)
+            case Some(token) => getPurlWithToken(purl, token)
+          }
+      }
   }
-
-
 }

@@ -1,23 +1,44 @@
 <configuration>
 
-    <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel" />
+    <conversionRule conversionWord="coloredLevel" converterClass="play.api.Logger$ColoredLevel"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%date - [%level] - from %logger in %thread %n%message%n%xException%n</pattern>
+            <!--<pattern>%date - %coloredLevel - from %logger in %thread %n%message%n%xException%n</pattern>-->
+            <!--<pattern>%coloredLevel %date - %logger in %thread: %message%n%xException</pattern>-->
+            <pattern>%date - %highlight(%-5level) - %-17logger{15} - %msg%n%xException</pattern>
         </encoder>
     </appender>
 
-    <logger name="play" level="INFO" />
-    <logger name="application" level="INFO" />
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${application.home}/logs/%d{yyyy-MM-dd}.log</fileNamePattern>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%date - %highlight(%-5level) - %-15.15logger{15} - %msg%n%xException</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
+        <!-- todo: change this to the hostname of the jump-host, waiting for the next release of docker, when editing /etc/hosts is supposed to be possible -->
+        <syslogHost>172.16.23.2</syslogHost>
+        <facility>LOCAL0</facility>
+        <suffixPattern>[%thread] %logger %msg</suffixPattern>
+    </appender>
+
+    <logger name="play" level="INFO"/>
+    <logger name="application" level="DEBUG"/>
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourself -->
-    <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
-    <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF" />
-    <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF" />
+    <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF"/>
+    <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF"/>
+    <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF"/>
 
     <root level="ERROR">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+        <appender-ref ref="SYSLOG"/>
     </root>
 
 </configuration>

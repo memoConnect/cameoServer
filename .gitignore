@@ -24,3 +24,11 @@ server.pid
 target/
 jmeter.log
 conf/secret*
+conf/version*
+/*.tmp
+/mode
+/nohup*
+*.log
+/UPDATING
+/public/
+/public

@@ -1,107 +1,155 @@
 package models
 
 import java.util.Date
-import traits.{OutputLimits, Model, MongoHelper}
+import traits.SubModel
 import play.api.libs.json._
 import helper.IdHelper
 import play.api.libs.functional.syntax._
-import scala.concurrent.{ExecutionContext, Future}
-import play.api.Logger
+import scala.concurrent.{ ExecutionContext, Future }
 import ExecutionContext.Implicits.global
+import helper.JsonHelper._
 
 /**
  * User: Björn Reimer
  * Date: 6/26/13
  * Time: 2:36 PM
  */
-case class Message(
-                    messageId: String,
-                    conversationId: Option[String],
-                    messageBody: String,
-                    from: String,                           // Name to be displayed next to Message
-                    fromRecipientId: Option[String],                // Recipient Id of the sender
-                    created: Date,
-                    recipients: Option[Seq[Recipient]],
-                    assets: Option[Seq[Asset]]
-                    )
+case class Message(id: MongoId,
+                   fromIdentityId: MongoId,
+                   //messageStatus: Seq[MessageStatus],
+                   plain: Option[PlainMessagePart],
+                   encrypted: Option[String],
+                   created: Date,
+                   docVersion: Int) {
 
+  def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
 
-object Message extends MongoHelper with Model[Message] {
+  //  def updateAllStatus(messageStatus: Seq[MessageStatus]) = {
+  //    val update = Json.obj("$set" -> Json.obj("messages.$.messageStatus" -> messageStatus))
+  //    Conversation.col.update(arrayQuery("messages", this.id), update)
+  //  }
+  //
+  //  def updateSingleStatus(status: MessageStatus): Future[Boolean] = {
+  //    // first remove old status (mongo cant update nested arrays...)
+  //    val query = arrayQuery("messages", this.id)
+  //    val set = Json.obj("$pull" -> Json.obj("messages.$.messageStatus" -> Json.obj("identityId" -> status.identityId)))
+  //
+  //    Message.col.update(query, set).flatMap {
+  //      lastError =>
+  //        lastError.ok match {
+  //          case false => Future(false)
+  //          case true => {
+  //            // write new message status
+  //            val set2 = Json.obj("$push" -> Json.obj("messages.$.messageStatus" -> status))
+  //            Message.col.update(query, set2).map {
+  //              _.ok
+  //            }
+  //          }
+  //        }
+  //    }
+  //  }
+}
 
-  implicit val collection = conversationCollection
+object Message extends SubModel[Message, Conversation] {
+
+  def parentModel = Conversation
+  def elementName = "messages"
+
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
-  def inputReads = (
-    Reads.pure[String](IdHelper.generateMessageId()) and
-      (__ \ 'conversationId).readNullable[String] and
-      (__ \ 'messageBody).read[String] and
-      Reads.pure[String]("") and
-      Reads.pure(None) and
-      Reads.pure[Date](new Date) and
-      (__ \ 'recipients).readNullable[Seq[Recipient]](Reads.seq(Recipient.inputReads)) and
-      Reads.pure(None)
-    )(Message.apply _)
+  def docVersion = 3
 
-  def outputWrites(implicit ol: OutputLimits = OutputLimits(0,0)) = Writes[Message] {
+  def evolutions = Map(1 -> MessageEvolutions.splitPlainAndEncrypted, 2 -> MessageEvolutions.filesToFileIds)
+
+  def createReads(fromIdentityId: MongoId) = (
+    Reads.pure[MongoId](IdHelper.generateMessageId()) and
+    Reads.pure[MongoId](fromIdentityId) and
+    //    Reads.pure[Seq[MessageStatus]](Seq()) and
+    (__ \ 'plain).readNullable[PlainMessagePart](PlainMessagePart.createReads) and
+    (__ \ 'encrypted).readNullable[String] and
+    Reads.pure[Date](new Date) and
+    Reads.pure[Int](docVersion)
+  )(Message.apply _)
+
+  def outputWrites = Writes[Message] {
     m =>
-      Json.obj("messageId" -> m.messageId) ++
-        Json.obj("conversationId" -> JsString(m.conversationId.getOrElse("none"))) ++
-        Json.obj("messageBody" -> m.messageBody) ++
-        Json.obj("from" -> m.from) ++
-        Recipient.toSortedJsonObjectOrEmpty("recipients", m.recipients)(OutputLimits(0,0)) ++
-        Asset.toSortedJsonObjectOrEmpty("assets", m.assets) ++
+      Json.obj("id" -> m.id.toJson) ++
+        Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
+        Json.obj("plain" -> m.plain.map(_.toJson)) ++
+        Json.obj("encrypted" -> m.encrypted) ++
         addCreated(m.created)
   }
 
-  def find(messageId: String, conversationId: String): Future[Option[Message]] = {
-    find(Json.obj("conversationId" -> conversationId, "messages.messageId" -> messageId))
+  def findConversation(id: MongoId): Future[Option[Conversation]] = {
+    Conversation.col.find(arrayQuery("messages", id)).one[Conversation]
   }
 
-  def find(messageId: String): Future[Option[Message]] = {
-    find(Json.obj("messages.messageId" -> messageId))
+  def create(fromId: MongoId, text: String): Message = {
+    new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, new Date, docVersion)
   }
 
-  def find(query: JsObject): Future[Option[Message]] = {
-    val filter = Json.obj("messages.$" -> 1)
-    collection.find(query, filter).cursor[JsObject].toList.map {
-      list =>
-        list.size match {
-          case 0 => None
-          case 1 => {
-            (list(0) \ "messages")(0).validate[Message].map {
-              message =>
-                if (message.messageId.equals((query \ "messageId").asOpt[String].getOrElse(message.messageId))) {
-                  Some(message)
-                } else {
-                  Logger.error("Received message with wrong Id: " + message.messageId + " Query: " + query.toString)
-                  None
-                }
-            }.recoverTotal{
-              e => None
-            }
-          }
-          case _ => {
-            Logger.error("CRITICAL: MessageId is not unique! query: " + query.toString)
-            None
-          }
-        }
-    }
+  override def createDefault(): Message = {
+    new Message(IdHelper.generateMessageId(), MongoId(""), None, None, new Date, docVersion)
+  }
+}
+
+object MessageEvolutions {
+
+  val assetsToFiles: Reads[JsObject] = Reads {
+    js =>
+      {
+        val deleteAsset: Reads[JsObject] = (__ \ 'assets).json.prune
+        val addFiles: Reads[JsObject] = __.json.update((__ \ 'files).json.put(JsArray()))
+        val renameBody: Reads[JsObject] = __.json.update((__ \ 'body).json.copyFrom((__ \ 'messageBody).json.pick)) andThen (__ \ 'messageBody).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(deleteAsset andThen addFiles andThen renameBody andThen addVersion)
+      }
   }
 
-  override val sortWith = {
-    (m1: Message, m2: Message) => m1.created.before(m2.created)
+  val splitPlainAndEncrypted: Reads[JsObject] = Reads {
+    js =>
+      {
+        val deleteFiles = (__ \ 'files).json.prune // file not used yet, not need to move them
+        val moveMessageBody = __.json.update((__ \ 'encrypted).json.copyFrom((__ \ 'body).json.pick)) andThen (__ \ 'body).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+        val addEmptyFiles = __.json.update((__ \ 'plain \ 'files).json.put(JsArray()))
+
+        js.transform(deleteFiles)
+        js.transform(moveMessageBody)
+        js.transform(addVersion andThen addEmptyFiles)
+      }
   }
 
-  // gets the position of a message in a conversation
-  def getMessagePosition(conversationId: String, messageId: String): Future[Int] ={
+  val filesToFileIds: Reads[JsObject] = Reads {
+    js =>
+      {
+        val deleteFiles: Reads[JsObject] = (__ \ 'plain \ 'files).json.prune
+        val addFileIds: Reads[JsObject] = __.json.update((__ \ 'plain \ 'fileIds).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+        js.transform(deleteFiles)
+        js.transform(addFileIds andThen addVersion)
+      }
+  }
+}
 
-    val query = Json.obj("conversationId" -> conversationId)
+case class PlainMessagePart(text: Option[String],
+                            fileIds: Seq[MongoId]) {
+  def toJson(): JsObject = {
+    maybeEmptyString("text", this.text) ++
+      Json.obj("fileIds" -> this.fileIds.map(_.toJson))
+  }
+}
 
-    conversationCollection.find(query).one[Conversation].map{
-      case None => -1
-      case Some(c) => c.messages.indexWhere(m => {m.messageId.equals(messageId)})
-    }
+object PlainMessagePart {
+  implicit val format: Format[PlainMessagePart] = Json.format[PlainMessagePart]
 
+  val createReads = (
+    (__ \ 'text).readNullable[String] and
+    ((__ \ 'fileIds).read[Seq[MongoId]](Reads.seq(MongoId.createReads)) or Reads.pure[Seq[MongoId]](Seq()))
+  )(PlainMessagePart.apply _)
+
+  def create(text: String): PlainMessagePart = {
+    new PlainMessagePart(Some(text), Seq())
   }
 }
 

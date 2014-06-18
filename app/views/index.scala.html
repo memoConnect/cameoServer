@@ -1,9 +1,15 @@
-@(message: String)
+@import _root_.helper.Utils
 
-@main("KolibriNet") {
+@main("Cameo") {
 
-    <h1>API von KolibriNet</h1>
+    <strong>Cameo API</strong><br>
+    <a href="http://docs.cameo.apiary.io/">Doku</a>
     <p>
-        <a href="http://docs.kolibrinet.apiary.io/">Dokumentation</a>
+        CameoServer: @{Utils.getAppVersion}<br>
+        Play Framework: @{play.core.PlayVersion.current}<br>
+        Scala: @{play.core.PlayVersion.scalaVersion}<br>
+        Sbt: @{play.core.PlayVersion.sbtVersion}<br>
     </p>
+
+
 }

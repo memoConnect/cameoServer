@@ -1,13 +1,12 @@
 package controllers
 
 import play.api.mvc._
-import helper.IdHelper
-import play.api.libs.json.{Json, JsValue}
 import scala.concurrent.Future
 import org.mindrot.jbcrypt.BCrypt
 import traits.ExtendedController
-import models.Token
-import java.util.Date
+import models.{ Identity, Account, Token }
+import play.api.libs.concurrent.Execution.Implicits._
+import helper.ResultHelper._
 
 /**
  * User: Björn Reimer
@@ -19,80 +18,81 @@ object TokenController extends ExtendedController {
   /**
    * Helper
    */
-  def checkUserAndReturnToken(user: String, pass: String): Future[Result] = {
-    val futureUser: Future[Option[JsValue]] = userCollection.find(Json.obj("username" -> user)).one[JsValue]
-
-    futureUser.map {
-      case None => {
-        Unauthorized(resKO("Wrong Username/Password"))
-      }
-      case Some(u: JsValue) => {
-        // check password
-        if (!BCrypt.checkpw(pass, (u \ "password").asOpt[String].getOrElse(""))) {
-          // wrong password
-          Unauthorized(resKO("Wrong Username/Password"))
-        } else {
-          val token = new Token(IdHelper.generateAccessToken(), Some(user), None, false, new Date)
-          tokenCollection.insert(token).map {
-            lastError => InternalServerError(resKO("MongoError: " + lastError))
-          }
-          Ok(resOK(Json.toJson(token)(Token.outputWrites))).withHeaders(
-            ACCESS_CONTROL_ALLOW_HEADERS -> "Authorization")
-        }
-      }
-    }
-  }
-
   // decode username and password
-  def decodeBasicAuth(auth: String) = {
-    val baStr = auth.replaceFirst("Basic ", "")
-    val Array(user, pass) = new String(new sun.misc.BASE64Decoder().decodeBuffer(baStr), "UTF-8").split(":")
-    (user, pass)
-  }
-
-  // create new token
-  def createToken(user: String): JsValue = {
-    Json.obj("token" -> IdHelper.generateAccessToken(), "username" -> user)
+  def decodeBasicAuth(auth: String): (String, String) = {
+    val baStr = auth.replaceFirst("Basic ", "").replace(" ", "")
+    new String(new sun.misc.BASE64Decoder().decodeBuffer(baStr), "UTF-8").split(":") match {
+      case Array(user: String, pass: String) => (user, pass)
+      case _                                 => ("", "")
+    }
   }
 
   /**
    * Actions
    */
-  def getToken = Action {
+  def createToken() = Action.async {
     request =>
-      request.headers.get("Authorization") match {
-        case None => {
-          BadRequest(resKO("No Authorization field in header")).withHeaders(
-            WWW_AUTHENTICATE -> "user")
-        }
-        case Some(basicAuth) => {
-          val (user, pass) = decodeBasicAuth(basicAuth)
-          Async {
-            checkUserAndReturnToken(user, pass)
+      {
+        request.headers.get("Authorization") match {
+          case None => {
+            Future.successful(resBadRequest("No Authorization field in header"))
           }
+          case Some(basicAuth) if !basicAuth.contains("Basic") => {
+            Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
+          }
+          case Some(basicAuth) =>
+            {
+              val (loginName, password) = decodeBasicAuth(basicAuth)
+              val loginNameLower = loginName.toLowerCase
+              //find account and get first identity
+              Account.findByLoginName(loginNameLower).flatMap {
+                case None => Future(resUnauthorized("Invalid password/loginName"))
+                case Some(account) => if (account.identities.nonEmpty) {
+                  val identityId = account.identities(0)
+
+                  Identity.find(identityId).map {
+                    case None => resNotFound("identity")
+                    case Some(identity) => {
+                      // check loginNames and passwords match
+                      if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
+                        // everything is ok
+                        val token = Token.createDefault
+                        identity.addToken(token)
+                        resOK(token.toJson)
+                      } else {
+                        resUnauthorized("Invalid password/loginName")
+                      }
+                    }
+                  }
+                } else {
+                  Future.successful(resUnauthorized("Invalid password/loginName"))
+                }
+              }
+            }
         }
       }
   }
 
-  def getTokenOptions = Action {
+  def getTokenOptions(foo: String) = Action {
     request =>
       Ok("")
   }
 
-  def deleteToken(token: String) = Action {
-    request =>
-      Async {
-        tokenCollection.remove[JsValue](Json.obj("token" -> token)).map {
-          lastError =>
-            if (lastError.updated > 0) {
-              Ok(resOK(Json.obj("deletedToken" -> token)))
-            }
-            else if (lastError.ok) {
-              NotFound(resKO("Token not found"))
-            } else {
-              InternalServerError(resKO(lastError.stringify))
-            }
-        }
-      }
-  }
+  //  def deleteToken(token: String) = AuthAction.async {
+  //    request =>
+  //      // check if token exists
+  //      request.identity
+  //
+  //
+  //      request.identity.deleteToken(new MongoId(token)).map {
+  //        lastError =>
+  //          if (lastError.updatedExisting) {
+  //            resOK("deleted")
+  //          } else {
+  //            resNotFound("token")
+  //          }
+  //      }
+  //
+  //  }
+
 }

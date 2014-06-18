@@ -1,77 +1,88 @@
 package actors
 
-import akka.actor.{Props, Actor}
+import akka.actor.{ Props, Actor }
 import play.api.Logger
-import play.api.libs.json._
-import traits.MongoHelper
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Execution.Implicits._
+import models._
+import constants.Messaging._
+import scala.concurrent.Future
 import play.api.libs.concurrent.Akka
 import play.api.Play.current
-import models.{Recipient, Message}
-import java.util.Date
+import scala.Some
 
 /**
  * User: Björn Reimer
  * Date: 6/12/13
  * Time: 5:36 PM
  */
-class SendMessageActor extends Actor with MongoHelper {
+
+case class SendMessage(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
+
+class SendMessageActor extends Actor {
 
   def receive = {
-    case message: Message => {
-      Logger.info("SendMessageActor: Sending message with id " + message.messageId)
 
-      val recipients = message.recipients.getOrElse(Seq())
+    case SendMessage(message, conversationId, recipients, subject) =>
 
-      val recipientsWithStatus = recipients.map {
-        recipient: Recipient =>
+      Logger.info("SendMessageActor: Processing message with id " + message.id)
 
-          def recipientAddStatus(status: String) = {
-            recipient.copy(sendStatus = Some(status))
+      // get identity of sender
+      Identity.find(message.fromIdentityId).map {
+        case None =>
+          val error = "Could not find fromIdentityID " + message.fromIdentityId
+          Logger.error(error)
+          new MessageStatus(message.fromIdentityId, MESSAGE_STATUS_ERROR, error)
+        case Some(fromIdentity: Identity) =>
+
+          // create actors
+          lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
+          lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
+
+          val futureMessageStatus: Seq[Future[MessageStatus]] = recipients.map {
+            recipient =>
+              {
+                // send event
+                eventRouter ! NewMessage(recipient.identityId, conversationId, message)
+
+                // dont send back to sender
+                if (!recipient.identityId.equals(fromIdentity.id)) {
+                  Identity.find(recipient.identityId).map {
+                    case None =>
+                      val error = "Could not find identityID " + recipient.identityId
+                      Logger.error(error)
+                      new MessageStatus(recipient.identityId, MESSAGE_STATUS_ERROR, error)
+                    case Some(toIdentity) =>
+                      Logger.debug("SendMessageActor: Message " + message.id + " Sending to identity " + toIdentity.id)
+
+                      toIdentity.preferredMessageType match {
+                        case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)
+                        case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, subject, 0)
+                        case _ =>
+                          // if recipient has a mail, send mail
+                          if (toIdentity.phoneNumber.isDefined) {
+                            sendSmsActor ! (message, fromIdentity, toIdentity, 0)
+                          } else if (toIdentity.email.isDefined) {
+                            sendMailActor ! (message, fromIdentity, toIdentity, subject, 0)
+                          } else {
+                            Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
+                          }
+                        // TODO case _ => sendFailActor ! (message, identity)
+                      }
+                      new MessageStatus(recipient.identityId, MESSAGE_STATUS_QUEUED, toIdentity.preferredMessageType)
+
+                  }
+                } else {
+                  Future.successful(new MessageStatus(recipient.identityId, MESSAGE_STATUS_NONE, "sender"))
+                }
+              }
           }
 
-          // check if we have a test run
-          if (recipient.testRun.getOrElse(false)) {
-            recipientAddStatus("testrun: message not send")
-            // do not send the message to the sender
-          } else if (message.fromRecipientId.getOrElse("none").equals(recipient.recipientId) || ( recipient.messageType.equals("otherUser") && message.from.equals(recipient.sendTo) )) {
-            recipientAddStatus("Sender of message")
-          }
-          else {
-            // check for message type
-            recipient.messageType match {
-              case "none" => recipientAddStatus("No MessageType given")
-              case "email" => {
-                sendMailActor ! (recipient, message)
-                recipientAddStatus("Email queued")
-              }
-              case "sms" => {
-                sendSMSActor ! (recipient, message)
-                recipientAddStatus("SMS queued")
-              }
-              case "otherUser" => {
-                sendKolibriActor ! (recipient, message)
-                recipientAddStatus("KolibriMessage queued")
-              }
-              case m => recipientAddStatus("Unkown message type \'" + m + "\'")
-            }
-          }
+        //          // convert to a singe future and write status to message
+        //          Future.sequence(futureMessageStatus).map {
+        //            s =>
+        //              message.updateAllStatus(s)
+        //          }
+
       }
-
-      // add recipients with Status to message and save to db
-      val query = Json.obj("conversationId" -> message.conversationId, "messages.messageId" -> message.messageId)
-      val set = Json.obj("$set" -> (
-        Json.obj("messages.$.recipients" -> recipientsWithStatus.map(Recipient.toJson)) ++
-          Json.obj("lastUpdated" -> Json.obj("$date" -> new Date)) ++
-          Json.obj("lastMessage" -> Json.toJson(message))
-        ))
-
-      conversationCollection.update(query, set).map {
-        lastError => if (lastError.inError) {
-          Logger.error("Error updating message: " + lastError.stringify)
-        }
-      }
-    }
   }
 }

@@ -2,117 +2,112 @@ package traits
 
 import play.api.libs.json._
 import play.api.libs.json.Reads._
-import java.text.SimpleDateFormat
-import org.mindrot.jbcrypt.BCrypt
-import java.util.{TimeZone, Date}
 import play.modules.reactivemongo.json.collection.JSONCollection
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ Await, ExecutionContext, Future }
 import ExecutionContext.Implicits.global
+import models.MongoId
+import play.api.Logger
+import helper.JsonHelper._
+import reactivemongo.core.commands.LastError
+import scala.concurrent.duration._
+import reactivemongo.api.ReadPreference
 
 /**
  * User: Björn Reimer
  * Date: 6/25/13
  * Time: 6:46 PM
  */
-case class OutputLimits(offset: Int, limit: Int)
 
-trait Model[A] extends MongoHelper {
+trait Model[A] {
 
-  implicit val collection: JSONCollection
-  implicit val mongoFormat: Format[A]
+  def col: JSONCollection
 
-  def inputReads: Reads[A]
+  def find(id: MongoId): Future[Option[A]] = {
+    val query = Json.obj("_id" -> id)
+    col.find(query).one[A]
+  }
 
-  def outputWrites(implicit ol: OutputLimits): Writes[A]
+  def find(id: String): Future[Option[A]] = find(new MongoId(id))
 
-  val sortWith = (o1: A, o2: A) => true
+  def delete(id: MongoId): Future[LastError] = {
+    val query = Json.obj("_id" -> id)
+    col.remove(query)
+  }
 
+  def delete(id: String): Future[LastError] = delete(new MongoId(id))
 
-  /**
-   * Helper
+  implicit def mongoFormat: Format[A]
+
+  def evolutions: Map[Int, Reads[JsObject]]
+
+  def docVersion: Int
+
+  def save(js: JsObject): Future[LastError] = {
+    col.save(js)
+  }
+
+  def createDefault(): A
+
+  /*
+   * Helper functions
    */
 
-  def toJson(model: A)(implicit ol: OutputLimits = OutputLimits(0, 0)): JsValue = {
-    Json.toJson[A](model)(outputWrites)
+  def createMongoWrites(writes: Writes[A]): Writes[A] = Writes {
+    obj: A => Json.toJson[A](obj)(writes).transform(toMongoDates andThen toMongoId).getOrElse(Json.obj())
   }
 
-  def toJsonCustomWrites(model: A, writes: Writes[A])(implicit ol: OutputLimits = OutputLimits(0, 0)): JsValue = {
-    Json.toJson[A](model)(writes)
+  def createMongoReads(reads: Reads[A]): Reads[A] = Reads {
+    js =>
+      try {
+        js.transform(fromMongoDates andThen fromMongoId).map {
+          obj: JsValue => obj.as[A](reads)
+        }
+      } catch {
+        // try to apply evolutions
+        case JsResultException(e) =>
+
+          // get whole object
+          val id: MongoId = (js \ "_id").as[MongoId]
+          val futureResult = col.find(Json.obj("_id" -> id)).one[JsObject]
+
+          // unfortunately we need to lock until we find the object...
+          Await.result(futureResult, 1.minute) match {
+            case None => throw new RuntimeException("could not find object")
+            case Some(all) =>
+              val currentDocVersion = (all \ "docVersion").asOpt[Int].getOrElse(0)
+              val readsWithEvolution = getEvolutions(currentDocVersion)
+
+              all.transform(readsWithEvolution).flatMap {
+                newJs =>
+                  // try to serialise after evolutions and save to db
+                  newJs.validate[A](fromMongoDates andThen fromMongoId andThen reads).map {
+                    o =>
+                      val futureRes: Future[Boolean] = save(newJs).map {
+                        _.ok
+                      }
+                      val res = Await.result(futureRes, 10.minutes)
+                      res match {
+                        case false =>
+                          Logger.error("Error saving DB evolution: " + newJs)
+                        case true =>
+                          Logger.info("DB migration successfull")
+                      }
+                      o
+                  }
+              }
+          }
+      }
+
   }
 
-  def toJsonOrEmpty(key: String, value: Option[String]): JsObject = {
-    value match {
-      case Some(s) => Json.obj(key -> JsString(s))
-      case None => Json.obj()
+  def createMongoFormat(reads: Reads[A], writes: Writes[A]) = Format(createMongoReads(reads), createMongoWrites(writes))
+
+  def getEvolutions(fromVersion: Int): Reads[JsObject] = {
+    fromVersion match {
+      case i if i == docVersion => __.json.pickBranch
+      case i if i < docVersion =>
+        evolutions(i) andThen getEvolutions(i + 1)
     }
   }
 
-  def toJsonArrayOrEmpty(key: String, value: Option[Seq[String]]): JsObject = {
-    value match {
-      case Some(s) => Json.obj(key -> JsArray(s.map(JsString)))
-      case None => Json.obj()
-    }
-  }
-
-  def toSortedJsonArray(array: Seq[A])(implicit ol: OutputLimits  = OutputLimits(0,0)): JsArray = toSortedJsonArray(array, outputWrites)
-
-  def toSortedJsonArray(array: Seq[A], writes: Writes[A])(implicit ol: OutputLimits): JsArray = {
-    val sorted = array.sortWith(sortWith).map(Json.toJson[A](_)(writes))
-
-    def mustBePositive(i: Int) = if (i < 0) {
-      0
-    } else {
-      i
-    }
-    val start = mustBePositive(math.min(ol.offset, sorted.size - 1))
-    val end = mustBePositive(
-      ol.limit match {
-        case 0 => sorted.size
-        case _ => math.min(start + ol.limit, sorted.size)
-      })
-
-    val subset = sorted.slice(start, end)
-    JsArray(subset)
-
-  }
-
-  def toSortedJsonObject(key: String, array: Seq[A])(implicit ol: OutputLimits = OutputLimits(0,0)): JsObject = {
-    Json.obj(key -> toSortedJsonArray(array))
-  }
-
-  def toSortedJsonObjectOrEmpty(key: String, array: Option[Seq[A]])(implicit ol: OutputLimits = OutputLimits(0,0)): JsObject = {
-    array match {
-      case Some(a) => toSortedJsonObject(key, a)
-      case None => Json.obj()
-    }
-  }
-
-  // get Array from Document
-  def getArray(queryKey: String, queryValue: String, arrayKey: String): Future[Option[Seq[A]]] = {
-    val query = Json.obj(queryKey -> queryValue)
-    val filter = Json.obj(arrayKey -> 1)
-
-    collection.find(query, filter).one[JsObject].map {
-      case None => None
-      case Some(js: JsObject) => Some((js \ arrayKey).asOpt[Seq[A]](Reads.seq[A]).getOrElse(Seq()))
-    }
-  }
-
-  val defaultDateFormat: SimpleDateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss")
-  defaultDateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Berlin"))
-
-  def addCreated(date: Date): JsObject = {
-    Json.obj("created" -> defaultDateFormat.format(date))
-  }
-
-  def addLastUpdated(date: Date): JsObject = {
-    Json.obj("lastUpdated" -> defaultDateFormat.format(date))
-  }
-
-  val hashPassword: Reads[String] = Reads[String] {
-    js => js.asOpt[String] match {
-      case None => JsError("No password")
-      case Some(pass) => JsSuccess(BCrypt.hashpw(pass, BCrypt.gensalt()))
-    }
-  }
 }

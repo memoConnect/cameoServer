@@ -1,9 +1,16 @@
 package controllers
 
-import play.api.libs.json.Json
-import traits.{OutputLimits, ExtendedController}
-import models.{Token, User, Conversation}
+import traits.ExtendedController
+import models._
 import scala.concurrent.Future
+import play.api.libs.concurrent.Execution.Implicits._
+import helper.OutputLimits
+import helper.CmActions.AuthAction
+import play.api.libs.json._
+import helper.ResultHelper._
+import play.api.mvc.Result
+import scala.Some
+import play.api.mvc.Result
 
 /**
  * User: Björn Reimer
@@ -12,62 +19,148 @@ import scala.concurrent.Future
  */
 object ConversationController extends ExtendedController {
 
-  def getConversation(conversationId: String, token: String, offset: Int, limit: Int) = authenticateGET(token, conversationId=Some(conversationId)) {
-    (tokenObject: Token, request) =>
-      Async {
-        implicit val outputLimits = OutputLimits(offset, limit)
-        Conversation.find(conversationId).map {
-          case None => NotFound(resKO("The conversation does not exist"))
-          case Some(conversation) => Ok(resOK(Conversation.toJson(conversation)))
+  def createConversation = AuthAction().async(parse.tolerantJson) {
+    request =>
+      {
+        def insertConversation(conversation: Conversation): Future[Result] = {
+          Conversation.col.insert(conversation).map {
+            le => resOK(conversation.toJson)
+          }
+        }
+
+        validateFuture[ConversationUpdate](request.body, ConversationUpdate.createReads) {
+          c =>
+            val conversation = Conversation.create(c.subject, Seq(Recipient.create(request.identity.id)), c.passCaptcha, c.aePassphraseList, c.sePassphrase)
+
+            // check if there are recipients
+            (request.body \ "recipients").asOpt[Seq[String]] match {
+              case None => insertConversation(conversation)
+              case Some(recipientIds) =>
+                checkRecipients(recipientIds, conversation, request.identity) match {
+                  case None => Future(resBadRequest("Invalid recipients. Not in contact book."))
+                  case Some(recipients) =>
+                    val withRecipients = conversation.copy(recipients = recipients ++ conversation.recipients)
+                    insertConversation(withRecipients)
+                }
+            }
+        }
+      }
+
+  }
+
+  def getConversation(id: String, offset: Int, limit: Int, keyId: List[String]) = AuthAction(allowExternal = true).async {
+    request =>
+      Conversation.find(id, limit, offset).flatMap {
+        case None => Future(resNotFound("conversation"))
+        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+          c.getMissingPassphrases.map {
+            missingPasshrases =>
+              resOK(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
+          }
         }
       }
   }
 
-  def getConversationSummary(conversationId: String, token: String) = authenticateGET(token, conversationId=Some(conversationId)) {
-    (tokenObject: Token, request) =>
-      Async {
-        Conversation.find(conversationId).map {
-          case None => NotFound(resKO("The conversation does not exist"))
-          case Some(conversation) => Ok(resOK(Conversation.toJsonCustomWrites(conversation, Conversation.summaryWrites)))
-        }
-      }
+  def checkRecipients(recipientIds: Seq[String], conversation: Conversation, identity: Identity): Option[Seq[Recipient]] = {
+    // remove all recipients that are already a member of this conversation and the sender himself
+    val filtered = recipientIds.filterNot(id => conversation.recipients.exists(_.identityId.id.equals(id)) || id.equals(identity.id.id))
+
+    // check if all recipients are in the users address book
+    filtered.forall(recipient => identity.contacts.exists(_.identityId.id.equals(recipient))) match {
+      case false => None
+      case true  => Some(filtered.map(Recipient.create))
+    }
   }
 
-  def getConversations(token: String, offset: Int, limit: Int) = authenticateGET(token) {
-    (tokenObject: Token, request) =>
-      def getUserConversations(ids: Seq[String]): Future[List[Conversation]] = {
-        val query = Json.obj("$or" -> ids.map(s => Json.obj("conversationId" -> s)))
-        conversationCollection.find(query).sort(Json.obj("lastUpdated" -> -1)).cursor[Conversation].toList
-      }
-
-      val futureConversations = for {
-        user <- User.find(tokenObject.username.get)
-        conversations <- user match {
-          case None => Future(Seq())
-          case Some(u) => {
-            if (u.conversations.length > 0) {
-              getUserConversations(u.conversations)
-            } else {
-              Future(Seq())
+  def addRecipients(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      Conversation.find(new MongoId(id), -1, 0).flatMap {
+        case None => Future.successful(resNotFound("conversation"))
+        case Some(conversation) =>
+          conversation.hasMemberFutureResult(request.identity.id) {
+            validateFuture[Seq[String]](request.body \ "recipients", Reads.seq[String]) {
+              recipientIds =>
+                checkRecipients(recipientIds, conversation, request.identity) match {
+                  case Some(recipients) =>
+                    conversation.addRecipients(recipients).map {
+                      case true  => resOk("updated")
+                      case false => resServerError("update failed")
+                    }
+                  case None => Future(resKo("invalid recipient list"))
+                }
             }
           }
-        }
-      } yield conversations
+      }
+  }
 
-      Async {
-        futureConversations.map {
-          conversationList => {
-            implicit val outputLimits = OutputLimits(offset, limit)
-            val array = Conversation.toSortedJsonArray(conversationList, Conversation.summaryWrites)
-
-            val res = Json.obj(
-              "numberOfConversations" -> conversationList.size,
-              "conversations" -> array
-            )
-
-            Ok(resOK(res))
+  def deleteRecipient(id: String, rid: String) = AuthAction().async {
+    request =>
+      Conversation.find(id, -1, 0).flatMap {
+        case None => Future(resNotFound("conversation"))
+        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+          c.deleteRecipient(new MongoId(rid)).map {
+            case false => resNotFound("recipient")
+            case true  => resOK()
           }
         }
+      }
+  }
+
+  def getConversationSummary(id: String, keyId: List[String]) = AuthAction(allowExternal = true).async {
+    request =>
+      Conversation.find(id, -1, 0).flatMap {
+        case None => Future(resNotFound("conversation"))
+        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+          c.toSummaryJsonWithKey(keyId).map(resOK(_))
+        }
+      }
+  }
+
+  def getConversations(offset: Int, limit: Int, keyId: List[String]) = AuthAction().async {
+    request =>
+      Conversation.findByIdentityId(request.identity.id).flatMap {
+        list =>
+          // TODO: this can be done more efficiently with the aggregation framework in mongo
+          val sorted = list.sortBy(_.lastUpdated).reverse
+          val limited = OutputLimits.applyLimits(sorted, offset, limit)
+          val futureJson = Future.sequence(limited.map(_.toSummaryJsonWithKey(keyId)))
+          futureJson.map {
+            json =>
+              val res = Json.obj("conversations" -> json, "numberOfConversations" -> list.length)
+              resOK(res)
+          }
+      }
+  }
+
+  def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, ConversationUpdate.createReads) {
+        cu =>
+          Conversation.find(id, -1, 0).flatMap {
+            case None => Future(resNotFound("conversation"))
+            case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+              c.update(cu).map {
+                case false => resServerError("could not update")
+                case true  => resOk("updated")
+              }
+            }
+          }
+      }
+  }
+
+  def addAePassphrase(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      Conversation.find(new MongoId(id), -1, 0).flatMap {
+        case None => Future.successful(resNotFound("conversation"))
+        case Some(conversation) =>
+          conversation.hasMemberFutureResult(request.identity.id) {
+            validateFuture(request.body \ "aePassphraseList", Reads.seq(EncryptedPassphrase.createReads)) {
+              conversation.addAePassphrases(_).map {
+                case true  => resOk("updated")
+                case false => resServerError("unable to update")
+              }
+            }
+          }
       }
   }
 }
