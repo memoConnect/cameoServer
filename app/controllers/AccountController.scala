@@ -90,8 +90,6 @@ object AccountController extends ExtendedController {
                                   Some(account.id)
                                 )
 
-                                identity.addSupport
-
                                 identity.update(update).flatMap {
                                   case false => Future(resServerError("unable to update identity"))
                                   case true  => createAccountWithIdentity(identity)
