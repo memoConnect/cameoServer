@@ -13,15 +13,7 @@ import helper.IdHelper
  */
 
 case class Recipient(identityId: MongoId) {
-
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
-
-  def toJsonWithIdentity: Future[JsObject] = {
-    Identity.find(this.identityId).map {
-      case None    => Json.obj()
-      case Some(i) => Json.obj("identity" -> i.toPublicJson) ++ this.toJson
-    }
-  }
 }
 
 object Recipient extends SubModel[Recipient, Conversation] {

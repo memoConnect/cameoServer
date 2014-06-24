@@ -66,6 +66,11 @@ object MongoCollections {
     col.indexesManager.ensure(Index(List("identityId" -> IndexType.Ascending)))
     col
   }
+  lazy val testUserMessageCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("testUserMessages")
+    col.indexesManager.ensure(Index(Seq("identityId" -> IndexType.Ascending)))
+    col
+  }
   lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purls")
   lazy val fileMetaCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileMeta")
