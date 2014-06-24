@@ -40,9 +40,6 @@ object Application extends Controller {
     }
   }
 
-  def staticAssets(path: String, file: String, foo: String) =
-    controllers.Assets.at(path, file)
-
   def checkApp = Action.async {
     Account.col.find(Json.obj()).one[Account].map {
       case Some(wummel) => resOK()
