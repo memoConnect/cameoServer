@@ -51,7 +51,7 @@ object FileController extends ExtendedController {
               FileMeta.col.insert(fileMeta).map { lastError =>
                 lastError.ok match {
                   case false => resServerError("could not save chunk")
-                  case true  => resOK(fileMeta.toJson)
+                  case true  => resOk(fileMeta.toJson)
                 }
               }
           }
@@ -98,7 +98,7 @@ object FileController extends ExtendedController {
               case false => resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize)
               case true =>
                 fileMeta.addChunk(request.body)
-                resOK()
+                resOk()
             }
         }
       }
@@ -121,7 +121,7 @@ object FileController extends ExtendedController {
         FileMeta.find(id).map {
           case None => resNotFound("file")
           case Some(fileMeta) =>
-            resOK(fileMeta.toJson)
+            resOk(fileMeta.toJson)
         }
       }
   }

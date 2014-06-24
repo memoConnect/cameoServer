@@ -58,7 +58,7 @@ object TokenController extends ExtendedController {
                         // everything is ok
                         val token = Token.createDefault
                         identity.addToken(token)
-                        resOK(token.toJson)
+                        resOk(token.toJson)
                       } else {
                         resUnauthorized("Invalid password/loginName")
                       }

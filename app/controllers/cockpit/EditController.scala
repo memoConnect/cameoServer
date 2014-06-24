@@ -19,7 +19,7 @@ object EditController {
           case None => resNotFound(elementName + " object with id: " + id)
           case Some(attributes) =>
             val cockpitEdit = new CockpitEdit(id, attributes)
-            resOK(cockpitEdit.toJson)
+            resOk(cockpitEdit.toJson)
         }
       }
     }
@@ -34,7 +34,7 @@ object EditController {
           case Some(definition) => definition.update(id, request.body.as[JsObject]).map {
             case None        => resBadRequest("invalid element id or update values")
             case Some(false) => resServerError("error saving update")
-            case Some(true)  => resOK()
+            case Some(true)  => resOk()
           }
         }
       }

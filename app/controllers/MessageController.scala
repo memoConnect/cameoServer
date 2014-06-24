@@ -41,7 +41,7 @@ object MessageController extends ExtendedController {
                   // initiate new actor for each request
                   val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
                   sendMessageActor ! SendMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
-                  Future(resOK(message.toJson))
+                  Future(resOk(message.toJson))
                 }
             }
           }
@@ -56,7 +56,7 @@ object MessageController extends ExtendedController {
           c.hasMemberResult(request.identity.id) {
             c.getMessage(new MongoId(id)) match {
               case None    => resServerError("unable to get message from conversation")
-              case Some(m) => resOK(m.toJson)
+              case Some(m) => resOk(m.toJson)
             }
           }
       }

@@ -19,7 +19,7 @@ object TwoFactorController extends ExtendedController {
   def initiate() = AuthAction().async {
     request =>
       TwoFactorAuth.sendNewKey(request.identity) match {
-        case None        => Future(resOK())
+        case None        => Future(resOk())
         case Some(error) => Future(resBadRequest(error))
       }
   }
@@ -35,7 +35,7 @@ object TwoFactorController extends ExtendedController {
           case false => BadRequest("invalid key")
           case true =>
             val newToken = TwoFactorToken.createAndInsert(request.identity.id)
-            resOK(newToken.toJson)
+            resOk(newToken.toJson)
         }
       }
   }

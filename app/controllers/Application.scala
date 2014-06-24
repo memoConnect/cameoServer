@@ -41,32 +41,9 @@ object Application extends Controller {
     }
   }
 
-  def deleteTestUser(id: String) = Action.async {
-    request =>
-      val prefix = Play.configuration.getString("testUser.prefix").getOrElse("foo").toLowerCase
-
-      val accountQuery = Json.obj("loginName" -> (prefix + "_" + id))
-      MongoCollections.accountCollection.find(accountQuery).one[Account].map {
-        case None => resNotFound("Test user")
-        case Some(account) =>
-          // delete all identities
-          val identityQuery = Json.obj("$or" -> account.identities.map(i => Json.obj("_id" -> i)))
-          MongoCollections.identityCollection.remove(identityQuery)
-
-          // delete all conversations which involve this test user
-          val conversationQuery = Json.obj("$or" -> account.identities.map(i => Json.obj("recipients.identityId" -> i)))
-          MongoCollections.conversationCollection.remove(conversationQuery)
-
-          // delete account
-          MongoCollections.accountCollection.remove(Json.obj("_id" -> account.id))
-
-          resOk("deleted")
-      }
-  }
-
   def checkApp = Action.async {
     Account.col.find(Json.obj()).one[Account].map {
-      case Some(wummel) => resOK()
+      case Some(wummel) => resOk()
       case None         => resKo("database connection down!")
     }
   }

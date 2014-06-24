@@ -29,6 +29,10 @@ trait Model[A] {
 
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
 
+  def findAll(query: JsObject):Future[Seq[A]] = {
+    col.find(query).cursor[A].collect[Seq]()
+  }
+
   def delete(id: MongoId): Future[LastError] = {
     val query = Json.obj("_id" -> id)
     col.remove(query)

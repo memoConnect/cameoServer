@@ -61,7 +61,7 @@ object ContactController extends ExtendedController {
             {
               request.identity.addContact(contact).flatMap {
                 case false => Future(resBadRequest("could not create contact"))
-                case true  => contact.toJsonWithIdentity.map(js => resOK(js))
+                case true  => contact.toJsonWithIdentity.map(js => resOk(js))
               }
             }
         }
@@ -134,7 +134,7 @@ object ContactController extends ExtendedController {
               .toLowerCase
         )
         val limited = OutputLimits.applyLimits(sorted, offset, limit)
-        resOK(limited)
+        resOk(limited)
       }
   }
 
@@ -159,14 +159,14 @@ object ContactController extends ExtendedController {
       val limited = OutputLimits.applyLimits(contacts, offset, limit)
 
       Future.sequence(limited.map(_.toJsonWithIdentity)).map {
-        c => resOK(c)
+        c => resOk(c)
       }
   }
 
   def getGroups = AuthAction().async {
     request =>
       val groups = request.identity.getGroups
-      Future(resOK(Json.toJson(groups)))
+      Future(resOk(Json.toJson(groups)))
   }
 
   def getFriendRequests = AuthAction().async {
@@ -174,7 +174,7 @@ object ContactController extends ExtendedController {
       val futureFriendRequests = request.identity.friendRequests.map(_.toJsonWithIdentity)
 
       Future.sequence(futureFriendRequests).map {
-        seq => resOK(seq)
+        seq => resOk(seq)
       }
   }
 
@@ -200,7 +200,7 @@ object ContactController extends ExtendedController {
               case Some(other) =>
                 // check if identity is ignored
                 other.ignoredIdentities.exists(_.equals(request.identity.id)) match {
-                  case true => Future(resOK())
+                  case true => Future(resOk())
                   case false =>
                     // check if there already is a friend request of this identity
                     other.friendRequests.exists(_.identityId.equals(request.identity.id)) match {
@@ -250,7 +250,7 @@ object ContactController extends ExtendedController {
               case FRIEND_REQUEST_REJECT =>
                 // delete friend request and do nothing else
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
-                Future(resOK())
+                Future(resOk())
               case FRIEND_REQUEST_ACCEPT =>
                 // add contact to both identites
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
@@ -273,7 +273,7 @@ object ContactController extends ExtendedController {
                 // delete friend request and add identity to ignore list
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
                 request.identity.addIgnored(new MongoId(afr.identityId))
-                Future(resOK())
+                Future(resOk())
               case _ => Future(resBadRequest("invalid answer type"))
             }
           }

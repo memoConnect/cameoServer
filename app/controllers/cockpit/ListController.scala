@@ -43,7 +43,7 @@ object ListController extends ExtendedController {
     request =>
       checkAccessList(request.identity.accountId) {
         val allNames: Seq[String] = allEditables.map(_.name)
-        Future(resOK(Json.obj("lists" -> Json.toJson(allNames))))
+        Future(resOk(Json.obj("lists" -> Json.toJson(allNames))))
       }
   }
 
@@ -68,7 +68,7 @@ object ListController extends ExtendedController {
                 case None => Future(resNotFound("elementName"))
                 case Some(definition) => definition.getList(listOptions).map {
                   list =>
-                    resOK(list.toJson)
+                    resOk(list.toJson)
                 }
               }
             }
@@ -94,7 +94,7 @@ object ListController extends ExtendedController {
     checkAccessList(request.identity.accountId) {
       getEditable(elementName) match {
         case None      => Future(resNotFound("elementName"))
-        case Some(obj) => Future(resOK(obj.create.toJson))
+        case Some(obj) => Future(resOk(obj.create.toJson))
       }
     }
   }

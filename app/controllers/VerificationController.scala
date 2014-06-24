@@ -37,7 +37,7 @@ object VerificationController extends Controller with ExtendedController {
           if (vr.verifyMail.getOrElse(false)) {
             verifyActor ! (VERIFY_TYPE_MAIL, request.identity)
           }
-          resOK()
+          resOk()
       }
   }
 

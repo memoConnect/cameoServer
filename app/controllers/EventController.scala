@@ -39,7 +39,7 @@ object EventController extends Controller {
         case _ =>
           val subscription = EventSubscription.create(request.identity.id)
           EventSubscription.col.insert(subscription)
-          resOK(subscription.toJson)
+          resOk(subscription.toJson)
       }
   }
 
@@ -48,7 +48,7 @@ object EventController extends Controller {
       EventSubscription.findAndClear(MongoId(id)).map {
         case None => resNotFound("subscription id")
         case Some(subscription) =>
-          resOK(subscription.toJson)
+          resOk(subscription.toJson)
       }
   }
 }

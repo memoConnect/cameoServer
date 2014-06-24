@@ -26,7 +26,7 @@ object IdentityController extends ExtendedController {
 
     Identity.find(mongoId).map {
       case None           => resNotFound("identity")
-      case Some(identity) => resOK(identity.toPublicJson)
+      case Some(identity) => resOk(identity.toPublicJson)
     }
   }
 
@@ -37,7 +37,7 @@ object IdentityController extends ExtendedController {
 
       Identity.find(mongoId).map {
         case None           => resNotFound("identity")
-        case Some(identity) => resOK(identity.toPrivateJson)
+        case Some(identity) => resOk(identity.toPrivateJson)
       }
   }
 
@@ -85,7 +85,7 @@ object IdentityController extends ExtendedController {
                     !request.identity.id.equals(identity.id) && !matchesContact
                   })
                   val limited = OutputLimits.applyLimits(filtered, offset, limit)
-                  resOK(limited.map { i => i.toPublicJson })
+                  resOk(limited.map { i => i.toPublicJson })
               }
           }
       }
@@ -97,7 +97,7 @@ object IdentityController extends ExtendedController {
         publicKey =>
           request.identity.addPublicKey(publicKey).map {
             case false => resServerError("unable to add")
-            case true  => resOK(publicKey.toJson)
+            case true  => resOk(publicKey.toJson)
           }
       }
   }

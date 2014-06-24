@@ -53,7 +53,7 @@ object AccountController extends ExtendedController {
                     lastError =>
                       lastError.ok match {
                         case true =>
-                          accountWithIdentity.toJsonWithIdentities.map(resOK)
+                          accountWithIdentity.toJsonWithIdentities.map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
                       }
@@ -107,7 +107,7 @@ object AccountController extends ExtendedController {
     request =>
       Account.findByLoginName(loginName).flatMap {
         case None          => Future(resNotFound("account"))
-        case Some(account) => account.toJsonWithIdentities.map { resOK(_) }
+        case Some(account) => account.toJsonWithIdentities.map { resOk(_) }
       }
   }
 
@@ -147,7 +147,7 @@ object AccountController extends ExtendedController {
                 case None =>
                   AccountReservation.reserve(lowerLogin).map {
                     res =>
-                      resOK(res.toJson)
+                      resOk(res.toJson)
                   }
               }
             }
@@ -162,7 +162,7 @@ object AccountController extends ExtendedController {
       Account.col.remove[JsValue](Json.obj("loginName" -> loginName)).map {
         lastError =>
           if (lastError.updated > 0) {
-            resOK(Json.obj("deleted Account" -> loginName))
+            resOk(Json.obj("deleted Account" -> loginName))
           } else if (lastError.ok) {
             resNotFound("account")
           } else {

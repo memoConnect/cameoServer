@@ -104,7 +104,7 @@ object CallStackController extends ExtendedController {
                 }
 
                 Future.sequence(responses).map {
-                  list => resOK(Json.obj("responses" -> list))
+                  list => resOk(Json.obj("responses" -> list))
                 }
             }
         }

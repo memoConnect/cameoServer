@@ -44,7 +44,7 @@ case class Contact(id: MongoId,
 
   def toJsonWithIdentityResult: Future[Result] = {
     this.toJsonWithIdentity.map(
-      js => resOK(js))
+      js => resOk(js))
   }
 
   def update(contactUpdate: ContactUpdate): Future[Boolean] = {

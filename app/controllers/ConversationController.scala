@@ -24,7 +24,7 @@ object ConversationController extends ExtendedController {
       {
         def insertConversation(conversation: Conversation): Future[Result] = {
           Conversation.col.insert(conversation).map {
-            le => resOK(conversation.toJson)
+            le => resOk(conversation.toJson)
           }
         }
 
@@ -55,7 +55,7 @@ object ConversationController extends ExtendedController {
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.getMissingPassphrases.map {
             missingPasshrases =>
-              resOK(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
+              resOk(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
           }
         }
       }
@@ -100,7 +100,7 @@ object ConversationController extends ExtendedController {
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.deleteRecipient(new MongoId(rid)).map {
             case false => resNotFound("recipient")
-            case true  => resOK()
+            case true  => resOk()
           }
         }
       }
@@ -111,7 +111,7 @@ object ConversationController extends ExtendedController {
       Conversation.find(id, -1, 0).flatMap {
         case None => Future(resNotFound("conversation"))
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.toSummaryJsonWithKey(keyId).map(resOK(_))
+          c.toSummaryJsonWithKey(keyId).map(resOk(_))
         }
       }
   }
@@ -127,7 +127,7 @@ object ConversationController extends ExtendedController {
           futureJson.map {
             json =>
               val res = Json.obj("conversations" -> json, "numberOfConversations" -> list.length)
-              resOK(res)
+              resOk(res)
           }
       }
   }

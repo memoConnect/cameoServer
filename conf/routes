@@ -100,8 +100,9 @@ OPTIONS        /a/cockpit/v1/*foo                           controllers.TokenCon
 GET            /a/v1/util/dumpDb                            controllers.Application.dumpDb()
 GET            /a/v1/util/loadDb                            controllers.Application.loadFixtures()
 
-# Functions for e2e tests
-DELETE         /a/v1/testUser/:id                           controllers.Application.deleteTestUser(id)
+# TEST USERS
+GET             /a/v1/testUser/:id                          controllers.TestUserController.getNotifications(id)
+DELETE         /a/v1/testUser/:id                           controllers.TestUserController.deleteTestUser(id)
 
 # check app to support monitoring
 GET            /a/v1/util/checkApp                          controllers.Application.checkApp()
