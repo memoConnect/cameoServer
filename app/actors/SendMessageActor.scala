@@ -54,35 +54,37 @@ class SendMessageActor extends Actor {
                     case Some(toIdentity) =>
                       Logger.debug("SendMessageActor: Message " + message.id + " Sending to identity " + toIdentity.id)
 
-                      toIdentity.preferredMessageType match {
-                        case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)
-                        case MESSAGE_TYPE_EMAIL => sendMailActor ! (message, fromIdentity, toIdentity, subject, 0)
-                        case _ =>
-                          // if recipient has a mail, send mail
+                      toIdentity.accountId match {
+                        case None =>
+                          // external user, use contacts from identity
                           if (toIdentity.phoneNumber.isDefined) {
-                            sendSmsActor ! (message, fromIdentity, toIdentity, 0)
+                            sendSmsActor ! (message, fromIdentity, toIdentity, toIdentity.phoneNumber.get, 0)
                           } else if (toIdentity.email.isDefined) {
-                            sendMailActor ! (message, fromIdentity, toIdentity, subject, 0)
+                            sendMailActor ! (message, fromIdentity, toIdentity, subject, toIdentity.email.get, 0)
                           } else {
                             Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
                           }
-                        // TODO case _ => sendFailActor ! (message, identity)
+                        case Some(accountId) =>
+                          // internal user, use contacts from account
+                          Account.find(accountId).map {
+                            case Some(account) =>
+                              if (account.phoneNumber.isDefined) {
+                                sendSmsActor ! (message, fromIdentity, toIdentity, account.phoneNumber.get, 0)
+                              } else if (account.email.isDefined) {
+                                sendMailActor ! (message, fromIdentity, toIdentity, subject, account.email.get, 0)
+                              } else {
+                                Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
+                              }
+                            case None => Logger.error("Could not find accountId: " + accountId)
+                          }
                       }
                       new MessageStatus(recipient.identityId, MESSAGE_STATUS_QUEUED, toIdentity.preferredMessageType)
-
                   }
                 } else {
                   Future.successful(new MessageStatus(recipient.identityId, MESSAGE_STATUS_NONE, "sender"))
                 }
               }
           }
-
-        //          // convert to a singe future and write status to message
-        //          Future.sequence(futureMessageStatus).map {
-        //            s =>
-        //              message.updateAllStatus(s)
-        //          }
-
       }
   }
 }

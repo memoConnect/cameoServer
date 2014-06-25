@@ -71,7 +71,7 @@ class SendSmsActor extends Actor {
 
   def receive = {
     // send message to recipient
-    case (message: Message, fromIdentity: Identity, toIdentity: Identity, tryCount: Int) =>
+    case (message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String, tryCount: Int) =>
 
 
       // check how often we tried to send this message
@@ -81,7 +81,7 @@ class SendSmsActor extends Actor {
       } else {
         // get identity of sender
         val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
-        val to: String = toIdentity.phoneNumber.get.toString
+        val to: String = phoneNumber
         val body: String = message.plain match {
           case Some(PlainMessagePart(Some(text), _)) => text
           case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
@@ -108,13 +108,13 @@ class SendSmsActor extends Actor {
         val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
         toIdentity.cameoId.startsWith(testUserPrefix) match {
           case false =>
-          case true  => TestUserNotification.createAndInsert(toIdentity.id, toIdentity.preferredMessageType, bodyWithFooter, false)
+          case true  => TestUserNotification.createAndInsert(toIdentity.id, "sms", bodyWithFooter, false)
         }
 
         // check if this message comes from a test user and save it
         fromIdentity.cameoId.startsWith(testUserPrefix) match {
           case false =>
-          case true  => TestUserNotification.createAndInsert(fromIdentity.id, toIdentity.preferredMessageType, bodyWithFooter, true)
+          case true  => TestUserNotification.createAndInsert(fromIdentity.id, "sms", bodyWithFooter, true)
         }
 
         sendSms(sms)

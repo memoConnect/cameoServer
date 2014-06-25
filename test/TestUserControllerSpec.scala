@@ -48,7 +48,7 @@ class TestUserControllerSpec extends StartedApp {
       val path = basePath + "/account"
       val json = Json.obj("loginName" -> loginName) ++
         Json.obj("password" -> password) ++
-        Json.obj("phonenumber" -> "+4912345678") ++
+        Json.obj("phoneNumber" -> "+4912345678") ++
         Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
@@ -136,7 +136,7 @@ class TestUserControllerSpec extends StartedApp {
     }
 
     "Get Test User Notifications" in {
-      Thread.sleep(200)
+      Thread.sleep(400)
       val path = basePath + "/testUser/" + testUserId
 
       val req = FakeRequest(GET, path)
@@ -147,8 +147,8 @@ class TestUserControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
       data.length must beEqualTo(1)
-      (data(0) \ "content" \ "plain" \ "text").asOpt[String] must beSome(messageText)
-      (data(0) \ "messageType").asOpt[String] must beSome("default")
+      (data(0) \ "content").asOpt[String] must beSome(contain(messageText))
+      (data(0) \ "messageType").asOpt[String] must beSome("sms")
     }
     
     "Delete testUser" in {

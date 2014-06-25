@@ -74,7 +74,7 @@ class SendMailActor extends Actor {
         sendMail(mail)
       }
 
-    case (message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, tryCount: Int) =>
+    case (message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, email: String, tryCount: Int) =>
 
       Logger.debug("received mail message")
 
@@ -87,7 +87,7 @@ class SendMailActor extends Actor {
         val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
         val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
         val mailSubject = "[cameo.io] - " + subject
-        val to: String = toIdentity.email.get.toString
+        val to: String = email
         val body: String = message.plain match {
           case Some(PlainMessagePart(Some(text), _)) => text
           case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED

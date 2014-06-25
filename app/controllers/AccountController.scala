@@ -7,7 +7,7 @@ import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
-import play.api.mvc.{Action, Result}
+import play.api.mvc.{ Action, Result }
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -78,7 +78,7 @@ object AccountController extends ExtendedController {
                           case Some(token) =>
                             // there is a token, check if it belongs to an external user
                             Identity.findByToken(new MongoId(token)).flatMap {
-                              case None => Future(resBadRequest("invalid token"))
+                              case None                                           => Future(resBadRequest("invalid token"))
                               case Some(identity) if identity.accountId.isDefined => Future(resBadRequest("token belongs to a registered user"))
                               case Some(identity) =>
 
@@ -124,7 +124,7 @@ object AccountController extends ExtendedController {
     request =>
       case class VerifyRequest(loginName: String)
 
-      val reads   = (__ \ 'loginName).read[String].map {
+      val reads = (__ \ 'loginName).read[String].map {
         l => VerifyRequest(l)
       }
 
