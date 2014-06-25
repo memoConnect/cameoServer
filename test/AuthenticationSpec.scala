@@ -63,6 +63,8 @@ class AuthenticationSpec extends StartedApp {
       (POST, "/a/v1/conversation/$id<[^/]+>/message"),
       (GET, "/a/v1/message/$id<[^/]+>"),
       (GET, "/a/v1/identity"),
+      (GET, "/a/v1/eventSubscription/$id<[^/]+>"),
+      (POST, "/a/v1/eventSubscription"),
       (GET, "/a/v1/file/$id<[^/]+>"),
       (GET, "/a/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>")
     )

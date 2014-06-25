@@ -48,6 +48,7 @@ class TestUserControllerSpec extends StartedApp {
       val path = basePath + "/account"
       val json = Json.obj("loginName" -> loginName) ++
         Json.obj("password" -> password) ++
+        Json.obj("phonenumber" -> "+4912345678") ++
         Json.obj("reservationSecret" -> regSec)
 
       val req = FakeRequest(POST, path).withJsonBody(json)

@@ -124,7 +124,7 @@ object AccountController extends ExtendedController {
     request =>
       case class VerifyRequest(loginName: String)
 
-      val reads = (__ \ 'loginName).read[String].map {
+      val reads   = (__ \ 'loginName).read[String].map {
         l => VerifyRequest(l)
       }
 
