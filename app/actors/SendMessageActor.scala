@@ -20,8 +20,6 @@ case class SendMessage(message: Message, conversationId: MongoId, recipients: Se
 
 class SendMessageActor extends Actor {
 
-  val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
-
   def receive = {
 
     case SendMessage(message, conversationId, recipients, subject) =>
@@ -55,12 +53,6 @@ class SendMessageActor extends Actor {
                       new MessageStatus(recipient.identityId, MESSAGE_STATUS_ERROR, error)
                     case Some(toIdentity) =>
                       Logger.debug("SendMessageActor: Message " + message.id + " Sending to identity " + toIdentity.id)
-
-                      // check if we have a test user and save message
-                      toIdentity.cameoId.startsWith(testUserPrefix) match {
-                        case false =>
-                        case true  => TestUserNotification.createAndInsert(toIdentity.id, toIdentity.preferredMessageType, message.toJson)
-                      }
 
                       toIdentity.preferredMessageType match {
                         case MESSAGE_TYPE_SMS   => sendSmsActor ! (message, fromIdentity, toIdentity, 0)

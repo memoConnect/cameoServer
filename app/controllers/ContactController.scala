@@ -56,7 +56,7 @@ object ContactController extends ExtendedController {
       }
 
       def createContact(identityId: MongoId, contactType: String): Future[Result] = {
-        validateFuture(request.body, Contact.createReads(identityId, contactType)) {
+        validateFuture(request.body, Contact.createReads(identityId)) {
           contact =>
             {
               request.identity.addContact(contact).flatMap {

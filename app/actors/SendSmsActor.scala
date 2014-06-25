@@ -73,6 +73,7 @@ class SendSmsActor extends Actor {
     // send message to recipient
     case (message: Message, fromIdentity: Identity, toIdentity: Identity, tryCount: Int) =>
 
+
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
@@ -101,8 +102,20 @@ class SendSmsActor extends Actor {
             body + footer
           }
         }
-
         val sms = new SmsMessage(from, to, bodyWithFooter)
+
+        // check if we have a test user and save message
+        val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+        toIdentity.cameoId.startsWith(testUserPrefix) match {
+          case false =>
+          case true  => TestUserNotification.createAndInsert(toIdentity.id, toIdentity.preferredMessageType, bodyWithFooter, false)
+        }
+
+        // check if this message comes from a test user and save it
+        fromIdentity.cameoId.startsWith(testUserPrefix) match {
+          case false =>
+          case true  => TestUserNotification.createAndInsert(fromIdentity.id, toIdentity.preferredMessageType, bodyWithFooter, true)
+        }
 
         sendSms(sms)
       }

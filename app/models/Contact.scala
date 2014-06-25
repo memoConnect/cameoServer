@@ -80,7 +80,7 @@ object Contact extends SubModel[Contact, Identity] {
 
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
-  def createReads(identityId: MongoId, contactType: String): Reads[Contact] = (
+  def createReads(identityId: MongoId): Reads[Contact] = (
     Reads.pure[MongoId](IdHelper.generateContactId()) and
     ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
     Reads.pure[MongoId](identityId) and

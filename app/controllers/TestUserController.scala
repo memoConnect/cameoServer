@@ -23,6 +23,8 @@ object TestUserController extends ExtendedController {
   def deleteTestUser(id: String) = Action.async {
     request =>
 
+      Logger.debug("deleted TestUserId: " + id)
+
       val accountQuery = Json.obj("loginName" -> (testUserPrefix + "_" + id))
       MongoCollections.accountCollection.find(accountQuery).one[Account].map {
         case None => resNotFound("Test user")

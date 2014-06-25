@@ -16,7 +16,8 @@ import scala.concurrent.Future
 case class TestUserNotification(id: MongoId,
                                 identityId: MongoId,
                                 messageType: String,
-                                content: JsObject,
+                                content: String,
+                                sender: Boolean,
                                 docVersion: Int) {
 
   def toJson: JsObject = Json.obj("messageType" -> messageType, "content" -> content)
@@ -28,12 +29,12 @@ object TestUserNotification extends Model[TestUserNotification] {
 
   implicit def mongoFormat: Format[TestUserNotification] = createMongoFormat(Json.reads[TestUserNotification], Json.writes[TestUserNotification])
 
-  def createAndInsert(identityId: MongoId, messageType: String, content: JsObject): Future[Boolean] = {
-    val msg = new TestUserNotification(IdHelper.generateMongoId(), identityId, messageType, content, docVersion)
+  def createAndInsert(identityId: MongoId, messageType: String, content: String, sender: Boolean): Future[Boolean] = {
+    val msg = new TestUserNotification(IdHelper.generateMongoId(), identityId, messageType, content, sender, docVersion)
     MongoCollections.testUserNotificationCollection.insert(msg).map(_.ok)
   }
 
-  def createDefault(): TestUserNotification = TestUserNotification(IdHelper.generateMongoId(), new MongoId(""), "", Json.obj(), docVersion)
+  def createDefault(): TestUserNotification = TestUserNotification(IdHelper.generateMongoId(), new MongoId(""), "", "", false, docVersion)
 
   def docVersion: Int = 0
 
