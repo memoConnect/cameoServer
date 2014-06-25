@@ -10,7 +10,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import play.api.Play
 import ExecutionContext.Implicits.global
 import play.api.Play.current
-import play.api.mvc.{Result, BodyParser, Headers, SimpleResult}
+import play.api.mvc.{ Result, BodyParser, Headers, SimpleResult }
 import play.api.libs.iteratee.Iteratee
 import reactivemongo.bson.{ Subtype, BSONBinary, BSONDocument }
 import scala.util.control.NonFatal

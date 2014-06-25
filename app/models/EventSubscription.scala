@@ -3,10 +3,10 @@ package models
 import java.util.Date
 import traits.Model
 import play.api.libs.json._
-import helper.{JsonHelper, IdHelper, MongoCollections}
+import helper.{ JsonHelper, IdHelper, MongoCollections }
 import scala.concurrent.{ ExecutionContext, Future }
 import reactivemongo.core.commands.{ Update, FindAndModify, Count }
-import reactivemongo.bson.{BSONDateTime, BSONArray, BSONDocument}
+import reactivemongo.bson.{ BSONDateTime, BSONArray, BSONDocument }
 import play.modules.reactivemongo.json.BSONFormats._
 import ExecutionContext.Implicits.global
 import play.modules.reactivemongo.json.collection.JSONCollection

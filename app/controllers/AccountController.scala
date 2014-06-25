@@ -1,6 +1,6 @@
 package controllers
 
-import play.api.mvc.{Result, SimpleResult, Action}
+import play.api.mvc.{ Result, SimpleResult, Action }
 import play.api.libs.json._
 import traits.ExtendedController
 import models._

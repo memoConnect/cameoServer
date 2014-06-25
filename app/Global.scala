@@ -5,7 +5,7 @@
  */
 import helper.DbAdminUtilities
 import models.GlobalState
-import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.libs.json.{ JsObject, JsValue, Json }
 import play.api.{ Logger, Play, GlobalSettings }
 import play.api.mvc.EssentialAction
 import play.api.http.HeaderNames._
@@ -36,19 +36,19 @@ object Global extends GlobalSettings {
 
     // make sure that we have a connection to mongodb
     def checkMongoConnection(): Boolean =
-    {
-      try {
-        val futureState = globalStateCollection.find(Json.obj()).one[JsObject].map(_.getOrElse(Json.obj()))
-        Await.result(futureState, 1.minute)
-        Logger.info("DB Connection OK")
-        true
-      } catch {
-        case e: Exception =>
-          Logger.error("Could not connect to mongodb", e)
-          Thread.sleep(1000)
-          checkMongoConnection()
+      {
+        try {
+          val futureState = globalStateCollection.find(Json.obj()).one[JsObject].map(_.getOrElse(Json.obj()))
+          Await.result(futureState, 1.minute)
+          Logger.info("DB Connection OK")
+          true
+        } catch {
+          case e: Exception =>
+            Logger.error("Could not connect to mongodb", e)
+            Thread.sleep(1000)
+            checkMongoConnection()
+        }
       }
-    }
 
     checkMongoConnection()
 

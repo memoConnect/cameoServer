@@ -14,10 +14,10 @@ import scala.concurrent.Future
  * Time: 15:07
  */
 case class TestUserNotification(id: MongoId,
-                           identityId: MongoId,
-                           messageType: String,
-                           content: JsObject,
-                           docVersion: Int) {
+                                identityId: MongoId,
+                                messageType: String,
+                                content: JsObject,
+                                docVersion: Int) {
 
   def toJson: JsObject = Json.obj("messageType" -> messageType, "content" -> content)
 }

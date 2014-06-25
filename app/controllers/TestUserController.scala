@@ -2,8 +2,8 @@ package controllers
 
 import helper.MongoCollections
 import helper.ResultHelper._
-import models.{MongoId, TestUserNotification, Account}
-import play.api.{Logger, Play}
+import models.{ MongoId, TestUserNotification, Account }
+import play.api.{ Logger, Play }
 import play.api.libs.json.Json
 import play.api.mvc.Action
 import traits.ExtendedController
@@ -53,7 +53,7 @@ object TestUserController extends ExtendedController {
       MongoCollections.accountCollection.find(accountQuery).one[Account].flatMap {
         case None => Future(resNotFound("Test user"))
         case Some(account) =>
-          val query = Json.obj("$or" -> account.identities.map(i=> Json.obj("identityId" -> i)))
+          val query = Json.obj("$or" -> account.identities.map(i => Json.obj("identityId" -> i)))
           TestUserNotification.findAll(query).map { seq =>
             resOk(seq.map(_.toJson))
           }
