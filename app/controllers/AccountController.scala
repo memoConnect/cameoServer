@@ -1,17 +1,16 @@
 package controllers
 
-import play.api.mvc.{ Result, SimpleResult, Action }
-import play.api.libs.json._
-import traits.ExtendedController
-import models._
-import play.api.libs.concurrent.Execution.Implicits._
-import scala.concurrent.Future
-import helper.ResultHelper._
 import helper.CmActions.AuthAction
-import scala.Some
-import play.api.libs.json.Reads._
-import services.AvatarGenerator
+import helper.ResultHelper._
+import models._
 import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+import play.api.mvc.{Action, Result}
+import traits.ExtendedController
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -24,7 +23,6 @@ object AccountController extends ExtendedController {
     login.length >= 6 &&
       login.length < 21 &&
       login.matches("^\\w+$")
-
   }
 
   case class AdditionalValues(reservationSecret: String, displayName: Option[String])
@@ -47,7 +45,7 @@ object AccountController extends ExtendedController {
                   val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
 
                   // add support user
-                  identity.addSupport
+                  identity.addSupport()
 
                   Account.col.insert(accountWithIdentity).flatMap {
                     lastError =>
@@ -74,25 +72,36 @@ object AccountController extends ExtendedController {
                         request.headers.get("Authorization") match {
                           case None =>
                             // no token, create new identity
-                            Identity.createAndInsert(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
+                            Identity.createAndInsert(Some(account.id), account.loginName, None, None, additionalValues.displayName)
                               .flatMap(createAccountWithIdentity)
 
                           case Some(token) =>
                             // there is a token, check if it belongs to an external user
                             Identity.findByToken(new MongoId(token)).flatMap {
                               case None => Future(resBadRequest("invalid token"))
+                              case Some(identity) if identity.accountId.isDefined => Future(resBadRequest("token belongs to a registered user"))
                               case Some(identity) =>
-                                val update = IdentityUpdate(
-                                  account.phoneNumber.map(VerifiedString.create),
-                                  account.email.map(VerifiedString.create),
-                                  additionalValues.displayName,
-                                  Some(account.loginName),
-                                  Some(account.id)
-                                )
 
-                                identity.update(update).flatMap {
-                                  case false => Future(resServerError("unable to update identity"))
-                                  case true  => createAccountWithIdentity(identity)
+                                // find the user that added the external contact
+                                val query = Json.obj("contacts.identityId" -> identity.id)
+                                Identity.find(query).flatMap {
+                                  case None => Future(resBadRequest("this user is in nobodies contact book"))
+                                  case Some(otherIdentity) =>
+                                    // add other identity as contact
+                                    identity.addContact(Contact.create(otherIdentity.id))
+
+                                    // add new information to identity
+                                    val update = IdentityUpdate(
+                                      None,
+                                      None,
+                                      additionalValues.displayName,
+                                      Some(account.loginName),
+                                      Some(account.id)
+                                    )
+                                    identity.update(update).flatMap {
+                                      case false => Future(resServerError("unable to update identity"))
+                                      case true  => createAccountWithIdentity(identity)
+                                    }
                                 }
                             }
                         }

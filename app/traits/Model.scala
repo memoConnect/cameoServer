@@ -24,10 +24,14 @@ trait Model[A] {
 
   def find(id: MongoId): Future[Option[A]] = {
     val query = Json.obj("_id" -> id)
-    col.find(query).one[A]
+    find(query)
   }
 
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
+
+  def find(query: JsObject): Future[Option[A]] = {
+    col.find(query).one[A]
+  }
 
   def findAll(query: JsObject): Future[Seq[A]] = {
     col.find(query).cursor[A].collect[Seq]()

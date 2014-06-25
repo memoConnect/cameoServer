@@ -8,7 +8,7 @@ import scala.Some
 import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
-import play.api.{Play, Logger}
+import play.api.{ Play, Logger }
 import testHelper.{ TestConfig, StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
@@ -283,8 +283,8 @@ class AccountControllerSpec extends StartedApp {
       (data \ "userKey").asOpt[String] must beSome
       (data \ "cameoId").asOpt[String] must beSome(login)
       (data \ "displayName").asOpt[String] must beSome(displayName)
-      (data \ "email" \ "value").asOpt[String] must beSome(mail)
-      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(cleanedTel)
+      (data \ "email" \ "value").asOpt[String] must beNone
+      (data \ "phoneNumber" \ "value").asOpt[String] must beNone
     }
 
     var fileId = ""
@@ -404,7 +404,6 @@ class AccountControllerSpec extends StartedApp {
     }
 
     "register user with token of external user" in {
-
       val path = basePath + "/account"
       val json = createUser(loginExternal, pass, Some(tel2), Some(mail2)) ++
         Json.obj("reservationSecret" -> regSecExternal) ++
@@ -420,12 +419,12 @@ class AccountControllerSpec extends StartedApp {
       val identity = (data \ "identities")(0).as[JsObject]
 
       (identity \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
-      (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(tel2)
-      (identity \ "email" \ "value").asOpt[String] must beSome(mail2)
+      (identity \ "phoneNumber" \ "value").asOpt[String] must beNone
+      (identity \ "email" \ "value").asOpt[String] must beNone
       (identity \ "displayName").asOpt[String] must beSome(displayName2)
-
     }
 
+    var purlExternIdentityToken = ""
     "get token of new account" in {
 
       val path = basePath + "/token"
@@ -437,7 +436,10 @@ class AccountControllerSpec extends StartedApp {
 
       status(res) must equalTo(OK)
 
-      (contentAsJson(res) \ "data").asOpt[JsObject] must beSome
+      (contentAsJson(res) \ "data" \ "token").asOpt[String] must beSome
+      purlExternIdentityToken = (contentAsJson(res) \ "data" \ "token").as[String]
+
+      1 === 1
     }
 
     "get identity of new account" in {
@@ -457,6 +459,22 @@ class AccountControllerSpec extends StartedApp {
       (data \ "displayName").asOpt[String] must beSome(displayName2)
     }
 
+    "identity should have sender as contact" in {
+
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(purlExternIdentityToken))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(2)
+
+      data.find(js => (js \ "identityId").asOpt[String].equals(Some(identityExisting2))) must beSome
+    }
+
     "Reserve another login" in {
       val path = basePath + "/account/check"
       val json = Json.obj("loginName" -> (loginExternal + "moep"))
@@ -474,7 +492,6 @@ class AccountControllerSpec extends StartedApp {
     }
 
     "refuse to register with token of internal user" in {
-
       val path = basePath + "/account"
       val json = createUser(loginExternal, pass, Some(tel2), Some(mail2)) ++
         Json.obj("reservationSecret" -> regSecExternal) ++
