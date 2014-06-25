@@ -58,9 +58,9 @@ class SendMessageActor extends Actor {
                         case None =>
                           // external user, use contacts from identity
                           if (toIdentity.phoneNumber.isDefined) {
-                            sendSmsActor ! (message, fromIdentity, toIdentity, toIdentity.phoneNumber.get, 0)
+                            sendSmsActor ! (message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value, 0)
                           } else if (toIdentity.email.isDefined) {
-                            sendMailActor ! (message, fromIdentity, toIdentity, subject, toIdentity.email.get, 0)
+                            sendMailActor ! (message, fromIdentity, toIdentity, subject, toIdentity.email.get.value, 0)
                           } else {
                             Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
                           }

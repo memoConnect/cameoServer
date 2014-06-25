@@ -72,8 +72,6 @@ class SendSmsActor extends Actor {
   def receive = {
     // send message to recipient
     case (message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String, tryCount: Int) =>
-
-
       // check how often we tried to send this message
       if (tryCount > MESSAGE_MAX_TRY_COUNT) {
         val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")

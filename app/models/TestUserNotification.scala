@@ -31,6 +31,7 @@ object TestUserNotification extends Model[TestUserNotification] {
 
   def createAndInsert(identityId: MongoId, messageType: String, content: String, sender: Boolean): Future[Boolean] = {
     val msg = new TestUserNotification(IdHelper.generateMongoId(), identityId, messageType, content, sender, docVersion)
+    Logger.debug("SAVONG: " + msg)
     MongoCollections.testUserNotificationCollection.insert(msg).map(_.ok)
   }
 
