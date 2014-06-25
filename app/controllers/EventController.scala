@@ -17,7 +17,7 @@ import play.api.libs.json.Json
  */
 object EventController extends Controller {
 
-  def newSubscription() = AuthAction().async(parse.tolerantJson) {
+  def newSubscription() = AuthAction(allowExternal = true).async(parse.tolerantJson) {
     request =>
       // check if a secret is used to disable max subscription
       val limitEnabled: Boolean = Play.configuration.getString("events.subscription.debug.secret") match {
@@ -43,7 +43,7 @@ object EventController extends Controller {
       }
   }
 
-  def getSubscription(id: String) = AuthAction().async {
+  def getSubscription(id: String) = AuthAction(allowExternal = true).async {
     request =>
       EventSubscription.findAndClear(MongoId(id)).map {
         case None => resNotFound("subscription id")
