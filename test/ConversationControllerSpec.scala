@@ -54,11 +54,12 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "lastUpdated").asOpt[Long] must beSome
     }
 
+    val keyTransmission = "moepSecure"
     "Create a new conversation with subject" in {
       val path = basePath + "/conversation"
 
       val subject = "test subject"
-      val json = Json.obj("subject" -> subject)
+      val json = Json.obj("subject" -> subject, "keyTransmission" -> keyTransmission)
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -75,6 +76,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "subject").asOpt[String] must beSome(subject)
+      (data \ "keyTransmission").asOpt[String] must beSome(keyTransmission)
     }
 
     "Create a new conversation without subject" in {
@@ -320,6 +322,31 @@ class ConversationControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "subject").asOpt[String] must beSome(newSubject)
+    }
+
+    val newKeyTransmission = "veryMoepSecure"
+    "Edit keyTransmission of an conversation" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val json = Json.obj("keyTransmission" -> newKeyTransmission)
+
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "Check if keyTransmission has changed" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "keyTransmission").asOpt[String] must beSome(newKeyTransmission)
     }
 
     "Refuse non-member to edit subject of an conversation" in {

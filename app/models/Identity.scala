@@ -1,5 +1,6 @@
 package models
 
+import constants.KeyTransmission
 import play.api.Play.current
 import play.api.libs.json._
 import play.api.libs.functional.syntax._
@@ -176,7 +177,7 @@ case class Identity(id: MongoId,
             case None => Future(false)
             case Some(supportIdentity) =>
               val contact = Contact.create(supportIdentity.id, Seq())
-              val conversation = Conversation.create(subject, Seq(supportIdentity.id, this.id).map(Recipient.create))
+              val conversation = Conversation.create(subject, Seq(supportIdentity.id, this.id).map(Recipient.create), keyTransmission = Some(KeyTransmission.KEY_TRANSMISSION_NONE))
               val message = Message.create(new MongoId(supportId), messageText)
 
               // create new conversation

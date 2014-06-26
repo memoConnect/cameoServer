@@ -29,8 +29,8 @@ object ConversationController extends ExtendedController {
         }
 
         validateFuture[ConversationUpdate](request.body, ConversationUpdate.createReads) {
-          c =>
-            val conversation = Conversation.create(c.subject, Seq(Recipient.create(request.identity.id)), c.passCaptcha, c.aePassphraseList, c.sePassphrase)
+          cu =>
+            val conversation = Conversation.create(cu.subject, Seq(Recipient.create(request.identity.id)), cu.passCaptcha, cu.aePassphraseList, cu.sePassphrase, cu.keyTransmission)
 
             // check if there are recipients
             (request.body \ "recipients").asOpt[Seq[String]] match {

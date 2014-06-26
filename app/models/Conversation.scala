@@ -40,6 +40,7 @@ case class Conversation(id: MongoId,
                         numberOfMessages: Option[Int],
                         created: Date,
                         lastUpdated: Date,
+                        keyTransmission: Option[String],
                         docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(Conversation.outputWrites).as[JsObject]
@@ -109,6 +110,7 @@ case class Conversation(id: MongoId,
         maybeEmptyString("subject", conversationUpdate.subject) ++
         maybeEmptyJsValue("passCaptcha", conversationUpdate.passCaptcha.map(str => Json.toJson(MongoId(str)))) ++
         maybeEmptyString("sePassphrase", conversationUpdate.sePassphrase) ++
+        maybeEmptyString("keyTransmission", conversationUpdate.keyTransmission) ++
         maybeEmptyJsValue("aePassphraseList", conversationUpdate.aePassphraseList.map(Json.toJson(_)))
       ))
     Conversation.col.update(query, set).map { _.ok }
@@ -185,6 +187,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("aePassphraseList" -> c.aePassphraseList.map(_.toJson)) ++
         maybeEmptyString("sePassphrase", c.sePassphrase) ++
         maybeEmptyString("subject", c.subject) ++
+        maybeEmptyString("keyTransmission", c.keyTransmission) ++
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString)) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
@@ -196,6 +199,7 @@ object Conversation extends Model[Conversation] {
         addLastUpdated(c.lastUpdated) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         maybeEmptyString("subject", c.subject) ++
+        maybeEmptyString("keyTransmission", c.keyTransmission) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
         maybeEmptyString("sePassphrase", c.sePassphrase) ++
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
@@ -224,9 +228,10 @@ object Conversation extends Model[Conversation] {
              recipients: Seq[Recipient] = Seq(),
              passCaptcha: Option[String] = None,
              aePassphraseList: Option[Seq[EncryptedPassphrase]] = None,
-             sePassphrase: Option[String] = None): Conversation = {
+             sePassphrase: Option[String] = None,
+             keyTransmission: Option[String] = None): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, subject, recipients, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), None, new Date, new Date, 0)
+    new Conversation(id, subject, recipients, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), None, new Date, new Date, keyTransmission, 0)
   }
 
   def evolutions = Map(
@@ -236,14 +241,15 @@ object Conversation extends Model[Conversation] {
   )
 
   def createDefault(): Conversation = {
-    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), None, None, None, new Date, new Date, 0)
+    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), None, None, None, new Date, new Date, None, 0)
   }
 }
 
 case class ConversationUpdate(subject: Option[String],
                               passCaptcha: Option[String],
                               aePassphraseList: Option[Seq[EncryptedPassphrase]],
-                              sePassphrase: Option[String])
+                              sePassphrase: Option[String],
+                              keyTransmission: Option[String])
 
 object ConversationUpdate {
   implicit val format: Format[ConversationUpdate] = Json.format[ConversationUpdate]
@@ -252,7 +258,8 @@ object ConversationUpdate {
     (__ \ "subject").readNullable[String] and
     (__ \ "passCaptcha").readNullable[String] and
     (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
-    (__ \ "sePassphrase").readNullable[String]
+    (__ \ "sePassphrase").readNullable[String] and
+    (__ \ "keyTransmission").readNullable[String]
   )(ConversationUpdate.apply _)
 }
 

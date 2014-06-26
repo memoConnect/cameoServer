@@ -28,3 +28,11 @@ object Verification {
   val VERIFY_TYPE_MAIL = "mail"
   val VERIFY_TYPE_PHONENUMBER = "phoneNumber"
 }
+
+object KeyTransmission {
+
+  val KEY_TRANSMISSION_NONE = "none"
+  val KEY_TRANSMISSION_MIXED = "mixed"
+  val KEY_TRANSMISSION_SYMMETRIC = "symmetric"
+  val KEY_TRANSMISSION_ASYMMECTRIC = "asymmetric"
+}
