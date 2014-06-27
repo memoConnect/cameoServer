@@ -1,6 +1,7 @@
 package models
 
 import java.util.Date
+import constants.KeyTransmission
 import traits.Model
 import scala.concurrent.{ ExecutionContext, Future }
 import helper.{ MongoCollections, IdHelper }
@@ -229,7 +230,7 @@ object Conversation extends Model[Conversation] {
              passCaptcha: Option[String] = None,
              aePassphraseList: Option[Seq[EncryptedPassphrase]] = None,
              sePassphrase: Option[String] = None,
-             keyTransmission: Option[String] = None): Conversation = {
+             keyTransmission: Option[String] = Some(KeyTransmission.KEY_TRANSMISSION_NONE)): Conversation = {
     val id = IdHelper.generateConversationId()
     new Conversation(id, subject, recipients, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), None, new Date, new Date, keyTransmission, 0)
   }
