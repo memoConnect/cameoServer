@@ -9,16 +9,16 @@ import helper.ResultHelper._
 import helper.{ IdHelper, MongoCollections }
 import play.api.Logger
 import play.api.libs.json.Reads._
-import play.api.libs.json.{ JsArray, JsNumber, JsObject, _ }
+import play.api.libs.json._
 import play.api.mvc.Result
 import play.modules.reactivemongo.json.BSONFormats._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.bson.BSONNull
-import reactivemongo.core.commands.{ Unwind, _ }
+import reactivemongo.core.commands._
 import traits.Model
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
+import play.api.libs.functional.syntax._
 
 /**
  * User: Björn Reimer
@@ -249,6 +249,14 @@ case class ConversationUpdate(subject: Option[String],
 
 object ConversationUpdate {
   implicit val format: Format[ConversationUpdate] = Json.format[ConversationUpdate]
+
+  val createReads: Reads[ConversationUpdate] = (
+    (__ \ "subject").readNullable[String] and
+    (__ \ "passCaptcha").readNullable[String] and
+    (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
+    (__ \ "sePassphrase").readNullable[String] and
+    (__ \ "keyTransmission").readNullable[String]
+  )(ConversationUpdate.apply _)
 }
 
 object ConversationEvolutions {
