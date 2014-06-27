@@ -1,16 +1,15 @@
 package controllers
 
-import traits.ExtendedController
-import models._
-import scala.concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits._
-import helper.OutputLimits
 import helper.CmActions.AuthAction
-import play.api.libs.json._
+import helper.OutputLimits
 import helper.ResultHelper._
+import models._
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json._
 import play.api.mvc.Result
-import scala.Some
-import play.api.mvc.Result
+import traits.ExtendedController
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -28,7 +27,7 @@ object ConversationController extends ExtendedController {
           }
         }
 
-        validateFuture[ConversationUpdate](request.body, ConversationUpdate.createReads) {
+        validateFuture[ConversationUpdate](request.body, ConversationUpdate.format) {
           cu =>
             val conversation = Conversation.create(cu.subject, Seq(Recipient.create(request.identity.id)), cu.passCaptcha, cu.aePassphraseList, cu.sePassphrase, cu.keyTransmission)
 
@@ -134,7 +133,7 @@ object ConversationController extends ExtendedController {
 
   def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, ConversationUpdate.createReads) {
+      validateFuture(request.body, ConversationUpdate.format) {
         cu =>
           Conversation.find(id, -1, 0).flatMap {
             case None => Future(resNotFound("conversation"))

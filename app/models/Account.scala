@@ -1,25 +1,23 @@
 package models
 
-import traits.{ CockpitEditable, CockpitAttribute, Model }
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import play.api.libs.json.Reads._
 import java.util.Date
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
+
+import constants.Messaging._
 import helper.IdHelper
-import play.api.Play
-import reactivemongo.core.commands.LastError
-import play.api.Play.current
 import helper.JsonHelper._
 import helper.MongoCollections._
-import constants.Messaging._
-import models.cockpit.attributes._
-import models.cockpit.attributes.CockpitAttributeFilter
-import scala.Some
-import models.cockpit.attributes.CockpitAttributeString
-import play.api.libs.json.JsObject
 import models.cockpit.CockpitListFilter
+import models.cockpit.attributes.{ CockpitAttributeFilter, CockpitAttributeString, _ }
+import play.api.Play
+import play.api.Play.current
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json.{ JsObject, _ }
+import reactivemongo.core.commands.LastError
+import traits.{ CockpitAttribute, CockpitEditable, Model }
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

@@ -1,12 +1,11 @@
 package models
 
+import helper.IdHelper
+import helper.JsonHelper._
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
 import play.api.libs.json._
 import traits.SubModel
-import play.api.libs.json.Reads._
-import helper.IdHelper
-import play.api.libs.functional.syntax._
-import helper.JsonHelper._
-import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

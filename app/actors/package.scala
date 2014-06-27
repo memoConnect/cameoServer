@@ -1,9 +1,9 @@
 import actors.testActors.SendSmsTestActor
 import akka.actor.{ ActorRef, Props }
 import akka.routing.RoundRobinPool
+import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.{ Logger, Play }
-import play.api.Play.current
 
 /**
  * User: Björn Reimer

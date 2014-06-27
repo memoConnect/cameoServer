@@ -1,19 +1,18 @@
 package actors
 
-import akka.actor.{ Props, Actor }
-import play.api.{ Play, Logger }
-import com.amazonaws.services.simpleemail.AmazonSimpleEmailServiceClient
+import akka.actor.{ Actor, Props }
 import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailServiceClient, model }
 import com.amazonaws.services.simpleemail.model._
-import com.amazonaws.{ AmazonServiceException, AmazonClientException }
-import models._
-import play.api.Play.current
+import com.amazonaws.{ AmazonClientException, AmazonServiceException }
 import constants.Messaging._
-import scala.concurrent.ExecutionContext
-import models.MailMessage
-import com.amazonaws.services.simpleemail.model
-import ExecutionContext.Implicits.global
+import models.{ MailMessage, _ }
+import play.api.Play.current
 import play.api.libs.concurrent.Akka
+import play.api.{ Logger, Play }
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer

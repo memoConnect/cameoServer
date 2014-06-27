@@ -1,15 +1,15 @@
 package actors
 
 import akka.actor.Actor
-import play.api.{ Play, Logger }
-import play.api.Play.current
-import play.api.libs.json.{ JsValue, Json }
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.ws.WS
-import scala.concurrent.Future
-import models._
 import constants.Messaging._
-import play.api.libs.json.JsString
+import models._
+import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.{ JsString, JsValue, Json }
+import play.api.libs.ws.WS
+import play.api.{ Logger, Play }
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

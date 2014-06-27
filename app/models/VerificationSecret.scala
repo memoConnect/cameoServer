@@ -1,10 +1,11 @@
 package models
 
-import play.api.libs.json._
-import helper.IdHelper
 import java.util.Date
-import traits.Model
+
+import helper.IdHelper
 import helper.MongoCollections._
+import play.api.libs.json._
+import traits.Model
 
 /**
  * User: Björn Reimer

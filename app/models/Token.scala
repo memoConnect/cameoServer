@@ -1,11 +1,11 @@
 package models
 
 import java.util.Date
-import traits.SubModel
-import play.api.libs.json._
-import scala.concurrent.Future
+
 import helper.IdHelper
 import helper.JsonHelper._
+import play.api.libs.json._
+import traits.SubModel
 
 /**
  * User: Björn Reimer

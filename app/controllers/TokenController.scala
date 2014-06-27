@@ -1,12 +1,13 @@
 package controllers
 
-import play.api.mvc._
-import scala.concurrent.Future
-import org.mindrot.jbcrypt.BCrypt
-import traits.ExtendedController
-import models.{ Identity, Account, Token }
-import play.api.libs.concurrent.Execution.Implicits._
 import helper.ResultHelper._
+import models.{ Account, Identity, Token }
+import org.mindrot.jbcrypt.BCrypt
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.mvc._
+import traits.ExtendedController
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

@@ -1,8 +1,8 @@
 package models
 
-import play.api.libs.json.{ JsObject, Writes, Format, Json }
-import traits.Model
 import helper.{ IdHelper, MongoCollections }
+import play.api.libs.json.{ Format, JsObject, Json, Writes }
+import traits.Model
 
 /**
  * User: Björn Reimer

@@ -1,15 +1,16 @@
 package helper
 
+import play.api.Play
+import play.api.Play.current
+import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.modules.reactivemongo.json.collection.JSONCollection
-import reactivemongo.api.indexes.{ IndexType, Index }
-import play.api.Play.current
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
-import reactivemongo.bson.BSONDocument
-import play.api.libs.json.Json
-import play.api.Play
 import reactivemongo.api.collections.default.BSONCollection
+import reactivemongo.api.indexes.{ Index, IndexType }
+import reactivemongo.bson.BSONDocument
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer

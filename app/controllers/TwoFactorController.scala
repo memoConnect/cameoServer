@@ -1,13 +1,14 @@
 package controllers
 
-import traits.ExtendedController
 import helper.CmActions.AuthAction
-import services.TwoFactorAuth
 import helper.ResultHelper._
-import play.api.libs.json.{ Json, Reads }
 import models.TwoFactorToken
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
+import play.api.libs.json.{ Json, Reads }
+import services.TwoFactorAuth
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

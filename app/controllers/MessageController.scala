@@ -1,21 +1,20 @@
 package controllers
 
-import play.api.libs.json._
-
-import helper.CmActions.AuthAction
-import traits.ExtendedController
-import models._
-import helper.ResultHelper._
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
 import java.util.Date
-import play.api.libs.functional.syntax._
-import scala.Some
-import java.lang.NumberFormatException
-import play.api.libs.concurrent.Akka
-import akka.actor.Props
+
 import actors.{ SendMessage, SendMessageActor }
+import akka.actor.Props
+import helper.CmActions.AuthAction
+import helper.ResultHelper._
+import models._
 import play.api.Play.current
+import play.api.libs.concurrent.Akka
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

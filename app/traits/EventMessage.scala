@@ -1,7 +1,7 @@
 package traits
 
+import models.{ Event, MongoId }
 import play.api.libs.json.JsObject
-import models.{ MongoId, Event }
 
 /**
  * User: Björn Reimer

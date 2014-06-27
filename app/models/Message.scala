@@ -1,13 +1,15 @@
 package models
 
 import java.util.Date
-import traits.SubModel
-import play.api.libs.json._
+
 import helper.IdHelper
-import play.api.libs.functional.syntax._
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
 import helper.JsonHelper._
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import traits.SubModel
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

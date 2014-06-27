@@ -1,14 +1,14 @@
 package controllers
 
-import play.api.mvc.Controller
 import helper.CmActions.AuthAction
-import models.{ MongoId, EventSubscription }
 import helper.ResultHelper._
-import scala.concurrent.ExecutionContext
-import play.api.{ Logger, Play }
+import models.{ EventSubscription, MongoId }
+import play.api.Play
 import play.api.Play.current
-import ExecutionContext.Implicits.global
-import play.api.libs.json.Json
+import play.api.mvc.Controller
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer

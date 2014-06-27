@@ -1,13 +1,14 @@
 package actors
 
-import akka.actor.{ Props, Actor }
+import akka.actor.{ Actor, Props }
 import constants.Verification._
-import models.{ SmsMessage, MailMessage, VerificationSecret, Identity }
+import models.{ Identity, MailMessage, SmsMessage, VerificationSecret }
 import play.api.Play
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer

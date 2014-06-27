@@ -1,15 +1,16 @@
 package models
 
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import helper.IdHelper
-import traits.SubModel
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import play.api.mvc.Result
-import helper.ResultHelper._
-import helper.JsonHelper._
 import constants.Contacts._
+import helper.IdHelper
+import helper.JsonHelper._
+import helper.ResultHelper._
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import play.api.mvc.Result
+import traits.SubModel
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

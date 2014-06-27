@@ -1,22 +1,21 @@
 package controllers
 
+import java.util.Date
+
+import actors.NewFriendRequest
+import constants.Contacts._
+import helper.CmActions.AuthAction
+import helper.OutputLimits
+import helper.ResultHelper._
+import models._
+import play.api.Logger
+import play.api.libs.json.{ JsObject, _ }
+import play.api.mvc.Result
+import services.AvatarGenerator
 import traits.ExtendedController
 
-import play.api.libs.json._
-import models._
-import helper.OutputLimits
-import helper.CmActions.AuthAction
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ ExecutionContext, Future }
-import helper.ResultHelper._
-import ExecutionContext.Implicits.global
-import constants.Contacts._
-import scala.Some
-import play.api.mvc.Result
-import play.api.libs.json.JsObject
-import java.util.Date
-import play.api.Logger
-import actors.NewFriendRequest
-import services.AvatarGenerator
 
 /**
  * User: Björn Reimer

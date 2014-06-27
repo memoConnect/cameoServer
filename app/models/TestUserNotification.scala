@@ -2,9 +2,10 @@ package models
 
 import helper.{ IdHelper, MongoCollections }
 import play.api.Logger
-import play.api.libs.json.{ Json, Format, JsObject, Reads }
+import play.api.libs.json.{ Format, JsObject, Json, Reads }
 import play.modules.reactivemongo.json.collection.JSONCollection
 import traits.Model
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

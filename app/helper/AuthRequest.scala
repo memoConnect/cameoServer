@@ -1,11 +1,12 @@
 package helper
 
-import play.api.mvc._
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
-import models.{ TwoFactorToken, MongoId, Identity }
-import helper.ResultHelper._
 import constants.Authentication._
+import helper.ResultHelper._
+import models.{ Identity, MongoId, TwoFactorToken }
+import play.api.mvc._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

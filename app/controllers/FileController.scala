@@ -1,20 +1,20 @@
 package controllers
 
-import traits.ExtendedController
-import play.api.libs.json.Json
-import models.{ FileChunk, ChunkMeta, FileMeta }
-import helper.{ MongoCollections, IdHelper, Utils }
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
-import scala.concurrent.{ ExecutionContext, Future }
+import helper.{ IdHelper, Utils }
+import models.{ ChunkMeta, FileChunk, FileMeta }
 import play.api.Play
-import ExecutionContext.Implicits.global
 import play.api.Play.current
-import play.api.mvc.{ Result, BodyParser, Headers, SimpleResult }
 import play.api.libs.iteratee.Iteratee
-import reactivemongo.bson.{ Subtype, BSONBinary, BSONDocument }
-import scala.util.control.NonFatal
+import play.api.libs.json.Json
+import play.api.mvc.{ BodyParser, Headers, Result }
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.control.Exception._
+import scala.util.control.NonFatal
 
 /**
  * User: Björn Reimer

@@ -1,8 +1,8 @@
 package actors.testActors
 
 import akka.actor.Actor
-import models.SmsMessage
 import helper.TestValueStore
+import models.SmsMessage
 import play.api.libs.json.{ JsObject, Json }
 
 /**

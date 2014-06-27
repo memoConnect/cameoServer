@@ -1,20 +1,22 @@
 package helper
 
-import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
-import scala.concurrent.{ Await, Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import play.api.{ Play, Logger }
-import scala.io.Source
-import models.{ Identity, GlobalState, MongoId }
-import play.api.libs.iteratee.Iteratee
-import play.api.libs.json._
-import play.api.libs.json.Reads._
-import scala.concurrent.duration._
+
 import helper.MongoCollections._
+import models.{ GlobalState, Identity, MongoId }
 import play.api.Play.current
-import services.AvatarGenerator
+import play.api.libs.iteratee.Iteratee
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+import play.api.{ Logger, Play }
 import play.modules.reactivemongo.ReactiveMongoPlugin
+import play.modules.reactivemongo.json.collection.JSONCollection
+import services.AvatarGenerator
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.io.Source
 
 /**
  * User: Björn Reimer

@@ -1,14 +1,16 @@
 package models
 
-import play.api.libs.json._
-import helper.JsonHelper._
-import traits.Model
 import java.util.Date
+
 import helper.IdHelper
-import scala.concurrent.{ ExecutionContext, Future }
-import reactivemongo.core.commands.LastError
-import ExecutionContext.Implicits.global
+import helper.JsonHelper._
 import helper.MongoCollections._
+import play.api.libs.json._
+import reactivemongo.core.commands.LastError
+import traits.Model
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

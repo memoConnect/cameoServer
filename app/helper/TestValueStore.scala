@@ -1,8 +1,9 @@
 package helper
 
-import play.api.libs.json.JsObject
 import java.util.concurrent.TimeoutException
+
 import play.api.Logger
+import play.api.libs.json.JsObject
 
 /**
  * User: Björn Reimer

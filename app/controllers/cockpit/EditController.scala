@@ -1,13 +1,13 @@
 package controllers.cockpit
 
-import play.api.mvc.BodyParsers.parse
-import scala.concurrent.{ ExecutionContext, Future }
-import helper.ResultHelper._
-import scala.Some
-import ExecutionContext.Implicits.global
-import play.api.libs.json.JsObject
-import models.cockpit.CockpitEdit
 import helper.CmActions._
+import helper.ResultHelper._
+import models.cockpit.CockpitEdit
+import play.api.libs.json.JsObject
+import play.api.mvc.BodyParsers.parse
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 object EditController {
 

@@ -1,19 +1,16 @@
 package traits
 
-import models.cockpit._
-import scala.concurrent.{ ExecutionContext, Future }
-import reactivemongo.core.commands._
-import ExecutionContext.Implicits.global
-import controllers.cockpit.ListController.{ SelectedFilters, ListOptions }
-import play.api.libs.json.{ JsObject, Json }
+import controllers.cockpit.ListController.{ ListOptions, SelectedFilters }
 import helper.JsonHelper._
 import helper.MongoCollections._
-import reactivemongo.core.commands.Match
-import scala.Some
-import reactivemongo.core.commands.Limit
-import reactivemongo.core.commands.Skip
-import play.modules.reactivemongo.json.BSONFormats._
+import models.cockpit._
 import play.api.Logger
+import play.api.libs.json.{ JsObject, Json }
+import play.modules.reactivemongo.json.BSONFormats._
+import reactivemongo.core.commands.{ Limit, Match, Skip, _ }
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

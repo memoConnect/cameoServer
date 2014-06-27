@@ -1,19 +1,14 @@
 package helper
 
-import play.api.libs.json._
-import play.api.libs.json.Reads._
-import play.api.libs.functional.syntax._
 import java.util.Date
-import reactivemongo.bson.BSONDocument
-import play.modules.reactivemongo.json.BSONFormats
+
 import models.{ MongoId, VerifiedString }
 import org.mindrot.jbcrypt.BCrypt
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
-import scala.Some
-import play.api.libs.json.JsNumber
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json.{ JsArray, JsNumber, JsObject, JsString, JsSuccess, _ }
+import play.modules.reactivemongo.json.BSONFormats
+import reactivemongo.bson.BSONDocument
 
 /**
  * User: Björn Reimer

@@ -1,14 +1,14 @@
 package actors
 
-import akka.actor.{ Props, Actor }
-import play.api.{ Play, Logger }
-import play.api.libs.concurrent.Execution.Implicits._
-import models._
+import akka.actor.{ Actor, Props }
 import constants.Messaging._
-import scala.concurrent.Future
-import play.api.libs.concurrent.Akka
+import models._
+import play.api.Logger
 import play.api.Play.current
-import scala.Some
+import play.api.libs.concurrent.Akka
+import play.api.libs.concurrent.Execution.Implicits._
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

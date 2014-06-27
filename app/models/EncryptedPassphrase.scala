@@ -1,12 +1,9 @@
 package models
 
-import play.api.libs.json._
-import traits.SubModel
 import helper.IdHelper
-import play.api.libs.json.JsObject
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
 import play.api.libs.functional.syntax._
+import play.api.libs.json.{ JsObject, _ }
+import traits.SubModel
 
 /**
  * User: Björn Reimer

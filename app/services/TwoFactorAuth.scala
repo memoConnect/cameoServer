@@ -1,10 +1,11 @@
 package services
 
-import models.{ TwoFactorSmsKey, SmsMessage, VerifiedString, Identity }
-import scala.concurrent.{ ExecutionContext, Future }
-import play.api.libs.concurrent.Akka
+import models.{ Identity, SmsMessage, TwoFactorSmsKey, VerifiedString }
 import play.api.Play.current
-import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Akka
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

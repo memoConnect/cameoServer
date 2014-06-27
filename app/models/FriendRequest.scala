@@ -1,11 +1,13 @@
 package models
 
 import java.util.Date
-import play.api.libs.json.{ Reads, JsObject, Json, Format }
+
 import helper.JsonHelper
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
+import play.api.libs.json.{ Format, JsObject, Json, Reads }
 import traits.SubModel
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

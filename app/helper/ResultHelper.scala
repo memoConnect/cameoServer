@@ -1,10 +1,9 @@
 package helper
 
-import play.api.mvc.Results._
-import play.api.libs.json._
 import constants.Notifications._
-import play.api.libs.json.JsObject
+import play.api.libs.json.{ JsObject, _ }
 import play.api.mvc.Result
+import play.api.mvc.Results._
 
 /**
  * User: Björn Reimer

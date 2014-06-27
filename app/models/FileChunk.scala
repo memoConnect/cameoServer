@@ -1,10 +1,11 @@
 package models
 
 import helper.MongoCollections._
-import scala.concurrent.{ ExecutionContext, Future }
+import reactivemongo.bson.{ BSONBinary, BSONDocument, Subtype }
 import reactivemongo.core.commands.LastError
-import reactivemongo.bson.{ Subtype, BSONBinary, BSONDocument }
-import ExecutionContext.Implicits.global
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

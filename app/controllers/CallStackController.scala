@@ -1,19 +1,18 @@
 package controllers
 
-import traits.ExtendedController
-import scala.concurrent.{ Await, ExecutionContext, Future }
 import helper.ResultHelper._
-import play.api.libs.json._
-import ExecutionContext.Implicits.global
 import play.api.Play
-import play.api.mvc._
-import play.api.http.Writeable
-import play.api.libs.iteratee.{ Iteratee, Input }
-import play.api.libs.json.JsObject
-import scala.Some
-import scala.concurrent.duration._
 import play.api.Play.current
+import play.api.http.Writeable
+import play.api.libs.iteratee.{ Input, Iteratee }
+import play.api.libs.json.{ JsObject, _ }
+import play.api.mvc._
 import play.core.parsers.FormUrlEncodedParser
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

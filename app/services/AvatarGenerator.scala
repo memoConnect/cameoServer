@@ -1,20 +1,22 @@
 package services
 
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import org.w3c.dom.{ Document, DOMImplementation }
-import org.apache.batik.dom.GenericDOMImplementation
-import org.apache.batik.svggen.SVGGraphics2D
 import java.awt._
 import java.io._
-import play.api.{ Play, Logger }
+
+import helper.{ IdHelper, Utils }
+import models.{ ChunkMeta, FileChunk, FileMeta, Identity }
+import org.apache.batik.dom.GenericDOMImplementation
+import org.apache.batik.dom.svg.SVGDOMImplementation
+import org.apache.batik.svggen.SVGGraphics2D
 import org.apache.batik.transcoder._
 import org.apache.batik.transcoder.image.PNGTranscoder
-import org.apache.batik.dom.svg.SVGDOMImplementation
-import helper.{ IdHelper, Utils }
+import org.w3c.dom.{ DOMImplementation, Document }
 import play.api.Play.current
+import play.api.{ Logger, Play }
 import sun.misc.BASE64Encoder
-import models.{ ChunkMeta, FileMeta, FileChunk, Identity }
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

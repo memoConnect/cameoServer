@@ -1,30 +1,24 @@
 package models
 
-import constants.KeyTransmission
-import play.api.Play.current
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
 import java.util.Date
-import traits.{ CockpitAttribute, CockpitEditable, Model }
-import play.api.libs.json.Reads._
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
+
 import constants.Contacts._
-import helper.JsonHelper._
-import models.cockpit._
-import models.cockpit.attributes._
-import helper.MongoCollections._
-import helper.IdHelper
 import constants.Messaging._
-import models.cockpit.attributes.CockpitAttributeDate
-import play.api.libs.json.JsArray
-import scala.Some
-import play.api.libs.json.JsNumber
-import models.cockpit.attributes.CockpitAttributeString
-import models.cockpit.attributes.CockpitAttributeVerifiedString
-import play.api.libs.json.JsObject
-import services.AvatarGenerator
+import helper.IdHelper
+import helper.JsonHelper._
+import helper.MongoCollections._
+import models.cockpit._
+import models.cockpit.attributes.{ CockpitAttributeDate, CockpitAttributeString, CockpitAttributeVerifiedString, _ }
+import play.api.Play.current
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json.{ JsArray, JsNumber, JsObject, _ }
 import play.api.{ Logger, Play }
+import services.AvatarGenerator
+import traits.{ CockpitAttribute, CockpitEditable, Model }
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

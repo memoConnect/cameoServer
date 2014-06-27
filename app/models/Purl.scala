@@ -1,9 +1,9 @@
 package models
 
-import traits.Model
-import play.api.libs.json._
 import helper.IdHelper
 import helper.MongoCollections._
+import play.api.libs.json._
+import traits.Model
 
 /**
  * User: Björn Reimer

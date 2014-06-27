@@ -1,18 +1,17 @@
 package controllers
 
-import traits.ExtendedController
-import models._
-import play.api.mvc.Action
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import helper.ResultHelper._
 import helper.CmActions.AuthAction
-import scala.Some
-
-import play.api.libs.json._
+import helper.OutputLimits
+import helper.ResultHelper._
+import models._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import helper.OutputLimits
+import play.api.libs.json._
+import play.api.mvc.Action
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

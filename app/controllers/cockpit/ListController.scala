@@ -1,13 +1,14 @@
 package controllers.cockpit
 
-import play.api.mvc.Result
-import play.api.libs.json.{ Reads, Json }
-import scala.concurrent.{ ExecutionContext, Future }
-import models.{ CockpitAccess, MongoId, Account, Identity }
-import traits.{ CockpitEditableDefinition, ExtendedController }
-import ExecutionContext.Implicits.global
 import helper.CmActions._
 import helper.ResultHelper._
+import models.{ Account, CockpitAccess, Identity, MongoId }
+import play.api.libs.json.{ Json, Reads }
+import play.api.mvc.Result
+import traits.{ CockpitEditableDefinition, ExtendedController }
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 /**
  * User: Björn Reimer

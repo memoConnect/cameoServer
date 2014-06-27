@@ -1,20 +1,20 @@
 package controllers
 
-import helper.CmActions.AuthAction
-import traits.ExtendedController
-import play.api.mvc.{ Action, Controller }
-import helper.ResultHelper._
-
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import constants.Verification._
-import models.{ IdentityUpdate, Identity, VerificationSecret, MongoId }
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
 import actors.VerifyActor
-import play.api.libs.concurrent.Akka
 import akka.actor.Props
+import constants.Verification._
+import helper.CmActions.AuthAction
+import helper.ResultHelper._
+import models.{ Identity, IdentityUpdate, MongoId, VerificationSecret }
 import play.api.Play.current
+import play.api.libs.concurrent.Akka
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import play.api.mvc.{ Action, Controller }
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ ExecutionContext, Future }
 
 object VerificationController extends Controller with ExtendedController {
   def sendVerifyMessage() = AuthAction()(parse.tolerantJson) {

@@ -1,14 +1,13 @@
 package controllers
 
-import play.api.mvc._
+import helper.DbAdminUtilities
+import helper.ResultHelper._
+import models.Account
+import play.api.Play
+import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
-import helper.{ MongoCollections, DbAdminUtilities }
-import play.api.{ Logger, Play }
-import helper.ResultHelper._
-import models.{ Identity, Account }
-import play.api.Play.current
-import reactivemongo.bson.BSONRegex
+import play.api.mvc._
 
 object Application extends Controller {
 
