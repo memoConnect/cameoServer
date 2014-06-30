@@ -1,6 +1,7 @@
 package services
 
 import models.{ Identity, SmsMessage, TwoFactorSmsKey, VerifiedString }
+import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 
@@ -15,12 +16,14 @@ import scala.concurrent.{ ExecutionContext, Future }
 object TwoFactorAuth {
 
   def sendNewKey(identity: Identity): Option[String] = {
+
     // check if the user has a phonenumber TODO: require that the phonenumber is verified
     identity.phoneNumber match {
       case Some(VerifiedString(_, number, _)) => {
         val key = TwoFactorSmsKey.create(identity.id)
         val sms = new SmsMessage("CameoAuth", number, key.toString)
         val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
+        Logger.info("Sending Two Factor Auth Key: " + key.toString + " to " + number)
         sendSmsActor ! (sms, 0)
         None
       }
