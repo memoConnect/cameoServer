@@ -178,7 +178,6 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "id").asOpt[String] must beSome
       cidNew4 = (data \ "id").as[String]
 
-      Logger.debug("MESSAGE: " + (data).as[JsObject])
       (data \ "messages")(0).asOpt[JsObject] must beSome
       val message = (data \ "messages")(0).as[JsObject]
       (message \ "plain" \ "text").asOpt[String] must beSome(messageText)

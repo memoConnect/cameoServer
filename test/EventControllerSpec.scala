@@ -213,7 +213,6 @@ class EventControllerSpec extends StartedApp {
       1 === 1
     }
 
-
     val numberOfMessages = 3
     val text = "the FooBaaMoep"
     var conversationId = ""
@@ -379,6 +378,82 @@ class EventControllerSpec extends StartedApp {
         (js \ "data" \ "message" \ "plain" \ "text").asOpt[String] must beSome(text)
       }
       1 === 1
+    }
+
+    var pubKeyId = ""
+    "add public key" in {
+
+      val path = basePath + "/identity/publicKey"
+
+      val json = Json.obj("name" -> "moep", "key" -> "asdfasdf", "keySize" -> 123)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      pubKeyId = (data \ "id").as[String]
+
+      1 === 1
+    }
+
+    "identity:update event should appear in both subscriptions of first user" in {
+      Thread.sleep(200)
+
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "id").asOpt[String] must beSome(id)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome
+
+        val events = (data \ "events").as[Seq[JsObject]]
+
+        val newMessageEvents = events.filter(e =>
+          (e \ "name").as[String].equals("identity:update"))
+        newMessageEvents.length must beEqualTo(1)
+        newMessageEvents.map { js =>
+          (js \ "data" \ "id").asOpt[String] must beSome(identityExisting)
+          (js \ "data" \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+          val keys = (js \ "data" \ "publicKeys").as[Seq[JsObject]]
+          (keys(0) \ "id").asOpt[String] must beSome(pubKeyId)
+        }
+      }
+      1 === 1
+    }
+
+    "identity:update event should appear in subscription of second user" in {
+      val path = basePath + "/eventSubscription/" + subscriptionOtherId
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(subscriptionOtherId)
+      (data \ "events").asOpt[Seq[JsObject]] must beSome
+
+      val events = (data \ "events").as[Seq[JsObject]]
+
+      val newMessageEvents = events.filter(e =>
+        (e \ "name").as[String].equals("identity:update"))
+      newMessageEvents.length must beEqualTo(1)
+      newMessageEvents.map { js =>
+        (js \ "data" \ "id").asOpt[String] must beSome(identityExisting)
+        (js \ "data" \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+        val keys = (js \ "data" \ "publicKeys").as[Seq[JsObject]]
+
+        (keys(0) \ "id").asOpt[String] must beSome(pubKeyId)
+      }
     }
   }
 }

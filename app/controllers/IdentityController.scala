@@ -1,5 +1,6 @@
 package controllers
 
+import actors.UpdatedIdentity
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -96,7 +97,15 @@ object IdentityController extends ExtendedController {
         publicKey =>
           request.identity.addPublicKey(publicKey).map {
             case false => resServerError("unable to add")
-            case true  => resOk(publicKey.toJson)
+            case true  =>
+              // send event to all people in address book
+              request.identity.contacts.foreach {
+                contact =>
+                  actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(publicKey.toJson)))
+              }
+              // send event to ourselves
+              actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(publicKey.toJson)))
+              resOk(publicKey.toJson)
           }
       }
   }

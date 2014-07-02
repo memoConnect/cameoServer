@@ -2,7 +2,7 @@ package actors
 
 import akka.actor.Actor
 import models._
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{ JsObject, Json }
 import traits.EventMessage
 
 /**
@@ -48,6 +48,13 @@ case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId,
       "from" -> fromIdentity.toJson,
       "to" -> toIdentityId.toJson
     )
+}
+
+case class UpdatedIdentity(sendToIdentity: MongoId, identityId: MongoId, updatedValues: JsObject) extends EventMessage {
+
+  def eventType = "identity:update"
+
+  def toEventContent = updatedValues ++ Json.obj("id" -> identityId.toJson)
 
 }
 
