@@ -111,7 +111,7 @@ class EventControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "friendRequest event should appear in both subscriptions" in {
+    "friendRequest:new event should appear in both subscriptions" in {
       Thread.sleep(200)
       Seq(subscriptionId, subscription2Id).seq.map { id =>
         val path = basePath + "/eventSubscription/" + id
@@ -131,6 +131,7 @@ class EventControllerSpec extends StartedApp {
         newMessageEvents.length must equalTo(1)
         newMessageEvents.map { js =>
           (js \ "data" \ "friendRequest" \ "message").asOpt[String] must beSome(friendRequestMessage)
+          (js \ "data" \ "friendRequest" \ "identity").asOpt[JsObject] must beSome
           (js \ "data" \ "to").asOpt[String] must beSome(identityExisting)
         }
       }

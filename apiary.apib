@@ -1529,26 +1529,26 @@ Events will be deleted after each call
          "data": {
            "events": [
              {
-               "type": "conversation:new-message",
-               "content": {
+               "name": "conversation:new-message",
+               "data": {
                  "conversationId": "O5DjLp2CZ6Q3BVroM4mX",
                  "message": {message object}
                }
              },
              {
-               "type": "conversation:new",
-               "content": { conversation object }
+               "name": "conversation:new",
+               "data": { conversation object }
              },
              {
-               "type": "friendRequest:new",
-               "content": { 
+               "name": "friendRequest:new",
+               "data": { 
                  "friendRequest":{ object },
                  "to": "identityId"
                }
              },
              {
-               "type": "friendRequest:accepted",
-               "content": { 
+               "name": "friendRequest:accepted",
+               "data": { 
                  "from": "identityId",
                  "to": "identityId"
                }

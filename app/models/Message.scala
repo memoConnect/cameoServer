@@ -18,7 +18,6 @@ import scala.concurrent.{ ExecutionContext, Future }
  */
 case class Message(id: MongoId,
                    fromIdentityId: MongoId,
-                   //messageStatus: Seq[MessageStatus],
                    plain: Option[PlainMessagePart],
                    encrypted: Option[String],
                    created: Date,

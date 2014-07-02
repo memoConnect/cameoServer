@@ -3,6 +3,7 @@ package models
 import java.util.Date
 
 import helper.JsonHelper
+import play.api.Logger
 import play.api.libs.json.{ Format, JsObject, Json, Reads }
 import traits.SubModel
 
@@ -27,6 +28,14 @@ case class FriendRequest(identityId: MongoId,
     Identity.find(this.identityId).map {
       case None    => this.toJson
       case Some(i) => Json.obj("identity" -> i.toPublicJson) ++ this.toJson
+    }
+  }
+
+  def toJsonWithIdentity(identity: Identity): JsObject = {
+    this.identityId.equals(identity.id) match {
+      case false =>
+        Logger.error("FriendRequest.toJson: identity does not match"); this.toJson
+      case true  => Json.obj("identity" -> identity.toPublicJson) ++ this.toJson
     }
   }
 }

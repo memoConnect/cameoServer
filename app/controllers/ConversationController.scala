@@ -1,10 +1,14 @@
 package controllers
 
-import actors.NewConversation
+import play.api.Logger
+import play.api.Play.current
+import actors.{SendMessage, SendMessageActor, NewConversation}
+import akka.actor.Props
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
+import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
@@ -22,6 +26,35 @@ object ConversationController extends ExtendedController {
   def createConversation = AuthAction().async(parse.tolerantJson) {
     request =>
       {
+        def addRecipients(conversation: Conversation): Either[Conversation, Result] = {
+          (request.body \ "recipients").asOpt[Seq[String]] match {
+            case None => Left(conversation)
+            case Some(recipientIds) =>
+              checkRecipients(recipientIds, conversation, request.identity) match {
+                case None => Right(resBadRequest("Invalid recipients. Not in contact book."))
+                case Some(recipients) => Left(conversation.copy(recipients = recipients ++ conversation.recipients))
+              }
+          }
+        }
+
+        def addMessages(conversation: Conversation) : Either[Conversation,Result] = {
+          (request.body \ "messages").asOpt[JsArray] match {
+            case None => Left(conversation)
+            case Some(js) =>
+              js.validate(Reads.seq(Message.createReads(request.identity.id))).map {
+                messages =>
+                  // send message
+                  messages.foreach { message =>
+                    val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
+                    sendMessageActor ! SendMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
+                  }
+                  Left(conversation.copy(messages = messages))
+              }.recoverTotal {
+                error => Right(resBadRequest(JsError.toFlatJson(error)))
+              }
+          }
+        }
+
         def insertConversation(conversation: Conversation): Future[Result] = {
           Conversation.col.insert(conversation).map {
             le =>
@@ -39,20 +72,17 @@ object ConversationController extends ExtendedController {
           cu =>
             val conversation = Conversation.create(cu.subject, Seq(Recipient.create(request.identity.id)), cu.passCaptcha, cu.aePassphraseList, cu.sePassphrase, cu.keyTransmission)
 
-            // check if there are recipients
-            (request.body \ "recipients").asOpt[Seq[String]] match {
-              case None => insertConversation(conversation)
-              case Some(recipientIds) =>
-                checkRecipients(recipientIds, conversation, request.identity) match {
-                  case None => Future(resBadRequest("Invalid recipients. Not in contact book."))
-                  case Some(recipients) =>
-                    val withRecipients = conversation.copy(recipients = recipients ++ conversation.recipients)
-                    insertConversation(withRecipients)
+            addRecipients(conversation) match {
+              case Right(result) => Future(result)
+              case Left(withRecipients) =>
+                addMessages(withRecipients) match {
+                  case Right(result) => Future(result)
+                  case Left(withMessages) =>
+                    insertConversation(withMessages)
                 }
             }
         }
       }
-
   }
 
   def getConversation(id: String, offset: Int, limit: Int, keyId: List[String]) = AuthAction(allowExternal = true).async {

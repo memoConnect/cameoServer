@@ -207,7 +207,7 @@ object ContactController extends ExtendedController {
                         val fr = new FriendRequest(request.identity.id, message, new Date)
                         other.addFriendRequest(fr).map {
                           case true =>
-                            actors.eventRouter ! NewFriendRequest(receiver, fr, receiver)
+                            actors.eventRouter ! NewFriendRequest(receiver, fr, request.identity, receiver)
                             resOk("request added")
                           case false =>
                             resServerError("could not update")

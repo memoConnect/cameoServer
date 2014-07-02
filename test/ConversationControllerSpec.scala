@@ -162,6 +162,45 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
     }
 
+    var cidNew4 = ""
+    val messageText = "moepmoepmoepmoepmoep"
+    "Create a new conversation with messages" in {
+      val path = basePath + "/conversation"
+      val json = Json.obj("messages" -> Seq(Json.obj("plain" -> Json.obj("text" -> messageText))))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      cidNew4 = (data \ "id").as[String]
+
+      Logger.debug("MESSAGE: " + (data).as[JsObject])
+      (data \ "messages")(0).asOpt[JsObject] must beSome
+      val message = (data \ "messages")(0).as[JsObject]
+      (message \ "plain" \ "text").asOpt[String] must beSome(messageText)
+    }
+
+    "Get the created conversation" in {
+      val path = basePath + "/conversation/" + cidNew4
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages")(0).asOpt[JsObject] must beSome
+      val message = (data \ "messages")(0).as[JsObject]
+      (message \ "plain" \ "text").asOpt[String] must beSome(messageText)
+    }
+
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
 
@@ -719,7 +758,8 @@ class ConversationControllerSpec extends StartedApp {
       cidNew3 = (data \ "id").as[String]
       1===1
     }
-    var missingPassphrases:Seq[JsObject] = Seq()
+
+    var missingPassphrasesLength = 0
     "return missing encrypted passphrases" in {
       val path = basePath + "/conversation/" + cidNew3
 
@@ -730,15 +770,12 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "missingAePassphrase").asOpt[Seq[JsObject]] must beSome
-      missingPassphrases = (data \ "missingAePassphrase").as[Seq[JsObject]]
+      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
+      val missingPassphrases = (data \ "missingAePassphrase").as[Seq[String]]
 
       missingPassphrases.length must beGreaterThanOrEqualTo(3)
-      (missingPassphrases(0) \ "keyId").asOpt[String] must beSome
-      (missingPassphrases(0) \ "identityId").asOpt[String] must beSome
-      missingPassphrases.find(js => (js \ "keyId").as[String].equals(pubKeyId)) must beSome(Json.obj("keyId"->pubKeyId,"identityId"->identityExisting))
-      missingPassphrases.find(js => (js \ "identityId").as[String].equals(validRecipients(0))) must beSome
-      missingPassphrases.find(js => (js \ "identityId").as[String].equals(validRecipients(1))) must beSome
+      missingPassphrasesLength = missingPassphrases.length
+      missingPassphrases.find(_.equals(pubKeyId)) must beSome
     }
 
     "add encrypted passphrase for one key to conversation" in {
@@ -753,6 +790,7 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
+    var missingPassphrases: Seq[String] = Seq()
     "missing encrypted passphrases should not contain added key" in {
       val path = basePath + "/conversation/" + cidNew3
 
@@ -763,22 +801,18 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "missingAePassphrase").asOpt[Seq[JsObject]] must beSome
-      missingPassphrases = (data \ "missingAePassphrase").as[Seq[JsObject]]
+      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
+      missingPassphrases = (data \ "missingAePassphrase").as[Seq[String]]
 
-      missingPassphrases.length must beGreaterThanOrEqualTo(1)
-      (missingPassphrases(0) \ "keyId").asOpt[String] must beSome
-      (missingPassphrases(0) \ "identityId").asOpt[String] must beSome
-      missingPassphrases.find(js => (js \ "keyId").as[String].equals(pubKeyId)) must beNone
-      missingPassphrases.find(js => (js \ "identityId").as[String].equals(validRecipients(0))) must beSome
-      missingPassphrases.find(js => (js \ "identityId").as[String].equals(validRecipients(1))) must beSome
+      missingPassphrases.length must beEqualTo(missingPassphrasesLength - 1)
+      missingPassphrases.find(_.equals(pubKeyId)) must beNone
     }
 
     "add encrypted passphrase for remaining keys" in {
 
       val path = basePath + "/conversation/" + cidNew3  + "/aePassphrases"
 
-      val list = missingPassphrases.map(mp => Json.obj("keyId" -> (mp \ "keyId").as[String], "encryptedPassphrase" -> "moep"))
+      val list = missingPassphrases.map(mp => Json.obj("keyId" -> mp, "encryptedPassphrase" -> "moep"))
 
       val json = Json.obj("aePassphraseList" -> list)
 
@@ -798,7 +832,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "missingAePassphrase").asOpt[Seq[JsObject]] must beSome
+      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
       val missingPassphrases = (data \ "missingAePassphrase").as[Seq[JsObject]]
 
       missingPassphrases.length must beEqualTo(0)

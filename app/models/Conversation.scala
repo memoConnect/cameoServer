@@ -148,19 +148,16 @@ case class Conversation(id: MongoId,
     EncryptedPassphrase.appendUnique(this.id, aePassphrases).map(_.updatedExisting)
   }
 
-  case class MissingPassphrase(identityId: String, keyId: String)
-  object MissingPassphrase { implicit val format = Json.format[MissingPassphrase] }
-
-  def getMissingPassphrases: Future[Seq[MissingPassphrase]] = {
+  def getMissingPassphrases: Future[Seq[String]] = {
 
     // get keyIds of all recipients. Todo: this takes quite a lot of db lookups, reduce!
-    val futureKeys: Seq[Future[Seq[MissingPassphrase]]] = this.recipients.map {
+    val futureKeys: Seq[Future[Seq[String]]] = this.recipients.map {
       recipient =>
         Identity.find(recipient.identityId).map {
           case None => Seq()
           case Some(identity) =>
             val filtered = identity.publicKeys.filterNot(pubKey => this.aePassphraseList.exists(_.keyId.equals(pubKey.id.id)))
-            filtered.map(pubKey => new MissingPassphrase(identity.id.id, pubKey.id.id))
+            filtered.map(_.id.toString)
         }
     }
     Future.sequence(futureKeys).map(_.flatten)
