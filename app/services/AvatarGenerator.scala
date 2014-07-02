@@ -154,7 +154,7 @@ object AvatarGenerator {
   private def saveAvatar(png: Array[Byte], identity: Identity): Future[Boolean] = {
 
     val prefix = "data:image/png;base64,"
-    val base64: String = new BASE64Encoder().encode(png).replace("\n", "")
+    val base64: String = new BASE64Encoder().encode(png).replace(System.getProperty("line.separator"), "")
     val data: Array[Byte] = (prefix + base64).getBytes
 
     // Create Chunk and MetaData
