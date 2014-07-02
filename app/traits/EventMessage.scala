@@ -10,7 +10,7 @@ import play.api.libs.json.JsObject
  */
 trait EventMessage {
 
-  def identityId: MongoId
+  def sendToIdentity: MongoId
 
   def eventType: String
 

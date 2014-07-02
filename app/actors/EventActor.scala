@@ -11,7 +11,7 @@ import traits.EventMessage
  * Time: 13:28
  */
 
-case class NewMessage(identityId: MongoId, conversationId: MongoId, message: Message) extends EventMessage {
+case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventMessage {
 
   def eventType = "conversation:new-message"
 
@@ -21,25 +21,42 @@ case class NewMessage(identityId: MongoId, conversationId: MongoId, message: Mes
   )
 }
 
-case class NewConversation(identityId: MongoId, conversation: Conversation) extends EventMessage {
+case class NewConversation(sendToIdentity: MongoId, conversation: Conversation) extends EventMessage {
 
   def eventType: String = "conversation:new"
 
   def toEventContent: JsObject = conversation.toJson
 }
 
-case class NewFriendRequest(identityId: MongoId, friendRequest: FriendRequest) extends EventMessage {
+case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendRequest, toIdentityId: MongoId) extends EventMessage {
 
   def eventType = "friendRequest:new"
 
-  def toEventContent = friendRequest.toJson
+  def toEventContent =
+    Json.obj(
+      "friendRequest" ->friendRequest.toJson,
+      "to" -> toIdentityId.toJson
+    )
+
+}
+
+case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId) extends EventMessage {
+
+  def eventType = "friendRequest:accepted"
+
+  def toEventContent =
+    Json.obj(
+      "from" -> fromIdentity.toJson,
+      "to" -> toIdentityId.toJson
+    )
+
 }
 
 class EventActor extends Actor {
 
   def receive() = {
     case msg: EventMessage =>
-      EventSubscription.pushEvent(msg.identityId, msg.toEvent)
+      EventSubscription.pushEvent(msg.sendToIdentity, msg.toEvent)
   }
 
 }

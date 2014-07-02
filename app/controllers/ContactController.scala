@@ -2,7 +2,7 @@ package controllers
 
 import java.util.Date
 
-import actors.NewFriendRequest
+import actors.{AcceptedFriendRequest, NewFriendRequest}
 import constants.Contacts._
 import helper.CmActions.AuthAction
 import helper.OutputLimits
@@ -207,7 +207,7 @@ object ContactController extends ExtendedController {
                         val fr = new FriendRequest(request.identity.id, message, new Date)
                         other.addFriendRequest(fr).map {
                           case true =>
-                            actors.eventRouter ! NewFriendRequest(receiver, fr)
+                            actors.eventRouter ! NewFriendRequest(receiver, fr, receiver)
                             resOk("request added")
                           case false =>
                             resServerError("could not update")
@@ -262,7 +262,12 @@ object ContactController extends ExtendedController {
                       le2 <- request.identity.addContact(Contact.create(otherIdentity.id))
                     } yield {
                       le1 && le2 match {
-                        case true  => resOk("added contacts")
+                        case true  =>
+                          // send event to both parties
+                          actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id,otherIdentity.id, request.identity.id)
+                          actors.eventRouter ! AcceptedFriendRequest(request.identity.id,otherIdentity.id, request.identity.id)
+
+                          resOk("added contacts")
                         case false => resKo("duplicate entries")
                       }
                     }
