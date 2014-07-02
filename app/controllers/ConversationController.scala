@@ -1,5 +1,6 @@
 package controllers
 
+import actors.NewConversation
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -23,7 +24,14 @@ object ConversationController extends ExtendedController {
       {
         def insertConversation(conversation: Conversation): Future[Result] = {
           Conversation.col.insert(conversation).map {
-            le => resOk(conversation.toJson)
+            le =>
+              // send conversation:new event to all recipients
+              conversation.recipients.foreach {
+                recipient =>
+                  actors.eventRouter ! NewConversation(recipient.identityId, conversation)
+              }
+
+              resOk(conversation.toJson)
           }
         }
 

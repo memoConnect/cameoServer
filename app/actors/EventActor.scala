@@ -2,7 +2,7 @@ package actors
 
 import akka.actor.Actor
 import models._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import traits.EventMessage
 
 /**
@@ -19,6 +19,13 @@ case class NewMessage(identityId: MongoId, conversationId: MongoId, message: Mes
     "conversationId" -> conversationId.toJson,
     "message" -> message.toJson
   )
+}
+
+case class NewConversation(identityId: MongoId, conversation: Conversation) extends EventMessage {
+
+  def eventType: String = "conversation:new"
+
+  def toEventContent: JsObject = conversation.toJson
 }
 
 case class NewFriendRequest(identityId: MongoId, friendRequest: FriendRequest) extends EventMessage {

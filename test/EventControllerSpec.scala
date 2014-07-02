@@ -86,7 +86,7 @@ class EventControllerSpec extends StartedApp {
     val numberOfMessages = 3
     val text = "the FooBaaMoep"
     var conversationId = ""
-    "Create conversation and send some messages" in {
+    "Create conversation" in {
 
       // create conversation
       val path = basePath + "/conversation"
@@ -95,6 +95,54 @@ class EventControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
       conversationId = (contentAsJson(res) \ "data" \ "id").as[String]
 
+      1===1
+    }
+
+    "conversation:new events should appear in both subscriptions" in {
+      Thread.sleep(200)
+
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "id").asOpt[String] must beSome(id)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome
+
+        val events = (data \ "events").as[Seq[JsObject]]
+
+        val newConverstionEvent = events.filter(e =>
+          (e \ "name").as[String].equals("conversation:new") && (e \ "data" \ "id").asOpt[String].getOrElse("foo").equals(conversationId))
+        newConverstionEvent.length must greaterThanOrEqualTo(1)
+        newConverstionEvent.map { js =>
+          (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
+          (js \ "data" \ "recipients").asOpt[Seq[JsObject]] must beSome
+          (js \ "data" \ "messages").asOpt[Seq[JsObject]] must beSome
+        }
+      }
+      1 === 1
+    }
+
+    "Events should be cleared" in {
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+        (data \ "id").asOpt[String] must beSome(id)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
+      }
+    }
+
+    "Send some messages" in {
       // send messages
       (1 to numberOfMessages).map { i =>
         val path2 = basePath + "/conversation/" + conversationId + "/message"
@@ -104,12 +152,12 @@ class EventControllerSpec extends StartedApp {
         status(res2) must equalTo(OK)
       }
 
-      Thread.sleep(300)
 
       1===1
     }
 
     "new-message events should appear in both subscriptions" in {
+      Thread.sleep(200)
 
       Seq(subscriptionId, subscription2Id).seq.map { id =>
         val path = basePath + "/eventSubscription/" + id
