@@ -42,6 +42,7 @@ object AccountController extends ExtendedController {
             account =>
               {
                 def createAccountWithIdentity(identity: Identity): Future[Result] = {
+
                   val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
 
                   // add support user
@@ -87,18 +88,25 @@ object AccountController extends ExtendedController {
                                 Identity.find(query).flatMap {
                                   case None => Future(resBadRequest("this user is in nobodies contact book"))
                                   case Some(otherIdentity) =>
-                                    // add other identity as contact
-                                    identity.addContact(Contact.create(otherIdentity.id))
-
-                                    // add new information to identity
-                                    val update = IdentityUpdate(
-                                      None,
-                                      None,
-                                      additionalValues.displayName,
-                                      Some(account.loginName),
-                                      Some(account.id)
-                                    )
-                                    identity.update(update).flatMap {
+                                    val futureRes: Future[Boolean] = for {
+                                      // add other identity as contact
+                                      addContact <- identity.addContact(Contact.create(otherIdentity.id))
+                                      updateIdentity <- {
+                                        // add update identity with details from registration
+                                        val update = IdentityUpdate(
+                                          None,
+                                          None,
+                                          additionalValues.displayName,
+                                          Some(account.loginName),
+                                          Some(account.id)
+                                        )
+                                        identity.update(update)
+                                      }
+                                      deleteDetails <- Identity.deleteOptionalValues(identity.id, Seq("email", "phoneNumber")).map(_.updatedExisting)
+                                    } yield {
+                                      addContact && updateIdentity && deleteDetails
+                                    }
+                                    futureRes.flatMap {
                                       case false => Future(resServerError("unable to update identity"))
                                       case true  => createAccountWithIdentity(identity)
                                     }

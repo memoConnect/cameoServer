@@ -75,7 +75,6 @@ object ContactController extends ExtendedController {
             case Some(js) => addExternalContact(js)
           }
       }
-
   }
 
   def editContact(contactId: String) = AuthAction().async(parse.tolerantJson) {

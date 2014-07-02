@@ -1,4 +1,3 @@
-
 import play.api.libs.json._
 import play.api.libs.json.JsObject
 import play.api.test._
@@ -744,7 +743,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "add encrypted passphrase for one key to conversation" in {
 
-      val path = basePath + "/conversation/" + cidNew3 + "/aePassphrase"
+      val path = basePath + "/conversation/" + cidNew3 + "/aePassphrases"
 
       val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> pubKeyId, "encryptedPassphrase" -> "moep")))
 
@@ -777,7 +776,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "add encrypted passphrase for remaining keys" in {
 
-      val path = basePath + "/conversation/" + cidNew3  + "/aePassphrase"
+      val path = basePath + "/conversation/" + cidNew3  + "/aePassphrases"
 
       val list = missingPassphrases.map(mp => Json.obj("keyId" -> (mp \ "keyId").as[String], "encryptedPassphrase" -> "moep"))
 

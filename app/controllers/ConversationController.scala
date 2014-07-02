@@ -147,7 +147,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def addAePassphrase(id: String) = AuthAction().async(parse.tolerantJson) {
+  def addAePassphrases(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
       Conversation.find(new MongoId(id), -1, 0).flatMap {
         case None => Future.successful(resNotFound("conversation"))

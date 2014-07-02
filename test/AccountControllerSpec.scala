@@ -377,6 +377,7 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path)
       val res = route(req).get
 
+
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]

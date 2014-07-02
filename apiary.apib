@@ -419,7 +419,7 @@ Sending and reading messages
               "subject": "new subject",
               "passCaptcha": "fileID",
               "aePassphrase": "someEncryptedString",
-              "eaPassphraseList": [
+              "aePassphraseList": [
                 "keyId": "some Id",
                 "encryptedPassphrase": "someEncryptedString"
               ]
@@ -541,9 +541,10 @@ Sending and reading messages
                   "subject": "new subject",
                   "passCaptcha": "fileID",
                   "aePassphrase": "someEncryptedString",
-                  "eaPassphraseList": [
+                  "aePassphraseList": [{
                     "keyId": "some Id",
                     "encryptedPassphrase": "someEncryptedString"
+                    }
                   ]
                 }
 
@@ -824,6 +825,38 @@ Sending and reading messages
           }
         }
 
+
+## add aePassphrases to conversation [/conversation/{id}/aePassphrases]
+
+### POST
+
++ Parameters
+    + id ... Conversation id
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+    
+    + Body
+    
+            {
+              "eaPassphraseList": 
+              [{
+                  "keyId": "some Id",
+                  "encryptedPassphrase": "someEncryptedString"
+               }
+              ]
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "updated"
+        }
+        
 
 ## Get single Message [/message/{id}]
 
