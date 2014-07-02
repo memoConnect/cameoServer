@@ -1536,8 +1536,21 @@ Events will be deleted after each call
                }
              },
              {
+               "type": "conversation:new",
+               "content": { conversation object }
+             },
+             {
                "type": "friendRequest:new",
-               "content": { friendRequest object }
+               "content": { 
+                 "friendRequest":{ object },
+                 "to": "identityId"
+               }
+             },
+             {
+               "type": "friendRequest:accepted",
+               "content": { 
+                 "from": "identityId",
+                 "to": "identityId"
                }
              }
            ],
