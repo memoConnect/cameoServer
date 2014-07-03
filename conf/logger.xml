@@ -22,9 +22,9 @@
 
     <appender name="SYSLOG" class="ch.qos.logback.classic.net.SyslogAppender">
         <!-- todo: change this to the hostname of the jump-host, waiting for the next release of docker, when editing /etc/hosts is supposed to be possible -->
-        <syslogHost>172.16.23.2</syslogHost>
-        <facility>LOCAL0</facility>
-        <suffixPattern>[%thread] %logger %msg</suffixPattern>
+        <syslogHost>XIPX</syslogHost>
+        <facility>XFACILITYX</facility>
+        <suffixPattern>%msg</suffixPattern>
     </appender>
 
     <logger name="play" level="INFO"/>
