@@ -100,7 +100,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       case true => findAlternative(loginName, count + 1) // recursive futures ftw!
       case false =>
         // check if it is reserved
-        AccountReservation.checkReserved(currentTry).flatMap {
+        AccountReservation.findByLoginName(currentTry).flatMap {
           case Some(r) => findAlternative(loginName, count + 1)
           case None    => Future(currentTry)
         }
