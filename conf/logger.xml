@@ -24,7 +24,7 @@
         <!-- todo: change this to the hostname of the jump-host, waiting for the next release of docker, when editing /etc/hosts is supposed to be possible -->
         <syslogHost>XIPX</syslogHost>
         <facility>XFACILITYX</facility>
-        <suffixPattern>%highlight(%-5level) - %-15.15logger{15} - %msg%n%xException</suffixPattern>
+        <suffixPattern>[%level] - %-15.15logger{15} - %msg%n%xException</suffixPattern>
     </appender>
 
     <logger name="play" level="INFO"/>
