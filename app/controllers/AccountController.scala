@@ -102,7 +102,16 @@ object AccountController extends ExtendedController {
                                         )
                                         identity.update(update)
                                       }
-                                      deleteDetails <- Identity.deleteOptionalValues(identity.id, Seq("email", "phoneNumber")).map(_.updatedExisting)
+                                      deleteDetails <- {
+                                        val deleteValues =
+                                          Seq("email", "phoneNumber") ++ {
+                                            additionalValues.displayName match {
+                                              case None    => Seq("displayName")
+                                              case Some(d) => Seq()
+                                            }
+                                          }
+                                        Identity.deleteOptionalValues(identity.id, deleteValues).map(_.updatedExisting)
+                                      }
                                     } yield {
                                       addContact && updateIdentity && deleteDetails
                                     }
