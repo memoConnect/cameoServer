@@ -161,29 +161,9 @@ object AccountReservation extends Model[AccountReservation] {
     }
   }
 
-  /**
-   * checks if a loginName is reserved
-   * @param loginName the loginName to be checked
-   * @return returns the secret associated with the login
-   */
-  def checkReserved(loginName: String): Future[Option[String]] = {
+  def findByLoginName(loginName: String): Future[Option[AccountReservation]] = {
     val query = Json.obj("loginName" -> loginName)
-
-    col.find(query).one[AccountReservation].flatMap {
-      case None => Future(None)
-      case Some(ar) => {
-        // check if the reservation has run out
-        if ((((new Date).getTime - ar.created.getTime) / (1000 * 60)) <
-          Play.configuration.getInt("loginName.reservation.timeout").get) {
-          Future(Some(ar.id.id))
-        } else {
-          // delete reservation
-          deleteReserved(loginName).map {
-            lastError => None
-          }
-        }
-      }
-    }
+    col.find(query).one[AccountReservation]
   }
 
   def deleteReserved(loginName: String): Future[LastError] = {

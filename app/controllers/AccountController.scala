@@ -59,11 +59,11 @@ object AccountController extends ExtendedController {
                   }
                 }
 
-                AccountReservation.checkReserved(account.loginName.toLowerCase).flatMap {
+                AccountReservation.findByLoginName(account.loginName.toLowerCase).flatMap {
                   case None => Future(resBadRequest("this loginName is not reserved"))
-                  case Some(secret) =>
+                  case Some(reservation) =>
 
-                    secret.equals(additionalValues.reservationSecret) match {
+                    reservation.id.id.equals(additionalValues.reservationSecret) match {
                       case false => Future(resBadRequest("invalid reservation secret"))
                       case true =>
                         // delete reservation secret
@@ -164,7 +164,7 @@ object AccountController extends ExtendedController {
                 newLoginName => resKO(Json.obj("alternative" -> newLoginName))
               }
               // it does not exist, check if it is reserved
-              case false => AccountReservation.checkReserved(lowerLogin).flatMap {
+              case false => AccountReservation.findByLoginName(lowerLogin).flatMap {
                 // it is reserved, get alternative
                 case Some(ra) => Account.findAlternative(vr.loginName).map {
                   newLoginName => resKO(Json.obj("alternative" -> newLoginName))

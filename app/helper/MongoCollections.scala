@@ -72,7 +72,14 @@ object MongoCollections {
     col.indexesManager.ensure(Index(Seq("identityId" -> IndexType.Ascending)))
     col
   }
-  lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
+  lazy val reservedAccountCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("reservedAccounts")
+    // expire reservations
+    val expireAfter = Play.configuration.getInt("loginName.reservation.timeout").get * 60
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
+    col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
+    col
+  }
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purls")
   lazy val fileMetaCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileMeta")
   lazy val globalStateCollection: JSONCollection = mongoDB.collection[JSONCollection]("globalState")
