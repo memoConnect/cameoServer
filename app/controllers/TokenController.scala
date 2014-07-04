@@ -35,39 +35,33 @@ object TokenController extends ExtendedController {
     request =>
       {
         request.headers.get("Authorization") match {
-          case None => {
-            Future.successful(resBadRequest("No Authorization field in header"))
-          }
-          case Some(basicAuth) if !basicAuth.contains("Basic") => {
+          case None =>   Future.successful(resBadRequest("No Authorization field in header"))
+          case Some(basicAuth) if !basicAuth.contains("Basic") =>
             Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
-          }
           case Some(basicAuth) =>
-            {
-              val (loginName, password) = decodeBasicAuth(basicAuth)
-              val loginNameLower = loginName.toLowerCase
-              //find account and get first identity
-              Account.findByLoginName(loginNameLower).flatMap {
-                case None => Future(resUnauthorized("Invalid password/loginName"))
-                case Some(account) => if (account.identities.nonEmpty) {
-                  val identityId = account.identities(0)
+            val (loginName, password) = decodeBasicAuth(basicAuth)
+            val loginNameLower = loginName.toLowerCase
+            //find account and get first identity
+            Account.findByLoginName(loginNameLower).flatMap {
+              case None => Future(resUnauthorized("Invalid password/loginName"))
+              case Some(account) => if (account.identities.nonEmpty) {
+                val identityId = account.identities(0)
 
-                  Identity.find(identityId).map {
-                    case None => resNotFound("identity")
-                    case Some(identity) => {
-                      // check loginNames and passwords match
-                      if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
-                        // everything is ok
-                        val token = Token.createDefault
-                        identity.addToken(token)
-                        resOk(token.toJson)
-                      } else {
-                        resUnauthorized("Invalid password/loginName")
-                      }
+                Identity.find(identityId).map {
+                  case None => resNotFound("identity")
+                  case Some(identity) =>
+                    // check loginNames and passwords match
+                    if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
+                      // everything is ok
+                      val token = Token.createDefault
+                      identity.addToken(token)
+                      resOk(token.toJson)
+                    } else {
+                      resUnauthorized("Invalid password/loginName")
                     }
-                  }
-                } else {
-                  Future.successful(resUnauthorized("Invalid password/loginName"))
                 }
+              } else {
+                Future.successful(resUnauthorized("Invalid password/loginName"))
               }
             }
         }
