@@ -5,7 +5,7 @@
  */
 import helper.DbAdminUtilities
 import helper.MongoCollections._
-import models.GlobalState
+import models.{Conversation, GlobalState}
 import play.api.Play.current
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsObject, JsValue, Json }
@@ -39,7 +39,7 @@ object Global extends GlobalSettings {
     def checkMongoConnection(): Boolean =
       {
         try {
-          val futureState = globalStateCollection.find(Json.obj()).one[JsObject].map(_.getOrElse(Json.obj()))
+          val futureState = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
           Await.result(futureState, 1.minute)
           Logger.info("DB Connection OK")
           true
