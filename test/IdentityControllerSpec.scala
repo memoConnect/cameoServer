@@ -45,6 +45,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -66,6 +69,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -76,6 +82,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -125,6 +134,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -144,6 +156,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -163,6 +178,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -194,6 +212,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
@@ -210,6 +231,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -228,6 +252,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -246,6 +273,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -264,6 +294,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -280,6 +313,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -298,6 +334,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -317,6 +356,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -333,6 +375,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -349,6 +394,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -364,6 +412,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -379,6 +430,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -398,6 +452,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -417,6 +474,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -448,6 +508,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -457,6 +520,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -485,6 +551,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -494,6 +563,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]

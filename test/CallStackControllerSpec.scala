@@ -31,7 +31,10 @@ class CallStackControllerSpec extends StartedApp {
     val body = Json.obj("requests" -> calls.map(_.toRequestJson))
     val req = FakeRequest(POST, path).withJsonBody(body).withHeaders(tokenHeader(token))
     val res = route(req).get
-    status(res) must equalTo(OK)
+    if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
     val responses = (contentAsJson(res) \ "data" \ "responses").as[Seq[JsObject]]
 

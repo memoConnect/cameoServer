@@ -33,6 +33,10 @@ trait Model[A] {
     col.find(query).one[A]
   }
 
+  def findJs(query: JsObject): Future[Option[JsObject]] = {
+    col.find(query).one[JsObject]
+  }
+
   def findAll(query: JsObject): Future[Seq[A]] = {
     col.find(query).cursor[A].collect[Seq]()
   }
@@ -83,11 +87,11 @@ trait Model[A] {
 
           // get whole object
           val id: MongoId = (js \ "_id").as[MongoId]
-          val futureResult = col.find(Json.obj("_id" -> id)).one[JsObject]
+          val futureResult = findJs(Json.obj("_id" -> id))
 
           // unfortunately we need to lock until we find the object...
           Await.result(futureResult, 1.minute) match {
-            case None => throw new RuntimeException("could not find object")
+            case None => throw new RuntimeException("could not find object. Original: " + js)
             case Some(all) =>
               val currentDocVersion = (all \ "docVersion").asOpt[Int].getOrElse(0)
               val readsWithEvolution = getEvolutions(currentDocVersion)

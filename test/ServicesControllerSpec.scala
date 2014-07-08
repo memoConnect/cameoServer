@@ -5,18 +5,18 @@
  */
 
 import org.specs2.mutable._
-import play.api.libs.json.{JsObject, Json}
-import play.api.test.{FakeApplication, WithApplication, FakeRequest}
+import play.api.Logger
+import play.api.libs.json.{ JsObject, Json }
+import play.api.test.{ FakeApplication, WithApplication, FakeRequest }
 import play.api.test.Helpers._
-import testHelper.{TestConfig, StartedApp}
+import testHelper.{ TestConfig, StartedApp }
 import testHelper.TestConfig._
 
 class ServicesControllerSpec extends StartedApp {
 
   "ServicesController" should {
 
-
-    "Check valid phoneNumbers " in  {
+    "Check valid phoneNumbers " in {
       val path = basePath + "/services/checkPhoneNumber"
 
       TestConfig.validPhoneNumbers.map {
@@ -26,6 +26,9 @@ class ServicesControllerSpec extends StartedApp {
           val req = FakeRequest(POST, path).withJsonBody(json)
           val res = route(req).get
 
+          if (status(res) != OK) {
+            Logger.error("Response: " + contentAsString(res))
+          }
           status(res) must equalTo(OK)
 
           val resStatus = (contentAsJson(res) \ "res").as[String]
@@ -37,7 +40,7 @@ class ServicesControllerSpec extends StartedApp {
       }
     }
 
-    "Check invalid phoneNumbers " in  {
+    "Check invalid phoneNumbers " in {
       val path = basePath + "/services/checkPhoneNumber"
       TestConfig.invalidPhoneNumbers.map {
         phoneNumber =>
@@ -56,7 +59,7 @@ class ServicesControllerSpec extends StartedApp {
       }
     }
 
-    "Check valid email addresses " in  {
+    "Check valid email addresses " in {
       val path = basePath + "/services/checkEmailAddress"
       TestConfig.validEmails.map {
         emailAddress =>
@@ -70,7 +73,7 @@ class ServicesControllerSpec extends StartedApp {
       }
     }
 
-    "Check invalid email addresses " in  {
+    "Check invalid email addresses " in {
       val path = basePath + "/services/checkEmailAddress"
       TestConfig.invalidEmails.map {
         emailAddress =>

@@ -31,6 +31,9 @@ class EventControllerSpec extends StartedApp {
 
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -45,6 +48,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -62,7 +68,10 @@ class EventControllerSpec extends StartedApp {
         val res = route(req).get
         i match {
           case j if j >= max => status(res) must equalTo(BAD_REQUEST)
-          case _             => status(res) must equalTo(OK)
+          case _             => if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
         }
       }
 
@@ -75,6 +84,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(Json.obj())
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -90,6 +102,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting3)).withJsonBody(Json.obj())
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -108,6 +123,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting3)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -118,7 +136,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -144,7 +165,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
         (data \ "id").asOpt[String] must beSome(id)
@@ -160,6 +184,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -169,7 +196,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -194,6 +224,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -223,6 +256,9 @@ class EventControllerSpec extends StartedApp {
       val json = Json.obj("recipients" -> Seq(identityExisting3))
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
       conversationId = (contentAsJson(res) \ "data" \ "id").as[String]
 
@@ -238,7 +274,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -265,7 +304,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
         (data \ "id").asOpt[String] must beSome(id)
@@ -278,6 +320,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -318,7 +363,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -346,7 +394,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
         (data \ "id").asOpt[String] must beSome(id)
@@ -359,6 +410,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -396,6 +450,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -421,7 +478,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
       }
       1 === 1
@@ -432,6 +492,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -441,7 +504,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
         (data \ "id").asOpt[String] must beSome(id)
@@ -454,7 +520,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
         (data \ "id").asOpt[String] must beSome(subscriptionOtherId)
@@ -467,6 +536,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -478,7 +550,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -505,6 +580,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -536,6 +614,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -554,7 +635,10 @@ class EventControllerSpec extends StartedApp {
         val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -581,6 +665,9 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]

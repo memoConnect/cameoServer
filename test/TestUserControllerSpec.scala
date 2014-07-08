@@ -31,6 +31,9 @@ class TestUserControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -54,6 +57,9 @@ class TestUserControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -73,6 +79,9 @@ class TestUserControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -94,7 +103,10 @@ class TestUserControllerSpec extends StartedApp {
         val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUserToken)).withJsonBody(json)
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
       }
       //accept friend request
       {
@@ -105,7 +117,10 @@ class TestUserControllerSpec extends StartedApp {
         val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
       }
       // create conversation
       {
@@ -116,7 +131,10 @@ class TestUserControllerSpec extends StartedApp {
         val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUserToken))
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
         val data = (contentAsJson(res) \ "data").as[JsObject]
 
         (data \ "id").asOpt[String] must beSome
@@ -131,7 +149,10 @@ class TestUserControllerSpec extends StartedApp {
         val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
         val res = route(req).get
 
-        status(res) must equalTo(OK)
+        if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
       }
     }
 
@@ -142,6 +163,9 @@ class TestUserControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -159,6 +183,9 @@ class TestUserControllerSpec extends StartedApp {
       val req = FakeRequest(DELETE, path)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 

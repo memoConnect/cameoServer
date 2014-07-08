@@ -65,7 +65,11 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
+
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       val regSeqOpt = (data \ "reservationSecret").asOpt[String]
@@ -84,6 +88,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -182,6 +189,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -244,6 +254,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -263,6 +276,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -275,6 +291,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -294,6 +313,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -310,6 +332,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -329,6 +354,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
       val raw = contentAsBytes(res)
 
@@ -341,6 +369,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -357,6 +388,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -378,6 +412,9 @@ class AccountControllerSpec extends StartedApp {
       val res = route(req).get
 
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -395,6 +432,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -413,6 +453,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(externalToken))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -435,6 +478,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       (contentAsJson(res) \ "data" \ "token").asOpt[String] must beSome
@@ -450,6 +496,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -467,6 +516,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(purlExternIdentityToken))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -483,6 +535,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
