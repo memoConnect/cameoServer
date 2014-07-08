@@ -108,7 +108,7 @@ object ContactController extends ExtendedController {
 
       // get all pending friendRequests, todo: this can be done more efficiently
       val query = Json.obj("friendRequests.identityId" -> request.identity.id)
-      val futurePendingFriendRequests = Identity.col.find(query).cursor[Identity].collect[Seq]()
+      val futurePendingFriendRequests = Identity.findAll(query)
 
       for {
         futurePendingContacts <- futurePendingFriendRequests.map {
