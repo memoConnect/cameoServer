@@ -94,9 +94,7 @@ case class Identity(id: MongoId,
 
   def editPublicKey(id: MongoId, update: PublicKeyUpdate): Future[Boolean] = {
     val setValues = {
-      maybeEmptyString("publicKeys.$.name", update.name) ++
-        maybeEmptyString("publicKeys.$.key", update.key) ++
-        maybeEmptyInt("publicKeys.$.keySize", update.keySize)
+      maybeEmptyString("publicKeys.$.name", update.name)
     }
     val publicKeyQuery = query ++ arrayQuery("publicKeys", id)
     val set = Json.obj("$set" -> setValues)

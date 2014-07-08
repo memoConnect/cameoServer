@@ -64,6 +64,7 @@ POST           /a/v1/friendRequest/answer                   controllers.ContactC
 # FILES
 POST           /a/v1/file                                   controllers.FileController.uploadFile
 POST           /a/v1/file/:id                               controllers.FileController.uploadFileChunks(id)
+POST           /a/v1/file/:id/completed                     controllers.FileController.uploadFileComplete(id)
 GET            /a/v1/file/:id                               controllers.FileController.getFile(id)
 GET            /a/v1/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex)
 
@@ -101,7 +102,7 @@ GET            /a/v1/util/dumpDb                            controllers.Applicat
 GET            /a/v1/util/loadDb                            controllers.Application.loadFixtures()
 
 # TEST USERS
-GET             /a/v1/testUser/:id                          controllers.TestUserController.getNotifications(id)
+GET            /a/v1/testUser/:id                           controllers.TestUserController.getNotifications(id)
 DELETE         /a/v1/testUser/:id                           controllers.TestUserController.deleteTestUser(id)
 
 # check app to support monitoring

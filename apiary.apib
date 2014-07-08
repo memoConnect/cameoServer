@@ -209,7 +209,8 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
                {
                  "id": "4TXpnSAa6IPNGdbLX7Mh",
                  "name": "some Name",
-                 "key": "theKey"
+                 "key": "theKey",
+                 "created" : 12354565
                }
              ]
           }
@@ -247,7 +248,8 @@ Get your identity
               {
                 "id": "4TXpnSAa6IPNGdbLX7Mh",
                 "name": "some Name",
-                "key": "theKey"
+                "key": "theKey",
+                "created" : 12354565
               }
             ],
             "userType": "internal",
@@ -321,7 +323,8 @@ Edit your identity. All values are optional. Only values contained in the json w
             "id": "4TXpnSAa6IPNGdbLX7Mh",
             "name": "some Name",
             "key": "theKey",
-            "size": "keySize"
+            "size": "keySize",
+            "created" : 12354565
           }
         }
 
@@ -906,6 +909,12 @@ Handle file up and download
             X-Max-Chunks: Total number of chunks
             X-File-Size: FileSize in Bytes
             X-File-Type: FileType
+            
+    + Body
+            
+            {
+                "conversationId":"id"
+            }
 
 
 + Response 200
@@ -984,9 +993,28 @@ Get meta-information of a file
             "maxChunks": 10,
             "fileSize": 1234567,
             "fileType": "some_type",
+            "isCompleted" : true
             "created": "21.02.2014 12:20:28"
           }
         }
+
+
+## Mark upload completed [/file/{id}/completed]
+
+### POST
++ Request
+    + Headers
+
+            Authorization: {token}
+            
+            
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "completed"
+        }
+        
 
 ## Download chunk [/file/{id}/{chunkIndex}]
 Download chunks of a file
@@ -1552,7 +1580,12 @@ Events will be deleted after each call
                  "from": "identityId",
                  "to": "identityId"
                }
+             },
+             {
+               "name": "identity:updated",
+               "data": { identity object (updated fields only)}
              }
+           }
            ],
            "id": "QvySbPNwtdKPXm5SUami"
          }

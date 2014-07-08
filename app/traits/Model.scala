@@ -67,7 +67,6 @@ trait Model[A] {
   /*
    * Helper functions
    */
-
   def createMongoWrites(writes: Writes[A]): Writes[A] = Writes {
     obj: A => Json.toJson[A](obj)(writes).transform(toMongoDates andThen toMongoId).getOrElse(Json.obj())
   }

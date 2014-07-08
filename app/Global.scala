@@ -47,6 +47,7 @@ object Global extends GlobalSettings {
           case e: Exception =>
             Logger.error("Could not connect to mongodb", e)
             Thread.sleep(1000)
+
             checkMongoConnection()
         }
       }

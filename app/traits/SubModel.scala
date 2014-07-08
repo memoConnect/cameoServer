@@ -24,8 +24,12 @@ trait SubModel[A, B] extends Model[A] {
   val col = parentModel.col
 
   override def find(id: MongoId): Future[Option[A]] = {
-    val projection = Json.obj(elementName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
-    parentModel.col.find(arrayQuery(elementName, id), projection).one[JsValue].map {
+    find( Json.obj("_id" -> id))
+  }
+
+  override def find(query: JsObject): Future[Option[A]] = {
+    val projection = Json.obj(elementName -> Json.obj("$elemMatch" -> query))
+    parentModel.col.find(arrayQuery(elementName, query), projection).one[JsValue].map {
       case None     => None
       case Some(js) => Some((js \ elementName)(0).as[A])
     }

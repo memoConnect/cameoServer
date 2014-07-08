@@ -380,6 +380,152 @@ class EventControllerSpec extends StartedApp {
       1 === 1
     }
 
+    val fileName: String = "moepFile"
+    var fileId = ""
+    "upload file" in {
+      val path = basePath + "/file"
+
+      val header: Seq[(String, String)] = Seq(
+        ("X-File-Name", fileName),
+        ("X-Max-Chunks", "1"),
+        ("X-File-Size", "123"),
+        ("X-File-Type", "moep")) :+
+        tokenHeader(tokenExisting)
+
+      val json = Json.obj("conversationId" -> conversationId)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      fileId = (data \ "id").as[String]
+      1 === 1
+    }
+
+    "send Message with file" in {
+      val path = basePath + "/conversation/" + conversationId + "/message"
+      val json = Json.obj("plain" -> Json.obj("text" -> text, "fileIds" -> Seq(fileId)))
+      val req2 = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res2 = route(req2).get
+      status(res2) must equalTo(OK)
+    }
+
+    "clear new-message events in both subscriptions of first user" in {
+      Thread.sleep(200)
+
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+      }
+      1 === 1
+    }
+
+    "clear new-message events in subscription of second user" in {
+      val path = basePath + "/eventSubscription/" + subscriptionOtherId
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "Events should be cleared for user 1" in {
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+        (data \ "id").asOpt[String] must beSome(id)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
+      }
+    }
+
+    "Events should be cleared for user 2" in {
+        val path = basePath + "/eventSubscription/" + subscriptionOtherId
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+        (data \ "id").asOpt[String] must beSome(subscriptionOtherId)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
+    }
+
+    "mark file upload as complete" in {
+      val path = basePath + "/file/" + fileId + "/completed"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "new-message events should appear in both subscriptions of first user" in {
+      Thread.sleep(200)
+
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "id").asOpt[String] must beSome(id)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome
+
+        val events = (data \ "events").as[Seq[JsObject]]
+
+        val newMessageEvents = events.filter(e =>
+          (e \ "name").as[String].equals("conversation:new-message") &&
+            (e \ "data" \ "conversationId").asOpt[String].getOrElse("foo").equals(conversationId))
+        newMessageEvents.length must beEqualTo(1)
+        newMessageEvents.map { js =>
+          (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
+          (js \ "data" \ "message").asOpt[JsObject] must beSome
+          (js \ "data" \ "message" \ "plain" \ "fileIds").asOpt[Seq[String]] must beSome
+        }
+      }
+      1 === 1
+    }
+
+    "new-message events should appear in subscription of second user" in {
+      val path = basePath + "/eventSubscription/" + subscriptionOtherId
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(subscriptionOtherId)
+      (data \ "events").asOpt[Seq[JsObject]] must beSome
+
+      val events = (data \ "events").as[Seq[JsObject]]
+
+      val newMessageEvents = events.filter(e =>
+        (e \ "name").as[String].equals("conversation:new-message") &&
+          (e \ "data" \ "conversationId").asOpt[String].getOrElse("foo").equals(conversationId))
+      newMessageEvents.length must beEqualTo(1)
+      newMessageEvents.map { js =>
+        (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
+        (js \ "data" \ "message").asOpt[JsObject] must beSome
+        (js \ "data" \ "message" \ "plain" \ "fileIds").asOpt[Seq[String]] must beSome
+      }
+      1 === 1
+    }
+
     var pubKeyId = ""
     "add public key" in {
 

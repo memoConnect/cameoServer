@@ -1,10 +1,11 @@
 package controllers
 
+import actors.NewMessage
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, Utils }
-import models.{ ChunkMeta, FileChunk, FileMeta }
-import play.api.Play
+import models._
+import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Json
@@ -23,7 +24,12 @@ import scala.util.control.NonFatal
  */
 object FileController extends ExtendedController {
 
-  def uploadFile = AuthAction().async {
+  case class FileUploadRequest(conversationId: Option[String])
+  object FileUploadRequest {
+    implicit val format = Json.format[FileUploadRequest]
+  }
+
+  def uploadFile = AuthAction().async(parse.tolerantJson) {
     request =>
 
       val fileName = request.headers.get("X-File-Name")
@@ -47,11 +53,15 @@ object FileController extends ExtendedController {
           fileSize.get.toInt <= Play.configuration.getInt("files.size.max").get match {
             case false => Future(resBadRequest(Json.obj("maxFileSize" -> Play.configuration.getInt("files.size.max").get)))
             case true =>
-              val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get)
-              FileMeta.col.insert(fileMeta).map { lastError =>
-                lastError.ok match {
-                  case false => resServerError("could not save chunk")
-                  case true  => resOk(fileMeta.toJson)
+
+              validateFuture(request.body, FileUploadRequest.format) { fur =>
+
+                val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get, fur.conversationId.map(new MongoId(_)))
+                FileMeta.col.insert(fileMeta).map { lastError =>
+                  lastError.ok match {
+                    case false => resServerError("could not save chunk")
+                    case true  => resOk(fileMeta.toJson)
+                  }
                 }
               }
           }
@@ -149,4 +159,41 @@ object FileController extends ExtendedController {
         }
       }
   }
+
+  def uploadFileComplete(id: String) = AuthAction().async {
+    request =>
+      FileMeta.find(id).flatMap {
+        case None => Future(resNotFound("file"))
+        case Some(fileMeta) =>
+          fileMeta.setCompleted(true).flatMap {
+            case false => Future(resServerError("unable to update"))
+            case true =>
+              // check if there is a conversationId attached to this file, if yes send event to all recipients
+              fileMeta.conversationId match {
+                case None => Future(resOk("completed"))
+                case Some(conversationId) =>
+                  val query = Json.obj("_id" -> conversationId)
+                  // todo: find a more efficient way to do this. Projection to a single message does not work, since mongodb will exclude all other fields. grrrr
+                  Conversation.find(query).map {
+                    case None =>
+                      Logger.error("Could not find conversationId (" + conversationId.toString + ") in FileMeta with Id " + id)
+                      resOk("completed, but conversationId is invalid. No events send")
+                    case Some(conversation) =>
+                      conversation.messages.find(_.plain.exists(_.fileIds.exists(_.id.equals(id)))) match {
+                        case None =>
+                          Logger.error("Could not find message (conversationId: " + conversationId.toString + ") that contains fileId " + id)
+                          resOk("completed, but could not find file in conversation. No event send.")
+                        case Some(m) =>
+                          conversation.recipients.foreach {
+                            recipient =>
+                              actors.eventRouter ! NewMessage(recipient.identityId, conversationId, conversation.messages(0))
+                          }
+                          resOk("completed")
+                      }
+                  }
+              }
+          }
+      }
+  }
+
 }
