@@ -49,7 +49,7 @@ object MessageController extends ExtendedController {
 
   def getMessage(id: String) = AuthAction(allowExternal = true).async {
     (request) =>
-      Message.findConversation(new MongoId(id)).map {
+      Message.findParent(new MongoId(id)).map {
         case None => resNotFound("message")
         case Some(c) =>
           c.hasMemberResult(request.identity.id) {

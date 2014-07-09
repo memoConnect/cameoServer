@@ -43,6 +43,11 @@ trait SubModel[A, B] extends Model[A] {
     }
   }
 
+  def findParent(id: MongoId)(implicit parentReads: Reads[B]): Future[Option[B]] = {
+    val query = Json.obj("_id" -> id)
+    parentModel.col.find(arrayQuery(elementName, query)).one[B]
+  }
+
   override def save(js: JsObject): Future[LastError] = {
     val id: MongoId = (js \ "_id").as[MongoId]
     val query = arrayQuery(elementName, id)

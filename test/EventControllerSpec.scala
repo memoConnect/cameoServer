@@ -446,8 +446,7 @@ class EventControllerSpec extends StartedApp {
         ("X-File-Type", "moep")) :+
         tokenHeader(tokenExisting)
 
-      val json = Json.obj("conversationId" -> conversationId)
-      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(header: _*)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -462,12 +461,17 @@ class EventControllerSpec extends StartedApp {
       1 === 1
     }
 
+    var messageId = ""
     "send Message with file" in {
       val path = basePath + "/conversation/" + conversationId + "/message"
       val json = Json.obj("plain" -> Json.obj("text" -> text, "fileIds" -> Seq(fileId)))
-      val req2 = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res2 = route(req2).get
-      status(res2) must equalTo(OK)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      messageId = (data \ "id").as[String]
+      1===1
     }
 
     "clear new-message events in both subscriptions of first user" in {
@@ -533,7 +537,9 @@ class EventControllerSpec extends StartedApp {
     "mark file upload as complete" in {
       val path = basePath + "/file/" + fileId + "/completed"
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting))
+      val json = Json.obj("messageId" -> messageId)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {

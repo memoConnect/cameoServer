@@ -24,12 +24,7 @@ import scala.util.control.NonFatal
  */
 object FileController extends ExtendedController {
 
-  case class FileUploadRequest(conversationId: Option[String])
-  object FileUploadRequest {
-    implicit val format = Json.format[FileUploadRequest]
-  }
-
-  def uploadFile = AuthAction().async(parse.tolerantJson) {
+  def uploadFile = AuthAction().async {
     request =>
 
       val fileName = request.headers.get("X-File-Name")
@@ -54,14 +49,11 @@ object FileController extends ExtendedController {
             case false => Future(resBadRequest(Json.obj("maxFileSize" -> Play.configuration.getInt("files.size.max").get)))
             case true =>
 
-              validateFuture(request.body, FileUploadRequest.format) { fur =>
-
-                val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get, fur.conversationId.map(new MongoId(_)))
-                FileMeta.col.insert(fileMeta).map { lastError =>
-                  lastError.ok match {
-                    case false => resServerError("could not save chunk")
-                    case true  => resOk(fileMeta.toJson)
-                  }
+              val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get)
+              FileMeta.col.insert(fileMeta).map { lastError =>
+                lastError.ok match {
+                  case false => resServerError("could not save chunk")
+                  case true  => resOk(fileMeta.toJson)
                 }
               }
           }
@@ -160,7 +152,12 @@ object FileController extends ExtendedController {
       }
   }
 
-  def uploadFileComplete(id: String) = AuthAction().async {
+  case class FileComplete(messageId: Option[String])
+  object FileComplete {
+    implicit val format = Json.format[FileComplete]
+  }
+
+  def uploadFileComplete(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
       FileMeta.find(id).flatMap {
         case None => Future(resNotFound("file"))
@@ -168,32 +165,24 @@ object FileController extends ExtendedController {
           fileMeta.setCompleted(true).flatMap {
             case false => Future(resServerError("unable to update"))
             case true =>
-              // check if there is a conversationId attached to this file, if yes send event to all recipients
-              fileMeta.conversationId match {
-                case None => Future(resOk("completed"))
-                case Some(conversationId) =>
-                  val query = Json.obj("_id" -> conversationId)
-                  // todo: find a more efficient way to do this. Projection to a single message does not work, since mongodb will exclude all other fields. grrrr
-                  Conversation.find(query).map {
-                    case None =>
-                      Logger.error("Could not find conversationId (" + conversationId.toString + ") in FileMeta with Id " + id)
-                      resOk("completed, but conversationId is invalid. No events send")
-                    case Some(conversation) =>
-                      conversation.messages.find(_.plain.exists(_.fileIds.exists(_.id.equals(id)))) match {
-                        case None =>
-                          Logger.error("Could not find message (conversationId: " + conversationId.toString + ") that contains fileId " + id)
-                          resOk("completed, but could not find file in conversation. No event send.")
-                        case Some(m) =>
-                          conversation.recipients.foreach {
-                            recipient =>
-                              actors.eventRouter ! NewMessage(recipient.identityId, conversationId, conversation.messages(0))
-                          }
-                          resOk("completed")
-                      }
-                  }
+              // check if there is a messageId given, if yes send event to all recipients
+              validateFuture(request.body, FileComplete.format) { fc =>
+                fc.messageId match {
+                  case None => Future(resOk("completed"))
+                  case Some(messageId) =>
+                    Message.findParent(new MongoId(messageId)).map {
+                      case None => resNotFound("messageId")
+                      case Some(conversation) =>
+                        val message = conversation.messages.find(_.id.id.equals(messageId)).get
+                        conversation.recipients.foreach {
+                          recipient =>
+                            actors.eventRouter ! NewMessage(recipient.identityId, conversation.id, message)
+                        }
+                        resOk("completed")
+                    }
+                }
               }
           }
       }
   }
-
 }

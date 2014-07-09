@@ -24,7 +24,6 @@ case class FileMeta(id: MongoId,
                     fileSize: Int,
                     fileType: String,
                     isCompleted: Boolean,
-                    conversationId: Option[MongoId],
                     created: Date,
                     docVersion: Int) {
 
@@ -81,14 +80,13 @@ object FileMeta extends Model[FileMeta] {
       fileSize,
       fileType,
       false,
-      conversationId,
       new Date,
       docVersion
     )
   }
 
   override def createDefault(): FileMeta = {
-    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, None, new Date, docVersion)
+    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, new Date, docVersion)
   }
 }
 

@@ -81,10 +81,6 @@ object Message extends SubModel[Message, Conversation] {
         addCreated(m.created)
   }
 
-  def findConversation(id: MongoId): Future[Option[Conversation]] = {
-    Conversation.col.find(arrayQuery("messages", id)).one[Conversation]
-  }
-
   def create(fromId: MongoId, text: String): Message = {
     new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, new Date, docVersion)
   }

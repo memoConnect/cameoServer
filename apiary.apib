@@ -909,13 +909,6 @@ Handle file up and download
             X-Max-Chunks: Total number of chunks
             X-File-Size: FileSize in Bytes
             X-File-Type: FileType
-            
-    + Body
-            
-            {
-                "conversationId":"id"
-            }
-
 
 + Response 200
 
@@ -1007,6 +1000,13 @@ Get meta-information of a file
 
             Authorization: {token}
             
+            
+    + Body
+            
+            {
+                "messaageId":"id (optional)"
+            }
+
             
 + Response 200
 
