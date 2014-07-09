@@ -139,7 +139,7 @@ class FileControllerSpec extends StartedApp {
     "mark file upload as complete" in {
       val path = basePath + "/file/" + fileId + "/completed"
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(Json.obj())
       val res = route(req).get
 
       if (status(res) != OK) {
