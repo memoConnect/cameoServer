@@ -3,8 +3,9 @@ package services
 import java.awt._
 import java.io._
 
+import actors.UpdatedIdentity
 import helper.{ IdHelper, Utils }
-import models.{ ChunkMeta, FileChunk, FileMeta, Identity }
+import models._
 import org.apache.batik.dom.GenericDOMImplementation
 import org.apache.batik.dom.svg.SVGDOMImplementation
 import org.apache.batik.svggen.SVGGraphics2D
@@ -12,6 +13,7 @@ import org.apache.batik.transcoder._
 import org.apache.batik.transcoder.image.PNGTranscoder
 import org.w3c.dom.{ DOMImplementation, Document }
 import play.api.Play.current
+import play.api.libs.json.Json
 import play.api.{ Logger, Play }
 import sun.misc.BASE64Encoder
 
@@ -72,6 +74,7 @@ object AvatarGenerator {
 
     // save to db
     saveAvatar(png, identity)
+
   }
 
   private def createAvatarDesc(seed: String): AvatarDescription = {
@@ -161,6 +164,8 @@ object AvatarGenerator {
     val chunkMeta = new ChunkMeta(0, IdHelper.generateChunkId, data.size)
     val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png")
 
+
+
     // write to db and add to identity
     for {
       chunk <- FileChunk.insert(chunkMeta.chunkId.id, data)
@@ -168,6 +173,8 @@ object AvatarGenerator {
       setAvatar <- identity.setAvatar(fileMeta.id)
     } yield {
       Logger.info("avatar generated for id: " + identity.id)
+      // send identity update event
+      actors.eventRouter ! UpdatedIdentity(identity.id, identity.id, Json.obj("avatar" -> fileMeta.id.toJson))
       chunk.ok && meta.ok && setAvatar
     }
   }
