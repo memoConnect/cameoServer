@@ -54,7 +54,7 @@ object AvatarGenerator {
         new Color(r, b, g)
       }
 
-  def generate(identity: Identity): Future[Boolean] = {
+  def generate(identity: Identity): Future[Option[MongoId]] = {
 
     // Get a DOMImplementation.
     val domImpl: DOMImplementation = GenericDOMImplementation.getDOMImplementation
@@ -74,7 +74,6 @@ object AvatarGenerator {
 
     // save to db
     saveAvatar(png, identity)
-
   }
 
   private def createAvatarDesc(seed: String): AvatarDescription = {
@@ -154,7 +153,7 @@ object AvatarGenerator {
     baos.toByteArray
   }
 
-  private def saveAvatar(png: Array[Byte], identity: Identity): Future[Boolean] = {
+  private def saveAvatar(png: Array[Byte], identity: Identity): Future[Option[MongoId]] = {
 
     val prefix = "data:image/png;base64,"
     val base64: String = new BASE64Encoder().encode(png).replace(System.getProperty("line.separator"), "")
@@ -163,9 +162,6 @@ object AvatarGenerator {
     // Create Chunk and MetaData
     val chunkMeta = new ChunkMeta(0, IdHelper.generateChunkId, data.size)
     val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png")
-
-
-
     // write to db and add to identity
     for {
       chunk <- FileChunk.insert(chunkMeta.chunkId.id, data)
@@ -173,9 +169,13 @@ object AvatarGenerator {
       setAvatar <- identity.setAvatar(fileMeta.id)
     } yield {
       Logger.info("avatar generated for id: " + identity.id)
-      // send identity update event
-      actors.eventRouter ! UpdatedIdentity(identity.id, identity.id, Json.obj("avatar" -> fileMeta.id.toJson))
-      chunk.ok && meta.ok && setAvatar
+      chunk.ok && meta.ok && setAvatar match {
+        case false =>
+          Logger.error("could not save avatar id: " + fileMeta.id)
+          None
+        case true =>
+          Some(fileMeta.id)
+      }
     }
   }
 }

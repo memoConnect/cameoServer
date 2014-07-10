@@ -276,12 +276,11 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     val identity = create(accountId, cameoId, email, phoneNumber, displayName)
 
     // insert into db
-    Identity.col.insert(identity).map { le =>
-
+    Identity.col.insert(identity).flatMap { le =>
       // generate default avatar
-      AvatarGenerator.generate(identity)
-
-      identity
+      AvatarGenerator.generate(identity).map {
+        fileId => identity.copy(avatar = fileId )
+      }
     }
   }
 
