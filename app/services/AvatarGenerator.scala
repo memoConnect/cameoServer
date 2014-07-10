@@ -161,7 +161,7 @@ object AvatarGenerator {
 
     // Create Chunk and MetaData
     val chunkMeta = new ChunkMeta(0, IdHelper.generateChunkId, data.size)
-    val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png")
+    val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png", isCompleted = true)
     // write to db and add to identity
     for {
       chunk <- FileChunk.insert(chunkMeta.chunkId.id, data)

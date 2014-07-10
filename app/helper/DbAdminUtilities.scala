@@ -259,7 +259,7 @@ object DbAdminUtilities {
     val enumerator = identityCollection.find(Json.obj()).cursor[Identity].enumerate()
 
     val iteratee: Iteratee[Identity, Boolean] = Iteratee.foldM(true) {
-      (result, identity) => AvatarGenerator.generate(identity).map(r => r && result)
+      (result, identity) => AvatarGenerator.generate(identity).map(r => r.isDefined && result)
     }
 
     enumerator.run(iteratee)

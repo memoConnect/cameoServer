@@ -71,7 +71,7 @@ object FileMeta extends Model[FileMeta] {
         addCreated(fm.created)
   }
 
-  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String, conversationId: Option[MongoId] = None): FileMeta = {
+  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String, isCompleted: Boolean = false, conversationId: Option[MongoId] = None): FileMeta = {
     new FileMeta(
       IdHelper.generateFileId(),
       chunks,
@@ -79,7 +79,7 @@ object FileMeta extends Model[FileMeta] {
       maxChunks,
       fileSize,
       fileType,
-      false,
+      isCompleted,
       new Date,
       docVersion
     )
