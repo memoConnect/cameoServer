@@ -2,6 +2,7 @@ package traits
 
 import helper.JsonHelper._
 import models.MongoId
+import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
@@ -24,7 +25,7 @@ trait SubModel[A, B] extends Model[A] {
   val col = parentModel.col
 
   override def find(id: MongoId): Future[Option[A]] = {
-    find( Json.obj("_id" -> id))
+    find(Json.obj("_id" -> id))
   }
 
   override def find(query: JsObject): Future[Option[A]] = {
@@ -43,9 +44,16 @@ trait SubModel[A, B] extends Model[A] {
     }
   }
 
-  def findParent(id: MongoId)(implicit parentReads: Reads[B]): Future[Option[B]] = {
-    val query = Json.obj("_id" -> id)
+  def findParent(parentId: MongoId)(implicit parentReads: Reads[B]): Future[Option[B]] = {
+    val query = Json.obj("_id" -> parentId)
     parentModel.col.find(arrayQuery(elementName, query)).one[B]
+  }
+
+  def update(parentId: MongoId, updateJs: JsObject, customIdName: String = this.idName): Future[LastError] = {
+    val id = (updateJs \ customIdName).as[JsValue]
+    val query = Json.obj("_id" -> parentId, (elementName + "." + customIdName) -> id)
+    val update = Json.obj("$set" -> Json.obj((elementName + ".$") -> updateJs))
+    parentModel.col.update(query, update)
   }
 
   override def save(js: JsObject): Future[LastError] = {
@@ -55,6 +63,7 @@ trait SubModel[A, B] extends Model[A] {
     parentModel.col.update(query, set)
   }
 
+  // append to seq only if the object is unique
   def appendUnique(parentId: MongoId, appendees: Seq[A]): Future[LastError] = {
     val query = Json.obj("_id" -> parentId)
     val set = Json.obj("$addToSet" -> Json.obj(elementName -> Json.obj("$each" -> appendees)))
@@ -63,6 +72,18 @@ trait SubModel[A, B] extends Model[A] {
 
   def appendUnique(parentId: MongoId, appendee: A): Future[LastError] = {
     appendUnique(parentId, Seq(appendee))
+  }
+
+  def appendOrUpdate(parentId: MongoId, appendee: A, customIdName: String = this.idName): Future[LastError] = {
+    // mongodb does not support this operation directly, so we need two steps
+    // first we try to update
+    update(parentId, Json.toJson(appendee).as[JsObject], customIdName).flatMap { lastError =>
+      // if we updated something we're good, else we need to add a new element
+      lastError.updatedExisting match {
+        case true  => Future(lastError)
+        case false => append(parentId, appendee)
+      }
+    }
   }
 
   def append(parentId: MongoId, appendees: Seq[A]): Future[LastError] = {

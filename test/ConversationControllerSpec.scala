@@ -677,6 +677,40 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "aePassphraseList").as[Seq[JsObject]].length must beEqualTo(0)
     }
 
+    val newEncryptedPassphrase = (encryptedPassphrase(0)._1, "someNewKey")
+    "add another encrypted passphrase with same keyId" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> newEncryptedPassphrase._1, "encryptedPassphrase" -> newEncryptedPassphrase._2)))
+
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "return only the new encrypted passphrase for that keyId" in {
+
+      val path = basePath + "/conversation/" + cidExisting + "?keyId=" + newEncryptedPassphrase._1
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "aePassphraseList").asOpt[Seq[JsObject]] must beSome
+      val encPasses = (data \ "aePassphraseList").as[Seq[JsObject]]
+
+      encPasses.length must beEqualTo(1)
+
+      (encPasses(0) \ "keyId").asOpt[String] must beSome(newEncryptedPassphrase._1)
+      (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(newEncryptedPassphrase._2)
+
+    }
+
     "return the encrypted passphrases in summary if keyids are given" in {
 
       val path = basePath + "/conversation/" + cidExisting + "/summary" + "?keyId=" + encryptedPassphrase(0)._1 + "&keyId=" + encryptedPassphrase(1)._1

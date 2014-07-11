@@ -145,7 +145,10 @@ case class Conversation(id: MongoId,
   }
 
   def addAePassphrases(aePassphrases: Seq[EncryptedPassphrase]): Future[Boolean] = {
-    EncryptedPassphrase.appendUnique(this.id, aePassphrases).map(_.updatedExisting)
+    val futureResults = aePassphrases.map { aePassphrase =>
+      EncryptedPassphrase.appendOrUpdate(this.id, aePassphrase, "keyId")
+    }
+    Future.sequence(futureResults).map(_.forall(_.ok))
   }
 
   def getMissingPassphrases: Future[Seq[String]] = {
