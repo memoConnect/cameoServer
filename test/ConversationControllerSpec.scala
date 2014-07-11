@@ -677,6 +677,31 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "aePassphraseList").as[Seq[JsObject]].length must beEqualTo(0)
     }
 
+    "return the encrypted passphrases in summary if keyids are given" in {
+
+      val path = basePath + "/conversation/" + cidExisting + "/summary" + "?keyId=" + encryptedPassphrase(0)._1 + "&keyId=" + encryptedPassphrase(1)._1
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "aePassphraseList").asOpt[Seq[JsObject]] must beSome
+      val encPasses = (data \ "aePassphraseList").as[Seq[JsObject]]
+
+      encPasses.length must beEqualTo(2)
+
+      (encPasses(0) \ "keyId").asOpt[String] must beSome(encryptedPassphrase(0)._1)
+      (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(encryptedPassphrase(0)._2)
+      (encPasses(1) \ "keyId").asOpt[String] must beSome(encryptedPassphrase(1)._1)
+      (encPasses(1) \ "encryptedPassphrase").asOpt[String] must beSome(encryptedPassphrase(1)._2)
+    }
+
     val newEncryptedPassphrase = (encryptedPassphrase(0)._1, "someNewKey")
     "add another encrypted passphrase with same keyId" in {
       val path = basePath + "/conversation/" + cidExisting
@@ -709,31 +734,6 @@ class ConversationControllerSpec extends StartedApp {
       (encPasses(0) \ "keyId").asOpt[String] must beSome(newEncryptedPassphrase._1)
       (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(newEncryptedPassphrase._2)
 
-    }
-
-    "return the encrypted passphrases in summary if keyids are given" in {
-
-      val path = basePath + "/conversation/" + cidExisting + "/summary" + "?keyId=" + encryptedPassphrase(0)._1 + "&keyId=" + encryptedPassphrase(1)._1
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "aePassphraseList").asOpt[Seq[JsObject]] must beSome
-      val encPasses = (data \ "aePassphraseList").as[Seq[JsObject]]
-
-      encPasses.length must beEqualTo(2)
-
-      (encPasses(0) \ "keyId").asOpt[String] must beSome(encryptedPassphrase(0)._1)
-      (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(encryptedPassphrase(0)._2)
-      (encPasses(1) \ "keyId").asOpt[String] must beSome(encryptedPassphrase(1)._1)
-      (encPasses(1) \ "encryptedPassphrase").asOpt[String] must beSome(encryptedPassphrase(1)._2)
     }
 
     "refuse non-members to edit encrypted passphrase list" in {
