@@ -129,4 +129,22 @@ object IdentityController extends ExtendedController {
       }
   }
 
+  def addAuthenticationRequest() = AuthAction().async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, AuthenticationRequest.createReads) {
+        authenticationRequest =>
+          request.identity.addAuthenticationRequest(authenticationRequest).map{
+            case false => resServerError("error while saving")
+            case true => resOk(authenticationRequest.toJson)
+          }
+      }
+  }
+
+  def deleteAuthenticationRequest(id: String) = AuthAction().async {
+    request =>
+      request.identity.deleteAuthenticationRequest(new MongoId(id)).map {
+        case false => resServerError("unable to delete")
+        case true => resOk("deleted")
+      }
+  }
 }

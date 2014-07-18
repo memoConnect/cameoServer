@@ -1,7 +1,7 @@
 
 import play.api.Logger
 import play.api.test._
-import play.api.libs.json.{JsString, Json, JsObject}
+import play.api.libs.json.{ JsString, Json, JsObject }
 import play.api.test.Helpers._
 import testHelper.Stuff._
 import org.specs2.mutable._
@@ -581,8 +581,85 @@ class IdentityControllerSpec extends StartedApp {
       (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
       (key2 \ "key").asOpt[String] must beSome(pubKey2)
       (key2 \ "keySize").asOpt[Int] must beSome(pubKeySize2)
-
     }
 
+    val fromKeyId = "fromMoep"
+    val toKeyId = "toMoep"
+    val encryptedTransactionSecret = "encryptedMoep"
+    var authenticationRequestId = ""
+
+    "add authenticationRequest" in {
+      val path = basePath + "/identity/authenticationRequest"
+      val json = Json.obj("fromKeyId" -> fromKeyId, "toKeyId" -> toKeyId, "encryptedTransactionSecret" -> encryptedTransactionSecret)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "id").asOpt[String] must beSome
+      authenticationRequestId = (data \ "id").as[String]
+      (data \ "fromKeyId").asOpt[String] must beSome(fromKeyId)
+      (data \ "toKeyId").asOpt[String] must beSome(toKeyId)
+      (data \ "encryptedTransactionSecret").asOpt[String] must beSome(encryptedTransactionSecret)
+      (data \ "created").asOpt[Int] must beSome
+    }
+
+    "the new authentication request should be returned with get identity" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "authenticationRequests").asOpt[Seq[JsObject]] must beSome
+      val requests = (data \ "authenticationRequests").as[Seq[JsObject]]
+      requests.length must beEqualTo(1)
+      (requests(0) \ "id").asOpt[String] must beSome
+      (requests(0) \ "fromKeyId").asOpt[String] must beSome(fromKeyId)
+      (requests(0) \ "toKeyId").asOpt[String] must beSome(toKeyId)
+      (requests(0) \ "encryptedTransactionSecret").asOpt[String] must beSome(encryptedTransactionSecret)
+      (requests(0) \ "created").asOpt[Int] must beSome
+    }
+
+    "delete authentication request" in {
+      val path = basePath + "/identity/authenticationRequest/" + authenticationRequestId
+
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "deleted authentication request should not be there when getting identity" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "authenticationRequests").asOpt[Seq[JsObject]] must beSome
+      val requests = (data \ "authenticationRequests").as[Seq[JsObject]]
+      requests.length must beEqualTo(0)
+    }
   }
 }

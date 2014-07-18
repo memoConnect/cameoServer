@@ -129,6 +129,7 @@ Account Management
             ],
             "phoneNumber": "12335",
             "email": "mail",
+            "authenticationRequests":[{request object}]
             "created": "22.01.2014 16:34:54",
             "lastUpdated": "22.01.2014 16:34:54"
         }
@@ -374,6 +375,60 @@ Edit your identity. All values are optional. Only values contained in the json w
             "res":"OK",
             "data":"deleted"
         }
+
+
+## Add authentication request [/identity/authenticationRequest]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "fromKeyId": "key new Device",
+                "toKeyId": "key old Device",
+                "encryptedTransactionSecret": "encrypted"
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "fromKeyId": "key new Device",
+            "toKeyId": "key old Device",
+            "encryptedTransactionSecret": "encrypted",
+            "id": "adVtKitsqCSrkc0NWGyb",
+            "created": 1405679129745
+          }
+        }
+
+
+## Manage authentication requests [/identity/authenticationRequest/{id}]
+
++   Parameters
+    + id ... Id of the authentication request
+
+### DELETE
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data":"deleted"
+        }
+
 
 
 

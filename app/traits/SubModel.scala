@@ -16,9 +16,9 @@ import scala.concurrent.{ ExecutionContext, Future }
  * Time: 6:46 PM
  */
 
-trait SubModel[A, B] extends Model[A] {
+trait SubModel[A, Parent] extends Model[A] {
 
-  def parentModel: Model[B]
+  def parentModel: Model[Parent]
   def elementName: String
 
   val idName: String = "_id"
@@ -44,9 +44,9 @@ trait SubModel[A, B] extends Model[A] {
     }
   }
 
-  def findParent(parentId: MongoId)(implicit parentReads: Reads[B]): Future[Option[B]] = {
+  def findParent(parentId: MongoId)(implicit parentReads: Reads[Parent]): Future[Option[Parent]] = {
     val query = Json.obj("_id" -> parentId)
-    parentModel.col.find(arrayQuery(elementName, query)).one[B]
+    parentModel.col.find(arrayQuery(elementName, query)).one[Parent]
   }
 
   def update(parentId: MongoId, updateJs: JsObject, customIdName: String = this.idName): Future[LastError] = {
