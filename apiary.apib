@@ -391,7 +391,8 @@ Edit your identity. All values are optional. Only values contained in the json w
             {
                 "fromKeyId": "key new Device",
                 "toKeyId": "key old Device",
-                "encryptedTransactionSecret": "encrypted"
+                "encryptedTransactionSecret": "encrypted",
+                "signature":"blob"
             }
 
 + Response 200
@@ -402,6 +403,7 @@ Edit your identity. All values are optional. Only values contained in the json w
             "fromKeyId": "key new Device",
             "toKeyId": "key old Device",
             "encryptedTransactionSecret": "encrypted",
+            "signature":"blob",
             "id": "adVtKitsqCSrkc0NWGyb",
             "created": 1405679129745
           }

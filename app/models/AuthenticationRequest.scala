@@ -16,6 +16,7 @@ case class AuthenticationRequest(id: MongoId,
                                  fromKeyId: String,
                                  toKeyId: String,
                                  encryptedTransactionSecret: String,
+signature: String,
                                  created: Date,
                                  docVersion: Int) {
   def toJson: JsObject =
@@ -23,6 +24,7 @@ case class AuthenticationRequest(id: MongoId,
       "fromKeyId" -> this.fromKeyId,
       "toKeyId" -> this.toKeyId,
       "encryptedTransactionSecret" -> this.encryptedTransactionSecret,
+      "signature" -> this.signature,
       "id" -> id.toJson) ++
       JsonHelper.addCreated(this.created)
 }
@@ -41,12 +43,13 @@ object AuthenticationRequest extends SubModel[AuthenticationRequest, Identity] {
     (__ \ 'fromKeyId).read[String] and
     (__ \ 'toKeyId).read[String] and
     (__ \ 'encryptedTransactionSecret).read[String] and
+    (__ \ 'signature).read[String] and
     Reads.pure[Date](new Date) and
     Reads.pure[Int](docVersion)
   )(AuthenticationRequest.apply _)
 
   def createDefault(): AuthenticationRequest =
-    new AuthenticationRequest(IdHelper.generateMongoId(), "", "", "", new Date, docVersion)
+    new AuthenticationRequest(IdHelper.generateMongoId(), "", "", "", "", new Date, docVersion)
 
   def docVersion: Int = 0
 

@@ -586,11 +586,12 @@ class IdentityControllerSpec extends StartedApp {
     val fromKeyId = "fromMoep"
     val toKeyId = "toMoep"
     val encryptedTransactionSecret = "encryptedMoep"
+    val signature = "singedByMoep"
     var authenticationRequestId = ""
 
     "add authenticationRequest" in {
       val path = basePath + "/identity/authenticationRequest"
-      val json = Json.obj("fromKeyId" -> fromKeyId, "toKeyId" -> toKeyId, "encryptedTransactionSecret" -> encryptedTransactionSecret)
+      val json = Json.obj("fromKeyId" -> fromKeyId, "toKeyId" -> toKeyId, "encryptedTransactionSecret" -> encryptedTransactionSecret, "signature" -> signature)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -605,6 +606,7 @@ class IdentityControllerSpec extends StartedApp {
       authenticationRequestId = (data \ "id").as[String]
       (data \ "fromKeyId").asOpt[String] must beSome(fromKeyId)
       (data \ "toKeyId").asOpt[String] must beSome(toKeyId)
+      (data \ "signature").asOpt[String] must beSome(signature)
       (data \ "encryptedTransactionSecret").asOpt[String] must beSome(encryptedTransactionSecret)
       (data \ "created").asOpt[Int] must beSome
     }
@@ -628,6 +630,7 @@ class IdentityControllerSpec extends StartedApp {
       (requests(0) \ "id").asOpt[String] must beSome
       (requests(0) \ "fromKeyId").asOpt[String] must beSome(fromKeyId)
       (requests(0) \ "toKeyId").asOpt[String] must beSome(toKeyId)
+      (requests(0) \ "signature").asOpt[String] must beSome(signature)
       (requests(0) \ "encryptedTransactionSecret").asOpt[String] must beSome(encryptedTransactionSecret)
       (requests(0) \ "created").asOpt[Int] must beSome
     }
