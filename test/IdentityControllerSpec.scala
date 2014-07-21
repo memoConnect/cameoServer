@@ -511,7 +511,7 @@ class IdentityControllerSpec extends StartedApp {
     "add signature to public key" in {
       val path = basePath + "/identity/publicKey/" + pubKeyId + "/signature"
 
-      val json = Json.obj("keyId" -> signatureKeyId, "signature" -> signature)
+      val json = Json.obj("keyId" -> signatureKeyId, "content" -> signature)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -529,7 +529,7 @@ class IdentityControllerSpec extends StartedApp {
     "add another signature to public key" in {
       val path = basePath + "/identity/publicKey/" + pubKeyId + "/signature"
 
-      val json = Json.obj("keyId" -> signatureKeyId2, "signature" -> signature2)
+      val json = Json.obj("keyId" -> signatureKeyId2, "content" -> signature2)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -573,10 +573,10 @@ class IdentityControllerSpec extends StartedApp {
       signatures.length must beEqualTo(2)
 
       val sig1: JsObject = signatures.find(js => (js \ "keyId").as[String].equals(signatureKeyId)).get
-      (sig1 \ "signature").asOpt[String] must beSome(signature)
+      (sig1 \ "content").asOpt[String] must beSome(signature)
 
       val sig2: JsObject = signatures.find(js => (js \ "keyId").as[String].equals(signatureKeyId2)).get
-      (sig2 \ "signature").asOpt[String] must beSome(signature2)
+      (sig2 \ "content").asOpt[String] must beSome(signature2)
     }
 
     "edit name of public key" in {

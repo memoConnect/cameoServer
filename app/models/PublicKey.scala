@@ -107,7 +107,7 @@ object PublicKeyEvolutions {
 }
 
 case class Signature(keyId: String,
-                     signature: String) {
+                     content: String) {
   def toJson = Json.toJson(this).as[JsObject]
 }
 
