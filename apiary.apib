@@ -377,6 +377,34 @@ Edit your identity. All values are optional. Only values contained in the json w
         }
 
 
+## Add signature to public key [/identity/publicKey/{id}/signature]
+
++   Parameters
+    + id ... Id of the public key
+
+
+### POST
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "keyId":"keyId of public key that created the signature",
+                "signature":"some signature"
+            }
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data":{signature object}
+        }
+
 ## Add authentication request [/identity/authenticationRequest]
 
 ### POST

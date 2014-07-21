@@ -147,4 +147,17 @@ object IdentityController extends ExtendedController {
         case true => resOk("deleted")
       }
   }
+
+  def addSignature(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      validateFuture[Signature](request.body, Signature.format) {
+        signature =>
+          request.identity.addSignatureToPublicKey(new MongoId(id), signature).map{
+            case false => resBadRequest("could not update")
+            case true => resOk(signature.toJson)
+          }
+      }
+  }
+
+  def deleteSignature(id: String, keyId: String) = play.mvc.Results.TODO
 }

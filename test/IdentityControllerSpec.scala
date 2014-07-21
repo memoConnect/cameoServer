@@ -442,6 +442,7 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "name").asOpt[String] must beSome(pubKeyName)
       (data \ "key").asOpt[String] must beSome(pubKey)
       (data \ "keySize").asOpt[Int] must beSome(pubKeySize)
+      (data \ "signatures").asOpt[Seq[JsObject]] must beSome
     }
 
     "add another public key to identity" in {
@@ -464,6 +465,7 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "name").asOpt[String] must beSome(pubKeyName2)
       (data \ "key").asOpt[String] must beSome(pubKey2)
       (data \ "keySize").asOpt[Int] must beSome(pubKeySize2)
+      (data \ "signatures").asOpt[Seq[JsObject]] must beSome
 
     }
 
@@ -490,13 +492,91 @@ class IdentityControllerSpec extends StartedApp {
       (key1 \ "name").asOpt[String] must beSome(pubKeyName)
       (key1 \ "key").asOpt[String] must beSome(pubKey)
       (key1 \ "keySize").asOpt[Int] must beSome(pubKeySize)
+      (key1 \ "signatures").asOpt[Seq[JsObject]] must beSome
 
       val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
       (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
       (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
       (key2 \ "key").asOpt[String] must beSome(pubKey2)
       (key2 \ "keySize").asOpt[Int] must beSome(pubKeySize2)
+      (key2 \ "signatures").asOpt[Seq[JsObject]] must beSome
 
+    }
+
+    val signature = "moepsSignature"
+    val signature2 = "moepsSignature2"
+    val signatureKeyId = "moepKeyId"
+    val signatureKeyId2 = "moepKeyId2"
+
+    "add signature to public key" in {
+      val path = basePath + "/identity/publicKey/" + pubKeyId + "/signature"
+
+      val json = Json.obj("keyId" -> signatureKeyId, "signature" -> signature)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "keyId").asOpt[String] must beSome(signatureKeyId)
+      (data \ "signature").asOpt[String] must beSome(signature)
+    }
+
+    "add another signature to public key" in {
+      val path = basePath + "/identity/publicKey/" + pubKeyId + "/signature"
+
+      val json = Json.obj("keyId" -> signatureKeyId2, "signature" -> signature2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "keyId").asOpt[String] must beSome(signatureKeyId2)
+      (data \ "signature").asOpt[String] must beSome(signature2)
+    }
+
+    "both signatures should be returned with public key" in {
+
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+
+      pubKeys.length must beGreaterThanOrEqualTo(2)
+
+      val key1: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)).get
+      (key1 \ "id").asOpt[String] must beSome(pubKeyId)
+      (key1 \ "name").asOpt[String] must beSome(pubKeyName)
+      (key1 \ "key").asOpt[String] must beSome(pubKey)
+      (key1 \ "keySize").asOpt[Int] must beSome(pubKeySize)
+      (key1 \ "signatures").asOpt[Seq[JsObject]] must beSome
+
+      val signatures = (key1 \ "signatures").as[Seq[JsObject]]
+      signatures.length must beEqualTo(2)
+
+      val sig1: JsObject = signatures.find(js => (js \ "keyId").as[String].equals(signatureKeyId)).get
+      (sig1 \ "signature").asOpt[String] must beSome(signature)
+
+      val sig2: JsObject = signatures.find(js => (js \ "keyId").as[String].equals(signatureKeyId2)).get
+      (sig2 \ "signature").asOpt[String] must beSome(signature2)
     }
 
     "edit name of public key" in {
@@ -586,12 +666,12 @@ class IdentityControllerSpec extends StartedApp {
     val fromKeyId = "fromMoep"
     val toKeyId = "toMoep"
     val encryptedTransactionSecret = "encryptedMoep"
-    val signature = "singedByMoep"
+    val authSignature = "singedByMoep"
     var authenticationRequestId = ""
 
     "add authenticationRequest" in {
       val path = basePath + "/identity/authenticationRequest"
-      val json = Json.obj("fromKeyId" -> fromKeyId, "toKeyId" -> toKeyId, "encryptedTransactionSecret" -> encryptedTransactionSecret, "signature" -> signature)
+      val json = Json.obj("fromKeyId" -> fromKeyId, "toKeyId" -> toKeyId, "encryptedTransactionSecret" -> encryptedTransactionSecret, "signature" -> authSignature)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -606,7 +686,7 @@ class IdentityControllerSpec extends StartedApp {
       authenticationRequestId = (data \ "id").as[String]
       (data \ "fromKeyId").asOpt[String] must beSome(fromKeyId)
       (data \ "toKeyId").asOpt[String] must beSome(toKeyId)
-      (data \ "signature").asOpt[String] must beSome(signature)
+      (data \ "signature").asOpt[String] must beSome(authSignature)
       (data \ "encryptedTransactionSecret").asOpt[String] must beSome(encryptedTransactionSecret)
       (data \ "created").asOpt[Int] must beSome
     }
@@ -630,7 +710,7 @@ class IdentityControllerSpec extends StartedApp {
       (requests(0) \ "id").asOpt[String] must beSome
       (requests(0) \ "fromKeyId").asOpt[String] must beSome(fromKeyId)
       (requests(0) \ "toKeyId").asOpt[String] must beSome(toKeyId)
-      (requests(0) \ "signature").asOpt[String] must beSome(signature)
+      (requests(0) \ "signature").asOpt[String] must beSome(authSignature)
       (requests(0) \ "encryptedTransactionSecret").asOpt[String] must beSome(encryptedTransactionSecret)
       (requests(0) \ "created").asOpt[Int] must beSome
     }

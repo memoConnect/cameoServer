@@ -126,6 +126,12 @@ case class Identity(id: MongoId,
     AuthenticationRequest.delete(this.id, id).map(_.updatedExisting)
   }
 
+  def addSignatureToPublicKey(publicKeyId: MongoId, signature: Signature): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id, "publicKeys._id" -> publicKeyId)
+    val set = Json.obj("$addToSet" -> Json.obj("publicKeys.$.signatures" -> signature))
+    Identity.col.update(query, set).map(_.updatedExisting)
+  }
+
   def update(update: IdentityUpdate): Future[Boolean] = {
 
     val newMail = update.email.flatMap {

@@ -9,6 +9,8 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import traits.SubModel
 
+import scala.concurrent.Future
+
 /**
  * User: Björn Reimer
  * Date: 2/27/14
@@ -18,6 +20,7 @@ case class PublicKey(id: MongoId,
                      name: Option[String],
                      key: String,
                      keySize: Int,
+                     signatures: Seq[Signature],
                      created: Date,
                      docVersion: Int) {
 
@@ -37,6 +40,7 @@ object PublicKey extends SubModel[PublicKey, Identity] {
     (__ \ 'name).readNullable[String] and
     (__ \ 'key).read[String] and
     (__ \ 'keySize).read[Int] and
+    Reads.pure[Seq[Signature]](Seq()) and
     Reads.pure[Date](new Date) and
     Reads.pure[Int](docVersion)
   )(PublicKey.apply _)
@@ -47,19 +51,21 @@ object PublicKey extends SubModel[PublicKey, Identity] {
         maybeEmptyString("name", pk.name) ++
         Json.obj("key" -> pk.key) ++
         Json.obj("keySize" -> pk.keySize) ++
+        Json.obj("signatures" -> pk.signatures) ++
         addCreated(pk.created)
   }
 
   def evolutions =
     Map(
       0 -> PublicKeyEvolutions.addKeySize,
-      1 -> PublicKeyEvolutions.addDate
+      1 -> PublicKeyEvolutions.addDate,
+      2 -> PublicKeyEvolutions.addSignatures
     )
 
-  def docVersion = 2
+  def docVersion = 3
 
   override def createDefault(): PublicKey = {
-    new PublicKey(IdHelper.generatePublicKeyId, None, "", 0, new Date, docVersion)
+    new PublicKey(IdHelper.generatePublicKeyId, None, "", 0, Seq(), new Date, docVersion)
   }
 }
 
@@ -88,4 +94,23 @@ object PublicKeyEvolutions {
         js.transform(keySize andThen addVersion)
       }
   }
+
+  val addSignatures: Reads[JsObject] = Reads {
+    js =>
+      {
+        val signatures: Reads[JsObject] = __.json.update((__ \ 'signatures).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+        js.transform(signatures andThen addVersion)
+      }
+  }
+
+}
+
+case class Signature(keyId: String,
+                     signature: String) {
+  def toJson = Json.toJson(this).as[JsObject]
+}
+
+object Signature {
+  implicit val format = Json.format[Signature]
 }
