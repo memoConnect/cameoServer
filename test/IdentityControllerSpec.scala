@@ -523,7 +523,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
       (data \ "keyId").asOpt[String] must beSome(signatureKeyId)
-      (data \ "signature").asOpt[String] must beSome(signature)
+      (data \ "content").asOpt[String] must beSome(signature)
     }
 
     "add another signature to public key" in {
@@ -541,7 +541,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
       (data \ "keyId").asOpt[String] must beSome(signatureKeyId2)
-      (data \ "signature").asOpt[String] must beSome(signature2)
+      (data \ "content").asOpt[String] must beSome(signature2)
     }
 
     "both signatures should be returned with public key" in {
