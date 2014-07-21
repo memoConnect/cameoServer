@@ -58,8 +58,12 @@ object TestUserController extends ExtendedController {
         case Some(account) =>
           val query = Json.obj("$or" -> account.identities.map(i => Json.obj("identityId" -> i)))
           TestUserNotification.findAll(query).map { seq =>
+            // delete them
+            TestUserNotification.deleteAll(query)
+
             resOk(seq.map(_.toJson))
           }
+
       }
   }
 }

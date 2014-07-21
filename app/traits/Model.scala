@@ -43,10 +43,14 @@ trait Model[A] {
 
   def delete(id: MongoId): Future[LastError] = {
     val query = Json.obj("_id" -> id)
-    col.remove(query)
+    deleteAll(query)
   }
 
   def delete(id: String): Future[LastError] = delete(new MongoId(id))
+
+  def deleteAll(query: JsObject): Future[LastError] = {
+    col.remove(query)
+  }
 
   def deleteOptionalValues(id: MongoId, values: Seq[String]): Future[LastError] = {
     val unsetValues = values.foldLeft(Json.obj())((js, value) => js ++ Json.obj(value -> ""))
