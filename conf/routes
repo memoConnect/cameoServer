@@ -22,7 +22,7 @@ POST           /a/v1/identity/publicKey                             controllers.
 PUT            /a/v1/identity/publicKey/:id                         controllers.IdentityController.editPublicKey(id)
 DELETE         /a/v1/identity/publicKey/:id                         controllers.IdentityController.deletePublicKey(id)
 POST           /a/v1/identity/publicKey/:id/signature               controllers.IdentityController.addSignature(id)
-DELETE         /a/v1/identity/publicKey/:id/signature/:keyId        controllers.IdentityController.deleteSignature(id, keyId)
+#DELETE         /a/v1/identity/publicKey/:id/signature/:keyId        controllers.IdentityController.deleteSignature(id, keyId)
 ## AUTHENTICATION REQUESTS
 POST           /a/v1/identity/authenticationRequest                 controllers.IdentityController.addAuthenticationRequest()
 DELETE         /a/v1/identity/authenticationRequest/:id             controllers.IdentityController.deleteAuthenticationRequest(id)
