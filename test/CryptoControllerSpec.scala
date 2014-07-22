@@ -1,7 +1,7 @@
 import testHelper.StartedApp
 import play.api.Logger
 import play.api.test._
-import play.api.libs.json.{ JsString, Json, JsObject }
+import play.api.libs.json.{JsArray, JsString, Json, JsObject}
 import play.api.test.Helpers._
 import testHelper.Stuff._
 import org.specs2.mutable._
@@ -429,6 +429,21 @@ class CryptoControllerSpec extends StartedApp {
       1 === 1
     }
 
+    "apply limit to result" in {
+      val path = basePath + "/identity/publicKey/" + keyId + "/aePassphrases?newKeyId=" + newKeyId  + "&limit=2"
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(2)
+    }
+
     "add aePassphrase for new key to conversation 1" in {
       val path = basePath + "/conversation/" + conversationIds(0)
 
@@ -472,6 +487,60 @@ class CryptoControllerSpec extends StartedApp {
       }
       1 === 1
     }
+
+
+    "add new aePassphrase to the other two conversation" in {
+      val path = basePath + "/identity/publicKey/" + newKeyId + "/aePassphrases"
+
+      val list = newAePassphrases.zip(conversationIds).drop(1).map{
+        case (aep, cid) => Json.obj("conversationId" -> cid, "aePassphrase" -> aep)
+      }
+
+      val json = JsArray(list)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "no more aePassphrases should be returned" in {
+
+      val path = basePath + "/identity/publicKey/" + keyId + "/aePassphrases?newKeyId=" + newKeyId
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(0)
+    }
+
+    "verify that new aePassphrase was added to conversation 2" in {
+
+      val path = basePath + "/conversation/" + conversationIds(1) + "?keyId=" + newKeyId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "aePassphraseList").asOpt[Seq[JsObject]] must beSome
+      val encPasses = (data \ "aePassphraseList").as[Seq[JsObject]]
+
+      encPasses.length must beEqualTo(1)
+
+      (encPasses(0) \ "keyId").asOpt[String] must beSome(newKeyId)
+      (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(newAePassphrases(1))
+    }
+
 
   }
 }

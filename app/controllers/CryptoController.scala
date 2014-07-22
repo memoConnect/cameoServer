@@ -5,6 +5,7 @@ import controllers.IdentityController._
 import helper.CmActions._
 import helper.ResultHelper._
 import models._
+import play.api.Logger
 import play.api.libs.json._
 import traits.ExtendedController
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -108,6 +109,21 @@ object CryptoController extends ExtendedController {
       }
   }
 
-  def addAePassphrases(id: String) = play.mvc.Results.TODO
+  def addAePassphrases(id: String) = AuthAction()(parse.tolerantJson) {
+    request =>
+      validate[Seq[AePassphrase]](request.body, Reads.seq(AePassphrase.format)) {
+        list =>
+          list.foreach {
+            aePassphrase =>
+              Conversation.addAePassphrases(
+                Seq(EncryptedPassphrase.create(id, aePassphrase.aePassphrase)),
+                new MongoId(aePassphrase.conversationId)).map {
+                  case false => Logger.error("error while adding aePassphrase to conversation " + aePassphrase.conversationId)
+                  case true  => Logger.debug("updated")
+                }
+          }
+          resOk("updated")
+      }
+  }
 
 }

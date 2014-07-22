@@ -39,6 +39,10 @@ object EncryptedPassphrase extends SubModel[EncryptedPassphrase, Conversation] {
     Reads.pure[Int](docVersion)
   )(EncryptedPassphrase.apply _)
 
+  def create(keyId: String, value: String): EncryptedPassphrase = {
+    new EncryptedPassphrase(IdHelper.generateMongoId(), keyId, value, docVersion)
+  }
+
   def evolutions = Map()
 
   def docVersion = 0

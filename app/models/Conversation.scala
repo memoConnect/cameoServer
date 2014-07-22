@@ -147,10 +147,7 @@ case class Conversation(id: MongoId,
   }
 
   def addAePassphrases(aePassphrases: Seq[EncryptedPassphrase]): Future[Boolean] = {
-    val futureResults = aePassphrases.map { aePassphrase =>
-      EncryptedPassphrase.appendOrUpdate(this.id, aePassphrase, "keyId")
-    }
-    Future.sequence(futureResults).map(_.forall(_.ok))
+    Conversation.addAePassphrases(aePassphrases, this.id)
   }
 
   def getMissingPassphrases: Future[Seq[String]] = {
@@ -245,6 +242,13 @@ object Conversation extends Model[Conversation] {
     mongoDB.command(aggregationCommand).map {
       _.map(Json.toJson(_).as[AePassphrase])
     }
+  }
+
+  def addAePassphrases(aePassphrases: Seq[EncryptedPassphrase], conversationId: MongoId): Future[Boolean] = {
+    val futureResults = aePassphrases.map { aePassphrase =>
+      EncryptedPassphrase.appendOrUpdate(conversationId, aePassphrase, "keyId")
+    }
+    Future.sequence(futureResults).map(_.forall(_.ok))
   }
 
   def create(subject: Option[String] = None,

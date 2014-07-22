@@ -23,7 +23,7 @@ POST           /a/v1/identity/publicKey                          controllers.Cry
 PUT            /a/v1/identity/publicKey/:id                      controllers.CryptoController.editPublicKey(id)
 DELETE         /a/v1/identity/publicKey/:id                      controllers.CryptoController.deletePublicKey(id)
 POST           /a/v1/identity/publicKey/:id/signature            controllers.CryptoController.addSignature(id)
-GET            /a/v1/identity/publicKey/:id/aePassphrases        controllers.CryptoController.getAePassphrases(id, newKeyId: String, limit: Int ?= 0)
+GET            /a/v1/identity/publicKey/:id/aePassphrases        controllers.CryptoController.getAePassphrases(id, newKeyId: String ?= "", limit: Int ?= 0)
 POST           /a/v1/identity/publicKey/:id/aePassphrases        controllers.CryptoController.addAePassphrases(id)
 POST           /a/v1/identity/authenticationRequest              controllers.CryptoController.addAuthenticationRequest()
 DELETE         /a/v1/identity/authenticationRequest/:id          controllers.CryptoController.deleteAuthenticationRequest(id)
