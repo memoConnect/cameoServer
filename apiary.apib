@@ -377,6 +377,82 @@ Edit your identity. All values are optional. Only values contained in the json w
         }
 
 
+## Rekeying of AePassphrases [/identity/publicKey/{id}/aePassphrases{?newKeyId,limit}]
+
++   Parameters
+    + id ... all aePassphrases of this public key will be returned
+    + newKeyId ... Id of the new key, only conversations that have no aePassphrase for this keyId will be returned
+    + limit ... maximum number of aePassphrases to return
+
+
+### GET
+Get AePassphrases for rekying
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": [
+            {
+              "conversationId": "OM9QeJ4RfJcdscyo52g4",
+              "aePassphrase": "encrypted passphrase 1"
+            },
+            {
+              "conversationId": "dLBDYFdfj9ymiTblElmN",
+              "aePassphrase": "encrypted passphrase 2"
+            },
+            {
+              "conversationId": "IXhJ0BwoLjRtrRn41zIw",
+              "aePassphrase": "encrypted passphrase 3"
+            }
+          ]
+        }
+
+
+### POST
+Store new aePassphrases
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+            
+    + Body
+    
+            {
+              "res": "OK",
+              "data": [
+                {
+                  "conversationId": "OM9QeJ4RfJcdscyo52g4",
+                  "aePassphrase": " new encrypted passphrase 1"
+                },
+                {
+                  "conversationId": "dLBDYFdfj9ymiTblElmN",
+                  "aePassphrase": " new encrypted passphrase 2"
+                },
+                {
+                  "conversationId": "IXhJ0BwoLjRtrRn41zIw",
+                  "aePassphrase": " new encrypted passphrase 3"
+                }
+              ]
+            }
+
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "updated"
+        }
+
+
 ## Add signature to public key [/identity/publicKey/{id}/signature]
 
 +   Parameters

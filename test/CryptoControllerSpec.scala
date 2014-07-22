@@ -13,7 +13,7 @@ import testHelper.StartedApp
  * Date: 22.07.14
  * Time: 17:10
  */
-object CryptoControllerSpec extends StartedApp {
+class CryptoControllerSpec extends StartedApp {
 
   sequential
 
