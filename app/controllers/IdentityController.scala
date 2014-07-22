@@ -1,6 +1,6 @@
 package controllers
 
-import actors.UpdatedIdentity
+import actors.{FinishedAuthenticationRequest, NewAuthenticationRequest, UpdatedIdentity}
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -135,7 +135,9 @@ object IdentityController extends ExtendedController {
         authenticationRequest =>
           request.identity.addAuthenticationRequest(authenticationRequest).map{
             case false => resServerError("error while saving")
-            case true => resOk(authenticationRequest.toJson)
+            case true =>
+              actors.eventRouter ! NewAuthenticationRequest(request.identity.id, authenticationRequest)
+              resOk(authenticationRequest.toJson)
           }
       }
   }
@@ -144,7 +146,9 @@ object IdentityController extends ExtendedController {
     request =>
       request.identity.deleteAuthenticationRequest(new MongoId(id)).map {
         case false => resServerError("unable to delete")
-        case true => resOk("deleted")
+        case true =>
+          actors.eventRouter ! FinishedAuthenticationRequest(request.identity.id, id)
+          resOk("deleted")
       }
   }
 
