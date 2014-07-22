@@ -1,144 +1,143 @@
 ##
 ##   API
 ##
-GET            /a/v1                                                controllers.Application.index
+GET            /a/v1                                             controllers.Application.index
 
 # CALL STACK
-POST           /a/v1/callStack                                      controllers.CallStackController.processCallStack()
+POST           /a/v1/callStack                                   controllers.CallStackController.processCallStack()
 
 # ACCOUNT
-POST           /a/v1/account                                        controllers.AccountController.createAccount
-POST           /a/v1/account/check                                  controllers.AccountController.checkLoginName
-GET            /a/v1/account/:loginName                             controllers.AccountController.getAccount(loginName)
-DELETE         /a/v1/account/:loginName                             controllers.AccountController.deleteAccount(loginName)
+POST           /a/v1/account                                     controllers.AccountController.createAccount
+POST           /a/v1/account/check                               controllers.AccountController.checkLoginName
+GET            /a/v1/account/:loginName                          controllers.AccountController.getAccount(loginName)
+DELETE         /a/v1/account/:loginName                          controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
-GET            /a/v1/identity/:id                                   controllers.IdentityController.getIdentityById(id)
-GET            /a/v1/identity                                       controllers.IdentityController.getIdentityByToken()
-PUT            /a/v1/identity                                       controllers.IdentityController.updateIdentity()
-POST           /a/v1/identity/search                                controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
-## PUBLIC KEYS
-POST           /a/v1/identity/publicKey                             controllers.IdentityController.addPublicKey()
-PUT            /a/v1/identity/publicKey/:id                         controllers.IdentityController.editPublicKey(id)
-DELETE         /a/v1/identity/publicKey/:id                         controllers.IdentityController.deletePublicKey(id)
-POST           /a/v1/identity/publicKey/:id/signature               controllers.IdentityController.addSignature(id)
-#DELETE         /a/v1/identity/publicKey/:id/signature/:keyId        controllers.IdentityController.deleteSignature(id, keyId)
-## AUTHENTICATION REQUESTS
-POST           /a/v1/identity/authenticationRequest                 controllers.IdentityController.addAuthenticationRequest()
-DELETE         /a/v1/identity/authenticationRequest/:id             controllers.IdentityController.deleteAuthenticationRequest(id)
+GET            /a/v1/identity/:id                                controllers.IdentityController.getIdentityById(id)
+GET            /a/v1/identity                                    controllers.IdentityController.getIdentityByToken()
+PUT            /a/v1/identity                                    controllers.IdentityController.updateIdentity()
+POST           /a/v1/identity/search                             controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
 
+# CRYPTO STUFF
+POST           /a/v1/identity/publicKey                          controllers.CryptoController.addPublicKey()
+PUT            /a/v1/identity/publicKey/:id                      controllers.CryptoController.editPublicKey(id)
+DELETE         /a/v1/identity/publicKey/:id                      controllers.CryptoController.deletePublicKey(id)
+POST           /a/v1/identity/publicKey/:id/signature            controllers.CryptoController.addSignature(id)
+GET            /a/v1/identity/publicKey/:id/aePassphrases        controllers.CryptoController.getAePassphrases(id, newKeyId: String, limit: Int ?= 0)
+POST           /a/v1/identity/publicKey/:id/aePassphrases        controllers.CryptoController.addAePassphrases(id)
+POST           /a/v1/identity/authenticationRequest              controllers.CryptoController.addAuthenticationRequest()
+DELETE         /a/v1/identity/authenticationRequest/:id          controllers.CryptoController.deleteAuthenticationRequest(id)
 
 # CONVERSATIONS
-POST           /a/v1/conversation                                   controllers.ConversationController.createConversation()
-GET            /a/v1/conversation/:id                               controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
-PUT            /a/v1/conversation/:id                               controllers.ConversationController.updateConversation(id)
-POST           /a/v1/conversation/:id/recipient                     controllers.ConversationController.addRecipients(id)
-POST           /a/v1/conversation/:id/aePassphrases                 controllers.ConversationController.addAePassphrases(id)
-DELETE         /a/v1/conversation/:id/recipient/:rid                controllers.ConversationController.deleteRecipient(id, rid)
-GET            /a/v1/conversation/:id/summary                       controllers.ConversationController.getConversationSummary(id: String, keyId: List[String])
-GET            /a/v1/conversations                                  controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
-
+POST           /a/v1/conversation                                controllers.ConversationController.createConversation()
+GET            /a/v1/conversation/:id                            controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
+PUT            /a/v1/conversation/:id                            controllers.ConversationController.updateConversation(id)
+POST           /a/v1/conversation/:id/recipient                  controllers.ConversationController.addRecipients(id)
+POST           /a/v1/conversation/:id/aePassphrases              controllers.ConversationController.addAePassphrases(id)
+DELETE         /a/v1/conversation/:id/recipient/:rid             controllers.ConversationController.deleteRecipient(id, rid)
+GET            /a/v1/conversation/:id/summary                    controllers.ConversationController.getConversationSummary(id: String, keyId: List[String])
+GET            /a/v1/conversations                               controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
 
 # MESSAGES
-POST           /a/v1/conversation/:id/message                       controllers.MessageController.createMessage(id)
-GET            /a/v1/message/:id                                    controllers.MessageController.getMessage(id)
-POST           /a/v1/message/filter                                 controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "false")
-POST           /a/v1/message/filter/count                           controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "true")
+POST           /a/v1/conversation/:id/message                    controllers.MessageController.createMessage(id)
+GET            /a/v1/message/:id                                 controllers.MessageController.getMessage(id)
+POST           /a/v1/message/filter                              controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "false")
+POST           /a/v1/message/filter/count                        controllers.MessageController.filter(offset: Int ?= 0, limit: Int ?= 0, count = "true")
 
 # TOKENS
-GET            /a/v1/token                                          controllers.TokenController.createToken
+GET            /a/v1/token                                       controllers.TokenController.createToken
 #DELETE         /a/v1/token/:token                           controllers.TokenController.deleteToken(token: String)
 
 # TWO FACTOR AUTH
-GET            /a/v1/twoFactorAuth                                  controllers.TwoFactorController.initiate()
-POST           /a/v1/twoFactorAuth/confirm                          controllers.TwoFactorController.confirmKey()
+GET            /a/v1/twoFactorAuth                               controllers.TwoFactorController.initiate()
+POST           /a/v1/twoFactorAuth/confirm                       controllers.TwoFactorController.confirmKey()
 
 # CONTACTS
-POST           /a/v1/contact                                        controllers.ContactController.addContact
-GET            /a/v1/contacts                                       controllers.ContactController.getContacts(offset: Int ?= 0, limit: Int ?= 0)
-GET            /a/v1/contact/:id                                    controllers.ContactController.getContact(id: String)
-PUT            /a/v1/contact/:id                                    controllers.ContactController.editContact(id: String)
-DELETE         /a/v1/contact/:id                                    controllers.ContactController.deleteContact(id: String)
-GET            /a/v1/contact-groups                                 controllers.ContactController.getGroups()
-GET            /a/v1/contact-group/:id                              controllers.ContactController.getGroup(id: String,  offset: Int ?= 0, limit: Int ?= 0)
+POST           /a/v1/contact                                     controllers.ContactController.addContact
+GET            /a/v1/contacts                                    controllers.ContactController.getContacts(offset: Int ?= 0, limit: Int ?= 0)
+GET            /a/v1/contact/:id                                 controllers.ContactController.getContact(id: String)
+PUT            /a/v1/contact/:id                                 controllers.ContactController.editContact(id: String)
+DELETE         /a/v1/contact/:id                                 controllers.ContactController.deleteContact(id: String)
+GET            /a/v1/contact-groups                              controllers.ContactController.getGroups()
+GET            /a/v1/contact-group/:id                           controllers.ContactController.getGroup(id: String,  offset: Int ?= 0, limit: Int ?= 0)
 
 # FRIEND_REQUESTS
-GET            /a/v1/friendRequests                                 controllers.ContactController.getFriendRequests
-POST           /a/v1/friendRequest                                  controllers.ContactController.sendFriendRequest
-POST           /a/v1/friendRequest/answer                           controllers.ContactController.answerFriendRequest
+GET            /a/v1/friendRequests                              controllers.ContactController.getFriendRequests
+POST           /a/v1/friendRequest                               controllers.ContactController.sendFriendRequest
+POST           /a/v1/friendRequest/answer                        controllers.ContactController.answerFriendRequest
 
 # FILES
-POST           /a/v1/file                                           controllers.FileController.uploadFile
-POST           /a/v1/file/:id                                       controllers.FileController.uploadFileChunks(id)
-POST           /a/v1/file/:id/completed                             controllers.FileController.uploadFileComplete(id)
-GET            /a/v1/file/:id                                       controllers.FileController.getFile(id)
-GET            /a/v1/file/:id/:chunkIndex                           controllers.FileController.getFileChunk(id, chunkIndex)
+POST           /a/v1/file                                        controllers.FileController.uploadFile
+POST           /a/v1/file/:id                                    controllers.FileController.uploadFileChunks(id)
+POST           /a/v1/file/:id/completed                          controllers.FileController.uploadFileComplete(id)
+GET            /a/v1/file/:id                                    controllers.FileController.getFile(id)
+GET            /a/v1/file/:id/:chunkIndex                        controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
-POST           /a/v1/verify                                         controllers.VerificationController.sendVerifyMessage()
-GET            /a/v1/verify/:id                                     controllers.VerificationController.verifyMessage(id)
+POST           /a/v1/verify                                      controllers.VerificationController.sendVerifyMessage()
+GET            /a/v1/verify/:id                                  controllers.VerificationController.verifyMessage(id)
 
 # PURLS
-GET            /a/v1/purl/:id                                       controllers.PurlController.getPurl(id: String, offset: Int ?= 0, limit: Int ?= 0)
+GET            /a/v1/purl/:id                                    controllers.PurlController.getPurl(id: String, offset: Int ?= 0, limit: Int ?= 0)
 
 # EVENTS
-POST           /a/v1/eventSubscription                              controllers.EventController.newSubscription()
-GET            /a/v1/eventSubscription/:id                          controllers.EventController.getSubscription(id)
+POST           /a/v1/eventSubscription                           controllers.EventController.newSubscription()
+GET            /a/v1/eventSubscription/:id                       controllers.EventController.getSubscription(id)
 
 # Services
-POST           /a/v1/services/checkPhoneNumber                      controllers.ServicesController.checkPhoneNumber
-POST           /a/v1/services/checkEmailAddress                     controllers.ServicesController.checkEmailAddress
+POST           /a/v1/services/checkPhoneNumber                   controllers.ServicesController.checkPhoneNumber
+POST           /a/v1/services/checkEmailAddress                  controllers.ServicesController.checkEmailAddress
 
 # Cockpit API
-GET            /a/cockpit/v1/twoFactorAuth                          controllers.TwoFactorController.initiate()
-POST           /a/cockpit/v1/twoFactorAuth/confirm                  controllers.TwoFactorController.confirmKey()
-GET            /a/cockpit/v1/lists                                  controllers.cockpit.ListController.getAllLists()
-POST           /a/cockpit/v1/:elementName                           controllers.cockpit.ListController.list(elementName)
-POST           /a/cockpit/v1/:elementName/new                       controllers.cockpit.ListController.create(elementName)
-DELETE         /a/cockpit/v1/:elementName/:id                       controllers.cockpit.ListController.delete(elementName, id)
-GET            /a/cockpit/v1/:elementName/:id                       controllers.cockpit.EditController.getEdit(elementName, id)
-PUT            /a/cockpit/v1/:elementName/:id                       controllers.cockpit.EditController.modify(elementName, id)
+GET            /a/cockpit/v1/twoFactorAuth                       controllers.TwoFactorController.initiate()
+POST           /a/cockpit/v1/twoFactorAuth/confirm               controllers.TwoFactorController.confirmKey()
+GET            /a/cockpit/v1/lists                               controllers.cockpit.ListController.getAllLists()
+POST           /a/cockpit/v1/:elementName                        controllers.cockpit.ListController.list(elementName)
+POST           /a/cockpit/v1/:elementName/new                    controllers.cockpit.ListController.create(elementName)
+DELETE         /a/cockpit/v1/:elementName/:id                    controllers.cockpit.ListController.delete(elementName, id)
+GET            /a/cockpit/v1/:elementName/:id                    controllers.cockpit.EditController.getEdit(elementName, id)
+PUT            /a/cockpit/v1/:elementName/:id                    controllers.cockpit.EditController.modify(elementName, id)
 
 # Deal with options
-OPTIONS        /a/v1/*foo                                           controllers.TokenController.getTokenOptions(foo)
-OPTIONS        /a/cockpit/v1/*foo                                   controllers.TokenController.getTokenOptions(foo)
+OPTIONS        /a/v1/*foo                                        controllers.TokenController.getTokenOptions(foo)
+OPTIONS        /a/cockpit/v1/*foo                                controllers.TokenController.getTokenOptions(foo)
 
 # Utitility functions
-GET            /a/v1/util/dumpDb                                    controllers.Application.dumpDb()
-GET            /a/v1/util/loadDb                                    controllers.Application.loadFixtures()
+GET            /a/v1/util/dumpDb                                 controllers.Application.dumpDb()
+GET            /a/v1/util/loadDb                                 controllers.Application.loadFixtures()
 
 # TEST USERS
-GET            /a/v1/testUser/:id                                   controllers.TestUserController.getNotifications(id)
-DELETE         /a/v1/testUser/:id                                   controllers.TestUserController.deleteTestUser(id)
+GET            /a/v1/testUser/:id                                controllers.TestUserController.getNotifications(id)
+DELETE         /a/v1/testUser/:id                                controllers.TestUserController.deleteTestUser(id)
 
 # check app to support monitoring
-GET            /a/v1/util/checkApp                                  controllers.Application.checkApp()
+GET            /a/v1/util/checkApp                               controllers.Application.checkApp()
 
 # Redirect for Shorturls
-GET            /p/:id                                               controllers.ShortUrlController.redirect(urlType = "p", id: String)
-GET            /v/:id                                               controllers.ShortUrlController.redirect(urlType = "v", id: String)
+GET            /p/:id                                            controllers.ShortUrlController.redirect(urlType = "p", id: String)
+GET            /v/:id                                            controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
 # app downloads
-GET            /dl                                                  controllers.Assets.at(path="/public/dl", file="index.html")
-GET            /dl/                                                 controllers.Assets.at(path="/public/dl", file="index.html")
-GET            /dl/*file                                            controllers.Assets.at(path="/public/dl", file)
+GET            /dl                                               controllers.Assets.at(path="/public/dl", file="index.html")
+GET            /dl/                                              controllers.Assets.at(path="/public/dl", file="index.html")
+GET            /dl/*file                                         controllers.Assets.at(path="/public/dl", file)
 
 # Cockpit WebClient
-GET            /c/                                                  controllers.Assets.at(path="/public/cockpit", file="index.html")
-GET            /c                                                   controllers.Application.redirect(url = "/c/")
-GET            /c/*file                                             controllers.Assets.at(path="/public/cockpit", file)
+GET            /c/                                               controllers.Assets.at(path="/public/cockpit", file="index.html")
+GET            /c                                                controllers.Application.redirect(url = "/c/")
+GET            /c/*file                                          controllers.Assets.at(path="/public/cockpit", file)
 
 ##
 ##   mobile WebClient
 ##
-GET            /m/                                                  controllers.Assets.at(path="/public/app", file="index.html")
-GET            /m                                                   controllers.Application.redirect(url = "/m/")
-GET            /m/*file                                             controllers.Assets.at(path="/public/app", file)
+GET            /m/                                               controllers.Assets.at(path="/public/app", file="index.html")
+GET            /m                                                controllers.Application.redirect(url = "/m/")
+GET            /m/*file                                          controllers.Assets.at(path="/public/app", file)
 
 ## Docs
-GET            /d/                                                   controllers.Assets.at(path="/public/docs", file="index.html")
-GET            /d                                                    controllers.Application.redirect(url = "/d/")
-GET            /d/*file                                              controllers.Assets.at(path="/public/docs", file)
+GET            /d/                                               controllers.Assets.at(path="/public/docs", file="index.html")
+GET            /d                                                controllers.Application.redirect(url = "/d/")
+GET            /d/*file                                          controllers.Assets.at(path="/public/docs", file)
 
 # Redirect / to /app
-GET            /                                            controllers.Application.redirect(url = "/m/")
+GET            /                                                 controllers.Application.redirect(url = "/m/")

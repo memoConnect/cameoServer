@@ -1,6 +1,6 @@
 package controllers
 
-import actors.{FinishedAuthenticationRequest, NewAuthenticationRequest, UpdatedIdentity}
+import actors.{ FinishedAuthenticationRequest, NewAuthenticationRequest, UpdatedIdentity }
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -90,78 +90,4 @@ object IdentityController extends ExtendedController {
           }
       }
   }
-
-  def addPublicKey() = AuthAction().async(parse.tolerantJson) {
-    request =>
-      validateFuture(request.body, PublicKey.createReads) {
-        publicKey =>
-          request.identity.addPublicKey(publicKey).map {
-            case false => resServerError("unable to add")
-            case true  =>
-              // send event to all people in address book
-              request.identity.contacts.foreach {
-                contact =>
-                  actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(publicKey.toJson)))
-              }
-              // send event to ourselves
-              actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(publicKey.toJson)))
-              resOk(publicKey.toJson)
-          }
-      }
-  }
-
-  def editPublicKey(id: String) = AuthAction().async(parse.tolerantJson) {
-    request =>
-      validateFuture(request.body, PublicKeyUpdate.format) {
-        pku =>
-          request.identity.editPublicKey(new MongoId(id), pku).map {
-            case false => resServerError("not updated")
-            case true  => resOk("updated")
-          }
-      }
-  }
-
-  def deletePublicKey(id: String) = AuthAction().async {
-    request =>
-      request.identity.deletePublicKey(new MongoId(id)).map {
-        case false => resServerError("unable to delete")
-        case true  => resOk("deleted")
-      }
-  }
-
-  def addAuthenticationRequest() = AuthAction().async(parse.tolerantJson) {
-    request =>
-      validateFuture(request.body, AuthenticationRequest.createReads) {
-        authenticationRequest =>
-          request.identity.addAuthenticationRequest(authenticationRequest).map{
-            case false => resServerError("error while saving")
-            case true =>
-              actors.eventRouter ! NewAuthenticationRequest(request.identity.id, authenticationRequest)
-              resOk(authenticationRequest.toJson)
-          }
-      }
-  }
-
-  def deleteAuthenticationRequest(id: String) = AuthAction().async {
-    request =>
-      request.identity.deleteAuthenticationRequest(new MongoId(id)).map {
-        case false => resServerError("unable to delete")
-        case true =>
-          actors.eventRouter ! FinishedAuthenticationRequest(request.identity.id, id)
-          resOk("deleted")
-      }
-  }
-
-  def addSignature(id: String) = AuthAction().async(parse.tolerantJson) {
-    request =>
-      validateFuture[Signature](request.body, Signature.format) {
-        signature =>
-          request.identity.addSignatureToPublicKey(new MongoId(id), signature).map{
-            case false => resBadRequest("could not update")
-            case true => resOk(signature.toJson)
-          }
-      }
-  }
-
-  def deleteSignature(id: String, keyId: String) = play.mvc.Results.TODO
 }

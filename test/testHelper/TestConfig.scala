@@ -30,6 +30,8 @@ object TestConfig {
 
   val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
   val cidExisting2 = "dLBDYFdfj9ymiTblElmN"
+  val cidExisting3 = "OM9QeJ4RfJcdscyo52g4"
+  val cidExisting4 = "IXhJ0BwoLjRtrRn41zIw"
   val cidExistingNonMember = "2GOdNSfdPMavyl95KUah"
 
   val identityExisting = "g9PWZY7xKNbeCO6LPNnx"

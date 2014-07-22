@@ -3,17 +3,19 @@ package models
 import java.util.Date
 
 import constants.KeyTransmission
+import controllers.CryptoController.AePassphrase
 import helper.JsonHelper._
 import helper.MongoCollections._
 import helper.ResultHelper._
 import helper.{ IdHelper, MongoCollections }
+import models.cockpit.CockpitList
 import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.Result
 import play.modules.reactivemongo.json.BSONFormats._
 import play.modules.reactivemongo.json.collection.JSONCollection
-import reactivemongo.bson.BSONNull
+import reactivemongo.bson.{ BSONString, BSONInteger, BSONDocument, BSONNull }
 import reactivemongo.core.commands._
 import traits.Model
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -220,6 +222,31 @@ object Conversation extends Model[Conversation] {
     col.find(query, limitArray("messages", -1, 0)).cursor[Conversation].collect[Seq]()
   }
 
+  def getAePassphrases(identityId: MongoId, oldKeyId: MongoId, newKeyId: MongoId, limit: Option[Int]): Future[Seq[AePassphrase]] = {
+
+    val pipeline: Seq[PipelineOperator] =
+      Seq(
+        Match(toBson(Json.obj("recipients.identityId" -> identityId)).get),
+        Match(toBson(Json.obj("aePassphraseList.keyId" -> oldKeyId.id)).get),
+        Match(toBson(Json.obj("aePassphraseList.keyId" -> Json.obj("$nin" -> Seq(newKeyId.id)))).get),
+        Project(("aePassphraseList", BSONInteger(1))),
+        Unwind("aePassphraseList"),
+        Match(toBson(Json.obj("aePassphraseList.keyId" -> oldKeyId.id)).get),
+        Project(("aePassphrase", BSONString("$aePassphraseList.value")), ("conversationId", BSONString("$_id.mongoId")))
+      ) ++ {
+          limit match {
+            case None      => Seq()
+            case Some(int) => Seq(Limit(int))
+          }
+        }
+
+    val aggregationCommand = Aggregate(col.name, pipeline)
+
+    mongoDB.command(aggregationCommand).map {
+      _.map(Json.toJson(_).as[AePassphrase])
+    }
+  }
+
   def create(subject: Option[String] = None,
              recipients: Seq[Recipient] = Seq(),
              passCaptcha: Option[String] = None,
@@ -290,5 +317,4 @@ object ConversationEvolutions {
         }
       }
   }
-
 }

@@ -9,6 +9,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json.{ JsArray, JsNumber, JsObject, JsString, JsSuccess, _ }
 import play.modules.reactivemongo.json.BSONFormats
 import reactivemongo.bson.BSONDocument
+import reactivemongo.core.commands.Match
 
 /**
  * User: Björn Reimer
@@ -97,6 +98,10 @@ object JsonHelper {
 
   def toBson(json: JsValue): Option[BSONDocument] = {
     BSONFormats.toBSON(json).asOpt.map(_.asInstanceOf[BSONDocument])
+  }
+
+  def toMatch(json: JsValue): Match = {
+    Match(toBson(json).get)
   }
 
   val hashPassword: Reads[String] = Reads[String] {
