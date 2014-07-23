@@ -42,6 +42,8 @@ object TestUserController extends ExtendedController {
           val notificationQuery = Json.obj("$or" -> account.identities.map(i => Json.obj("identityId" -> i)))
           MongoCollections.testUserNotificationCollection.remove(notificationQuery)
 
+          //todo: delete external contacts, files,
+
           // delete account
           MongoCollections.accountCollection.remove(Json.obj("_id" -> account.id))
 
@@ -63,7 +65,6 @@ object TestUserController extends ExtendedController {
 
             resOk(seq.map(_.toJson))
           }
-
       }
   }
 }
