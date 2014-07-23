@@ -24,6 +24,3 @@ libraryDependencies ++= Seq(
 )
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
-
-watchSources := (watchSources.value
-  --- baseDirectory.value / "public"     ** "*").get

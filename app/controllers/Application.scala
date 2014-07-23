@@ -3,7 +3,7 @@ package controllers
 import helper.DbAdminUtilities
 import helper.ResultHelper._
 import models.Account
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
@@ -17,6 +17,7 @@ object Application extends Controller {
 
   def index = Action {
     request =>
+      Logger.debug("asdf")
       Ok(views.html.index())
   }
 

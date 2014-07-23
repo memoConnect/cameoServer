@@ -5,21 +5,20 @@
  */
 import helper.DbAdminUtilities
 import helper.MongoCollections._
-import models.{Conversation, GlobalState}
+import models.{ Conversation, GlobalState }
 import play.api.Play.current
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsObject, JsValue, Json }
-import play.api.mvc.{WithFilters, EssentialAction}
+import play.api.mvc.{ EssentialFilter, WithFilters, EssentialAction }
 import play.api.{ GlobalSettings, Logger, Play }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, ExecutionContext, Future }
 
-object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter()) {
-
+object AccessControllFilter extends EssentialFilter {
   // wrap action to modify the headers of every request
-  override def doFilter(action: EssentialAction): EssentialAction = EssentialAction {
+  def apply(action: EssentialAction): EssentialAction = EssentialAction {
     request =>
       // todo: this check should not be done for each request...
       Play.configuration.getString("headers.accessControl.enable") match {
@@ -32,6 +31,9 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter()) {
         case _ => action.apply(request)
       }
   }
+}
+
+object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter) {
 
   override def onStart(app: play.api.Application) = {
 
@@ -114,3 +116,5 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter()) {
 
   }
 }
+
+
