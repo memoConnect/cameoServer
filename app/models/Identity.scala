@@ -119,6 +119,12 @@ case class Identity(id: MongoId,
   }
 
   def addAuthenticationRequest(authenticationRequest: AuthenticationRequest): Future[Boolean] = {
+    // replace old requests with the same fromKeyId/toKeyId pair.
+    this.authenticationRequests.find(ar => ar.fromKeyId.equals(authenticationRequest.fromKeyId) && ar.toKeyId.equals(authenticationRequest.toKeyId)) match {
+      case None     =>
+      case Some(ar) => this.deleteAuthenticationRequest(ar.id)
+    }
+
     AuthenticationRequest.appendUnique(this.id, authenticationRequest).map(_.updatedExisting)
   }
 

@@ -275,6 +275,9 @@ class CryptoControllerSpec extends StartedApp {
     val encryptedTransactionSecret = "encryptedMoep"
     val authSignature = "singedByMoep"
     var authenticationRequestId = ""
+    val encryptedTransactionSecret2 = "encryptedMoep2"
+    val authSignature2 = "singedByMoep2"
+    var authenticationRequestId2 = ""
 
     "add authenticationRequest" in {
       val path = basePath + "/identity/authenticationRequest"
@@ -322,8 +325,51 @@ class CryptoControllerSpec extends StartedApp {
       (requests(0) \ "created").asOpt[Int] must beSome
     }
 
+    "add another authentication request with the same keyIds" in {
+      val path = basePath + "/identity/authenticationRequest"
+      val json = Json.obj("fromKeyId" -> fromKeyId, "toKeyId" -> toKeyId, "encryptedTransactionSecret" -> encryptedTransactionSecret2, "signature" -> authSignature2)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      authenticationRequestId2 = (data \ "id").as[String]
+
+      1 === 1
+    }
+
+    "the new authentication request should have replaced the old one" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "authenticationRequests").asOpt[Seq[JsObject]] must beSome
+      val requests = (data \ "authenticationRequests").as[Seq[JsObject]]
+      requests.length must beEqualTo(1)
+      (requests(0) \ "id").asOpt[String] must beSome(authenticationRequestId2)
+      (requests(0) \ "fromKeyId").asOpt[String] must beSome(fromKeyId)
+      (requests(0) \ "toKeyId").asOpt[String] must beSome(toKeyId)
+      (requests(0) \ "signature").asOpt[String] must beSome(authSignature2)
+      (requests(0) \ "encryptedTransactionSecret").asOpt[String] must beSome(encryptedTransactionSecret2)
+      (requests(0) \ "created").asOpt[Int] must beSome
+    }
+
+
     "delete authentication request" in {
-      val path = basePath + "/identity/authenticationRequest/" + authenticationRequestId
+      val path = basePath + "/identity/authenticationRequest/" + authenticationRequestId2
 
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -540,7 +586,5 @@ class CryptoControllerSpec extends StartedApp {
       (encPasses(0) \ "keyId").asOpt[String] must beSome(newKeyId)
       (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(newAePassphrases(1))
     }
-
-
   }
 }
