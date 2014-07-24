@@ -103,15 +103,20 @@ case class Conversation(id: MongoId,
   }
 
   def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
-    val set =
-      Json.obj("$set" -> (
-        maybeEmptyString("subject", conversationUpdate.subject) ++
-        maybeEmptyJsValue("passCaptcha", conversationUpdate.passCaptcha.map(str => Json.toJson(MongoId(str)))) ++
-        maybeEmptyString("sePassphrase", conversationUpdate.sePassphrase) ++
-        maybeEmptyString("keyTransmission", conversationUpdate.keyTransmission) ++
-        maybeEmptyJsValue("aePassphraseList", conversationUpdate.aePassphraseList.map(Json.toJson(_)))
-      ))
-    Conversation.col.update(query, set).map { _.ok }
+    conversationUpdate match {
+      case ConversationUpdate(None, None, None, None, None) => Future(true)
+      case ConversationUpdate(maybeSubject, maybePassCaptcha, maybeAePassphraseList, maybeSePassphraseList, maybeKeyTransmisstion) =>
+
+        val set =
+          Json.obj("$set" -> (
+            maybeEmptyString("subject", maybeSubject) ++
+            maybeEmptyJsValue("passCaptcha", maybePassCaptcha.map(str => Json.toJson(MongoId(str)))) ++
+            maybeEmptyString("sePassphrase", maybeSePassphraseList) ++
+            maybeEmptyString("keyTransmission", maybeKeyTransmisstion) ++
+            maybeEmptyJsValue("aePassphraseList", maybeAePassphraseList.map(Json.toJson(_)))
+          ))
+        Conversation.col.update(query, set).map { _.ok }
+    }
   }
 
   def addRecipients(recipients: Seq[Recipient]): Future[Boolean] = {

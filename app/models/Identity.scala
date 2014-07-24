@@ -94,13 +94,18 @@ case class Identity(id: MongoId,
   }
 
   def editPublicKey(id: MongoId, update: PublicKeyUpdate): Future[Boolean] = {
-    val setValues = {
-      maybeEmptyString("publicKeys.$.name", update.name)
-    }
-    val publicKeyQuery = query ++ arrayQuery("publicKeys", id)
-    val set = Json.obj("$set" -> setValues)
-    Identity.col.update(publicKeyQuery, set).map {
-      _.updatedExisting
+    update match {
+      case PublicKeyUpdate(None) => Future(true)
+      case PublicKeyUpdate(maybeName) =>
+
+        val setValues = {
+          maybeEmptyString("publicKeys.$.name", maybeName)
+        }
+        val publicKeyQuery = query ++ arrayQuery("publicKeys", id)
+        val set = Json.obj("$set" -> setValues)
+        Identity.col.update(publicKeyQuery, set).map {
+          _.updatedExisting
+        }
     }
   }
 
@@ -139,32 +144,19 @@ case class Identity(id: MongoId,
   }
 
   def update(update: IdentityUpdate): Future[Boolean] = {
+    update match {
+      case IdentityUpdate(None, None, None, None, None) => Future(true)
+      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAccountId) =>
 
-    val newMail = update.email.flatMap {
-      getNewValueVerifiedString(this.email, _)
-    }
-    val newPhoneNumber = update.phoneNumber.flatMap {
-      getNewValueVerifiedString(this.phoneNumber, _)
-    }
-    val newDisplayName = update.displayName.flatMap {
-      getNewValue(this.displayName, _)
-    }
-    val newCameoId = update.cameoId
-    val newAccountId = update.accountId.flatMap {
-      getNewValue(this.accountId, _)
-    }
-
-    val setValues = {
-      maybeEmptyJsValue("email", newMail.map(Json.toJson(_))) ++
-        maybeEmptyJsValue("phoneNumber", newPhoneNumber.map(Json.toJson(_))) ++
-        maybeEmptyString("displayName", newDisplayName) ++
-        maybeEmptyString("cameoId", newCameoId) ++
-        maybeEmptyJsValue("accountId", newAccountId.map(Json.toJson(_)))
-    }
-    val set = Json.obj("$set" -> setValues)
-
-    Identity.col.update(query, set).map {
-      _.updatedExisting
+        val set =
+          Json.obj("$set" -> (
+            maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
+              maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
+              maybeEmptyString("displayName", maybeDisplayName) ++
+              maybeEmptyString("cameoId", maybeCameoId) ++
+              maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_)))
+            ))
+        Identity.col.update(query, set).map { _.ok }
     }
   }
 
