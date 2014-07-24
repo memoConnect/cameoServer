@@ -73,8 +73,8 @@ object CryptoController extends ExtendedController {
     request =>
       // check if authentication request exists
       request.identity.authenticationRequests.exists(_.id.id.equals(id)) match {
-        case true => Future(resNotFound("authenticationRequest"))
-        case false =>
+        case false => Future(resNotFound("authenticationRequest"))
+        case true =>
           request.identity.deleteAuthenticationRequest(new MongoId(id)).map {
             case false => resServerError("could not delete")
             case true =>
