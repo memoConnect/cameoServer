@@ -17,7 +17,6 @@ object Application extends Controller {
 
   def index = Action {
     request =>
-      Logger.debug("asdf")
       Ok(views.html.index())
   }
 
