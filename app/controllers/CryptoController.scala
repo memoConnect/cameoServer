@@ -95,7 +95,13 @@ object CryptoController extends ExtendedController {
       }
   }
 
-  def deleteSignature(id: String, keyId: String) = play.mvc.Results.TODO
+  def deleteSignature(id: String, keyId: String) = AuthAction().async {
+    request =>
+      request.identity.deleteSignature(new MongoId(id), keyId).map {
+        case false => resServerError("could not delete")
+        case true => resOk("deleted")
+      }
+  }
 
   case class AePassphrase(conversationId: String, aePassphrase: String)
   object AePassphrase { implicit val format = Json.format[AePassphrase] }

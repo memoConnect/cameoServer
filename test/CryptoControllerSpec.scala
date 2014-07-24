@@ -112,6 +112,7 @@ class CryptoControllerSpec extends StartedApp {
 
     val signature = "moepsSignature"
     val signature2 = "moepsSignature2"
+    val signature3 = "moepsSignature3"
     val signatureKeyId = "moepKeyId"
     val signatureKeyId2 = "moepKeyId2"
 
@@ -134,6 +135,24 @@ class CryptoControllerSpec extends StartedApp {
     }
 
     "add another signature to public key" in {
+      val path = basePath + "/identity/publicKey/" + pubKeyId + "/signature"
+
+      val json = Json.obj("keyId" -> signatureKeyId2, "content" -> signature3)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "keyId").asOpt[String] must beSome(signatureKeyId2)
+      (data \ "content").asOpt[String] must beSome(signature3)
+    }
+
+    "overwrite the second signature" in {
       val path = basePath + "/identity/publicKey/" + pubKeyId + "/signature"
 
       val json = Json.obj("keyId" -> signatureKeyId2, "content" -> signature2)
@@ -184,6 +203,50 @@ class CryptoControllerSpec extends StartedApp {
 
       val sig2: JsObject = signatures.find(js => (js \ "keyId").as[String].equals(signatureKeyId2)).get
       (sig2 \ "content").asOpt[String] must beSome(signature2)
+    }
+
+    "delete signature" in {
+      val path = basePath + "/identity/publicKey/" + pubKeyId + "/signature/" + signatureKeyId2
+
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "deleted signatures should not be returned anymore" in {
+
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+
+      pubKeys.length must beGreaterThanOrEqualTo(2)
+
+      val key1: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)).get
+      (key1 \ "id").asOpt[String] must beSome(pubKeyId)
+      (key1 \ "name").asOpt[String] must beSome(pubKeyName)
+      (key1 \ "key").asOpt[String] must beSome(pubKey)
+      (key1 \ "keySize").asOpt[Int] must beSome(pubKeySize)
+      (key1 \ "signatures").asOpt[Seq[JsObject]] must beSome
+
+      val signatures = (key1 \ "signatures").as[Seq[JsObject]]
+      signatures.length must beEqualTo(1)
+
+      val sig1: JsObject = signatures.find(js => (js \ "keyId").as[String].equals(signatureKeyId)).get
+      (sig1 \ "content").asOpt[String] must beSome(signature)
     }
 
     "edit name of public key" in {

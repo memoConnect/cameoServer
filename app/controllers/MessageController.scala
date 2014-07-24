@@ -75,13 +75,12 @@ object MessageController extends ExtendedController {
         js.asOpt[String] match {
           case None =>
             JsError()
-          case Some(s) => {
+          case Some(s) =>
             try {
               JsSuccess(new Date(s.toLong * 1000))
             } catch {
               case e: NumberFormatException => JsError()
             }
-          }
         }
     }
 

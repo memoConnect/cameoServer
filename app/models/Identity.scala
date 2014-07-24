@@ -138,8 +138,30 @@ case class Identity(id: MongoId,
   }
 
   def addSignatureToPublicKey(publicKeyId: MongoId, signature: Signature): Future[Boolean] = {
+    def addSignature(): Future[Boolean] = {
+      val query = Json.obj("_id" -> this.id, "publicKeys._id" -> publicKeyId)
+      val set = Json.obj("$addToSet" -> Json.obj("publicKeys.$.signatures" -> signature))
+      Identity.col.update(query, set).map(_.updatedExisting)
+    }
+
+    // check if this keyId has already signed this publicKey
+    this.publicKeys.find(_.id.equals(publicKeyId)) match {
+      case None => Future(false)
+      case Some(key) =>
+        key.signatures.find(_.keyId.equals(signature.keyId)) match {
+          case None => addSignature()
+          case Some(sig) =>
+            // delete old signature
+            this.deleteSignature(publicKeyId, signature.keyId).flatMap {
+              res => addSignature()
+            }
+        }
+    }
+  }
+
+  def deleteSignature(publicKeyId: MongoId, signatureKeyId: String): Future[Boolean] = {
     val query = Json.obj("_id" -> this.id, "publicKeys._id" -> publicKeyId)
-    val set = Json.obj("$addToSet" -> Json.obj("publicKeys.$.signatures" -> signature))
+    val set = Json.obj("$pull" -> Json.obj("publicKeys.$.signatures" -> Json.obj("keyId" -> signatureKeyId)))
     Identity.col.update(query, set).map(_.updatedExisting)
   }
 

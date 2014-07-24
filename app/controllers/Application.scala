@@ -26,6 +26,7 @@ object Application extends Controller {
             case Some(BSONString(version)) => version
             case _ => "na"
           }
+          Logger.debug("SERVERSTATUS: " + res.toString)
           Ok(views.html.index(dbVersion))
       }
   }
