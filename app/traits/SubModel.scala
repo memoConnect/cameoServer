@@ -2,13 +2,12 @@ package traits
 
 import helper.JsonHelper._
 import models.MongoId
-import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

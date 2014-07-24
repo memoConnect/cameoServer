@@ -1,13 +1,12 @@
 package controllers
 
-import play.api.Logger
-import play.api.Play.current
-import actors.{SendMessage, SendMessageActor, NewConversation}
+import actors.{ NewConversation, SendMessage, SendMessageActor }
 import akka.actor.Props
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
+import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
@@ -31,13 +30,13 @@ object ConversationController extends ExtendedController {
             case None => Left(conversation)
             case Some(recipientIds) =>
               checkRecipients(recipientIds, conversation, request.identity) match {
-                case None => Right(resBadRequest("Invalid recipients. Not in contact book."))
+                case None             => Right(resBadRequest("Invalid recipients. Not in contact book."))
                 case Some(recipients) => Left(conversation.copy(recipients = recipients ++ conversation.recipients))
               }
           }
         }
 
-        def addMessages(conversation: Conversation) : Either[Conversation,Result] = {
+        def addMessages(conversation: Conversation): Either[Conversation, Result] = {
           (request.body \ "messages").asOpt[JsArray] match {
             case None => Left(conversation)
             case Some(js) =>

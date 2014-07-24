@@ -14,7 +14,7 @@ import play.api.mvc.{ Action, Controller }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 object VerificationController extends Controller with ExtendedController {
   def sendVerifyMessage() = AuthAction()(parse.tolerantJson) {

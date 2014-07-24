@@ -8,9 +8,6 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import traits.SubModel
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
-
 /**
  * User: Björn Reimer
  * Date: 6/26/13

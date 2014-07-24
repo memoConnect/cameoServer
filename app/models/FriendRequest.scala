@@ -8,7 +8,7 @@ import play.api.libs.json.{ Format, JsObject, Json, Reads }
 import traits.SubModel
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -35,7 +35,7 @@ case class FriendRequest(identityId: MongoId,
     this.identityId.equals(identity.id) match {
       case false =>
         Logger.error("FriendRequest.toJson: identity does not match"); this.toJson
-      case true  => Json.obj("identity" -> identity.toPublicJson) ++ this.toJson
+      case true => Json.obj("identity" -> identity.toPublicJson) ++ this.toJson
     }
   }
 }

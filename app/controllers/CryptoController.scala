@@ -1,15 +1,14 @@
 package controllers
 
 import actors.{ FinishedAuthenticationRequest, NewAuthenticationRequest, UpdatedIdentity }
-import controllers.IdentityController._
 import helper.CmActions._
 import helper.ResultHelper._
 import models._
 import play.api.Logger
 import play.api.libs.json._
 import traits.ExtendedController
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.libs.functional.syntax._
 
 /**
  * User: Björn Reimer

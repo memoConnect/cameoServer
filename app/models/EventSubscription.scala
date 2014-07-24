@@ -3,7 +3,7 @@ package models
 import java.util.Date
 
 import helper.{ IdHelper, JsonHelper, MongoCollections }
-import play.api.libs.json.{ JsObject, _ }
+import play.api.libs.json._
 import play.modules.reactivemongo.json.BSONFormats._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.bson.BSONDocument
@@ -11,7 +11,7 @@ import reactivemongo.core.commands.{ Count, FindAndModify, Update }
 import traits.Model
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

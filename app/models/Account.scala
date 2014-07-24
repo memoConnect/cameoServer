@@ -7,17 +7,15 @@ import helper.IdHelper
 import helper.JsonHelper._
 import helper.MongoCollections._
 import models.cockpit.CockpitListFilter
-import models.cockpit.attributes.{ CockpitAttributeFilter, CockpitAttributeString, _ }
-import play.api.Play
-import play.api.Play.current
+import models.cockpit.attributes._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json.{ JsObject, _ }
+import play.api.libs.json._
 import reactivemongo.core.commands.LastError
 import traits.{ CockpitAttribute, CockpitEditable, Model }
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

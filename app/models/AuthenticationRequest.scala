@@ -2,7 +2,7 @@ package models
 
 import java.util.Date
 
-import helper.{ JsonHelper, IdHelper }
+import helper.{ IdHelper, JsonHelper }
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import traits.SubModel
@@ -16,7 +16,7 @@ case class AuthenticationRequest(id: MongoId,
                                  fromKeyId: String,
                                  toKeyId: String,
                                  encryptedTransactionSecret: String,
-signature: String,
+                                 signature: String,
                                  created: Date,
                                  docVersion: Int) {
   def toJson: JsObject =

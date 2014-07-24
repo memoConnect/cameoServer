@@ -9,8 +9,6 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import traits.SubModel
 
-import scala.concurrent.Future
-
 /**
  * User: Björn Reimer
  * Date: 2/27/14

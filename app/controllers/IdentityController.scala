@@ -1,6 +1,5 @@
 package controllers
 
-import actors.{ FinishedAuthenticationRequest, NewAuthenticationRequest, UpdatedIdentity }
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -12,7 +11,7 @@ import play.api.mvc.Action
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

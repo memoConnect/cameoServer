@@ -4,14 +4,13 @@ import constants.Contacts._
 import helper.IdHelper
 import helper.JsonHelper._
 import helper.ResultHelper._
-import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc.Result
 import traits.SubModel
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -56,7 +55,6 @@ case class Contact(id: MongoId,
       case Some(groups) =>
         val query = arrayQuery("contacts", this.id)
         val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
-        Logger.debug("SET: "+ set)
         Contact.col.update(query, set).map(_.updatedExisting)
       case None => Future(false)
     }

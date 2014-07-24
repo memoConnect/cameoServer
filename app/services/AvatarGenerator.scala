@@ -3,7 +3,6 @@ package services
 import java.awt._
 import java.io._
 
-import actors.UpdatedIdentity
 import helper.{ IdHelper, Utils }
 import models._
 import org.apache.batik.dom.GenericDOMImplementation
@@ -13,12 +12,11 @@ import org.apache.batik.transcoder._
 import org.apache.batik.transcoder.image.PNGTranscoder
 import org.w3c.dom.{ DOMImplementation, Document }
 import play.api.Play.current
-import play.api.libs.json.Json
 import play.api.{ Logger, Play }
 import sun.misc.BASE64Encoder
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

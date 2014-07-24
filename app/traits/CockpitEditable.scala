@@ -7,10 +7,10 @@ import models.cockpit._
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 import play.modules.reactivemongo.json.BSONFormats._
-import reactivemongo.core.commands.{ Limit, Match, Skip, _ }
+import reactivemongo.core.commands._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

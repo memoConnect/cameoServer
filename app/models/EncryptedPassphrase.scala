@@ -2,7 +2,7 @@ package models
 
 import helper.IdHelper
 import play.api.libs.functional.syntax._
-import play.api.libs.json.{ JsObject, _ }
+import play.api.libs.json._
 import traits.SubModel
 
 /**

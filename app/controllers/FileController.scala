@@ -5,7 +5,7 @@ import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, Utils }
 import models._
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Json
@@ -13,7 +13,7 @@ import play.api.mvc.{ BodyParser, Headers, Result }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 import scala.util.control.Exception._
 import scala.util.control.NonFatal
 

@@ -8,7 +8,7 @@ import play.api.mvc.Result
 import traits.{ CockpitEditableDefinition, ExtendedController }
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

@@ -10,7 +10,7 @@ import reactivemongo.core.commands.LastError
 import traits.Model
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

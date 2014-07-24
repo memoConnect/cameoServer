@@ -8,19 +8,19 @@ import helper.JsonHelper._
 import helper.MongoCollections._
 import helper.ResultHelper._
 import helper.{ IdHelper, MongoCollections }
-import models.cockpit.CockpitList
 import play.api.Logger
+import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.Result
 import play.modules.reactivemongo.json.BSONFormats._
 import play.modules.reactivemongo.json.collection.JSONCollection
-import reactivemongo.bson.{ BSONString, BSONInteger, BSONDocument, BSONNull }
+import reactivemongo.bson.{ BSONInteger, BSONNull, BSONString }
 import reactivemongo.core.commands._
 import traits.Model
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import play.api.libs.functional.syntax._
 
 /**
  * User: Björn Reimer

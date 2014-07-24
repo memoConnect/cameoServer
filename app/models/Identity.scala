@@ -8,17 +8,17 @@ import helper.IdHelper
 import helper.JsonHelper._
 import helper.MongoCollections._
 import models.cockpit._
-import models.cockpit.attributes.{ CockpitAttributeDate, CockpitAttributeString, CockpitAttributeVerifiedString, _ }
+import models.cockpit.attributes._
 import play.api.Play.current
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json.{ JsArray, JsNumber, JsObject, _ }
+import play.api.libs.json._
 import play.api.{ Logger, Play }
 import services.AvatarGenerator
 import traits.{ CockpitAttribute, CockpitEditable, Model }
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -151,11 +151,11 @@ case class Identity(id: MongoId,
         val set =
           Json.obj("$set" -> (
             maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
-              maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
-              maybeEmptyString("displayName", maybeDisplayName) ++
-              maybeEmptyString("cameoId", maybeCameoId) ++
-              maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_)))
-            ))
+            maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
+            maybeEmptyString("displayName", maybeDisplayName) ++
+            maybeEmptyString("cameoId", maybeCameoId) ++
+            maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_)))
+          ))
         Identity.col.update(query, set).map { _.ok }
     }
   }

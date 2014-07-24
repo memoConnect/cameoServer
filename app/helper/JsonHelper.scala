@@ -6,7 +6,7 @@ import models.{ MongoId, VerifiedString }
 import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json.{ JsArray, JsNumber, JsObject, JsString, JsSuccess, _ }
+import play.api.libs.json._
 import play.modules.reactivemongo.json.BSONFormats
 import reactivemongo.bson.BSONDocument
 import reactivemongo.core.commands.Match

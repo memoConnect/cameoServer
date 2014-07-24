@@ -7,7 +7,6 @@ import play.api.Play
 import play.api.Play.current
 import play.api.mvc.Controller
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**

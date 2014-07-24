@@ -5,14 +5,14 @@ import play.api.Play
 import play.api.Play.current
 import play.api.http.Writeable
 import play.api.libs.iteratee.{ Input, Iteratee }
-import play.api.libs.json.{ JsObject, _ }
+import play.api.libs.json._
 import play.api.mvc._
 import play.core.parsers.FormUrlEncodedParser
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import scala.concurrent.{ Await, ExecutionContext, Future }
+import scala.concurrent.{ Await, Future }
 
 /**
  * User: Björn Reimer

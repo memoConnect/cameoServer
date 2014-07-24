@@ -1,7 +1,7 @@
 package helper
 
 import constants.Notifications._
-import play.api.libs.json.{ JsObject, _ }
+import play.api.libs.json._
 import play.api.mvc.Result
 import play.api.mvc.Results._
 

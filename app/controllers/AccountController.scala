@@ -3,7 +3,6 @@ package controllers
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models._
-import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Reads._
 import play.api.libs.json._

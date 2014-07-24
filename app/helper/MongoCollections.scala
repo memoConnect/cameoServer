@@ -9,7 +9,6 @@ import reactivemongo.api.collections.default.BSONCollection
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.bson.BSONDocument
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**

@@ -7,7 +7,7 @@ import play.api.libs.json.JsObject
 import play.api.mvc.BodyParsers.parse
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 object EditController {
 

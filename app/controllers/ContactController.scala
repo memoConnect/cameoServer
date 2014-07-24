@@ -2,20 +2,20 @@ package controllers
 
 import java.util.Date
 
-import actors.{AcceptedFriendRequest, NewFriendRequest}
+import actors.{ AcceptedFriendRequest, NewFriendRequest }
 import constants.Contacts._
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
 import play.api.Logger
-import play.api.libs.json.{ JsObject, _ }
+import play.api.libs.json._
 import play.api.mvc.Result
 import services.AvatarGenerator
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -262,10 +262,10 @@ object ContactController extends ExtendedController {
                       le2 <- request.identity.addContact(Contact.create(otherIdentity.id))
                     } yield {
                       le1 && le2 match {
-                        case true  =>
+                        case true =>
                           // send event to both parties
-                          actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id,otherIdentity.id, request.identity.id)
-                          actors.eventRouter ! AcceptedFriendRequest(request.identity.id,otherIdentity.id, request.identity.id)
+                          actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id, otherIdentity.id, request.identity.id)
+                          actors.eventRouter ! AcceptedFriendRequest(request.identity.id, otherIdentity.id, request.identity.id)
 
                           resOk("added contacts")
                         case false => resKo("duplicate entries")

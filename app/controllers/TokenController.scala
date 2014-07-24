@@ -35,7 +35,7 @@ object TokenController extends ExtendedController {
     request =>
       {
         request.headers.get("Authorization") match {
-          case None =>   Future.successful(resBadRequest("No Authorization field in header"))
+          case None => Future.successful(resBadRequest("No Authorization field in header"))
           case Some(basicAuth) if !basicAuth.contains("Basic") =>
             Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
           case Some(basicAuth) =>
