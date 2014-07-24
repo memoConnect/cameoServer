@@ -1,13 +1,15 @@
 package controllers
 
 import helper.DbAdminUtilities
+import helper.MongoCollections._
 import helper.ResultHelper._
 import models.Account
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
+import reactivemongo.bson._
 
 object Application extends Controller {
 
@@ -15,9 +17,18 @@ object Application extends Controller {
     Redirect(url)
   }
 
-  def index = Action {
+  def index = Action.async {
     request =>
-      Ok(views.html.index())
+
+      // get mongodb version
+      mongoDB.command(reactivemongo.core.commands.Status).map{
+        res =>
+          val dbVersion = res.get("version") match {
+            case Some(BSONString(version)) => version
+            case _ => "na"
+          }
+          Ok(views.html.index(dbVersion))
+      }
   }
 
   def dumpDb() = Action {

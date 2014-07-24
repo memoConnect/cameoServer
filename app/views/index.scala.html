@@ -1,3 +1,4 @@
+@(dbVersion: String)
 @import _root_.helper.Utils
 
 @main("Cameo") {
@@ -7,8 +8,10 @@
     <p>
         CameoServer: @{Utils.getAppVersion}<br>
         Play Framework: @{play.core.PlayVersion.current}<br>
+        MongoDB: @dbVersion<br>
         Scala: @{play.core.PlayVersion.scalaVersion}<br>
         Sbt: @{play.core.PlayVersion.sbtVersion}<br>
+
     </p>
 
 
