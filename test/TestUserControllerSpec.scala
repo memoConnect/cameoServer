@@ -195,6 +195,9 @@ class TestUserControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUserToken))
       val res = route(req).get
 
+      if (status(res) != UNAUTHORIZED) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(UNAUTHORIZED)
     }
 

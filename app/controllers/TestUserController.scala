@@ -2,7 +2,7 @@ package controllers
 
 import helper.MongoCollections
 import helper.ResultHelper._
-import models.{ Account, TestUserNotification }
+import models.{ FileMeta, Identity, Account, TestUserNotification }
 import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.mvc.Action
@@ -30,24 +30,51 @@ object TestUserController extends ExtendedController {
       MongoCollections.accountCollection.find(accountQuery).one[Account].map {
         case None => resNotFound("Test user")
         case Some(account) =>
-          // delete all identities
-          val identityQuery = Json.obj("$or" -> account.identities.map(i => Json.obj("_id" -> i)))
-          MongoCollections.identityCollection.remove(identityQuery)
+          // get all identities of this account
+          val futureIdentities = account.identities.map { id =>
+            Identity.find(id)
+          }
 
-          // delete all conversations which involve this test user
-          val conversationQuery = Json.obj("$or" -> account.identities.map(i => Json.obj("recipients.identityId" -> i)))
-          MongoCollections.conversationCollection.remove(conversationQuery)
+          Future.sequence(futureIdentities).map {
+            _.filter(_.isDefined).map(_.get).map {
+              identity =>
+                // delete Avatar
+                identity.avatar match {
+                  case None         => // do nothing
+                  case Some(fileId) => FileMeta.deleteWithChunks(fileId)
+                }
 
-          // delete all notifications
-          val notificationQuery = Json.obj("$or" -> account.identities.map(i => Json.obj("identityId" -> i)))
-          MongoCollections.testUserNotificationCollection.remove(notificationQuery)
+                // delete external contacts
+                identity.contacts.map {
+                  contact =>
+                    Identity.find(contact.identityId).map {
+                      case Some(contactIdentity) if contactIdentity.accountId.isEmpty =>
+                        // delete avatar
+                        contactIdentity.avatar match {
+                          case None           => // do nothing
+                          case Some(avatarId) => FileMeta.deleteWithChunks(avatarId)
+                        }
+                        Identity.delete(contactIdentity.id)
+                      case _ => // do nothing
+                    }
+                }
 
-          //todo: delete external contacts, files,
+                // delete all conversations which involve this identity
+                val conversationQuery = Json.obj("recipients.identityId" -> identity.id)
+                MongoCollections.conversationCollection.remove(conversationQuery)
 
+                // delete all notifications
+                val notificationQuery = Json.obj("identityId" -> identity.id)
+                MongoCollections.testUserNotificationCollection.remove(notificationQuery)
+
+                // delete identity
+                Identity.delete(identity.id)
+            }
+          }
           // delete account
-          MongoCollections.accountCollection.remove(Json.obj("_id" -> account.id))
+          Account.delete(account.id)
 
-          resOk("deleted")
+          resOk("deleting")
       }
   }
 

@@ -19,7 +19,6 @@ object Application extends Controller {
 
   def index = Action.async {
     request =>
-
       // get mongodb version
       mongoDB.command(reactivemongo.core.commands.Status).map{
         res =>

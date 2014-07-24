@@ -46,7 +46,6 @@ case class FileMeta(id: MongoId,
     val set = Json.obj("$set" -> Json.obj("isCompleted" -> value))
     FileMeta.col.update(query, set).map(_.updatedExisting)
   }
-
 }
 
 object FileMeta extends Model[FileMeta] {
@@ -85,7 +84,19 @@ object FileMeta extends Model[FileMeta] {
     )
   }
 
-  override def createDefault(): FileMeta = {
+  def deleteWithChunks(id: MongoId): Future[Boolean] = {
+    // find chunks first
+    FileMeta.find(id).flatMap {
+      case None => Future(false)
+      case Some(fileMeta) =>
+        fileMeta.chunks.map {
+          chunk => FileChunk.delete(chunk.chunkId.toString)
+        }
+        delete(id).map(_.updatedExisting)
+    }
+  }
+
+  def createDefault(): FileMeta = {
     new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, new Date, docVersion)
   }
 }

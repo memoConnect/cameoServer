@@ -29,15 +29,8 @@ object IdentityController extends ExtendedController {
     }
   }
 
-  def getIdentityByToken = AuthAction(allowExternal = true).async {
-    request =>
-
-      val mongoId = request.identity.id
-
-      Identity.find(mongoId).map {
-        case None           => resNotFound("identity")
-        case Some(identity) => resOk(identity.toPrivateJson)
-      }
+  def getIdentityByToken = AuthAction(allowExternal = true) {
+    request =>  resOk(request.identity.toPrivateJson)
   }
 
   def updateIdentity() = AuthAction().async(parse.tolerantJson) {

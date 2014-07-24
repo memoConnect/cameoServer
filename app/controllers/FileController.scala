@@ -185,4 +185,12 @@ object FileController extends ExtendedController {
           }
       }
   }
+
+  def deleteFile(id: String) = AuthAction().async {
+    request =>
+      FileMeta.deleteWithChunks(new MongoId(id)).map {
+        case false => resServerError("could not delete")
+        case true => resOk("deleted")
+      }
+  }
 }
