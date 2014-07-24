@@ -9,6 +9,7 @@ import play.api.libs.json._
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -70,11 +71,16 @@ object CryptoController extends ExtendedController {
 
   def deleteAuthenticationRequest(id: String) = AuthAction().async {
     request =>
-      request.identity.deleteAuthenticationRequest(new MongoId(id)).map {
-        case false => resServerError("unable to delete")
-        case true =>
-          actors.eventRouter ! FinishedAuthenticationRequest(request.identity.id, id)
-          resOk("deleted")
+      // check if authentication request exists
+      request.identity.authenticationRequests.exists(_.id.id.equals(id)) match {
+        case true => Future(resNotFound("authenticationRequest"))
+        case false =>
+          request.identity.deleteAuthenticationRequest(new MongoId(id)).map {
+            case false => resServerError("could not delete")
+            case true =>
+              actors.eventRouter ! FinishedAuthenticationRequest(request.identity.id, id)
+              resOk("deleted")
+          }
       }
   }
 

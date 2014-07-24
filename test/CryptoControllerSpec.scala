@@ -1,7 +1,7 @@
 import testHelper.StartedApp
 import play.api.Logger
 import play.api.test._
-import play.api.libs.json.{JsArray, JsString, Json, JsObject}
+import play.api.libs.json.{ JsArray, JsString, Json, JsObject }
 import play.api.test.Helpers._
 import testHelper.Stuff._
 import org.specs2.mutable._
@@ -367,7 +367,6 @@ class CryptoControllerSpec extends StartedApp {
       (requests(0) \ "created").asOpt[Int] must beSome
     }
 
-
     "delete authentication request" in {
       val path = basePath + "/identity/authenticationRequest/" + authenticationRequestId2
 
@@ -378,6 +377,18 @@ class CryptoControllerSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(OK)
+    }
+
+    "return error when trying to delete the same request again" in {
+      val path = basePath + "/identity/authenticationRequest/" + authenticationRequestId2
+
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != NOT_FOUND) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(NOT_FOUND)
     }
 
     "deleted authentication request should not be there when getting identity" in {
@@ -476,7 +487,7 @@ class CryptoControllerSpec extends StartedApp {
     }
 
     "apply limit to result" in {
-      val path = basePath + "/identity/publicKey/" + keyId + "/aePassphrases?newKeyId=" + newKeyId  + "&limit=2"
+      val path = basePath + "/identity/publicKey/" + keyId + "/aePassphrases?newKeyId=" + newKeyId + "&limit=2"
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
@@ -534,11 +545,10 @@ class CryptoControllerSpec extends StartedApp {
       1 === 1
     }
 
-
     "add new aePassphrase to the other two conversation" in {
       val path = basePath + "/identity/publicKey/" + newKeyId + "/aePassphrases"
 
-      val list = newAePassphrases.zip(conversationIds).drop(1).map{
+      val list = newAePassphrases.zip(conversationIds).drop(1).map {
         case (aep, cid) => Json.obj("conversationId" -> cid, "aePassphrase" -> aep)
       }
 
