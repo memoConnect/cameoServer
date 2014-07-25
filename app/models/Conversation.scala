@@ -216,11 +216,12 @@ object Conversation extends Model[Conversation] {
   }
 
   def findByMessageId(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {
-    col.find(arrayQuery("messages", id), limitArray("messages", limit, offset)).one[Conversation]
+    val query = Json.obj("messages._id" -> id)
+    col.find(query, limitArray("messages", limit, offset)).one[Conversation]
   }
 
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
-    val query = Json.obj("recipients" -> Json.obj("identityId" -> id))
+    val query = Json.obj("recipients.identityId" -> id)
     col.find(query, limitArray("messages", -1, 0)).cursor[Conversation].collect[Seq]()
   }
 

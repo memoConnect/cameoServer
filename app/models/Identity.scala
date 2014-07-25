@@ -101,7 +101,7 @@ case class Identity(id: MongoId,
         val setValues = {
           maybeEmptyString("publicKeys.$.name", maybeName)
         }
-        val publicKeyQuery = query ++ arrayQuery("publicKeys", id)
+        val publicKeyQuery = query ++ Json.obj("publicKeys._id" -> id)
         val set = Json.obj("$set" -> setValues)
         Identity.col.update(publicKeyQuery, set).map {
           _.updatedExisting
@@ -324,7 +324,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   // todo: add projection to exclude contacts when not needed
   def findByToken(tokenId: MongoId): Future[Option[Identity]] = {
-    val query = Json.obj("tokens" -> Json.obj("$elemMatch" -> Json.obj("_id" -> tokenId)))
+    val query = Json.obj("tokens._id" -> tokenId)
     col.find(query).one[Identity]
   }
 

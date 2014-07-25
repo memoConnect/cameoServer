@@ -53,7 +53,7 @@ case class Contact(id: MongoId,
     // edit groups
     val updatedGroups = contactUpdate.groups match {
       case Some(groups) =>
-        val query = arrayQuery("contacts", this.id)
+        val query = Json.obj("contacts._id" -> this.id)
         val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
         Contact.col.update(query, set).map(_.updatedExisting)
       case None => Future(false)

@@ -27,25 +27,27 @@ trait SubModel[A, Parent] extends Model[A] {
     find(Json.obj("_id" -> id))
   }
 
-  override def find(query: JsObject): Future[Option[A]] = {
-    val projection = Json.obj(elementName -> Json.obj("$elemMatch" -> query))
-    parentModel.col.find(arrayQuery(elementName, query), projection).one[JsValue].map {
+  override def find(subQuery: JsObject): Future[Option[A]] = {
+    val query = Json.obj(elementName -> subQuery)
+    val projection = Json.obj(elementName -> Json.obj("$elemMatch" -> subQuery))
+    parentModel.col.find(query, projection).one[JsValue].map {
       case None     => None
       case Some(js) => Some((js \ elementName)(0).as[A])
     }
   }
 
-  override def findJs(query: JsObject): Future[Option[JsObject]] = {
-    val projection = Json.obj(elementName -> Json.obj("$elemMatch" -> query))
-    parentModel.col.find(arrayQuery(elementName, query), projection).one[JsValue].map {
+  override def findJs(id: MongoId): Future[Option[JsObject]] = {
+    val query = Json.obj(elementName + "." + idName -> id)
+    val projection = Json.obj(elementName -> Json.obj("$elemMatch" -> Json.obj(idName -> id)))
+    parentModel.col.find(query, projection).one[JsValue].map {
       case None     => None
       case Some(js) => Some((js \ elementName)(0).as[JsObject])
     }
   }
 
-  def findParent(parentId: MongoId)(implicit parentReads: Reads[Parent]): Future[Option[Parent]] = {
-    val query = Json.obj("_id" -> parentId)
-    parentModel.col.find(arrayQuery(elementName, query)).one[Parent]
+  def findParent(childId: MongoId)(implicit parentReads: Reads[Parent]): Future[Option[Parent]] = {
+    val query = Json.obj(elementName + "." + idName -> childId)
+    parentModel.col.find(query).one[Parent]
   }
 
   def update(parentId: MongoId, updateJs: JsObject, customIdName: String = this.idName): Future[LastError] = {
@@ -56,8 +58,8 @@ trait SubModel[A, Parent] extends Model[A] {
   }
 
   override def save(js: JsObject): Future[LastError] = {
-    val id: MongoId = (js \ "_id").as[MongoId]
-    val query = arrayQuery(elementName, id)
+    val id: MongoId = (js \ idName).as[MongoId]
+    val query = Json.obj((elementName + "." + idName, id))
     val set = Json.obj("$set" -> Json.obj(elementName + ".$" -> js))
     parentModel.col.update(query, set)
   }
