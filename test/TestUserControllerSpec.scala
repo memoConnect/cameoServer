@@ -176,7 +176,6 @@ class TestUserControllerSpec extends StartedApp {
     }
     
     "Delete testUser" in {
-      Thread.sleep(200)
 
       val path = basePath + "/testUser/" + testUserId
 
@@ -190,6 +189,7 @@ class TestUserControllerSpec extends StartedApp {
     }
 
     "Token should not work anymore" in {
+      Thread.sleep(300)
       val path = basePath + "/identity"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUserToken))
