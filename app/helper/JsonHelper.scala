@@ -115,10 +115,6 @@ object JsonHelper {
       }
   }
 
-//  def arrayQuery(arrayName: String, id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
-//
-//  def arrayQuery(arrayName: String, query: JsObject): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> query))
-
   def limitArray(name: String, limit: Int, offset: Int): JsObject = {
 
     // this is not very elegant, but there seems to be no way to get offset without limit in mongodb...
