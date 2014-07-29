@@ -39,7 +39,6 @@ case class Identity(id: MongoId,
                     friendRequests: Seq[FriendRequest],
                     publicKeys: Seq[PublicKey],
                     ignoredIdentities: Seq[MongoId],
-                    authenticationRequests: Seq[AuthenticationRequest],
                     avatar: Option[MongoId],
                     created: Date,
                     lastUpdated: Date,
@@ -121,20 +120,6 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set).map {
       _.updatedExisting
     }
-  }
-
-  def addAuthenticationRequest(authenticationRequest: AuthenticationRequest): Future[Boolean] = {
-    // replace old requests with the same fromKeyId/toKeyId pair.
-    this.authenticationRequests.find(ar => ar.fromKeyId.equals(authenticationRequest.fromKeyId) && ar.toKeyId.equals(authenticationRequest.toKeyId)) match {
-      case None     =>
-      case Some(ar) => this.deleteAuthenticationRequest(ar.id)
-    }
-
-    AuthenticationRequest.appendUnique(this.id, authenticationRequest).map(_.updatedExisting)
-  }
-
-  def deleteAuthenticationRequest(id: MongoId): Future[Boolean] = {
-    AuthenticationRequest.delete(this.id, id).map(_.updatedExisting)
   }
 
   def addSignatureToPublicKey(publicKeyId: MongoId, signature: Signature): Future[Boolean] = {
@@ -249,7 +234,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Reads.pure[Seq[FriendRequest]](Seq()) and
     Reads.pure[Seq[PublicKey]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
-    Reads.pure[Seq[AuthenticationRequest]](Seq()) and
     Reads.pure[Option[MongoId]](None) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
@@ -273,7 +257,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         }) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
-        Json.obj("authenticationRequests" -> i.authenticationRequests.map(_.toJson)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
   }
@@ -297,7 +280,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       cameoId,
       MESSAGE_TYPE_DEFAULT,
       IdHelper.generateUserKey(),
-      Seq(),
       Seq(),
       Seq(),
       Seq(),
@@ -354,7 +336,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Identity.create(None, IdHelper.generateCameoId, None, None)
   }
 
-  def docVersion = 8
+  def docVersion = 9
 
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
@@ -364,7 +346,8 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     4 -> IdentityEvolutions.removeAssets,
     5 -> IdentityEvolutions.convertFriendRequests,
     6 -> IdentityEvolutions.addIgnoredIdentities,
-    7 -> IdentityEvolutions.addAuthenticationRequests
+    7 -> IdentityEvolutions.addAuthenticationRequests,
+    8 -> IdentityEvolutions.removeAuthenticationRequests
   )
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -486,5 +469,15 @@ object IdentityEvolutions {
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(8)))
         js.transform(addArray andThen addVersion)
       }
+  }
+
+  val removeAuthenticationRequests: Reads[JsObject] = Reads {
+    js =>
+    {
+      val removeArray = (__ \ 'authenticationRequests).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(9)))
+      js.transform(removeArray andThen addVersion)
+    }
+
   }
 }

@@ -56,34 +56,6 @@ object CryptoController extends ExtendedController {
       }
   }
 
-  def addAuthenticationRequest() = AuthAction().async(parse.tolerantJson) {
-    request =>
-      validateFuture(request.body, AuthenticationRequest.createReads) {
-        authenticationRequest =>
-          request.identity.addAuthenticationRequest(authenticationRequest).map {
-            case false => resServerError("error while saving")
-            case true =>
-              actors.eventRouter ! NewAuthenticationRequest(request.identity.id, authenticationRequest)
-              resOk(authenticationRequest.toJson)
-          }
-      }
-  }
-
-  def deleteAuthenticationRequest(id: String) = AuthAction().async {
-    request =>
-      // check if authentication request exists
-      request.identity.authenticationRequests.exists(_.id.id.equals(id)) match {
-        case false => Future(resNotFound("authenticationRequest"))
-        case true =>
-          request.identity.deleteAuthenticationRequest(new MongoId(id)).map {
-            case false => resServerError("could not delete")
-            case true =>
-              actors.eventRouter ! FinishedAuthenticationRequest(request.identity.id, id)
-              resOk("deleted")
-          }
-      }
-  }
-
   def addSignature(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
       validateFuture[Signature](request.body, Signature.format) {
