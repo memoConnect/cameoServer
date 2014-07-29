@@ -58,23 +58,6 @@ case class UpdatedIdentity(sendToIdentity: MongoId, identityId: MongoId, updated
 
 }
 
-case class NewAuthenticationRequest(sendToIdentity: MongoId, authenticationRequest: AuthenticationRequest) extends EventMessage {
-
-  def eventType: String = "authenticationRequest:new"
-
-  def toEventContent: JsObject = authenticationRequest.toJson
-}
-
-case class FinishedAuthenticationRequest(sendToIdentity: MongoId, authenticationRequestId: String) extends EventMessage {
-
-  def eventType = "authenticationRequest:finished"
-
-  def toEventContent =
-    Json.obj(
-      "id" -> authenticationRequestId
-    )
-}
-
 class EventActor extends Actor {
 
   def receive() = {

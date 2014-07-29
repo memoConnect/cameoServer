@@ -1,6 +1,6 @@
 package controllers
 
-import actors.{ FinishedAuthenticationRequest, NewAuthenticationRequest, UpdatedIdentity }
+import actors.UpdatedIdentity
 import helper.CmActions._
 import helper.ResultHelper._
 import models._
@@ -9,7 +9,6 @@ import play.api.libs.json._
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
