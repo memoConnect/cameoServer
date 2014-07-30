@@ -37,10 +37,12 @@ object TestConfig {
   val identityExisting = "g9PWZY7xKNbeCO6LPNnx"
   val identityExisting2 = "N2HKgBdxxnWBGxlYY7Dn"
   val identityExisting3 = "xiDoJmuua853krSS5SeZ"
+  val identityExisting4 = "tfy8ZdsGVWlUI98igv2S"
 
   val cameoIdExisting = "KG5mSGTY8l3"
   val cameoIdExisting2 ="bwyVeVnCvuO"
   val cameoIdExisting3 ="m534n69eHW92DfDenrQo"
+  val cameoIdExisting4 ="4EKozMkDyz7fvvTU3TI0"
 
   val displayNameExisting = "Moeper"
   val displayNameExisting2 = "Moeper2"
@@ -48,6 +50,7 @@ object TestConfig {
   val tokenExisting = "hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo"
   val tokenExisting2 = "viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ"
   val tokenExisting3 = "PszpnGzJonsFCYNmeddqif0JGsQH2jI33ZNoRRxY"
+  val tokenExisting4 = "2PnueJm3g6zpsIQib4YF7HNadad6zEN8vCcySELi"
 
   val telExisting = "+49123456789"
   val emailExisting = "test@cameo.io"

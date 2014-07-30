@@ -415,7 +415,7 @@ class IdentityControllerSpec extends StartedApp {
     "send friend request" in {
       val path = basePath + "/friendRequest"
 
-      val json = Json.obj("identityId" -> identityExisting3)
+      val json = Json.obj("identityId" -> identityExisting4)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -430,7 +430,7 @@ class IdentityControllerSpec extends StartedApp {
     "pending friend requests should be excluded in search" in {
 
       val path = basePath + "/identity/search"
-      val json = Json.obj("search" -> cameoIdExisting3, "fields" -> Seq("cameoId"))
+      val json = Json.obj("search" -> cameoIdExisting4, "fields" -> Seq("cameoId"))
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
@@ -448,7 +448,7 @@ class IdentityControllerSpec extends StartedApp {
       val path = basePath + "/friendRequest/answer"
       val json = Json.obj("answerType" -> "reject", "identityId" -> identityExisting)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting3)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting4)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -460,20 +460,21 @@ class IdentityControllerSpec extends StartedApp {
     "identity should be returned again in search" in {
 
       val path = basePath + "/identity/search"
-      val json = Json.obj("search" -> cameoIdExisting3, "fields" -> Seq("cameoId"))
+      val json = Json.obj("search" -> cameoIdExisting4, "fields" -> Seq("cameoId"))
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-//      if (status(res) != OK) {
+      if (status(res) != OK) {
         Logger.error("Response: " + contentAsString(res))
-//      }
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
       data.length must equalTo(1)
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting3)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting4)
+      (data(0) \ "id").asOpt[String] must beSome(identityExisting4)
 
     }
   }
