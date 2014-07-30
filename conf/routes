@@ -7,9 +7,10 @@ GET            /a/v1                                                controllers.
 POST           /a/v1/callStack                                      controllers.CallStackController.processCallStack()
 
 # ACCOUNT
-POST           /a/v1/account                                        controllers.AccountController.createAccount
+POST           /a/v1/account                                        controllers.AccountController.createAccount()
+GET            /a/v1/account                                        controllers.AccountController.getAccount()
+PUT            /a/v1/account                                        controllers.AccountController.updateAccount()
 POST           /a/v1/account/check                                  controllers.AccountController.checkLoginName
-GET            /a/v1/account/:loginName                             controllers.AccountController.getAccount(loginName)
 DELETE         /a/v1/account/:loginName                             controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES

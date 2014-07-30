@@ -39,12 +39,28 @@ case class Account(id: MongoId,
       iId =>
         Identity.find(iId).map {
           case None    => Json.obj()
-          case Some(i) => i.toPrivateJson
+          case Some(i) => i.toPublicJson
         }
     }
 
     Future.sequence(js).map {
       futureIdentities => this.toJson ++ Json.obj("identities" -> futureIdentities)
+    }
+  }
+
+  def update(update: AccountUpdate): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    update match {
+      case AccountUpdate(None, None, None) => Future(true)
+      case AccountUpdate(maybePhoneNumber, maybeEmail, maybePassword) =>
+
+        val set =
+          Json.obj("$set" -> (
+            maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
+              maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
+              maybeEmptyString("displayName", maybePassword)
+            ))
+        Account.col.update(query, set).map { _.ok }
     }
   }
 }
@@ -72,6 +88,8 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       Json.obj("id" -> a.id.toJson) ++
         Json.obj("loginName" -> a.loginName) ++
         Json.obj("identities" -> a.identities.map(id => id.toJson)) ++
+        maybeEmptyJsValue("phoneNumber", a.phoneNumber.map(_.toJson)) ++
+        maybeEmptyJsValue("email", a.email.map(_.toJson)) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
@@ -204,5 +222,16 @@ object AccountEvolutions {
         js.transform(phoneNumber andThen email andThen addVersion)
       }
   }
+}
 
+case class AccountUpdate(phoneNumber: Option[VerifiedString] = None,
+                         email: Option[VerifiedString] = None,
+                         password: Option[String] = None)
+
+object AccountUpdate {
+  implicit val reads: Reads[AccountUpdate] = (
+    (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+    (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+    (__ \ "password").readNullable[String](minLength[String](8) andKeep hashPassword)
+  )(AccountUpdate.apply _)
 }

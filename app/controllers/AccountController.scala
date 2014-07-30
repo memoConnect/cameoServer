@@ -128,11 +128,15 @@ object AccountController extends ExtendedController {
       }
   }
 
-  def getAccount(loginName: String) = AuthAction().async {
+  def getAccount = AuthAction().async {
     request =>
-      Account.findByLoginName(loginName).flatMap {
-        case None          => Future(resNotFound("account"))
-        case Some(account) => account.toJsonWithIdentities.map { resOk(_) }
+      request.identity.accountId match {
+        case None => Future(resBadRequest("no account"))
+        case Some(id) =>
+          Account.find(id).flatMap {
+            case None          => Future(resNotFound("account"))
+            case Some(account) => account.toJsonWithIdentities.map(resOk)
+          }
       }
   }
 
@@ -192,6 +196,25 @@ object AccountController extends ExtendedController {
             resNotFound("account")
           } else {
             resServerError(lastError.stringify)
+          }
+      }
+  }
+
+  def updateAccount() = AuthAction().async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, AccountUpdate.reads) {
+        accountUpdate =>
+          request.identity.accountId match {
+            case None => Future(resBadRequest("no account"))
+            case Some(accountId) =>
+              Account.find(accountId).flatMap {
+                case None => Future(resNotFound("account"))
+                case Some(account) =>
+                  account.update(accountUpdate).map {
+                    case false => resServerError("could not update")
+                    case true  => resOk("updated")
+                  }
+              }
           }
       }
   }

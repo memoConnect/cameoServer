@@ -558,5 +558,44 @@ class AccountControllerSpec extends StartedApp {
 
       status(res) must equalTo(BAD_REQUEST)
     }
+
+    val newPhoneNumber = "+49123456"
+    val newEmail = "asdfasdf@moep.de"
+    val newPassword = "asdfasdfasdf"
+
+    "update phoneNumber and email of account" in {
+
+      val path = basePath + "/account"
+      val json = Json.obj("phoneNumber" -> newPhoneNumber, "email" -> newEmail)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "account should contain new values" in {
+      val path = basePath + "/account"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "loginName").asOpt[String] must beSome
+      (data \ "identities").asOpt[Seq[JsObject]] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome(newEmail)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newPhoneNumber)
+
+    }
   }
 }
