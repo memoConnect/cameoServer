@@ -19,11 +19,11 @@ import scala.concurrent.Future
 case class Sms(from: String, to: String, body: String)
 object Sms { implicit val format = Json.format[Sms] }
 
-case class SmsFromMessage(message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String)
+case class SmsWithPurl(message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String)
 
 class SendSmsActor extends Actor {
 
-  def sendSms(sms: Sms) = {
+  def sendSms(sms: Sms): Unit = {
 
     val key = Play.configuration.getString("nexmo.key")
     val secret = Play.configuration.getString("nexmo.secret")
@@ -31,9 +31,7 @@ class SendSmsActor extends Actor {
     key.isEmpty || secret.isEmpty match {
       case true =>
         Logger.warn("No Nexmo credentials")
-        Future(new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "No Credentials"))
       case false =>
-
         val postBody =
           Json.obj(
             "api_key" -> JsString(key.get),
@@ -74,7 +72,7 @@ class SendSmsActor extends Actor {
 
   def receive = {
     // send message to recipient
-    case SmsFromMessage(message, fromIdentity, toIdentity, phoneNumber) =>
+    case SmsWithPurl(message, fromIdentity, toIdentity, phoneNumber) =>
       // get identity of sender
       val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
       val to: String = phoneNumber

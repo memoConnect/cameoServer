@@ -28,9 +28,7 @@ class NotificationActor extends Actor {
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
         case None =>
-          val error = "Could not find fromIdentityID " + message.fromIdentityId
-          Logger.error(error)
-          new MessageStatus(message.fromIdentityId, MESSAGE_STATUS_ERROR, error)
+          Logger.error("Could not find fromIdentityID " + message.fromIdentityId)
         case Some(fromIdentity: Identity) =>
 
           // create actors
@@ -57,7 +55,7 @@ class NotificationActor extends Actor {
                           case None =>
                             // external user, use contacts from identity
                             if (toIdentity.phoneNumber.isDefined) {
-                              sendSmsActor ! SmsFromMessage(message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value)
+                              sendSmsActor ! SmsWithPurl(message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value)
                             } else if (toIdentity.email.isDefined) {
                               sendMailActor ! MailWithPurl(message, fromIdentity, toIdentity, subject, toIdentity.email.get.value)
                             } else {
@@ -68,7 +66,7 @@ class NotificationActor extends Actor {
                             Account.find(accountId).map {
                               case Some(account) =>
                                 if (account.phoneNumber.isDefined) {
-                                  sendSmsActor ! SmsFromMessage(message, fromIdentity, toIdentity, account.phoneNumber.get)
+                                  sendSmsActor ! SmsWithPurl(message, fromIdentity, toIdentity, account.phoneNumber.get)
                                 } else if (account.email.isDefined) {
                                   sendMailActor ! MailWithPurl(message, fromIdentity, toIdentity, subject, account.email.get)
                                 } else {

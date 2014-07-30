@@ -1,7 +1,7 @@
 package services
 
 import actors.Sms
-import models.{ Identity, TwoFactorSmsKey, VerifiedString }
+import models.{Account, Identity, TwoFactorSmsKey, VerifiedString}
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
@@ -16,17 +16,25 @@ import scala.concurrent.Future
  */
 object TwoFactorAuth {
 
-  def sendNewKey(identity: Identity): Option[String] = {
+  def sendNewKey(identity: Identity): Future[Option[String]] = {
 
-    // check if the user has a phonenumber TODO: require that the phonenumber is verified
-    identity.phoneNumber match {
-      case Some(VerifiedString(_, number, _)) =>
-        val key = TwoFactorSmsKey.create(identity.id)
-        val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
-        Logger.info("Sending Two Factor Auth Key: " + key.toString + " to " + number)
-        sendSmsActor ! Sms("CameoAuth", number, key.toString)
-        None
-      case _ => Some("identity has no phone number")
+    // get phonenumber of account
+    identity.accountId match {
+      case None => Future(Some("identity is external"))
+      case Some(accountId)                             =>
+        Account.find(accountId).map {
+          case None => Some("could not find account")
+          case Some(account) =>
+            account.phoneNumber match {
+              case None => Some("account has no phone number")
+              case Some(number) =>
+                val key = TwoFactorSmsKey.createAndInsert(identity.id)
+                val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
+                Logger.info("Sending Two Factor Auth Key: " + key.toString + " to " + number)
+                sendSmsActor ! Sms("CameoAuth", number, key.toString)
+                None
+            }
+        }
     }
   }
 

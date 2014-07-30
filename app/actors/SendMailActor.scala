@@ -25,7 +25,7 @@ case class MailWithPurl(message: models.Message, fromIdentity: Identity, toIdent
 
 class SendMailActor extends Actor {
 
-  def sendMail(mail: Mail): MessageStatus = {
+  def sendMail(mail: Mail): Unit = {
 
     Logger.info("SendMailActor: Sending email to " + mail.to + " from " + mail.from + " with subject \'" + mail.subject + "\'")
 
@@ -33,10 +33,9 @@ class SendMailActor extends Actor {
     val accessKey = Play.configuration.getString("aws.accessKey")
     val secretKey = Play.configuration.getString("aws.secretKey")
 
-    val status: MessageStatus = accessKey.isEmpty || secretKey.isEmpty match {
+    accessKey.isEmpty || secretKey.isEmpty match {
       case true =>
         Logger.warn("No AWS credentials")
-        new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "No Credentials")
       case false =>
         val credentials = new BasicAWSCredentials(accessKey.get, secretKey.get)
         val client = new AmazonSimpleEmailServiceClient(credentials)
@@ -51,21 +50,17 @@ class SendMailActor extends Actor {
 
         try {
           val result = client.sendEmail(sendEmailRequest)
-          new MessageStatus(new MongoId(""), MESSAGE_STATUS_SEND, "Mail send. Id: " + result.getMessageId)
+          Logger.info("Mail send. Id: " + result.getMessageId)
         } catch {
           case ce: AmazonClientException => {
             Logger.error("ACE", ce)
-            new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "Error sending Mail, Could not connect to Amazon")
           }
           case se: AmazonServiceException => {
             Logger.error("ACE", se)
-            new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "Error sending Mail, Could not connect to Amazon")
           }
         }
     }
 
-    Logger.info("SendMailActor: Send Mail. STATUS: " + status)
-    status
   }
 
   def receive = {
