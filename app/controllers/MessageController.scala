@@ -2,7 +2,7 @@ package controllers
 
 import java.util.Date
 
-import actors.{ SendMessage, SendMessageActor }
+import actors.{ Notification, NotificationActor }
 import akka.actor.Props
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
@@ -23,9 +23,6 @@ import scala.concurrent.Future
  */
 object MessageController extends ExtendedController {
 
-  /**
-   * Actions
-   */
   def createMessage(id: String) = AuthAction(allowExternal = true).async(parse.tolerantJson) {
     request =>
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
@@ -37,9 +34,8 @@ object MessageController extends ExtendedController {
                 // only members can add message to conversation
                 conversation.hasMemberFutureResult(request.identity.id) {
                   conversation.addMessage(message)
-                  // initiate new actor for each request
-                  val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
-                  sendMessageActor ! SendMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
+                  // send notification to user
+                  actors.notificationRouter ! Notification(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
                   Future(resOk(message.toJson))
                 }
             }

@@ -17,13 +17,13 @@ import scala.concurrent.Future
  * Time: 5:36 PM
  */
 
-case class SendMessage(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
+case class Notification(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
 
-class SendMessageActor extends Actor {
+class NotificationActor extends Actor {
 
   def receive = {
 
-    case SendMessage(message, conversationId, recipients, subject) =>
+    case Notification(message, conversationId, recipients, subject) =>
 
       //      Logger.info("SendMessageActor: Processing message with id " + message.id)
 
@@ -51,8 +51,6 @@ class SendMessageActor extends Actor {
                     val error = "Could not find identityID " + recipient.identityId
                     Logger.error(error)
                   case Some(toIdentity) =>
-                    //                      Logger.debug("SendMessageActor: Message " + message.id + " Sending to identity " + toIdentity.id)
-
                     // check if identity has an event subscription
                     EventSubscription.find(Json.obj("identityId" -> toIdentity.id)).map {
                       case Some(es) => // do nothing
@@ -61,9 +59,9 @@ class SendMessageActor extends Actor {
                           case None =>
                             // external user, use contacts from identity
                             if (toIdentity.phoneNumber.isDefined) {
-                              sendSmsActor ! (message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value, 0)
+                              sendSmsActor ! SmsFromMessage(message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value)
                             } else if (toIdentity.email.isDefined) {
-                              sendMailActor ! (message, fromIdentity, toIdentity, subject, toIdentity.email.get.value, 0)
+                              sendMailActor ! MailWithPurl(message, fromIdentity, toIdentity, subject, toIdentity.email.get.value)
                             } else {
                               Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
                             }
@@ -72,9 +70,9 @@ class SendMessageActor extends Actor {
                             Account.find(accountId).map {
                               case Some(account) =>
                                 if (account.phoneNumber.isDefined) {
-                                  sendSmsActor ! (message, fromIdentity, toIdentity, account.phoneNumber.get, 0)
+                                  sendSmsActor ! SmsFromMessage(message, fromIdentity, toIdentity, account.phoneNumber.get)
                                 } else if (account.email.isDefined) {
-                                  sendMailActor ! (message, fromIdentity, toIdentity, subject, account.email.get, 0)
+                                  sendMailActor ! MailWithPurl(message, fromIdentity, toIdentity, subject, account.email.get)
                                 } else {
                                   Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
                                 }

@@ -26,5 +26,10 @@ package object actors {
     val props = RoundRobinPool(5).props(Props[EventActor])
     Akka.system.actorOf(props, "event_router")
   }
+  
+  lazy val notificationRouter: ActorRef = {
+    val props = RoundRobinPool(5).props(Props[NotificationActor])
+    Akka.system.actorOf(props, "notification_router")
+  }
 
 }

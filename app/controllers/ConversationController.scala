@@ -1,6 +1,6 @@
 package controllers
 
-import actors.{ NewConversation, SendMessage, SendMessageActor }
+import actors.{ NewConversation, Notification, NotificationActor }
 import akka.actor.Props
 import helper.CmActions.AuthAction
 import helper.OutputLimits
@@ -42,10 +42,10 @@ object ConversationController extends ExtendedController {
             case Some(js) =>
               js.validate(Reads.seq(Message.createReads(request.identity.id))).map {
                 messages =>
-                  // send message
-                  messages.foreach { message =>
-                    val sendMessageActor = Akka.system.actorOf(Props[SendMessageActor])
-                    sendMessageActor ! SendMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
+                  // send notification for last message only
+                  messages.lastOption match {
+                    case None          => // do nothing
+                    case Some(message) => actors.notificationRouter ! Notification(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
                   }
                   Left(conversation.copy(messages = messages))
               }.recoverTotal {

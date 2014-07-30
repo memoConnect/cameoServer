@@ -1,6 +1,7 @@
 package services
 
-import models.{ Identity, SmsMessage, TwoFactorSmsKey, VerifiedString }
+import actors.Sms
+import models.{ Identity,  TwoFactorSmsKey, VerifiedString }
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
@@ -19,14 +20,12 @@ object TwoFactorAuth {
 
     // check if the user has a phonenumber TODO: require that the phonenumber is verified
     identity.phoneNumber match {
-      case Some(VerifiedString(_, number, _)) => {
+      case Some(VerifiedString(_, number, _)) =>
         val key = TwoFactorSmsKey.create(identity.id)
-        val sms = new SmsMessage("CameoAuth", number, key.toString)
         val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
         Logger.info("Sending Two Factor Auth Key: " + key.toString + " to " + number)
-        sendSmsActor ! (sms, 0)
+        sendSmsActor ! Sms("CameoAuth", number, key.toString)
         None
-      }
       case _ => Some("identity has no phone number")
     }
   }

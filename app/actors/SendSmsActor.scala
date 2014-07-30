@@ -5,7 +5,7 @@ import constants.Messaging._
 import models._
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{ JsString, JsValue, Json }
+import play.api.libs.json.{ Format, JsString, JsValue, Json }
 import play.api.libs.ws.WS
 import play.api.{ Logger, Play }
 
@@ -16,19 +16,23 @@ import scala.concurrent.Future
  * Date: 6/12/13
  * Time: 8:01 PM
  */
+case class Sms(from: String, to: String, body: String)
+object Sms {implicit val format = Json.format[Sms]}
+
+case class SmsFromMessage(message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String)
+
 class SendSmsActor extends Actor {
 
-  def sendSms(sms: SmsMessage) = {
+  def sendSms(sms: Sms) = {
 
     val key = Play.configuration.getString("nexmo.key")
     val secret = Play.configuration.getString("nexmo.secret")
 
     key.isEmpty || secret.isEmpty match {
-      case true => {
+      case true =>
         Logger.warn("No Nexmo credentials")
         Future(new MessageStatus(new MongoId(""), MESSAGE_STATUS_ERROR, "No Credentials"))
-      }
-      case false => {
+      case false =>
 
         val postBody =
           Json.obj(
@@ -65,66 +69,53 @@ class SendSmsActor extends Actor {
               }
             }
         }
-      }
     }
   }
 
   def receive = {
     // send message to recipient
-    case (message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String, tryCount: Int) =>
-      // check how often we tried to send this message
-      if (tryCount > MESSAGE_MAX_TRY_COUNT) {
-        val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
-        //        message.updateSingleStatus(ms)
-      } else {
-        // get identity of sender
-        val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
-        val to: String = phoneNumber
-        val body: String = message.plain match {
-          case Some(PlainMessagePart(Some(text), _)) => text
-          case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
-        }
-
-        // create purl 
-        val purl = Purl.create(message.id, toIdentity.id)
-        Purl.col.insert(purl)
-
-        // add footer to sms
-        val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" + purl.id
-
-        // cut message, so it will fit in the sms with the footer.
-        val bodyWithFooter: String = {
-          if (footer.length + body.length > 160) {
-            body.substring(0, 160 - footer.length) + footer
-          } else {
-            body + footer
-          }
-        }
-        val sms = new SmsMessage(from, to, bodyWithFooter)
-
-        // check if we have a test user and save message
-        val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
-        toIdentity.cameoId.startsWith(testUserPrefix) match {
-          case false =>
-          case true  => TestUserNotification.createAndInsert(toIdentity.id, "sms", bodyWithFooter, false)
-        }
-
-        // check if this message comes from a test user and save it
-        fromIdentity.cameoId.startsWith(testUserPrefix) match {
-          case false =>
-          case true  => TestUserNotification.createAndInsert(fromIdentity.id, "sms", bodyWithFooter, true)
-        }
-
-        sendSms(sms)
+    case SmsFromMessage(message, fromIdentity, toIdentity, phoneNumber) =>
+      // get identity of sender
+      val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
+      val to: String = phoneNumber
+      val body: String = message.plain match {
+        case Some(PlainMessagePart(Some(text), _)) => text
+        case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
       }
 
-    case (sms: SmsMessage, tryCount: Int) => {
-      if (tryCount > MESSAGE_MAX_TRY_COUNT) {
-        Logger.error("Max try count of message reached: " + sms)
-      } else {
-        sendSms(sms)
+      // create purl 
+      val purl = Purl.create(message.id, toIdentity.id)
+      Purl.col.insert(purl)
+
+      // add footer to sms
+      val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" + purl.id
+
+      // cut message, so it will fit in the sms with the footer.
+      val bodyWithFooter: String = {
+        if (footer.length + body.length > 160) {
+          body.substring(0, 160 - footer.length) + footer
+        } else {
+          body + footer
+        }
       }
-    }
+      val sms = new Sms(from, to, bodyWithFooter)
+
+      // check if we have a test user and save message
+      val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+      toIdentity.cameoId.startsWith(testUserPrefix) match {
+        case false =>
+        case true  => TestUserNotification.createAndInsert(toIdentity.id, "sms", bodyWithFooter, false)
+      }
+
+      // check if this message comes from a test user and save it
+      fromIdentity.cameoId.startsWith(testUserPrefix) match {
+        case false =>
+        case true  => TestUserNotification.createAndInsert(fromIdentity.id, "sms", bodyWithFooter, true)
+      }
+
+      sendSms(sms)
+
+    case sms: Sms =>
+      sendSms(sms)
   }
-
 }

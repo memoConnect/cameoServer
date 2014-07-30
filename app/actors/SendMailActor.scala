@@ -9,6 +9,7 @@ import constants.Messaging._
 import models._
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
+import play.api.libs.json.Json
 import play.api.{ Logger, Play }
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -18,10 +19,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Date: 6/12/13
  * Time: 8:01 PM
  */
+case class Mail(from: String, to: String, body: String, subject: String)
+object Mail {implicit val format = Json.format[Mail]}
+
+case class MailWithPurl(message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, email: String)
 
 class SendMailActor extends Actor {
 
-  def sendMail(mail: MailMessage): MessageStatus = {
+  def sendMail(mail: Mail): MessageStatus = {
 
     Logger.info("SendMailActor: Sending email to " + mail.to + " from " + mail.from + " with subject \'" + mail.subject + "\'")
 
@@ -65,54 +70,34 @@ class SendMailActor extends Actor {
   }
 
   def receive = {
-    case (mail: MailMessage, tryCount: Int) =>
-      if (tryCount > MESSAGE_MAX_TRY_COUNT) {
-        Logger.error("Max try count of message reached: " + mail)
-      } else {
-        sendMail(mail)
+    case mail: Mail=>
+      sendMail(mail)
+
+    case MailWithPurl(message, fromIdentity, toIdentity, subject, email) =>
+
+      // get identity of sender
+      val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
+      val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
+      val mailSubject = "[cameo.io] - " + subject
+      val to: String = email
+      val body: String = message.plain match {
+        case Some(PlainMessagePart(Some(text), _)) => text
+        case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
       }
 
-    case (message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, email: String, tryCount: Int) =>
+      // create purl
+      val purl = Purl.create(message.id, toIdentity.id)
+      Purl.col.insert(purl)
 
-      Logger.debug("received mail message")
+      // add footer to mail
+      val footer = "\n\n---\nRead entire conversation on cameo.io: " + Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
 
-      // check how often we tried to send this message
-      if (tryCount > MESSAGE_MAX_TRY_COUNT) {
-        val ms = new MessageStatus(toIdentity.id, MESSAGE_STATUS_ERROR, "max try count reached")
-        //        message.updateSingleStatus(ms)
-      } else {
-        // get identity of sender
-        val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
-        val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
-        val mailSubject = "[cameo.io] - " + subject
-        val to: String = email
-        val body: String = message.plain match {
-          case Some(PlainMessagePart(Some(text), _)) => text
-          case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
-        }
+      // cut message, so it will fit in the sms with the footer.
+      val bodyWithFooter = body + footer
 
-        // create purl
-        val purl = Purl.create(message.id, toIdentity.id)
-        Purl.col.insert(purl)
+      val mail = new Mail(from, to, bodyWithFooter, mailSubject)
 
-        // add footer to mail
-        val footer = "\n\n---\nRead entire conversation on cameo.io: " + Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
-
-        // cut message, so it will fit in the sms with the footer.
-        val bodyWithFooter = body + footer
-
-        val mail = new MailMessage(from, to, bodyWithFooter, mailSubject)
-
-        val messageStatus = sendMail(mail)
-
-        if (messageStatus.status.equals(MESSAGE_STATUS_SEND)) {
-          //          message.updateSingleStatus(messageStatus.copy(identityId = toIdentity.id))
-        } else {
-          // try again
-          lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
-          sendMailActor ! (message, fromIdentity, toIdentity, tryCount + 1)
-        }
-      }
+      sendMail(mail)
   }
 }
 
