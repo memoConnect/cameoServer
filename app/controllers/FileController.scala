@@ -190,7 +190,7 @@ object FileController extends ExtendedController {
     request =>
       FileMeta.deleteWithChunks(new MongoId(id)).map {
         case false => resServerError("could not delete")
-        case true => resOk("deleted")
+        case true  => resOk("deleted")
       }
   }
 }

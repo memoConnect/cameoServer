@@ -5,7 +5,7 @@ import constants.Messaging._
 import models._
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.{ Format, JsString, JsValue, Json }
+import play.api.libs.json.{ JsString, JsValue, Json }
 import play.api.libs.ws.WS
 import play.api.{ Logger, Play }
 
@@ -17,7 +17,7 @@ import scala.concurrent.Future
  * Time: 8:01 PM
  */
 case class Sms(from: String, to: String, body: String)
-object Sms {implicit val format = Json.format[Sms]}
+object Sms { implicit val format = Json.format[Sms] }
 
 case class SmsFromMessage(message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String)
 

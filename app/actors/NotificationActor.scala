@@ -9,8 +9,6 @@ import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 
-import scala.concurrent.Future
-
 /**
  * User: Björn Reimer
  * Date: 6/12/13

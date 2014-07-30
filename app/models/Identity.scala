@@ -473,11 +473,11 @@ object IdentityEvolutions {
 
   val removeAuthenticationRequests: Reads[JsObject] = Reads {
     js =>
-    {
-      val removeArray = (__ \ 'authenticationRequests).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(9)))
-      js.transform(removeArray andThen addVersion)
-    }
+      {
+        val removeArray = (__ \ 'authenticationRequests).json.prune
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(9)))
+        js.transform(removeArray andThen addVersion)
+      }
 
   }
 }

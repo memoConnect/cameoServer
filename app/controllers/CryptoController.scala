@@ -70,7 +70,7 @@ object CryptoController extends ExtendedController {
     request =>
       request.identity.deleteSignature(new MongoId(id), keyId).map {
         case false => resServerError("could not delete")
-        case true => resOk("deleted")
+        case true  => resOk("deleted")
       }
   }
 

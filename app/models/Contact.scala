@@ -2,7 +2,6 @@ package models
 
 import constants.Contacts._
 import helper.IdHelper
-import helper.JsonHelper._
 import helper.ResultHelper._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._

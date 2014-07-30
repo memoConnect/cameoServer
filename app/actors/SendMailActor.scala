@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.{ Actor, Props }
+import akka.actor.Actor
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail.model._
 import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailServiceClient, model }
@@ -8,7 +8,6 @@ import com.amazonaws.{ AmazonClientException, AmazonServiceException }
 import constants.Messaging._
 import models._
 import play.api.Play.current
-import play.api.libs.concurrent.Akka
 import play.api.libs.json.Json
 import play.api.{ Logger, Play }
 
@@ -20,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Time: 8:01 PM
  */
 case class Mail(from: String, to: String, body: String, subject: String)
-object Mail {implicit val format = Json.format[Mail]}
+object Mail { implicit val format = Json.format[Mail] }
 
 case class MailWithPurl(message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, email: String)
 
@@ -70,7 +69,7 @@ class SendMailActor extends Actor {
   }
 
   def receive = {
-    case mail: Mail=>
+    case mail: Mail =>
       sendMail(mail)
 
     case MailWithPurl(message, fromIdentity, toIdentity, subject, email) =>

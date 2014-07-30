@@ -1,13 +1,10 @@
 package controllers
 
-import actors.{ NewConversation, Notification, NotificationActor }
-import akka.actor.Props
+import actors.{ NewConversation, Notification }
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
-import play.api.Play.current
-import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result

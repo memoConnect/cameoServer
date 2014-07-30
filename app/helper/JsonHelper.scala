@@ -2,7 +2,7 @@ package helper
 
 import java.util.Date
 
-import models.{ MongoId, VerifiedString }
+import models.VerifiedString
 import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._

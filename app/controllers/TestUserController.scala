@@ -2,7 +2,7 @@ package controllers
 
 import helper.MongoCollections
 import helper.ResultHelper._
-import models.{ FileMeta, Identity, Account, TestUserNotification }
+import models.{ Account, FileMeta, Identity, TestUserNotification }
 import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.mvc.Action

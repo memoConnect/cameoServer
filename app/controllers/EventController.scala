@@ -6,8 +6,7 @@ import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.json.{ Json, JsObject }
-import play.api.mvc.Controller
+import play.api.libs.json.{ JsObject, Json }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

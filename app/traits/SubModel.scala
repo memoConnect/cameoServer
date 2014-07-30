@@ -1,6 +1,5 @@
 package traits
 
-import helper.JsonHelper._
 import models.MongoId
 import play.api.libs.json.Reads._
 import play.api.libs.json._
