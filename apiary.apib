@@ -1758,3 +1758,21 @@ Events will be deleted after each call
          }
         }
         
+## broadcast event to all eventSubscriptions [/api/v1/event/broadcast]
+
+### POST
+
++ Request
+
+        {
+            "name" : "eventname",
+            "data" : "eventdata"
+        }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "event send"
+        }
+        

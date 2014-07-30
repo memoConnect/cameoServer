@@ -1,11 +1,14 @@
 package controllers
 
+import actors.BroadcastEvent
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
 import play.api.Play
 import play.api.Play.current
+import play.api.libs.json.{ Json, JsObject }
 import play.api.mvc.Controller
+import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -14,7 +17,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Date: 09.05.14
  * Time: 13:42
  */
-object EventController extends Controller {
+object EventController extends ExtendedController {
 
   def newSubscription() = AuthAction(allowExternal = true).async(parse.tolerantJson) {
     request =>
@@ -48,6 +51,18 @@ object EventController extends Controller {
         case None => resNotFound("subscription id")
         case Some(subscription) =>
           resOk(subscription.toJson)
+      }
+  }
+
+  case class EventBroadcastRequest(data: JsObject, name: String)
+  object EventBroadcastRequest { implicit val format = Json.format[EventBroadcastRequest] }
+
+  def broadcastEvent() = AuthAction()(parse.tolerantJson) {
+    request =>
+      validate(request.body, EventBroadcastRequest.format) {
+        ebr =>
+          actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data)
+          resOk("event send")
       }
   }
 }

@@ -82,6 +82,7 @@ GET            /a/v1/purl/:id                                       controllers.
 # EVENTS
 POST           /a/v1/eventSubscription                              controllers.EventController.newSubscription()
 GET            /a/v1/eventSubscription/:id                          controllers.EventController.getSubscription(id)
+POST           /a/v1/event/broadcast                                controllers.EventController.broadcastEvent()
 
 # Services
 POST           /a/v1/services/checkPhoneNumber                      controllers.ServicesController.checkPhoneNumber

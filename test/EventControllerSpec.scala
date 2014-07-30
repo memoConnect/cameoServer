@@ -613,7 +613,6 @@ class EventControllerSpec extends StartedApp {
 
     var pubKeyId = ""
     "add public key" in {
-
       val path = basePath + "/identity/publicKey"
 
       val json = Json.obj("name" -> "moep", "key" -> "asdfasdf", "keySize" -> 123)
@@ -696,5 +695,50 @@ class EventControllerSpec extends StartedApp {
       }
     }
 
+    val eventName = "moepsEvent"
+    val eventData = Json.obj("foo" -> "baa", "moep" -> "moeps")
+    "send broadcast event" in {
+      val path = basePath + "/event/broadcast"
+
+      val json = Json.obj("name" -> eventName, "data" -> eventData)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "broadcast event should appear in both subscriptions of first user" in {
+      Thread.sleep(200)
+
+      Seq(subscriptionId, subscription2Id).seq.map { id =>
+        val path = basePath + "/eventSubscription/" + id
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "id").asOpt[String] must beSome(id)
+        (data \ "events").asOpt[Seq[JsObject]] must beSome
+
+        val events = (data \ "events").as[Seq[JsObject]]
+
+        val newMessageEvents = events.filter(e =>
+          (e \ "name").as[String].equals(eventName))
+        newMessageEvents.length must beEqualTo(1)
+        newMessageEvents.map { js =>
+          (js \ "data").asOpt[JsObject] must beSome(eventData)
+        }
+      }
+      1 === 1
+    }
   }
 }
