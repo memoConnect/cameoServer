@@ -30,7 +30,7 @@ object IdentityController extends ExtendedController {
   }
 
   def getIdentityByToken = AuthAction(allowExternal = true) {
-    request =>  resOk(request.identity.toPrivateJson)
+    request => resOk(request.identity.toPrivateJson)
   }
 
   def updateIdentity() = AuthAction().async(parse.tolerantJson) {
@@ -49,35 +49,46 @@ object IdentityController extends ExtendedController {
   def search(offset: Int, limit: Int) = AuthAction().async(parse.tolerantJson) {
     request =>
 
-      case class VerifyRequest(search: String, fields: Seq[String], excludeContacts: Option[Boolean])
+      case class IdentitySearch(search: String, fields: Seq[String], excludeContacts: Option[Boolean])
 
-      def reads: Reads[VerifyRequest] = (
+      def reads: Reads[IdentitySearch] = (
         (__ \ 'search).read[String](minLength[String](4)) and
         (__ \ 'fields).read[Seq[String]] and
         (__ \ 'excludeContacts).readNullable[Boolean]
-      )(VerifyRequest.apply _)
+      )(IdentitySearch.apply _)
 
       validateFuture(request.body, reads) {
-        vr =>
+        identitySearch =>
           // there needs to be at least one field
-          vr.fields.isEmpty match {
+          identitySearch.fields.isEmpty match {
             case true => Future(resBadRequest("at least one element in fields required"))
             case false =>
-              val cameoId = if (vr.fields.contains("cameoId")) Some(vr.search) else None
-              val displayName = if (vr.fields.contains("displayName")) Some(vr.search) else None
+              val cameoId = if (identitySearch.fields.contains("cameoId")) Some(identitySearch.search) else None
+              val displayName = if (identitySearch.fields.contains("displayName")) Some(identitySearch.search) else None
 
-              Identity.search(cameoId, displayName).map {
-                list =>
-                  // todo: filter directly in mongo search
-                  val filtered = list.filter(identity => {
-                    val matchesContact: Boolean = vr.excludeContacts match {
-                      case Some(true) => request.identity.contacts.exists(_.identityId.equals(identity.id))
-                      case _          => false
-                    }
-                    !request.identity.id.equals(identity.id) && !matchesContact
-                  })
-                  val limited = OutputLimits.applyLimits(filtered, offset, limit)
-                  resOk(limited.map { i => i.toPublicJson })
+              // find all pending friend request
+              Identity.findAll(Json.obj("friendRequests.identityId" -> request.identity.id)).flatMap {
+                pendingFriendRequest =>
+                  val exclude =
+                    Seq(request.identity.id) ++
+                      pendingFriendRequest.map(_.id) ++
+                      // exclude identities that requested friendship
+                      request.identity.friendRequests.map(_.identityId) ++
+                      // exclude contacts
+                      {
+                        identitySearch.excludeContacts match {
+                          case Some(true) => request.identity.contacts.map(_.identityId)
+                          case _          => Seq()
+                        }
+                      }
+
+                  Identity.search(cameoId, displayName).map {
+                    list =>
+                      // filter excluded identities
+                      val filtered = list.filterNot(identity => exclude.exists(_.equals(identity.id)))
+                      val limited = OutputLimits.applyLimits(filtered, offset, limit)
+                      resOk(limited.map { i => i.toPublicJson })
+                  }
               }
           }
       }

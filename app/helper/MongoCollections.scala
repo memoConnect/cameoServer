@@ -29,6 +29,8 @@ object MongoCollections {
   lazy val identityCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("identities")
     col.indexesManager.ensure(Index(Seq("cameoId" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
+    col.indexesManager.ensure(Index(Seq("displayName" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(Seq("accountId" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("contacts._id" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("tokens._id" -> IndexType.Ascending)))
     col
