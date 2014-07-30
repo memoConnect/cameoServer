@@ -66,9 +66,9 @@ class NotificationActor extends Actor {
                             Account.find(accountId).map {
                               case Some(account) =>
                                 if (account.phoneNumber.isDefined) {
-                                  sendSmsActor ! SmsWithPurl(message, fromIdentity, toIdentity, account.phoneNumber.get)
+                                  sendSmsActor ! SmsWithPurl(message, fromIdentity, toIdentity, account.phoneNumber.get.value)
                                 } else if (account.email.isDefined) {
-                                  sendMailActor ! MailWithPurl(message, fromIdentity, toIdentity, subject, account.email.get)
+                                  sendMailActor ! MailWithPurl(message, fromIdentity, toIdentity, subject, account.email.get.value)
                                 } else {
                                   Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
                                 }

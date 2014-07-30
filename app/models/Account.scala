@@ -8,6 +8,7 @@ import helper.JsonHelper._
 import helper.MongoCollections._
 import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
+import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
@@ -26,8 +27,8 @@ case class Account(id: MongoId,
                    loginName: String,
                    password: String,
                    identities: Seq[MongoId],
-                   phoneNumber: Option[String], // not used anymore
-                   email: Option[String], // not used anymore
+                   phoneNumber: Option[VerifiedString],
+                   email: Option[VerifiedString],
                    created: Date,
                    lastUpdated: Date) {
 
@@ -54,18 +55,14 @@ object Account extends Model[Account] with CockpitEditable[Account] {
 
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
 
-  def docVersion = 0
-
-  def evolutions = Map()
-
   def createReads: Reads[Account] = {
     val id = IdHelper.generateAccountId()
     (Reads.pure[MongoId](id) and
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       Reads.pure[Seq[MongoId]](Seq()) and
-      (__ \ 'phoneNumber).readNullable[String](verifyPhoneNumber andThen Reads.StringReads) and
-      (__ \ 'email).readNullable[String](verifyMail andThen Reads.StringReads) and
+      (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+      (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -130,6 +127,11 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
+  def docVersion = 1
+
+  def evolutions = Map(
+    0 -> AccountEvolutions.migrateToVerifiedString
+  )
 }
 
 case class AccountReservation(loginName: String,
@@ -172,4 +174,35 @@ object AccountReservation extends Model[AccountReservation] {
   def createDefault(): AccountReservation = {
     new AccountReservation(IdHelper.randomString(8), IdHelper.generateMongoId(), new Date)
   }
+}
+
+object AccountEvolutions {
+
+  def migrateToVerifiedString: Reads[JsObject] = Reads {
+    js =>
+      {
+        val movePhoneNumber = __.json.update((__ \ 'phoneNumber \ 'value).json.copyFrom((__ \ 'phoneNumber).json.pick[JsString]))
+        val pnAddVerified = __.json.update((__ \ 'phoneNumber \ 'isVerified).json.put(JsBoolean(false)))
+        val pnAddDate = __.json.update((__ \ 'phoneNumber \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
+        val phoneNumber: Reads[JsObject] =
+          (js \ "phoneNumber").asOpt[String] match {
+            case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
+            case Some(n) => movePhoneNumber andThen pnAddVerified andThen pnAddDate
+          }
+
+        val moveMail = __.json.update((__ \ 'email \ 'value).json.copyFrom((__ \ 'email).json.pick[JsString]))
+        val mAddVerified = __.json.update((__ \ 'email \ 'isVerified).json.put(JsBoolean(false)))
+        val mAddDate = __.json.update((__ \ 'email \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
+        val email =
+          (js \ "email").asOpt[String] match {
+            case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
+            case Some(m) => moveMail andThen mAddVerified andThen mAddDate
+          }
+
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+
+        js.transform(phoneNumber andThen email andThen addVersion)
+      }
+  }
+
 }

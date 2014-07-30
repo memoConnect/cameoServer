@@ -110,7 +110,6 @@ class SendSmsActor extends Actor {
         case false =>
         case true  => TestUserNotification.createAndInsert(fromIdentity.id, "sms", bodyWithFooter, true)
       }
-
       sendSms(sms)
 
     case sms: Sms =>

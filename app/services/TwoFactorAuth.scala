@@ -1,7 +1,7 @@
 package services
 
 import actors.Sms
-import models.{Account, Identity, TwoFactorSmsKey, VerifiedString}
+import models.{ Account, Identity, TwoFactorSmsKey, VerifiedString }
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
@@ -21,17 +21,19 @@ object TwoFactorAuth {
     // get phonenumber of account
     identity.accountId match {
       case None => Future(Some("identity is external"))
-      case Some(accountId)                             =>
+      case Some(accountId) =>
+        Logger.debug("finding key")
         Account.find(accountId).map {
           case None => Some("could not find account")
           case Some(account) =>
+            Logger.debug("found key")
             account.phoneNumber match {
               case None => Some("account has no phone number")
               case Some(number) =>
                 val key = TwoFactorSmsKey.createAndInsert(identity.id)
                 val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
                 Logger.info("Sending Two Factor Auth Key: " + key.toString + " to " + number)
-                sendSmsActor ! Sms("CameoAuth", number, key.toString)
+                sendSmsActor ! Sms("CameoAuth", number.value, key.toString)
                 None
             }
         }

@@ -109,6 +109,7 @@ trait Model[A] {
                       val futureRes: Future[Boolean] = save(newJs).map {
                         _.ok
                       }
+                      // lock until the migrated object is saved
                       val res = Await.result(futureRes, 10.minutes)
                       res match {
                         case false =>
