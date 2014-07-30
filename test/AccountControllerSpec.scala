@@ -595,6 +595,62 @@ class AccountControllerSpec extends StartedApp {
       (data \ "identities").asOpt[Seq[JsObject]] must beSome
       (data \ "email" \ "value").asOpt[String] must beSome(newEmail)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newPhoneNumber)
+    }
+
+    "get token with old password" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExisting2 + ":" + password).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "update account password" in {
+      val path = basePath + "/account"
+      val json = Json.obj("password" -> newPassword)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "refuse login with old password" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExisting2 + ":" + password).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(UNAUTHORIZED)
+
+    }
+
+    "allow login with new password" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExisting2 + ":" + newPassword).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
     }
   }

@@ -58,7 +58,7 @@ case class Account(id: MongoId,
           Json.obj("$set" -> (
             maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
               maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
-              maybeEmptyString("displayName", maybePassword)
+              maybeEmptyString("password", maybePassword)
             ))
         Account.col.update(query, set).map { _.ok }
     }
