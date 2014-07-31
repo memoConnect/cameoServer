@@ -689,7 +689,7 @@ class AccountControllerSpec extends StartedApp {
       val path = basePath + "/identity"
       val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId)
 
-      val req = FakeRequest(GET, path).withJsonBody(json)
+      val req = FakeRequest(GET, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
       val res = route(req).get
 
       if (status(res) != OK) {

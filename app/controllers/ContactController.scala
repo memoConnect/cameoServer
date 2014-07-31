@@ -255,18 +255,26 @@ object ContactController extends ExtendedController {
                 Identity.find(afr.identityId).flatMap {
                   case None => Future(resNotFound("other identity"))
                   case Some(otherIdentity) =>
+                    val contact = Contact.create(otherIdentity.id)
+                    val otherContact = Contact.create(request.identity.id)
+
                     // check if accepting identity also has send a friendRequest and remove it
                     otherIdentity.deleteFriendRequest(request.identity.id)
                     for {
-                      le1 <- otherIdentity.addContact(Contact.create(request.identity.id))
-                      le2 <- request.identity.addContact(Contact.create(otherIdentity.id))
+                      le1 <- otherIdentity.addContact(otherContact)
+                      le2 <- request.identity.addContact(contact)
                     } yield {
                       le1 && le2 match {
                         case true =>
-                          // send event to both parties
-                          actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id, otherIdentity.id, request.identity.id)
-                          actors.eventRouter ! AcceptedFriendRequest(request.identity.id, otherIdentity.id, request.identity.id)
 
+                          for {
+                            contactJs <- contact.toJsonWithIdentity
+                            otherContactJs <- otherContact.toJsonWithIdentity
+                          } yield {
+                            // send event to both parties
+                            actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id, otherIdentity.id, request.identity.id, otherContactJs)
+                            actors.eventRouter ! AcceptedFriendRequest(request.identity.id, otherIdentity.id, request.identity.id, contactJs)
+                          }
                           resOk("added contacts")
                         case false => resKo("duplicate entries")
                       }

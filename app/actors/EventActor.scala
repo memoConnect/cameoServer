@@ -39,14 +39,15 @@ case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendReques
     )
 }
 
-case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId) extends EventMessage {
+case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId, contact: JsObject) extends EventMessage {
 
   def eventType = "friendRequest:accepted"
 
   def toEventContent =
     Json.obj(
       "from" -> fromIdentity.toJson,
-      "to" -> toIdentityId.toJson
+      "to" -> toIdentityId.toJson,
+      "contact" -> contact
     )
 }
 

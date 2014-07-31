@@ -214,6 +214,8 @@ class EventControllerSpec extends StartedApp {
         newMessageEvents.map { js =>
           (js \ "data" \ "to").asOpt[String] must beSome(identityExisting)
           (js \ "data" \ "from").asOpt[String] must beSome(identityExisting3)
+          (js \ "data" \ "contact" \ "id").asOpt[String] must beSome
+          (js \ "data" \ "contact" \ "identity").asOpt[JsObject] must beSome
         }
       }
       1 === 1
