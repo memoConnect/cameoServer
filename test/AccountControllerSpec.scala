@@ -685,18 +685,18 @@ class AccountControllerSpec extends StartedApp {
     val newIdentityCameoId = "myMoep"
     var newIdentityId = ""
 
-    "refuse to add new identity to account without reservation secret" in {
-      val path = basePath + "/identity"
-      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId)
-
-      val req = FakeRequest(GET, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(BAD_REQUEST)
-    }
+//    "refuse to add new identity to account without reservation secret" in {
+//      val path = basePath + "/identity"
+//      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId)
+//
+//      val req = FakeRequest(GET, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(BAD_REQUEST)
+//    }
 
 //    var regSec3 = ""
 //    "reserve cameoId" in {
