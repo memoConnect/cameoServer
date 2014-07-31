@@ -8,6 +8,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.Action
+import services.AvatarGenerator
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -102,10 +103,9 @@ object IdentityController extends ExtendedController {
     request =>
       validateFuture(request.body, Identity.createReads) {
         identity =>
-          identity.accountId match {
+          request.identity.accountId match {
             case None => Future(resBadRequest("identity has no account"))
             case Some(accountId) =>
-
               validateFuture(request.body, AdditionalValues.format) {
                 additionalValues =>
                   AccountReservation.findByLoginName(identity.cameoId).flatMap {
@@ -116,14 +116,15 @@ object IdentityController extends ExtendedController {
                       val identityWithAccount = identity.copy(accountId = request.identity.accountId)
                       val res = for {
                         updateAccount <- Account.addIdentityToAccount(request.identity.accountId.get, identityWithAccount.id)
-                        insertIdentity <- Identity.col.insert(identityWithAccount).map(_.ok)
-                      } yield {
-                        updateAccount && insertIdentity
-                      }
-                      res.map {
-                        case false => resServerError("could not create")
-                        case true  => resOk(identityWithAccount.toPrivateJson)
-                      }
+                        fileId <- AvatarGenerator.generate(identityWithAccount)
+                        insertedIdentity <- {
+                          val identityWithAvatar = identityWithAccount.copy(avatar = fileId)
+                          Identity.col.insert(identityWithAvatar).map(foo=>identityWithAvatar)
+                        }
+                        supportAdded <- insertedIdentity.addSupport()
+                      } yield { insertedIdentity }
+
+                      res.map(insertedIdentity => resOk(insertedIdentity.toPrivateJson))
                   }
               }
           }

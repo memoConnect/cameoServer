@@ -523,5 +523,119 @@ class IdentityControllerSpec extends StartedApp {
       (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting4)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting4)
     }
+
+    val testUser = createTestUser()
+    val newIdentityDisplayName = "Mooeepp"
+    val newIdentityTel = "+49123456"
+    val newIdentityEmail = "foo@moep.de"
+    val newIdentityCameoId = "myMoep"
+    var newIdentityId = ""
+
+    "refuse to add new identity to account without reservation secret" in {
+      val path = basePath + "/identity"
+      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "refuse to add new identity to account with invalid reservation secret" in {
+      val path = basePath + "/identity"
+      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId, "reservationSecret" -> "fooooo")
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    var regSec = ""
+    "reserve cameoId" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("cameoId" -> newIdentityCameoId)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "reservationSecret").asOpt[String] must beSome
+      regSec = (data \ "reservationSecret").as[String]
+      1 === 1
+    }
+
+    "add new identity to account with correct reservation secret" in {
+      val path = basePath + "/identity"
+      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId, "reservationSecret" -> regSec)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      newIdentityId = (data \ "id").as[String]
+      (data \ "userKey").asOpt[String] must beSome
+      (data \ "cameoId").asOpt[String] must beSome(newIdentityCameoId)
+      (data \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (data \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "account should now contain both identities" in {
+      val path = basePath + "/account"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "identities").asOpt[Seq[JsObject]] must beSome
+      val identities = (data \ "identities").as[Seq[JsObject]]
+      identities.length must beEqualTo(2)
+
+      identities.find(js => (js \ "id").as[String].equals(testUser.identityId)) must beSome
+      identities.find(js => (js \ "id").as[String].equals(newIdentityId)) must beSome
+
+      val identity = identities.find(js => (js \ "id").as[String].equals(newIdentityId)).get
+      (identity \ "id").asOpt[String] must beSome
+      (identity \ "userKey").asOpt[String] must beSome
+      (identity \ "cameoId").asOpt[String] must beSome(newIdentityCameoId)
+      (identity \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (identity \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (identity \ "avatar").asOpt[String] must beSome
+      (identity \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+//    "get token for new identity"
+//
+//    "identity should have an avatar"
+//
+//    "identity should have support user as contact"
   }
 }
