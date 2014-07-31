@@ -37,6 +37,11 @@ object TestConfig {
   val loginExisting = "2VqTftqh"
   val loginExisting2 = "BMeSfHXQ"
 
+  val accountExisting2Tel = "560277123"
+  val accountExisting2Mail = "moep2@bjrm.de"
+  val accountExisting3Tel = "5602772323"
+  val accountExisting4Mail = "moep4@bjrm.de"
+
   val password = "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8"
 
   val identityExisting = "g9PWZY7xKNbeCO6LPNnx"

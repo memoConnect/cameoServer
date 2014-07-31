@@ -3,7 +3,7 @@ package actors
 import akka.actor.{ Actor, Props }
 import constants.Messaging._
 import models._
-import play.api.Logger
+import play.api.{ Play, Logger }
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
@@ -32,8 +32,8 @@ class NotificationActor extends Actor {
         case Some(fromIdentity: Identity) =>
 
           // create actors
-          lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
-          lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
+          lazy val sendMailActor = Akka.system.actorOf(SendMailActorProps)
+          lazy val sendSmsActor = Akka.system.actorOf(SendSmsActorProps)
 
           recipients.map {
             recipient =>
@@ -55,9 +55,9 @@ class NotificationActor extends Actor {
                           case None =>
                             // external user, use contacts from identity
                             if (toIdentity.phoneNumber.isDefined) {
-                              sendSmsActor ! SmsWithPurl(message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value)
+                              sendSmsActor ! generateSms(message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value)
                             } else if (toIdentity.email.isDefined) {
-                              sendMailActor ! MailWithPurl(message, fromIdentity, toIdentity, subject, toIdentity.email.get.value)
+                              sendMailActor ! generateMail(message, fromIdentity, toIdentity, subject, toIdentity.email.get.value)
                             } else {
                               Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
                             }
@@ -66,9 +66,9 @@ class NotificationActor extends Actor {
                             Account.find(accountId).map {
                               case Some(account) =>
                                 if (account.phoneNumber.isDefined) {
-                                  sendSmsActor ! SmsWithPurl(message, fromIdentity, toIdentity, account.phoneNumber.get.value)
+                                  sendSmsActor ! generateSms(message, fromIdentity, toIdentity, account.phoneNumber.get.value)
                                 } else if (account.email.isDefined) {
-                                  sendMailActor ! MailWithPurl(message, fromIdentity, toIdentity, subject, account.email.get.value)
+                                  sendMailActor ! generateMail(message, fromIdentity, toIdentity, subject, account.email.get.value)
                                 } else {
                                   Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
                                 }
@@ -81,5 +81,69 @@ class NotificationActor extends Actor {
               }
           }
       }
+  }
+
+  def generateMail(message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, email: String): Mail = {
+    // get identity of sender
+    val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
+    val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
+    val mailSubject = "[cameo.io] - " + subject
+    val to: String = email
+    val body: String = message.plain match {
+      case Some(PlainMessagePart(Some(text), _)) => text
+      case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
+    }
+
+    // create purl
+    val purl = Purl.create(message.id, toIdentity.id)
+    Purl.col.insert(purl)
+
+    // add footer to mail
+    val footer = "\n\n---\nRead entire conversation on cameo.io: " + Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
+
+    // cut message, so it will fit in the sms with the footer.
+    val bodyWithFooter = body + footer
+
+    new Mail(from, to, bodyWithFooter, mailSubject)
+  }
+
+  def generateSms(message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String): Sms = {
+    val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
+    val to: String = phoneNumber
+    val body: String = message.plain match {
+      case Some(PlainMessagePart(Some(text), _)) => text
+      case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
+    }
+
+    // create purl
+    val purl = Purl.create(message.id, toIdentity.id)
+    Purl.col.insert(purl)
+
+    // add footer to sms
+    val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" + purl.id
+
+    // cut message, so it will fit in the sms with the footer.
+    val bodyWithFooter: String = {
+      if (footer.length + body.length > 160) {
+        body.substring(0, 160 - footer.length) + footer
+      } else {
+        body + footer
+      }
+    }
+
+    // check if we have a test user and save message
+    val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+    toIdentity.cameoId.startsWith(testUserPrefix) match {
+      case false =>
+      case true  => TestUserNotification.createAndInsert(toIdentity.id, "sms", bodyWithFooter, false)
+    }
+
+    // check if this message comes from a test user and save it
+    fromIdentity.cameoId.startsWith(testUserPrefix) match {
+      case false =>
+      case true  => TestUserNotification.createAndInsert(fromIdentity.id, "sms", bodyWithFooter, true)
+    }
+
+    new Sms(from, to, bodyWithFooter)
   }
 }

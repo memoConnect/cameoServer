@@ -651,7 +651,6 @@ class AccountControllerSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(OK)
-
     }
   }
 }

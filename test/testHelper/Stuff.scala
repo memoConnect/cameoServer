@@ -1,5 +1,6 @@
 package testHelper
 
+import play.api.Logger
 import play.api.libs.json.{Json, JsObject}
 import helper.TestValueStore
 
@@ -36,7 +37,16 @@ object Stuff {
 
   def twoFactorTokenHeader(token: String): (String, String) = ("X-TwoFactorToken", token)
 
-
+  def waitFor(test : => Boolean) {
+    var maxRepetitions = 100
+    while(!test  && maxRepetitions > 0) {
+      maxRepetitions -= 1
+      Thread.sleep(50)
+      if(maxRepetitions % 20 == 0) {
+        Logger.debug("waiting: " + test)
+      }
+    }
+  }
 
 
 }

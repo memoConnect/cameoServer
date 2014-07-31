@@ -1,4 +1,4 @@
-import actors.testActors.SendSmsTestActor
+import actors.testActors.{SendMailTestActor, SendSmsTestActor}
 import akka.actor.{ ActorRef, Props }
 import akka.routing.RoundRobinPool
 import play.api.Play.current
@@ -19,6 +19,15 @@ package object actors {
       Props[SendSmsTestActor]
     } else {
       Props[SendSmsActor]
+    }
+  }
+
+  def SendMailActorProps: Props = {
+    if (Play.isTest) {
+      Logger.debug("Using Mail Test Actor")
+      Props[SendMailTestActor]
+    } else {
+      Props[SendMailActor]
     }
   }
 
