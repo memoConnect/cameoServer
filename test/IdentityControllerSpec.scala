@@ -178,7 +178,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
 
       data.length must beEqualTo(1)
@@ -200,7 +200,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
 
       data.length must beEqualTo(1)
@@ -222,7 +222,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
 
       data.length must beEqualTo(1)
@@ -378,7 +378,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
 
       data.length must beEqualTo(1)
@@ -520,7 +520,7 @@ class IdentityControllerSpec extends StartedApp {
 
       data.length must equalTo(1)
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting4)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting4 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting4)
     }
 
@@ -594,7 +594,7 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "id").asOpt[String] must beSome
       newIdentityId = (data \ "id").as[String]
       (data \ "userKey").asOpt[String] must beSome
-      (data \ "cameoId").asOpt[String] must beSome(newIdentityCameoId)
+      (data \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
       (data \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
       (data \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
@@ -624,7 +624,7 @@ class IdentityControllerSpec extends StartedApp {
       val identity = identities.find(js => (js \ "id").as[String].equals(newIdentityId)).get
       (identity \ "id").asOpt[String] must beSome
       (identity \ "userKey").asOpt[String] must beSome
-      (identity \ "cameoId").asOpt[String] must beSome(newIdentityCameoId)
+      (identity \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
       (identity \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
       (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
       (identity \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)

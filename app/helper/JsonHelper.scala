@@ -4,12 +4,14 @@ import java.util.Date
 
 import models.VerifiedString
 import org.mindrot.jbcrypt.BCrypt
+import play.api.Play
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.modules.reactivemongo.json.BSONFormats
 import reactivemongo.bson.BSONDocument
 import reactivemongo.core.commands.Match
+import play.api.Play.current
 
 /**
  * User: Björn Reimer
@@ -78,6 +80,11 @@ object JsonHelper {
       case Some(s) => Json.obj(key -> s)
       case None    => Json.obj()
     }
+  }
+
+  def getCameoId(base: String): JsObject = {
+    val domain = Play.configuration.getString("domain").get
+    Json.obj("cameoId" -> (base + "@" + domain))
   }
 
   def getNewValueVerifiedString(old: Option[VerifiedString], newValue: VerifiedString): Option[VerifiedString] = {

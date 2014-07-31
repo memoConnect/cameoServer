@@ -243,7 +243,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       Json.obj("id" -> i.id.toJson) ++
         maybeEmptyString("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
-        Json.obj("cameoId" -> i.cameoId) ++
+        getCameoId(i.cameoId) ++
         maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
         maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson)) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
@@ -257,7 +257,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   def publicWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
-        Json.obj("cameoId" -> i.cameoId) ++
+        getCameoId(i.cameoId) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         maybeEmptyString("displayName", i.displayName) ++
         Json.obj("publicKeys" -> i.publicKeys.map(_.toJson)) ++ {

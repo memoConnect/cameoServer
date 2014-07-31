@@ -325,7 +325,7 @@ class AccountControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       (data \ "userKey").asOpt[String] must beSome
-      (data \ "cameoId").asOpt[String] must beSome(login)
+      (data \ "cameoId").asOpt[String] must beSome(login + "@" + domain)
       (data \ "displayName").asOpt[String] must beSome(displayName)
       (data \ "email" \ "value").asOpt[String] must beNone
       (data \ "phoneNumber" \ "value").asOpt[String] must beNone
@@ -529,7 +529,7 @@ class AccountControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
-      (data \ "cameoId").asOpt[String] must beSome(loginExternal)
+      (data \ "cameoId").asOpt[String] must beSome(loginExternal + "@" + domain)
       (data \ "avatar").asOpt[String] must beSome
       (data \ "displayName").asOpt[String] must beSome(displayName2)
     }
