@@ -28,6 +28,8 @@ object TestConfig {
 
   lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
 
+  val testUserPrefix = "testUser23"
+
   val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
   val cidExisting2 = "dLBDYFdfj9ymiTblElmN"
   val cidExisting3 = "OM9QeJ4RfJcdscyo52g4"

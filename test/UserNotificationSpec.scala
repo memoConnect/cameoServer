@@ -18,66 +18,36 @@ class UserNotificationSpec extends StartedApp {
 
   "User Notifications" should {
 
-    val nameExt1 = "MeopMeister"
-    val nameExt2 = "MeopMaster"
-    val nameExt3 = "MeopSupaMaster"
+    val mailInt1 = "moep@int.de"
+    val mailInt3 = "moep@int3.de"
+    val telInt2 = "+49134564"
+    val telInt3 = "+491345644654"
+
     val mailExt1 = "foo@baa.de"
     val mailExt3 = "moep@baa.de"
     val telExt2 = "+491234"
     val telExt3 = "+494561"
 
-    var externalContactId1 = ""
-    var externalContactId2 = ""
-    var externalContactId3 = ""
+    val testUser1 = createTestUser(email = Some(mailInt1))
+    val testUser2 = createTestUser(tel = Some(telInt2))
+    val testUser3 = createTestUser(tel = Some(telInt3), email = Some(mailInt3))
 
-    "create external contact with mail only" in {
-      val path = basePath + "/contact"
-      val json = Json.obj("identity" -> Json.obj("email" -> mailExt1, "displayName" -> nameExt1))
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
-      val res = route(req).get
-      status(res) must equalTo(OK)
+    val externalContactId1 = addExternalContact(testUser1.token, email = Some(mailExt1))
+    val externalContactId2 = addExternalContact(testUser1.token, tel = Some(telExt2))
+    val externalContactId3 = addExternalContact(testUser1.token, tel = Some(telExt3), email = Some(mailExt3))
 
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-      (data \ "identityId").asOpt[String] must beSome
-      externalContactId1 = (data \ "identityId").as[String]
-      1 === 1
-    }
-
-    "create external contact with tel only" in {
-      val path = basePath + "/contact"
-      val json = Json.obj("identity" -> Json.obj("phoneNumber" -> telExt2, "displayName" -> nameExt2))
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
-      val res = route(req).get
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-      (data \ "identityId").asOpt[String] must beSome
-      externalContactId2 = (data \ "identityId").as[String]
-      1 === 1
-    }
-
-    "create external contact with tel and mail" in {
-      val path = basePath + "/contact"
-      val json = Json.obj("identity" -> Json.obj("email" -> mailExt3, "phoneNumber" -> telExt3, "displayName" -> nameExt3))
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
-      val res = route(req).get
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-      (data \ "identityId").asOpt[String] must beSome
-      externalContactId3 = (data \ "identityId").as[String]
-      1 === 1
-    }
+    makeFriends(testUser1, testUser2)
+    makeFriends(testUser1, testUser3)
 
     var conversationId = ""
     "start conversation with external and internal contacts" in {
       val path = basePath + "/conversation"
 
-      val recipients = Seq(externalContactId1, externalContactId2, externalContactId3, identityExisting3, identityExisting4)
+      val recipients = Seq(externalContactId1, externalContactId2, externalContactId3, testUser2.identityId, testUser3.identityId)
 
       val json = Json.obj("recipients" -> recipients)
 
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser1.token))
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -100,7 +70,7 @@ class UserNotificationSpec extends StartedApp {
 
       val json = Json.obj("plain" -> Json.obj("text" -> "foo"))
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
@@ -108,26 +78,23 @@ class UserNotificationSpec extends StartedApp {
 
     "all users except the sender should have received notifications" in {
       // wait until notifications have arrived
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 2 && TestValueStore.getValues("sms").length == 3)
+      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 4)
 
       val mails = TestValueStore.getValues("mail")
       val sms = TestValueStore.getValues("sms")
 
-      Logger.debug(mails.toString)
-      Logger.debug(sms.toString)
-
       sms.exists(js => (js \ "to").as[String].equals(telExt2)) must beTrue
       sms.exists(js => (js \ "to").as[String].equals(telExt3)) must beTrue
-      sms.exists(js => (js \ "to").as[String].equals(accountExisting2Tel)) must beFalse
-      sms.exists(js => (js \ "to").as[String].equals(accountExisting3Tel)) must beTrue
+      sms.exists(js => (js \ "to").as[String].equals(telInt2)) must beTrue
+      sms.exists(js => (js \ "to").as[String].equals(telInt3)) must beTrue
 
       mails.exists(js => (js \ "to").as[String].equals(mailExt1)) must beTrue
       mails.exists(js => (js \ "to").as[String].equals(mailExt3)) must beFalse
-      mails.exists(js => (js \ "to").as[String].equals(accountExisting2Mail)) must beFalse
-      mails.exists(js => (js \ "to").as[String].equals(accountExisting4Mail)) must beTrue
+      mails.exists(js => (js \ "to").as[String].equals(mailInt1)) must beFalse
+      mails.exists(js => (js \ "to").as[String].equals(mailInt3)) must beFalse
 
-      mails.length must beEqualTo(2)
-      sms.length must beEqualTo(3)
+      mails.length must beEqualTo(1)
+      sms.length must beEqualTo(4)
     }
 
     var tokenExt1 = ""
@@ -157,7 +124,7 @@ class UserNotificationSpec extends StartedApp {
 
     "add event subscription to internal user" in {
       val path = basePath + "/eventSubscription"
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting3)).withJsonBody(Json.obj())
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser2.token)).withJsonBody(Json.obj())
 
       val res = route(req).get
 
@@ -184,48 +151,13 @@ class UserNotificationSpec extends StartedApp {
 
       val json = Json.obj("plain" -> Json.obj("text" -> "foo"))
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
       val res = route(req).get
 
       status(res) must equalTo(OK)
     }
 
     "users with event subscriptions should not get notifications" in {
-      // wait until notifications have arrived
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 2)
-
-      val mails = TestValueStore.getValues("mail")
-      val sms = TestValueStore.getValues("sms")
-
-      sms.exists(js => (js \ "to").as[String].equals(telExt2)) must beTrue
-      sms.exists(js => (js \ "to").as[String].equals(telExt3)) must beTrue
-      sms.exists(js => (js \ "to").as[String].equals(accountExisting2Tel)) must beFalse
-      sms.exists(js => (js \ "to").as[String].equals(accountExisting3Tel)) must beFalse
-
-      mails.exists(js => (js \ "to").as[String].equals(mailExt1)) must beFalse
-      mails.exists(js => (js \ "to").as[String].equals(mailExt3)) must beFalse
-      mails.exists(js => (js \ "to").as[String].equals(accountExisting2Mail)) must beFalse
-      mails.exists(js => (js \ "to").as[String].equals(accountExisting4Mail)) must beTrue
-
-      mails.length must beEqualTo(1)
-      sms.length must beEqualTo(2)
-    }
-
-    step(TestValueStore.stop())
-    step(TestValueStore.start())
-    "recipient send message" in {
-      val path = basePath + "/conversation/" + conversationId + "/message"
-
-      val json = Json.obj("plain" -> Json.obj("text" -> "foo"))
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting4)).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(OK)
-
-    }
-
-    "author of conversation should now receive a notification" in {
       // wait until notifications have arrived
       Stuff.waitFor(TestValueStore.getValues("mail").length == 0 && TestValueStore.getValues("sms").length == 3)
 
@@ -234,15 +166,50 @@ class UserNotificationSpec extends StartedApp {
 
       sms.exists(js => (js \ "to").as[String].equals(telExt2)) must beTrue
       sms.exists(js => (js \ "to").as[String].equals(telExt3)) must beTrue
-      sms.exists(js => (js \ "to").as[String].equals(accountExisting2Tel)) must beTrue
-      sms.exists(js => (js \ "to").as[String].equals(accountExisting3Tel)) must beFalse
+      sms.exists(js => (js \ "to").as[String].equals(telInt2)) must beFalse
+      sms.exists(js => (js \ "to").as[String].equals(telInt3)) must beTrue
 
       mails.exists(js => (js \ "to").as[String].equals(mailExt1)) must beFalse
       mails.exists(js => (js \ "to").as[String].equals(mailExt3)) must beFalse
-      mails.exists(js => (js \ "to").as[String].equals(accountExisting2Mail)) must beFalse
-      mails.exists(js => (js \ "to").as[String].equals(accountExisting4Mail)) must beFalse
+      mails.exists(js => (js \ "to").as[String].equals(mailInt1)) must beFalse
+      mails.exists(js => (js \ "to").as[String].equals(mailInt3)) must beFalse
 
       mails.length must beEqualTo(0)
+      sms.length must beEqualTo(3)
+    }
+
+    step(TestValueStore.stop())
+    step(TestValueStore.start())
+
+    "recipient send message" in {
+      val path = basePath + "/conversation/" + conversationId + "/message"
+
+      val json = Json.obj("plain" -> Json.obj("text" -> "foo"))
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser2.token)).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(OK)
+    }
+
+    "author of conversation should now receive a notification" in {
+      // wait until notifications have arrived
+      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 3)
+
+      val mails = TestValueStore.getValues("mail")
+      val sms = TestValueStore.getValues("sms")
+
+      sms.exists(js => (js \ "to").as[String].equals(telExt2)) must beTrue
+      sms.exists(js => (js \ "to").as[String].equals(telExt3)) must beTrue
+      sms.exists(js => (js \ "to").as[String].equals(telInt2)) must beFalse
+      sms.exists(js => (js \ "to").as[String].equals(telInt3)) must beTrue
+
+      mails.exists(js => (js \ "to").as[String].equals(mailExt1)) must beFalse
+      mails.exists(js => (js \ "to").as[String].equals(mailExt3)) must beFalse
+      mails.exists(js => (js \ "to").as[String].equals(mailInt1)) must beTrue
+      mails.exists(js => (js \ "to").as[String].equals(mailInt3)) must beFalse
+
+      mails.length must beEqualTo(1)
       sms.length must beEqualTo(3)
     }
 

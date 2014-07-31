@@ -15,9 +15,8 @@ class TestUserControllerSpec extends StartedApp {
 
   sequential
 
-  val prefix = "testUser23"
   val testUserId = "asdfmoep"
-  val loginName = prefix + "_" + testUserId
+  val loginName = testUserPrefix + "_" + testUserId
   val password = "somePassword"
 
   "TestUserController" should {
