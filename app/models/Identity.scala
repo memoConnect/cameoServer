@@ -219,14 +219,13 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   implicit val mongoFormat: Format[Identity] = createMongoFormat(Json.reads[Identity], Json.writes[Identity])
 
-  // todo: this is now only used to create external contacts. rename and move accordingly
   def createReads: Reads[Identity] = (
     Reads.pure[MongoId](IdHelper.generateIdentityId()) and
     Reads.pure[Option[MongoId]](None) and
     (__ \ 'displayName).readNullable[String] and
     (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
     (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-    Reads.pure[String](IdHelper.generateCameoId) and
+    ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId)) and
     ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and
@@ -313,7 +312,8 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   def findByCameoId(cameoId: String): Future[Option[Identity]] = {
-    val query = Json.obj("cameoId" -> cameoId)
+    // cameoIds are not case sensitive
+    val query = Json.obj("cameoId" -> Json.obj("$regex" -> cameoId, "$options" -> "i"))
     col.find(query).one[Identity]
   }
 

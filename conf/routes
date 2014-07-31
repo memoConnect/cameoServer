@@ -11,12 +11,13 @@ POST           /a/v1/account                                        controllers.
 GET            /a/v1/account                                        controllers.AccountController.getAccount()
 PUT            /a/v1/account                                        controllers.AccountController.updateAccount()
 POST           /a/v1/account/check                                  controllers.AccountController.checkLoginName
-DELETE         /a/v1/account/:loginName                             controllers.AccountController.deleteAccount(loginName)
+#DELETE         /a/v1/account/:loginName                             controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
 GET            /a/v1/identity/:id                                   controllers.IdentityController.getIdentity(id)
 GET            /a/v1/identity                                       controllers.IdentityController.getOwnIdentity()
 PUT            /a/v1/identity                                       controllers.IdentityController.updateIdentity()
+POST           /a/v1/identity                                       controllers.IdentityController.addIdentity()
 POST           /a/v1/identity/search                                controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
 
 # CRYPTO STUFF

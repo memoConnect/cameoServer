@@ -94,4 +94,39 @@ object IdentityController extends ExtendedController {
           }
       }
   }
+
+  case class AdditionalValues(reservationSecret: String)
+  object AdditionalValues { implicit val format = Json.format[AdditionalValues] }
+
+  def addIdentity() = AuthAction().async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, Identity.createReads) {
+        identity =>
+          identity.accountId match {
+            case None => Future(resBadRequest("identity has no account"))
+            case Some(accountId) =>
+
+              validateFuture(request.body, AdditionalValues.format) {
+                additionalValues =>
+                  AccountReservation.findByLoginName(identity.cameoId).flatMap {
+                    case None => Future(resBadRequest("cameoId is not reserved"))
+                    case Some(reservation) if !reservation.id.id.equals(additionalValues.reservationSecret) =>
+                      Future(resBadRequest("reservation secret does not match"))
+                    case Some(reservation) =>
+                      val identityWithAccount = identity.copy(accountId = request.identity.accountId)
+                      val res = for {
+                        updateAccount <- Account.addIdentityToAccount(request.identity.accountId.get, identityWithAccount.id)
+                        insertIdentity <- Identity.col.insert(identityWithAccount).map(_.ok)
+                      } yield {
+                        updateAccount && insertIdentity
+                      }
+                      res.map {
+                        case false => resServerError("could not create")
+                        case true  => resOk(identityWithAccount.toPrivateJson)
+                      }
+                  }
+              }
+          }
+      }
+  }
 }

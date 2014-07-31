@@ -40,6 +40,27 @@ class AccountControllerSpec extends StartedApp {
 
   "AccountController" should {
 
+    "Get existing account" in {
+      val path = basePath + "/account"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "id").asOpt[String] must beSome
+      (data \ "loginName").asOpt[String] must beSome
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome
+      (data \ "phoneNumber" \ "isVerified").asOpt[Boolean] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome
+      (data \ "email" \ "isVerified").asOpt[Boolean] must beSome
+      (data \ "identities").asOpt[Seq[JsObject]] must beSome
+    }
+
     "Refuse invalid Logins" in {
       val path = basePath + "/account/check"
 

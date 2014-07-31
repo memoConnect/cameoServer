@@ -39,7 +39,7 @@ case class Account(id: MongoId,
       iId =>
         Identity.find(iId).map {
           case None    => Json.obj()
-          case Some(i) => i.toPublicJson
+          case Some(i) => i.toPrivateJson
         }
     }
 
@@ -57,12 +57,14 @@ case class Account(id: MongoId,
         val set =
           Json.obj("$set" -> (
             maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
-              maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
-              maybeEmptyString("password", maybePassword)
-            ))
-        Account.col.update(query, set).map { _.ok }
+            maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
+            maybeEmptyString("password", maybePassword)
+          ))
+        Account.col.update(query, set).map(_.ok)
     }
   }
+
+
 }
 
 object Account extends Model[Account] with CockpitEditable[Account] {
@@ -95,33 +97,18 @@ object Account extends Model[Account] with CockpitEditable[Account] {
   }
 
   def findByLoginName(loginName: String): Future[Option[Account]] = {
-    val query = Json.obj("loginName" -> loginName)
+    val query = Json.obj("loginName" -> loginName.toLowerCase)
     col.find(query).one[Account]
-  }
-
-  def findAlternative(loginName: String, count: Int = 1): Future[String] = {
-    val currentTry = loginName + "_" + count
-
-    val loginExists: Future[Boolean] = for {
-      account <- Account.findByLoginName(currentTry)
-      identity <- Identity.findByCameoId(currentTry)
-    } yield {
-      account.isDefined || identity.isDefined
-    }
-
-    loginExists.flatMap {
-      case true => findAlternative(loginName, count + 1) // recursive futures ftw!
-      case false =>
-        // check if it is reserved
-        AccountReservation.findByLoginName(currentTry).flatMap {
-          case Some(r) => findAlternative(loginName, count + 1)
-          case None    => Future(currentTry)
-        }
-    }
   }
 
   def createDefault(): Account = {
     new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", Seq(), None, None, new Date, new Date)
+  }
+
+  def addIdentityToAccount(accountId: MongoId, identityId: MongoId): Future[Boolean] = {
+    val query = Json.obj("_id" -> accountId)
+    val set = Json.obj("$addToSet" -> Json.obj("identities" -> identityId))
+    Account.col.update(query, set).map(_.updatedExisting)
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -180,12 +167,12 @@ object AccountReservation extends Model[AccountReservation] {
   }
 
   def findByLoginName(loginName: String): Future[Option[AccountReservation]] = {
-    val query = Json.obj("loginName" -> loginName)
+    val query = Json.obj("loginName" -> Json.obj("$regex" -> loginName, "$options" -> "i"))
     col.find(query).one[AccountReservation]
   }
 
   def deleteReserved(loginName: String): Future[LastError] = {
-    val query = Json.obj("loginName" -> loginName)
+    val query = Json.obj("loginName" -> Json.obj("$regex" -> loginName, "$options" -> "i"))
     col.remove(query)
   }
 

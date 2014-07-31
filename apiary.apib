@@ -105,13 +105,10 @@ Account Management
         }
 
 
-## Get Account details [/account/{loginName}]
+## Get Account details of current user [/account]
 
 ### GET
 
-+ Parameters
-    + loginName
-
 + Request
     + Headers
     
@@ -123,33 +120,35 @@ Account Management
         {
           "res": "OK",
           "data": {
-            "loginName": "test",
+            "id": "iuMQFnJAZLgyDw7GwV2t",
+            "loginName": "2vqtftqh",
+            "phoneNumber": {
+              "value": "560277",
+              "isVerified": false
+            },
+            "email": {
+              "value": "foo@baa.de",
+              "isVerified": false
+            },
+            "created": 1392301163329,
+            "lastUpdated": 1392301163329,
             "identities": [
-              "ZVtXkxMmPj4WtLYea8ci"
-            ],
-            "phoneNumber": "12335",
-            "email": "mail",
-            "authenticationRequests":[{request object}]
-            "created": "22.01.2014 16:34:54",
-            "lastUpdated": "22.01.2014 16:34:54"
-        }
-
-### delete a Account [DELETE]
-
-+ Parameters
-    + loginName
-    
-+ Request
-    + Headers
-    
-            Authorization: {token}
-
-+ Response 200
-
-        {
-          "res": "OK",
-          "data": {
-            "deleted Account": "test1"
+              {
+                "id": "g9PWZY7xKNbeCO6LPNnx",
+                "cameoId": "KG5mSGTY8l3",
+                "avatar": "eQhldI981mHiZdOyPD2z",
+                "displayName": "Moeper",
+                "publicKeys": [],
+                "email": {
+                  "value": "test@cameo.io",
+                  "isVerified": false
+                },
+                "phoneNumber": {
+                  "value": "+49123456789",
+                  "isVerified": false
+                }
+              }
+            ]
           }
         }
 

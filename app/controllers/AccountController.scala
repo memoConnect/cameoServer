@@ -59,7 +59,7 @@ object AccountController extends ExtendedController {
                   }
                 }
 
-                AccountReservation.findByLoginName(account.loginName.toLowerCase).flatMap {
+                AccountReservation.findByLoginName(account.loginName).flatMap {
                   case None => Future(resBadRequest("this loginName is not reserved"))
                   case Some(reservation) =>
 
@@ -67,7 +67,7 @@ object AccountController extends ExtendedController {
                       case false => Future(resBadRequest("invalid reservation secret"))
                       case true =>
                         // delete reservation secret
-                        AccountReservation.deleteReserved(account.loginName.toLowerCase)
+                        AccountReservation.deleteReserved(account.loginName)
 
                         // check if there is a token
                         request.headers.get("Authorization") match {
@@ -141,49 +141,76 @@ object AccountController extends ExtendedController {
       }
   }
 
+  case class CheckLoginRequest(loginName: Option[String], cameoId: Option[String])
+  object CheckLoginRequest { implicit val format = Json.format[CheckLoginRequest] }
+
   def checkLoginName = Action.async(parse.tolerantJson) {
     request =>
-      case class VerifyRequest(loginName: String)
 
-      val reads = (__ \ 'loginName).read[String].map {
-        l => VerifyRequest(l)
+      def findAlternative(value: String, count: Int = 1): Future[String] = {
+        val currentTry = value + "_" + count
+
+        val loginExists: Future[Boolean] = for {
+          account <- Account.findByLoginName(currentTry)
+          identity <- Identity.findByCameoId(currentTry)
+        } yield {
+          account.isDefined || identity.isDefined
+        }
+
+        loginExists.flatMap {
+          case true => findAlternative(value, count + 1) // recursive futures ftw!
+          case false =>
+            // check if it is reserved
+            AccountReservation.findByLoginName(currentTry).flatMap {
+              case Some(r) => findAlternative(value, count + 1)
+              case None    => Future(currentTry)
+            }
+        }
       }
 
-      validateFuture[VerifyRequest](request.body, reads) {
-        vr =>
-          val lowerLogin = vr.loginName.toLowerCase
+      def reserveOrAlternative(login: String): Future[Result] = {
 
-          if (checkLogin(vr.loginName)) {
+        checkLogin(login) match {
+          case false => Future(resBadRequest("invalid loginName/cameoId"))
+          case true =>
             // check if loginName exists or is a cameoId
-            val loginExists: Future[Boolean] = for {
-              account <- Account.findByLoginName(lowerLogin)
-              identity <- Identity.findByCameoId(vr.loginName)
+            val maybeExists: Future[Boolean] = for {
+              account <- Account.findByLoginName(login)
+              identity <- Identity.findByCameoId(login)
             } yield {
               account.isDefined || identity.isDefined
             }
 
-            loginExists.flatMap {
-              // it exists, find alternative
-              case true => Account.findAlternative(vr.loginName).map {
-                newLoginName => resKO(Json.obj("alternative" -> newLoginName))
-              }
-              // it does not exist, check if it is reserved
-              case false => AccountReservation.findByLoginName(lowerLogin).flatMap {
-                // it is reserved, get alternative
-                case Some(ra) => Account.findAlternative(vr.loginName).map {
+            maybeExists.flatMap {
+              case true =>
+                // it exists, find alternative
+                findAlternative(login).map {
                   newLoginName => resKO(Json.obj("alternative" -> newLoginName))
                 }
-                // not reserved, reserve it and return reservation Secret
-                case None =>
-                  AccountReservation.reserve(lowerLogin).map {
-                    res =>
-                      resOk(res.toJson)
-                  }
-              }
+              case false =>
+                // it does not exist, check if it is reserved
+                AccountReservation.findByLoginName(login).flatMap {
+                  // it is reserved, get alternative
+                  case Some(ra) =>
+                    findAlternative(login).map {
+                      newLoginName => resKO(Json.obj("alternative" -> newLoginName))
+                    }
+                  // not reserved, reserve it and return reservation Secret
+                  case None =>
+                    AccountReservation.reserve(login).map {
+                      res =>
+                        resOk(res.toJson)
+                    }
+                }
             }
-          } else {
-            Future(resBadRequest("invalid login name"))
-          }
+        }
+      }
+
+      validateFuture[CheckLoginRequest](request.body, CheckLoginRequest.format) {
+        case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
+        case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName required"))
+        case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId)
+        case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName)
       }
   }
 
