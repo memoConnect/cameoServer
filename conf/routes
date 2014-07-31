@@ -14,8 +14,8 @@ POST           /a/v1/account/check                                  controllers.
 DELETE         /a/v1/account/:loginName                             controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
-GET            /a/v1/identity/:id                                   controllers.IdentityController.getIdentityById(id)
-GET            /a/v1/identity                                       controllers.IdentityController.getIdentityByToken()
+GET            /a/v1/identity/:id                                   controllers.IdentityController.getIdentity(id)
+GET            /a/v1/identity                                       controllers.IdentityController.getOwnIdentity()
 PUT            /a/v1/identity                                       controllers.IdentityController.updateIdentity()
 POST           /a/v1/identity/search                                controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
 

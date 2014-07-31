@@ -20,7 +20,8 @@ import scala.concurrent.Future
  */
 object IdentityController extends ExtendedController {
 
-  def getIdentityById(id: String) = Action.async {
+  def getIdentity(id: String) = Action.async {
+    //todo: external identities should only be available to contact owner and other participants in the conversation
     val mongoId = new MongoId(id)
 
     Identity.find(mongoId).map {
@@ -29,7 +30,7 @@ object IdentityController extends ExtendedController {
     }
   }
 
-  def getIdentityByToken = AuthAction(allowExternal = true) {
+  def getOwnIdentity = AuthAction(allowExternal = true) {
     request => resOk(request.identity.toPrivateJson)
   }
 

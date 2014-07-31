@@ -208,7 +208,6 @@ class UserNotificationSpec extends StartedApp {
       mails.exists(js => (js \ "to").as[String].equals(mailExt3)) must beFalse
       mails.exists(js => (js \ "to").as[String].equals(accountExisting2Mail)) must beFalse
       mails.exists(js => (js \ "to").as[String].equals(accountExisting4Mail)) must beTrue
-
     }
 
     step(TestValueStore.stop())
@@ -245,7 +244,6 @@ class UserNotificationSpec extends StartedApp {
       mails.exists(js => (js \ "to").as[String].equals(accountExisting2Mail)) must beFalse
       mails.exists(js => (js \ "to").as[String].equals(accountExisting4Mail)) must beFalse
     }
-
 
     step(TestValueStore.stop())
   }

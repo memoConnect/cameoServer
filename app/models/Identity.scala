@@ -245,16 +245,10 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         maybeEmptyString("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         Json.obj("cameoId" -> i.cameoId) ++
-        maybeEmptyJsValue("email", i.email.map {
-          _.toJson
-        }) ++
-        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map {
-          _.toJson
-        }) ++
+        maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
+        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson)) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
-        Json.obj("publicKeys" -> i.publicKeys.map {
-          _.toJson
-        }) ++
+        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson)) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         addCreated(i.created) ++
@@ -267,7 +261,15 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         Json.obj("cameoId" -> i.cameoId) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         maybeEmptyString("displayName", i.displayName) ++
-        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson))
+        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson)) ++ {
+          // add phoneNumber and email for internal identities
+          i.accountId match {
+            case None => Json.obj()
+            case Some(a) =>
+              maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
+                maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson))
+          }
+        }
   }
 
   private def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Identity = {

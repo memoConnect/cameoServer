@@ -47,10 +47,58 @@ class IdentityControllerSpec extends StartedApp {
       cameoId = (data \ "cameoId").as[String]
       (data \ "email" \ "value").asOpt[String] must beSome(emailExisting)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(telExisting)
+      (data \ "displayName").asOpt[String] must beSome
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "Get internal identity without token" in {
+      val path = basePath + "/identity/" + identityExisting
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "userKey").asOpt[String] must beNone
+      (data \ "cameoId").asOpt[String] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome(emailExisting)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(telExisting)
+      (data \ "displayName").asOpt[String] must beSome
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "Get external identity without token" in {
+      val path = basePath + "/identity/" + externalContact2IdentityId
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "userKey").asOpt[String] must beNone
+      (data \ "cameoId").asOpt[String] must beSome
+      (data \ "email" \ "value").asOpt[String] must beNone
+      (data \ "phoneNumber" \ "value").asOpt[String] must beNone
+      (data \ "displayName").asOpt[String] must beSome
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
     "Edit an identity" in {
-
       val path = basePath + "/identity"
 
       val json = Json.obj("phoneNumber" -> newTel, "email" -> newMail, "displayName" -> newName)
@@ -458,7 +506,6 @@ class IdentityControllerSpec extends StartedApp {
     }
 
     "identity should be returned again in search" in {
-
       val path = basePath + "/identity/search"
       val json = Json.obj("search" -> cameoIdExisting4, "fields" -> Seq("cameoId"))
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
@@ -475,7 +522,6 @@ class IdentityControllerSpec extends StartedApp {
 
       (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting4)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting4)
-
     }
   }
 }
