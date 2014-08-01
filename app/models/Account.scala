@@ -6,6 +6,7 @@ import constants.Messaging._
 import helper.IdHelper
 import helper.JsonHelper._
 import helper.MongoCollections._
+import helper.ResultHelper._
 import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
 import play.api.Logger
@@ -178,6 +179,19 @@ object AccountReservation extends Model[AccountReservation] {
 
   def createDefault(): AccountReservation = {
     new AccountReservation(IdHelper.randomString(8), IdHelper.generateMongoId(), new Date)
+  }
+
+  def checkReservationSecret(value: String, secret: String): Future[Boolean] = {
+    AccountReservation.findByLoginName(value).map {
+      case None => false
+      case Some(reservation) =>
+        reservation.id.id.equals(secret) match {
+          case false => false
+          case true =>
+            AccountReservation.deleteReserved(value)
+            true
+        }
+    }
   }
 }
 

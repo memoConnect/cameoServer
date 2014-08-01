@@ -180,6 +180,20 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
     }
 
+    "Refuse to create new conversation with recipients that are not in the address book" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> Seq(identityExisting2))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != 232) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(232)
+    }
+
     var cidNew4 = ""
     val messageText = "moepmoepmoepmoepmoep"
     "Create a new conversation with messages" in {

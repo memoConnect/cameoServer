@@ -116,11 +116,9 @@ object IdentityController extends ExtendedController {
 
                   validateFuture(request.body, AdditionalValues.format) {
                     additionalValues =>
-                      AccountReservation.findByLoginName(identity.cameoId).flatMap {
-                        case None => Future(resBadRequest("cameoId is not reserved"))
-                        case Some(reservation) if !reservation.id.id.equals(additionalValues.reservationSecret) =>
-                          Future(resBadRequest("reservation secret does not match"))
-                        case Some(reservation) =>
+                      AccountReservation.checkReservationSecret(identity.cameoId, additionalValues.reservationSecret).flatMap {
+                        case false => Future(resBadRequest("invalid reservation secret"))
+                        case true =>
                           val identityWithAccount = identity.copy(accountId = request.identity.accountId)
                           val res = for {
                             updateAccount <- account.addIdentity(identityWithAccount.id)

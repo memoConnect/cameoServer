@@ -59,71 +59,65 @@ object AccountController extends ExtendedController {
                   }
                 }
 
-                AccountReservation.findByLoginName(account.loginName).flatMap {
-                  case None => Future(resBadRequest("this loginName is not reserved"))
-                  case Some(reservation) =>
+                AccountReservation.checkReservationSecret(account.loginName, additionalValues.reservationSecret).flatMap {
+                  case false => Future(resBadRequest("invalid reservation secret"))
+                  case true =>
 
-                    reservation.id.id.equals(additionalValues.reservationSecret) match {
-                      case false => Future(resBadRequest("invalid reservation secret"))
-                      case true =>
-                        // delete reservation secret
-                        AccountReservation.deleteReserved(account.loginName)
+                    // check if there is a token
+                    request.headers.get("Authorization") match {
+                      case None =>
+                        // no token, create new identity
+                        Identity.createAndInsert(Some(account.id), account.loginName, None, None, additionalValues.displayName)
+                          .flatMap(createAccountWithIdentity)
 
-                        // check if there is a token
-                        request.headers.get("Authorization") match {
-                          case None =>
-                            // no token, create new identity
-                            Identity.createAndInsert(Some(account.id), account.loginName, None, None, additionalValues.displayName)
-                              .flatMap(createAccountWithIdentity)
+                      case Some(token) =>
+                        // there is a token, check if it belongs to an external user
+                        Identity.findByToken(new MongoId(token)).flatMap {
+                          case None                                           => Future(resBadRequest("invalid token"))
+                          case Some(identity) if identity.accountId.isDefined => Future(resBadRequest("token belongs to a registered user"))
+                          case Some(identity) =>
 
-                          case Some(token) =>
-                            // there is a token, check if it belongs to an external user
-                            Identity.findByToken(new MongoId(token)).flatMap {
-                              case None                                           => Future(resBadRequest("invalid token"))
-                              case Some(identity) if identity.accountId.isDefined => Future(resBadRequest("token belongs to a registered user"))
-                              case Some(identity) =>
-
-                                // find the user that added the external contact
-                                val query = Json.obj("contacts.identityId" -> identity.id)
-                                Identity.find(query).flatMap {
-                                  case None => Future(resBadRequest("this user is in nobodies contact book"))
-                                  case Some(otherIdentity) =>
-                                    val futureRes: Future[Boolean] = for {
-                                      // add other identity as contact
-                                      addContact <- identity.addContact(Contact.create(otherIdentity.id))
-                                      updateIdentity <- {
-                                        // add update identity with details from registration
-                                        val update = IdentityUpdate(
-                                          None,
-                                          None,
-                                          additionalValues.displayName,
-                                          Some(account.loginName),
-                                          Some(account.id)
-                                        )
-                                        identity.update(update)
+                            // find the user that added the external contact
+                            val query = Json.obj("contacts.identityId" -> identity.id)
+                            Identity.find(query).flatMap {
+                              case None => Future(resBadRequest("this user is in nobodies contact book"))
+                              case Some(otherIdentity) =>
+                                val futureRes: Future[Boolean] = for {
+                                  // add other identity as contact
+                                  addContact <- identity.addContact(Contact.create(otherIdentity.id))
+                                  updateIdentity <- {
+                                    // add update identity with details from registration
+                                    val update = IdentityUpdate(
+                                      None,
+                                      None,
+                                      additionalValues.displayName,
+                                      Some(account.loginName),
+                                      Some(account.id)
+                                    )
+                                    identity.update(update)
+                                  }
+                                  deleteDetails <- {
+                                    val deleteValues =
+                                      Seq("email", "phoneNumber") ++ {
+                                        additionalValues.displayName match {
+                                          case None    => Seq("displayName")
+                                          case Some(d) => Seq()
+                                        }
                                       }
-                                      deleteDetails <- {
-                                        val deleteValues =
-                                          Seq("email", "phoneNumber") ++ {
-                                            additionalValues.displayName match {
-                                              case None    => Seq("displayName")
-                                              case Some(d) => Seq()
-                                            }
-                                          }
-                                        Identity.deleteOptionalValues(identity.id, deleteValues).map(_.updatedExisting)
-                                      }
-                                    } yield {
-                                      addContact && updateIdentity && deleteDetails
-                                    }
-                                    futureRes.flatMap {
-                                      case false => Future(resServerError("unable to update identity"))
-                                      case true  => createAccountWithIdentity(identity)
-                                    }
+                                    Identity.deleteOptionalValues(identity.id, deleteValues).map(_.updatedExisting)
+                                  }
+                                } yield {
+                                  addContact && updateIdentity && deleteDetails
+                                }
+                                futureRes.flatMap {
+                                  case false => Future(resServerError("unable to update identity"))
+                                  case true  => createAccountWithIdentity(identity)
                                 }
                             }
                         }
                     }
                 }
+
               }
           }
       }

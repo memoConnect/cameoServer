@@ -27,7 +27,7 @@ object ConversationController extends ExtendedController {
             case None => Left(conversation)
             case Some(recipientIds) =>
               checkRecipients(recipientIds, conversation, request.identity) match {
-                case None             => Right(resBadRequest("Invalid recipients. Not in contact book."))
+                case None             => Right(resKo("Invalid recipients. Not in contact book."))
                 case Some(recipients) => Left(conversation.copy(recipients = recipients ++ conversation.recipients))
               }
           }
