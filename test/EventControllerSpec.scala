@@ -473,7 +473,6 @@ class EventControllerSpec extends StartedApp {
       checkEvent(events2, eventNameFinder("identity:update"), eventCheck)
     }
 
-
     "identity:update event should appear in subscription of second user" in {
       val events1 = waitForEvents(testUser3.token, subscriptionOtherId, 1)
 
@@ -513,9 +512,34 @@ class EventControllerSpec extends StartedApp {
       checkEvent(events2, eventNameFinder(eventName), eventCheck)
     }
 
-//    "create new identity for first user" in {
-//
-//
-//    }
+    val cameoId = testUserPrefix + "_" + randomString(6)
+    "create new identity for first user" in {
+      val path = basePath + "/identity"
+      val json = Json.obj("cameoId" -> cameoId, "reservationSecret" -> "foo")
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser1.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "identity:new event should appear in both subscriptions of first user" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome
+        (js \ "data" \ "cameoId").asOpt[String] must beSome(cameoId + "@" + domain)
+        (js \ "data" \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+        (js \ "data" \ "userKey").asOpt[String] must beSome
+      }
+
+      checkEvent(events1, eventNameFinder("identity:new"), eventCheck)
+      checkEvent(events2, eventNameFinder("identity:new"), eventCheck)
+
+    }
   }
 }

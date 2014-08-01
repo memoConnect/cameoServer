@@ -9,13 +9,13 @@ import helper.MongoCollections._
 import helper.ResultHelper._
 import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
-import play.api.Logger
+import play.api.{Play, Logger}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
 import traits.{ CockpitAttribute, CockpitEditable, Model }
-
+import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -182,18 +182,25 @@ object AccountReservation extends Model[AccountReservation] {
   }
 
   def checkReservationSecret(value: String, secret: String): Future[Boolean] = {
-    AccountReservation.findByLoginName(value).map {
-      case None => false
-      case Some(reservation) =>
-        reservation.id.id.equals(secret) match {
-          case false => false
-          case true =>
-            AccountReservation.deleteReserved(value)
-            true
+    // do not require reservation secret for test users
+    val testUserPrefix = Play.configuration.getString("testUser.prefix").get
+    value.startsWith(testUserPrefix) match {
+      case true => Future(true)
+      case false =>
+        AccountReservation.findByLoginName(value).map {
+          case None => false
+          case Some(reservation) =>
+            reservation.id.id.equals(secret) match {
+              case false => false
+              case true =>
+                AccountReservation.deleteReserved(value)
+                true
+            }
         }
     }
   }
 }
+
 
 object AccountEvolutions {
 
