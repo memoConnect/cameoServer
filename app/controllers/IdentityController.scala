@@ -72,15 +72,18 @@ object IdentityController extends ExtendedController {
               // find all pending friend request
               Identity.findAll(Json.obj("friendRequests.identityId" -> request.identity.id)).flatMap {
                 pendingFriendRequest =>
-                  val exclude = Seq(request.identity.id) ++
-                    pendingFriendRequest.map(_.id) ++
-                    // exclude identities that requested friendship
-                    request.identity.friendRequests.map(_.identityId) ++
-                    // exclude contacts {
-                    identitySearch.excludeContacts match {
-                      case Some(true) => request.identity.contacts.map(_.identityId)
-                      case _          => Seq()
-                    }
+                  val exclude =
+                    Seq(request.identity.id) ++
+                      pendingFriendRequest.map(_.id) ++
+                      // exclude identities that requested friendship
+                      request.identity.friendRequests.map(_.identityId) ++
+                      // exclude contacts
+                      {
+                        identitySearch.excludeContacts match {
+                          case Some(true) => request.identity.contacts.map(_.identityId)
+                          case _          => Seq()
+                        }
+                      }
 
                   Identity.search(cameoId, displayName).map {
                     list =>
