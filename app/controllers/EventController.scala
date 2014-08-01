@@ -60,7 +60,6 @@ object EventController extends ExtendedController {
     request =>
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>
-          Logger.debug("received broadcast event. Name: " + ebr.name + " Data: " + ebr.data)
           actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data)
           resOk("event send")
       }
