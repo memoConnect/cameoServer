@@ -66,6 +66,16 @@ case class NewIdentity(sendToIdentity: MongoId, identity: Identity) extends Even
   def toEventContent = identity.toPrivateJson
 }
 
+case class NewAePassphrases(sendToIdentity: MongoId, keyId: String, conversationIds: Seq[String]) extends EventMessage {
+  def eventType = "conversation:new-aePassphrase"
+
+  def toEventContent =
+    Json.obj(
+      "keyId" -> keyId,
+      "conversationIds" -> conversationIds
+    )
+}
+
 case class BroadcastEvent(sendToIdentity: MongoId, eventType: String, content: JsObject) extends EventMessage {
   def toEventContent: JsObject = content
 }

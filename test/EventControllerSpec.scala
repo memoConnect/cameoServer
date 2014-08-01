@@ -1,6 +1,6 @@
 import actors.NewMessage
 import org.specs2.matcher.{MatchResult, Matcher, SomeMatcher}
-import play.api.libs.json.{ Json, JsObject }
+import play.api.libs.json.{JsArray, Json, JsObject}
 import play.api.{Logger, Play}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -484,6 +484,32 @@ class EventControllerSpec extends StartedApp {
       }
 
       checkEvent(events1, eventNameFinder("identity:update"), eventCheck)
+    }
+
+    "add new aePassphrases to conversation" in {
+      val path = basePath + "/identity/publicKey/" + pubKeyId + "/aePassphrases"
+      val json = JsArray(Seq(Json.obj("conversationId" -> conversationId, "aePassphrase" -> "huuuup")))
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "new-aePassphrase event should appear in both subscriptions of first user" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "conversationIds").asOpt[Seq[String]] must beSome(contain(exactly(conversationId)))
+        (js \ "data" \ "keyId").asOpt[String] must beSome(pubKeyId)
+      }
+
+      checkEvent(events1, eventNameFinder("conversation:new-aePassphrase"), eventCheck)
+      checkEvent(events2, eventNameFinder("conversation:new-aePassphrase"), eventCheck)
     }
 
     val eventName = "moepsEvent"

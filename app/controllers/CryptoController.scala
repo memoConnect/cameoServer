@@ -1,6 +1,6 @@
 package controllers
 
-import actors.UpdatedIdentity
+import actors.{NewAePassphrases, UpdatedIdentity}
 import helper.CmActions._
 import helper.ResultHelper._
 import models._
@@ -104,6 +104,9 @@ object CryptoController extends ExtendedController {
                   case true  => Logger.debug("updated")
                 }
           }
+          val event =  NewAePassphrases(request.identity.id, id, list.map(_.conversationId))
+          Logger.debug(event.toString)
+          actors.eventRouter ! NewAePassphrases(request.identity.id, id, list.map(_.conversationId))
           resOk("updated")
       }
   }
