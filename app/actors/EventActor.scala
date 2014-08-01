@@ -59,6 +59,13 @@ case class UpdatedIdentity(sendToIdentity: MongoId, identityId: MongoId, updated
 
 }
 
+case class NewIdentity(sendToIdentity: MongoId, identity: Identity) extends EventMessage {
+
+  def eventType = "identity:new"
+
+  def toEventContent = identity.toPrivateJson
+}
+
 case class BroadcastEvent(sendToIdentity: MongoId, eventType: String, content: JsObject) extends EventMessage {
   def toEventContent: JsObject = content
 }

@@ -64,6 +64,12 @@ case class Account(id: MongoId,
     }
   }
 
+  def addIdentity(identityId: MongoId): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$addToSet" -> Json.obj("identities" -> identityId))
+    Account.col.update(query, set).map(_.updatedExisting)
+  }
+
 
 }
 
@@ -103,12 +109,6 @@ object Account extends Model[Account] with CockpitEditable[Account] {
 
   def createDefault(): Account = {
     new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", Seq(), None, None, new Date, new Date)
-  }
-
-  def addIdentityToAccount(accountId: MongoId, identityId: MongoId): Future[Boolean] = {
-    val query = Json.obj("_id" -> accountId)
-    val set = Json.obj("$addToSet" -> Json.obj("identities" -> identityId))
-    Account.col.update(query, set).map(_.updatedExisting)
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {

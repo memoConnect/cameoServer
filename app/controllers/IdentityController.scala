@@ -1,5 +1,6 @@
 package controllers
 
+import actors.{ NewIdentity, NewMessage }
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -71,18 +72,15 @@ object IdentityController extends ExtendedController {
               // find all pending friend request
               Identity.findAll(Json.obj("friendRequests.identityId" -> request.identity.id)).flatMap {
                 pendingFriendRequest =>
-                  val exclude =
-                    Seq(request.identity.id) ++
-                      pendingFriendRequest.map(_.id) ++
-                      // exclude identities that requested friendship
-                      request.identity.friendRequests.map(_.identityId) ++
-                      // exclude contacts
-                      {
-                        identitySearch.excludeContacts match {
-                          case Some(true) => request.identity.contacts.map(_.identityId)
-                          case _          => Seq()
-                        }
-                      }
+                  val exclude = Seq(request.identity.id) ++
+                    pendingFriendRequest.map(_.id) ++
+                    // exclude identities that requested friendship
+                    request.identity.friendRequests.map(_.identityId) ++
+                    // exclude contacts {
+                    identitySearch.excludeContacts match {
+                      case Some(true) => request.identity.contacts.map(_.identityId)
+                      case _          => Seq()
+                    }
 
                   Identity.search(cameoId, displayName).map {
                     list =>
@@ -97,7 +95,10 @@ object IdentityController extends ExtendedController {
   }
 
   case class AdditionalValues(reservationSecret: String)
-  object AdditionalValues { implicit val format = Json.format[AdditionalValues] }
+
+  object AdditionalValues {
+    implicit val format = Json.format[AdditionalValues]
+  }
 
   def addIdentity() = AuthAction().async(parse.tolerantJson) {
     request =>
@@ -106,28 +107,41 @@ object IdentityController extends ExtendedController {
           request.identity.accountId match {
             case None => Future(resBadRequest("identity has no account"))
             case Some(accountId) =>
-              validateFuture(request.body, AdditionalValues.format) {
-                additionalValues =>
-                  AccountReservation.findByLoginName(identity.cameoId).flatMap {
-                    case None => Future(resBadRequest("cameoId is not reserved"))
-                    case Some(reservation) if !reservation.id.id.equals(additionalValues.reservationSecret) =>
-                      Future(resBadRequest("reservation secret does not match"))
-                    case Some(reservation) =>
-                      val identityWithAccount = identity.copy(accountId = request.identity.accountId)
-                      val res = for {
-                        updateAccount <- Account.addIdentityToAccount(request.identity.accountId.get, identityWithAccount.id)
-                        fileId <- AvatarGenerator.generate(identityWithAccount)
-                        insertedIdentity <- {
-                          val identityWithAvatar = identityWithAccount.copy(avatar = fileId)
-                          Identity.col.insert(identityWithAvatar).map(foo=>identityWithAvatar)
-                        }
-                        supportAdded <- insertedIdentity.addSupport()
-                      } yield { insertedIdentity }
+              Account.find(accountId).flatMap {
+                case None => Future(resServerError("could not find account"))
+                case Some(account) =>
 
-                      res.map(insertedIdentity => resOk(insertedIdentity.toPrivateJson))
+                  validateFuture(request.body, AdditionalValues.format) {
+                    additionalValues =>
+                      AccountReservation.findByLoginName(identity.cameoId).flatMap {
+                        case None => Future(resBadRequest("cameoId is not reserved"))
+                        case Some(reservation) if !reservation.id.id.equals(additionalValues.reservationSecret) =>
+                          Future(resBadRequest("reservation secret does not match"))
+                        case Some(reservation) =>
+                          val identityWithAccount = identity.copy(accountId = request.identity.accountId)
+                          val res = for {
+                            updateAccount <- account.addIdentity(identityWithAccount.id)
+                            fileId <- AvatarGenerator.generate(identityWithAccount)
+                            insertedIdentity <- {
+                              val identityWithAvatar = identityWithAccount.copy(avatar = fileId)
+                              Identity.col.insert(identityWithAvatar).map(foo => identityWithAvatar)
+                            }
+                            supportAdded <- insertedIdentity.addSupport()
+                          } yield {
+                            insertedIdentity
+                          }
+
+                          res.map {
+                            insertedIdentity =>
+                              // send event to all other identities
+                              account.identities.foreach(actors.eventRouter ! NewIdentity(_, insertedIdentity))
+                              resOk(insertedIdentity.toPrivateJson)
+                          }
+                      }
                   }
               }
           }
       }
   }
 }
+
