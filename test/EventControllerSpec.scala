@@ -512,6 +512,34 @@ class EventControllerSpec extends StartedApp {
       checkEvent(events2, eventNameFinder("conversation:new-aePassphrase"), eventCheck)
     }
 
+    "delete public key" in {
+      val path = basePath + "/identity/publicKey/" + pubKeyId
+
+      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(testUser1.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "identity:update event should appear in both subscriptions of first user" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome(testUser1.identityId)
+        (js \ "data" \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+        val keys = (js \ "data" \ "publicKeys").as[Seq[JsObject]]
+        (keys(0) \ "id").asOpt[String] must beSome(pubKeyId)
+        (keys(0) \ "deleted").asOpt[Boolean] must beSome(true)
+      }
+
+      checkEvent(events1, eventNameFinder("identity:update"), eventCheck)
+      checkEvent(events2, eventNameFinder("identity:update"), eventCheck)
+    }
+
     val eventName = "moepsEvent"
     val eventData = Json.obj("foo" -> "baa", "moep" -> "moeps")
     "send broadcast event" in {

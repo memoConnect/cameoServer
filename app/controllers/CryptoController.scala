@@ -51,7 +51,9 @@ object CryptoController extends ExtendedController {
     request =>
       request.identity.deletePublicKey(new MongoId(id)).map {
         case false => resServerError("unable to delete")
-        case true  => resOk("deleted")
+        case true  =>
+          actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
+          resOk("deleted")
       }
   }
 
