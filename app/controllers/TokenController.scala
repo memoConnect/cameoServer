@@ -6,6 +6,7 @@ import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc._
 import traits.ExtendedController
+import helper.CmActions.AuthAction
 
 import scala.concurrent.Future
 
@@ -53,7 +54,7 @@ object TokenController extends ExtendedController {
                     // check loginNames and passwords match
                     if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
                       // everything is ok
-                      val token = Token.createDefault
+                      val token = Token.createDefault()
                       identity.addToken(token)
                       resOk(token.toJson)
                     } else {
@@ -90,4 +91,23 @@ object TokenController extends ExtendedController {
   //
   //  }
 
+  def getToken(id: String) = AuthAction().async {
+    request =>
+      request.identity.accountId match {
+        case None => Future(resBadRequest("identity has no account"))
+        case Some(accountId) =>
+          Account.find (accountId).map {
+            case None => resServerError("unable to get account")
+            case Some(account) =>
+              account.identities.find(_.id.equals(id)) match {
+                case None => resNotFound("identity in account")
+                case Some(identityId) =>
+                  val token = Token.createDefault()
+                  Identity.addTokenToIdentity(identityId, token)
+                  resOk(token.toJson)
+              }
+          }
+      }
+
+  }
 }

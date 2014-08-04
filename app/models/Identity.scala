@@ -69,7 +69,7 @@ case class Identity(id: MongoId,
   }
 
   def addToken(token: Token): Future[Boolean] = {
-    Token.appendUnique(this.id, token).map(_.updatedExisting)
+    Identity.addTokenToIdentity(this.id, token)
   }
 
   def deleteToken(tokenId: MongoId): Future[Boolean] = {
@@ -317,8 +317,11 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     col.find(query).one[Identity]
   }
 
-  def search(cameoId: Option[String], displayName: Option[String]): Future[Seq[Identity]] = {
+  def addTokenToIdentity(identityId: MongoId, token: Token): Future[Boolean] = {
+      Token.appendUnique(identityId, token).map(_.updatedExisting)
+  }
 
+  def search(cameoId: Option[String], displayName: Option[String]): Future[Seq[Identity]] = {
     def toQueryOrEmpty(key: String, field: Option[String]): Seq[JsObject] = {
       field match {
         case None    => Seq()

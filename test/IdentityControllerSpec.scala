@@ -1,5 +1,5 @@
-
-import play.api.Logger
+import play.api.Play.current
+import play.api.{Play, Logger}
 import play.api.test._
 import play.api.libs.json.{ JsString, Json, JsObject }
 import play.api.test.Helpers._
@@ -632,10 +632,142 @@ class IdentityControllerSpec extends StartedApp {
       (identity \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
-//    "get token for new identity"
-//
-//    "identity should have an avatar"
-//
-//    "identity should have support user as contact"
+    var newToken = ""
+    "get token for new identity" in {
+      val path = basePath + "/identity/" + newIdentityId + "/token"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+      (contentAsJson(res) \ "data" \ "token").asOpt[String] must beSome
+      newToken = (contentAsJson(res) \ "data" \ "token").as[String]
+
+      1 === 1
+    }
+
+    "get identity with new token" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "userKey").asOpt[String] must beSome
+      (data \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
+      (data \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (data \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    var fileId = ""
+    "identity should have avatar" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "avatar").asOpt[String] must beSome
+      fileId = (data \ "avatar").as[String]
+      1 === 1
+    }
+
+    "check that avatar file meta exist" in {
+
+      val path = basePath + "/file/" + fileId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(fileId)
+      (data \ "chunks").asOpt[Seq[Int]] must beSome
+      (data \ "chunks")(0).asOpt[Int] must beSome(0)
+      (data \ "chunks")(1).asOpt[Int] must beNone
+      (data \ "fileName").asOpt[String] must beSome("avatar.png")
+      (data \ "fileSize").asOpt[Int] must beSome
+      (data \ "fileType").asOpt[String] must beSome("image/png")
+    }
+
+    "check that avatar file chunk exists" in {
+      val path = basePath + "/file/" + fileId + "/" + 0
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+      val raw = contentAsBytes(res)
+
+      raw.length must beGreaterThan(100)
+    }
+
+    "identity should have support user as contact" in {
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(1)
+      (data(0) \ "identityId").asOpt[String] must beEqualTo(Play.configuration.getString("support.contact.identityId"))
+    }
+
+    "refuse to return token for identity that is not in the same account" in {
+      val path = basePath + "/identity/" + identityExisting + "/token"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != NOT_FOUND) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "refuse to return token for external identity"in {
+      val path = basePath + "/identity/" + externalContactIdentityId + "/token"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != NOT_FOUND) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(NOT_FOUND)
+    }
   }
 }

@@ -7,7 +7,7 @@ new and improved ;)
 
 # Group Authentication
 
-## Create new Token [/api/v1/token]
+## Create new Token [/token]
 
 ### GET
 
@@ -25,7 +25,7 @@ new and improved ;)
           }
         }
 
-## Delete Token [/api/token/{token}]
+## Delete Token [/token/{token}]
 
 ### DELETE
 
@@ -40,6 +40,26 @@ new and improved ;)
             "deletedToken": "34AmUnliV2SXqj9vOTfHDiymmu5XF9B7KGEVV126"
           }
         }
+
+## Get token for another identity of current account [/identity/:id/token]
+
+### GET
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
++ Response 200
+    
+        {
+          "res": "OK",
+          "data": {
+            "token": "FPqYIrbvPdTmxUE5fb2TIRfy1Gmy7JS1OxfdIhNJ",
+            "created": "22.01.2014 16:34:54"
+          }
+        }
+
 
 
 # Group Accounts
@@ -75,9 +95,10 @@ Account Management
           }
         }
 
-## Create Account [/account]
+## Manage Accounts [/account]
 
 ### POST
+Create new account
 
 + Request (application/json)
 
@@ -104,10 +125,8 @@ Account Management
             "lastUpdated": "22.01.2014 16:34:54"
         }
 
-
-## Get Account details of current user [/account]
-
 ### GET
+Get Account details of current user
 
 + Request
     + Headers
