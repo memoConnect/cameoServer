@@ -31,12 +31,8 @@ object TestUserController extends ExtendedController {
         case None => resNotFound("Test user")
         case Some(account) =>
           // get all identities of this account
-          val futureIdentities = account.identities.map { id =>
-            Identity.find(id)
-          }
-
-          Future.sequence(futureIdentities).map {
-            _.filter(_.isDefined).map(_.get).map {
+          Identity.findAll(Json.obj("accountId" -> account.id)).map { list =>
+            list.map {
               identity =>
                 // delete Avatar
                 identity.avatar match {
@@ -85,12 +81,16 @@ object TestUserController extends ExtendedController {
       MongoCollections.accountCollection.find(accountQuery).one[Account].flatMap {
         case None => Future(resNotFound("Test user"))
         case Some(account) =>
-          val query = Json.obj("$or" -> account.identities.map(i => Json.obj("identityId" -> i)))
-          TestUserNotification.findAll(query).map { seq =>
-            // delete them
-            TestUserNotification.deleteAll(query)
+          Identity.findAll(Json.obj("accountId" -> account.id)).flatMap {
+            identities =>
 
-            resOk(seq.map(_.toJson))
+              val query = Json.obj("$or" -> identities.map(i => Json.obj("identityId" -> i.id)))
+              TestUserNotification.findAll(query).map { seq =>
+                // delete them
+                TestUserNotification.deleteAll(query)
+
+                resOk(seq.map(_.toJson))
+              }
           }
       }
   }

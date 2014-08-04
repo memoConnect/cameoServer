@@ -769,5 +769,39 @@ class IdentityControllerSpec extends StartedApp {
       }
       status(res) must equalTo(NOT_FOUND)
     }
+
+    var tokenOldIdentity = ""
+    "return token for first identity when loggin in" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((testUser.login + ":" + password).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      (contentAsJson(res) \ "data" \ "token").asOpt[String] must beSome
+      tokenOldIdentity = (contentAsJson(res) \ "data" \ "token").as[String]
+
+      1 === 1
+    }
+
+    "check that default identity is returned" in {
+      val path = basePath + "/identity"
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenOldIdentity))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "id").asOpt[String] must beSome(testUser.identityId)
+    }
   }
 }

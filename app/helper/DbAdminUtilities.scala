@@ -100,7 +100,7 @@ object DbAdminUtilities {
     }
   }
 
-  val latestDbVersion = 4
+  val latestDbVersion = 5
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -263,12 +263,24 @@ object DbAdminUtilities {
     }
 
     enumerator.run(iteratee)
+  }
 
+  def setDefaultIdentity: Any => Future[Boolean] = foo => {
+    Logger.info("setting as default identity")
+
+    val enumerator = identityCollection.find(Json.obj()).cursor[Identity].enumerate()
+
+    val iteratee: Iteratee[Identity, Boolean] = Iteratee.foldM(true) {
+      (result, identity) => Future(identity.isDefaultIdentity && result)
+    }
+    enumerator.run(iteratee)
   }
 
   def migrations: Map[Int, Any => Future[Boolean]] = Map(
     0 -> migrateTokensWithIteratee,
     1 -> migrateRecipients,
     2 -> loginNamesToLowerCase,
-    3 -> addAvatars)
+    3 -> addAvatars,
+    4 -> setDefaultIdentity
+  )
 }

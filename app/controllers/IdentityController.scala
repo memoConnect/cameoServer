@@ -110,34 +110,30 @@ object IdentityController extends ExtendedController {
           request.identity.accountId match {
             case None => Future(resBadRequest("identity has no account"))
             case Some(accountId) =>
-              Account.find(accountId).flatMap {
-                case None => Future(resServerError("could not find account"))
-                case Some(account) =>
+              validateFuture(request.body, AdditionalValues.format) {
+                additionalValues =>
+                  AccountReservation.checkReservationSecret(identity.cameoId, additionalValues.reservationSecret).flatMap {
+                    case false => Future(resBadRequest("invalid reservation secret"))
+                    case true =>
+                      val identityWithAccount = identity.copy(accountId = request.identity.accountId)
+                      val res = for {
+                        fileId <- AvatarGenerator.generate(identityWithAccount)
+                        insertedIdentity <- {
+                          val identityWithAvatar = identityWithAccount.copy(avatar = fileId)
+                          Identity.col.insert(identityWithAvatar).map(foo => identityWithAvatar)
+                        }
+                        supportAdded <- insertedIdentity.addSupport()
+                      } yield {
+                        insertedIdentity
+                      }
 
-                  validateFuture(request.body, AdditionalValues.format) {
-                    additionalValues =>
-                      AccountReservation.checkReservationSecret(identity.cameoId, additionalValues.reservationSecret).flatMap {
-                        case false => Future(resBadRequest("invalid reservation secret"))
-                        case true =>
-                          val identityWithAccount = identity.copy(accountId = request.identity.accountId)
-                          val res = for {
-                            updateAccount <- account.addIdentity(identityWithAccount.id)
-                            fileId <- AvatarGenerator.generate(identityWithAccount)
-                            insertedIdentity <- {
-                              val identityWithAvatar = identityWithAccount.copy(avatar = fileId)
-                              Identity.col.insert(identityWithAvatar).map(foo => identityWithAvatar)
-                            }
-                            supportAdded <- insertedIdentity.addSupport()
-                          } yield {
-                            insertedIdentity
+                      res.map {
+                        insertedIdentity =>
+                          // send event to all other identities
+                          Identity.findAll(Json.obj("accountId" -> accountId)).map { list =>
+                            list.foreach(i => actors.eventRouter ! NewIdentity(i.id, insertedIdentity))
                           }
-
-                          res.map {
-                            insertedIdentity =>
-                              // send event to all other identities
-                              account.identities.foreach(actors.eventRouter ! NewIdentity(_, insertedIdentity))
-                              resOk(insertedIdentity.toPrivateJson)
-                          }
+                          resOk(insertedIdentity.toPrivateJson)
                       }
                   }
               }

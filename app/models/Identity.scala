@@ -40,6 +40,7 @@ case class Identity(id: MongoId,
                     publicKeys: Seq[PublicKey],
                     ignoredIdentities: Seq[MongoId],
                     avatar: Option[MongoId],
+                    isDefaultIdentity: Boolean = false,
                     created: Date,
                     lastUpdated: Date,
                     docVersion: Int) {
@@ -152,8 +153,8 @@ case class Identity(id: MongoId,
 
   def update(update: IdentityUpdate): Future[Boolean] = {
     update match {
-      case IdentityUpdate(None, None, None, None, None) => Future(true)
-      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAccountId) =>
+      case IdentityUpdate(None, None, None, None, None, None) => Future(true)
+      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAccountId, maybeIsDefault) =>
 
         val set =
           Json.obj("$set" -> (
@@ -161,7 +162,8 @@ case class Identity(id: MongoId,
             maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
             maybeEmptyString("displayName", maybeDisplayName) ++
             maybeEmptyString("cameoId", maybeCameoId) ++
-            maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_)))
+            maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_))) ++
+            maybeEmptyJsValue("isDefaultIdentity", maybeIsDefault.map(JsBoolean))
           ))
         Identity.col.update(query, set).map { _.ok }
     }
@@ -234,6 +236,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Reads.pure[Seq[PublicKey]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
     Reads.pure[Option[MongoId]](None) and
+    Reads.pure[Boolean](false) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Date](new Date()) and
     Reads.pure[Int](docVersion))(Identity.apply _)
@@ -271,7 +274,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         }
   }
 
-  private def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Identity = {
+  private def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean, displayName: Option[String] = None): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
       accountId,
@@ -287,14 +290,15 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       Seq(),
       Seq(),
       None,
+      isDefaultIdentity,
       new Date,
       new Date,
       docVersion)
   }
 
-  def createAndInsert(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], displayName: Option[String] = None): Future[Identity] = {
+  def createAndInsert(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean, displayName: Option[String] = None): Future[Identity] = {
 
-    val identity = create(accountId, cameoId, email, phoneNumber, displayName)
+    val identity = create(accountId, cameoId, email, phoneNumber, isDefaultIdentity: Boolean, displayName)
 
     // insert into db
     Identity.col.insert(identity).flatMap { le =>
@@ -318,7 +322,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   def addTokenToIdentity(identityId: MongoId, token: Token): Future[Boolean] = {
-      Token.appendUnique(identityId, token).map(_.updatedExisting)
+    Token.appendUnique(identityId, token).map(_.updatedExisting)
   }
 
   def search(cameoId: Option[String], displayName: Option[String]): Future[Seq[Identity]] = {
@@ -338,10 +342,10 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   def createDefault(): Identity = {
-    Identity.create(None, IdHelper.generateCameoId, None, None)
+    Identity.create(None, IdHelper.generateCameoId, None, None, false)
   }
 
-  def docVersion = 9
+  def docVersion = 10
 
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
@@ -352,7 +356,8 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     5 -> IdentityEvolutions.convertFriendRequests,
     6 -> IdentityEvolutions.addIgnoredIdentities,
     7 -> IdentityEvolutions.addAuthenticationRequests,
-    8 -> IdentityEvolutions.removeAuthenticationRequests
+    8 -> IdentityEvolutions.removeAuthenticationRequests,
+    9 -> IdentityEvolutions.addDefaultIdentityFlag
   )
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -389,7 +394,8 @@ case class IdentityUpdate(phoneNumber: Option[VerifiedString] = None,
                           email: Option[VerifiedString] = None,
                           displayName: Option[String] = None,
                           cameoId: Option[String] = None,
-                          accountId: Option[MongoId] = None)
+                          accountId: Option[MongoId] = None,
+                          isDefaultIdentity: Option[Boolean] = None)
 
 object IdentityUpdate {
 
@@ -397,6 +403,7 @@ object IdentityUpdate {
     (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
     (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
     (__ \ "displayName").readNullable[String] and
+    Reads.pure(None) and
     Reads.pure(None) and
     Reads.pure(None)
   )(IdentityUpdate.apply _)
@@ -483,6 +490,14 @@ object IdentityEvolutions {
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(9)))
         js.transform(removeArray andThen addVersion)
       }
+  }
 
+  val addDefaultIdentityFlag: Reads[JsObject] = Reads {
+    js =>
+      {
+        val addBoolean = __.json.update((__ \ 'isDefaultIdentity).json.put(JsBoolean(true)))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(10)))
+        js.transform(addBoolean andThen addVersion)
+      }
   }
 }

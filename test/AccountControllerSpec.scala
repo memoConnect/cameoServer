@@ -495,7 +495,6 @@ class AccountControllerSpec extends StartedApp {
 
     var purlExternIdentityToken = ""
     "get token of new account" in {
-
       val path = basePath + "/token"
 
       val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExternal + ":" + pass).getBytes)

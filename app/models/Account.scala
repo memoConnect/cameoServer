@@ -9,7 +9,7 @@ import helper.MongoCollections._
 import helper.ResultHelper._
 import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
-import play.api.{Play, Logger}
+import play.api.{ Play, Logger }
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
@@ -27,7 +27,6 @@ import scala.concurrent.Future
 case class Account(id: MongoId,
                    loginName: String,
                    password: String,
-                   identities: Seq[MongoId],
                    phoneNumber: Option[VerifiedString],
                    email: Option[VerifiedString],
                    created: Date,
@@ -36,16 +35,9 @@ case class Account(id: MongoId,
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
 
   def toJsonWithIdentities: Future[JsObject] = {
-    val js = this.identities.map {
-      iId =>
-        Identity.find(iId).map {
-          case None    => Json.obj()
-          case Some(i) => i.toPrivateJson
-        }
-    }
-
-    Future.sequence(js).map {
-      futureIdentities => this.toJson ++ Json.obj("identities" -> futureIdentities)
+    Identity.findAll(Json.obj("accountId" -> this.id)).map {
+      list =>
+        this.toJson ++ Json.obj("identities" -> list.map(_.toPrivateJson))
     }
   }
 
@@ -64,14 +56,6 @@ case class Account(id: MongoId,
         Account.col.update(query, set).map(_.ok)
     }
   }
-
-  def addIdentity(identityId: MongoId): Future[Boolean] = {
-    val query = Json.obj("_id" -> this.id)
-    val set = Json.obj("$addToSet" -> Json.obj("identities" -> identityId))
-    Account.col.update(query, set).map(_.updatedExisting)
-  }
-
-
 }
 
 object Account extends Model[Account] with CockpitEditable[Account] {
@@ -80,12 +64,11 @@ object Account extends Model[Account] with CockpitEditable[Account] {
 
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
 
-  def createReads: Reads[Account] = {
+  def createReads(): Reads[Account] = {
     val id = IdHelper.generateAccountId()
     (Reads.pure[MongoId](id) and
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
-      Reads.pure[Seq[MongoId]](Seq()) and
       (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
       Reads.pure[Date](new Date()) and
@@ -96,7 +79,6 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     a =>
       Json.obj("id" -> a.id.toJson) ++
         Json.obj("loginName" -> a.loginName) ++
-        Json.obj("identities" -> a.identities.map(id => id.toJson)) ++
         maybeEmptyJsValue("phoneNumber", a.phoneNumber.map(_.toJson)) ++
         maybeEmptyJsValue("email", a.email.map(_.toJson)) ++
         addCreated(a.created) ++
@@ -109,7 +91,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
   }
 
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", Seq(), None, None, new Date, new Date)
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, new Date, new Date)
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -200,7 +182,6 @@ object AccountReservation extends Model[AccountReservation] {
     }
   }
 }
-
 
 object AccountEvolutions {
 

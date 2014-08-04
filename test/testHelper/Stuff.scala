@@ -70,6 +70,9 @@ object Stuff {
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
       (data \ "reservationSecret").as[String]
@@ -81,6 +84,9 @@ object Stuff {
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
       val identity = (data \ "identities")(0).as[JsObject]
@@ -92,6 +98,9 @@ object Stuff {
       val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginName + ":" + password).getBytes)
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
       (data \ "token").as[String]
@@ -116,6 +125,9 @@ object Stuff {
 
     val req = FakeRequest(POST, path).withHeaders(tokenHeader(token)).withJsonBody(json)
     val res = route(req).get
+    if (status(res) != OK) {
+      Logger.error("Response: " + contentAsString(res))
+    }
 
     val data = (contentAsJson(res) \ "data").as[JsObject]
     (data \ "identityId").as[String]
@@ -132,6 +144,10 @@ object Stuff {
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(user2.token)).withJsonBody(json)
       val res = route(req).get
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+
       contentAsString(res)
     }
 
@@ -142,6 +158,10 @@ object Stuff {
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(user1.token)).withJsonBody(json)
       val res = route(req).get
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+
       contentAsString(res)
     }
 

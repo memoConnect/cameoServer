@@ -38,21 +38,21 @@ object AccountController extends ExtendedController {
 
       validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
         additionalValues =>
-          validateFuture[Account](jsBody, Account.createReads) {
+          validateFuture[Account](jsBody, Account.createReads()) {
             account =>
               {
                 def createAccountWithIdentity(identity: Identity): Future[Result] = {
 
-                  val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
+                  val accountLowerCase = account.copy(loginName = account.loginName.toLowerCase)
 
                   // add support user
                   identity.addSupport()
 
-                  Account.col.insert(accountWithIdentity).flatMap {
+                  Account.col.insert(accountLowerCase).flatMap {
                     lastError =>
                       lastError.ok match {
                         case true =>
-                          accountWithIdentity.toJsonWithIdentities.map(resOk)
+                          accountLowerCase.toJsonWithIdentities.map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
                       }
@@ -67,7 +67,7 @@ object AccountController extends ExtendedController {
                     request.headers.get("Authorization") match {
                       case None =>
                         // no token, create new identity
-                        Identity.createAndInsert(Some(account.id), account.loginName, None, None, additionalValues.displayName)
+                        Identity.createAndInsert(Some(account.id), account.loginName, None, None, true, additionalValues.displayName)
                           .flatMap(createAccountWithIdentity)
 
                       case Some(token) =>
@@ -92,7 +92,8 @@ object AccountController extends ExtendedController {
                                       None,
                                       additionalValues.displayName,
                                       Some(account.loginName),
-                                      Some(account.id)
+                                      Some(account.id),
+                                      Some(true)
                                     )
                                     identity.update(update)
                                   }

@@ -3,7 +3,9 @@ package controllers
 import helper.ResultHelper._
 import models.{ Account, Identity, Token }
 import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json
 import play.api.mvc._
 import traits.ExtendedController
 import helper.CmActions.AuthAction
@@ -45,12 +47,10 @@ object TokenController extends ExtendedController {
             //find account and get first identity
             Account.findByLoginName(loginNameLower).flatMap {
               case None => Future(resUnauthorized("Invalid password/loginName"))
-              case Some(account) => if (account.identities.nonEmpty) {
-                val identityId = account.identities(0)
-
-                Identity.find(identityId).map {
-                  case None => resNotFound("identity")
-                  case Some(identity) =>
+              case Some(account) =>
+                Identity.findAll(Json.obj("accountId" -> account.id, "isDefaultIdentity" -> true)).map {
+                  case Seq() => resNotFound("default identity")
+                  case Seq(identity) =>
                     // check loginNames and passwords match
                     if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
                       // everything is ok
@@ -60,10 +60,8 @@ object TokenController extends ExtendedController {
                     } else {
                       resUnauthorized("Invalid password/loginName")
                     }
+                  case _ => resServerError("more than one default identity")
                 }
-              } else {
-                Future.successful(resUnauthorized("Invalid password/loginName"))
-              }
             }
         }
       }
@@ -96,18 +94,15 @@ object TokenController extends ExtendedController {
       request.identity.accountId match {
         case None => Future(resBadRequest("identity has no account"))
         case Some(accountId) =>
-          Account.find (accountId).map {
-            case None => resServerError("unable to get account")
-            case Some(account) =>
-              account.identities.find(_.id.equals(id)) match {
-                case None => resNotFound("identity in account")
-                case Some(identityId) =>
-                  val token = Token.createDefault()
-                  Identity.addTokenToIdentity(identityId, token)
-                  resOk(token.toJson)
-              }
+          Identity.findAll(Json.obj("accountId" -> accountId)).map { list =>
+            list.find(_.id.id.equals(id)) match {
+              case None => resNotFound("identity within account")
+              case Some(identity) =>
+                val token = Token.createDefault()
+                Identity.addTokenToIdentity(identity.id, token)
+                resOk(token.toJson)
+            }
           }
       }
-
   }
 }
