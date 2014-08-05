@@ -50,14 +50,16 @@ case class Contact(id: MongoId,
 
   def update(contactUpdate: ContactUpdate): Future[Boolean] = {
 
-    // edit groups
-    val updatedGroups = contactUpdate.groups match {
-      case Some(groups) =>
-        val query = Json.obj("contacts._id" -> this.id)
-        val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
-        Contact.col.update(query, set).map(_.updatedExisting)
-      case None => Future(false)
-    }
+//    // edit groups
+//    val updatedGroups = contactUpdate.groups match {
+//      case Some(groups) =>
+//        val query = Json.obj("contacts._id" -> this.id)
+//        val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
+//        Contact.col.update(query, set).map(_.updatedExisting)
+//      case None => Future(false)
+//    }
+
+    Future(true)
 
   }
 
