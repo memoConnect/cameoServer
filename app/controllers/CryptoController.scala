@@ -1,6 +1,6 @@
 package controllers
 
-import actors.{NewAePassphrases, UpdatedIdentity}
+import actors.{ NewAePassphrases, UpdatedIdentity }
 import helper.CmActions._
 import helper.ResultHelper._
 import models._
@@ -9,6 +9,7 @@ import play.api.libs.json._
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -38,22 +39,32 @@ object CryptoController extends ExtendedController {
 
   def editPublicKey(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, PublicKeyUpdate.format) {
-        pku =>
-          request.identity.editPublicKey(new MongoId(id), pku).map {
-            case false => resServerError("not updated")
-            case true  => resOk("updated")
+      // check if the public key belongs to this identity
+      request.identity.publicKeys.exists(_.id.id.equals(id)) match {
+        case false => Future(resNotFound("public key"))
+        case true =>
+          validateFuture(request.body, PublicKeyUpdate.format) {
+            pku =>
+              request.identity.editPublicKey(new MongoId(id), pku).map {
+                case false => resServerError("not updated")
+                case true  => resOk("updated")
+              }
           }
       }
   }
 
   def deletePublicKey(id: String) = AuthAction().async {
     request =>
-      request.identity.deletePublicKey(new MongoId(id)).map {
-        case false => resServerError("unable to delete")
-        case true  =>
-          actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
-          resOk("deleted")
+      // check if the public key belongs to this identity
+      request.identity.publicKeys.exists(_.id.id.equals(id)) match {
+        case false => Future(resNotFound("public key"))
+        case true =>
+          request.identity.deletePublicKey(new MongoId(id)).map {
+            case false => resServerError("unable to delete")
+            case true =>
+              actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
+              resOk("deleted")
+          }
       }
   }
 
@@ -106,7 +117,7 @@ object CryptoController extends ExtendedController {
                   case true  => Logger.debug("updated")
                 }
           }
-          val event =  NewAePassphrases(request.identity.id, id, list.map(_.conversationId))
+          val event = NewAePassphrases(request.identity.id, id, list.map(_.conversationId))
           Logger.debug(event.toString)
           actors.eventRouter ! NewAePassphrases(request.identity.id, id, list.map(_.conversationId))
           resOk("updated")

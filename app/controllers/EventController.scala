@@ -58,6 +58,7 @@ object EventController extends ExtendedController {
 
   def broadcastEvent() = AuthAction()(parse.tolerantJson) {
     request =>
+      Logger.debug("Broadcast:@ " + request.body)
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>
           actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data)

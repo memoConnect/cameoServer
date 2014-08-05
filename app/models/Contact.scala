@@ -19,6 +19,7 @@ import scala.concurrent.Future
 case class Contact(id: MongoId,
                    groups: Seq[String],
                    identityId: MongoId,
+                   signatures: Seq[Signature],
                    docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
@@ -58,17 +59,6 @@ case class Contact(id: MongoId,
       case None => Future(false)
     }
 
-    Identity.find(this.identityId).flatMap {
-      case None => updatedGroups
-      case Some(identity) =>
-        // only update, if the identity does not have an account
-        identity.accountId match {
-          case Some(a) => updatedGroups
-          case None =>
-            val identityUpdate = new IdentityUpdate(VerifiedString.createOpt(contactUpdate.phoneNumber), VerifiedString.createOpt(contactUpdate.email), contactUpdate.displayName)
-            identity.update(identityUpdate)
-        }
-    }
   }
 
 }
@@ -84,6 +74,7 @@ object Contact extends SubModel[Contact, Identity] {
     Reads.pure[MongoId](IdHelper.generateContactId()) and
     ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
     Reads.pure[MongoId](identityId) and
+    Reads.pure[Seq[Signature]](Seq()) and
     Reads.pure[Int](docVersion)
   )(Contact.apply _)
 
@@ -91,6 +82,7 @@ object Contact extends SubModel[Contact, Identity] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("groups" -> c.groups) ++
+        Json.obj("signatures" -> c.signatures) ++
         Json.obj("identityId" -> c.identityId.toJson)
   }
 
@@ -99,32 +91,45 @@ object Contact extends SubModel[Contact, Identity] {
       case None      => IdHelper.generateContactId()
       case Some(cid) => cid
     }
-    new Contact(contactId, groups, identityId, docVersion)
+    new Contact(contactId, groups, identityId, Seq(), docVersion)
   }
 
   /*
    * Evolutions
    */
 
-  val evolutionAddContactType: Reads[JsObject] = Reads[JsObject] {
+  val docVersion = 2
+  val evolutions = Map(
+    0 -> ContactEvolutions.addContactType,
+    1 -> ContactEvolutions.addSignatures
+  )
+
+  override def createDefault(): Contact = {
+    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), Seq(), docVersion)
+  }
+}
+
+object ContactEvolutions {
+
+  val addContactType: Reads[JsObject] = Reads[JsObject] {
     js =>
       val addType = __.json.update((__ \ 'contactType).json.put(JsString(CONTACT_TYPE_INTERNAL)))
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
       js.transform(addType andThen addVersion)
   }
 
-  val docVersion = 1
-  val evolutions = Map(0 -> evolutionAddContactType)
-
-  override def createDefault(): Contact = {
-    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), docVersion)
+  val addSignatures: Reads[JsObject] = Reads {
+    js =>
+      {
+        val addArray = __.json.update((__ \ 'signatures).json.put(JsArray()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+        js.transform(addArray andThen addVersion)
+      }
   }
 }
 
 case class ContactUpdate(groups: Option[Seq[String]],
-                         displayName: Option[String],
-                         email: Option[String],
-                         phoneNumber: Option[String])
+                         signatures: Option[Seq[Signature]])
 
 object ContactUpdate {
   implicit val format = Json.format[ContactUpdate]

@@ -20,14 +20,15 @@ PUT            /a/v1/identity                                       controllers.
 POST           /a/v1/identity                                       controllers.IdentityController.addIdentity()
 POST           /a/v1/identity/search                                controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
 
-# CRYPTO STUFF
-POST           /a/v1/identity/publicKey                             controllers.CryptoController.addPublicKey()
-PUT            /a/v1/identity/publicKey/:id                         controllers.CryptoController.editPublicKey(id)
-DELETE         /a/v1/identity/publicKey/:id                         controllers.CryptoController.deletePublicKey(id)
-POST           /a/v1/identity/publicKey/:id/signature               controllers.CryptoController.addSignature(id)
-DELETE         /a/v1/identity/publicKey/:id/signature/:keyId        controllers.CryptoController.deleteSignature(id, keyId)
-GET            /a/v1/identity/publicKey/:id/aePassphrases           controllers.CryptoController.getAePassphrases(id, newKeyId: String ?= "", limit: Int ?= 0)
-POST           /a/v1/identity/publicKey/:id/aePassphrases           controllers.CryptoController.addAePassphrases(id)
+# Public Keys
+POST           /a/v1/publicKey                                      controllers.CryptoController.addPublicKey()
+PUT            /a/v1/publicKey/:id                                  controllers.CryptoController.editPublicKey(id)
+DELETE         /a/v1/publicKey/:id                                  controllers.CryptoController.deletePublicKey(id)
+POST           /a/v1/publicKey/:id/signature                        controllers.CryptoController.addSignature(id)
+DELETE         /a/v1/publicKey/:id/signature/:keyId                 controllers.CryptoController.deleteSignature(id, keyId)
+GET            /a/v1/publicKey/:id/aePassphrases                    controllers.CryptoController.getAePassphrases(id, newKeyId: String ?= "", limit: Int ?= 0)
+POST           /a/v1/publicKey/:id/aePassphrases                    controllers.CryptoController.addAePassphrases(id)
+
 
 # CONVERSATIONS
 POST           /a/v1/conversation                                   controllers.ConversationController.createConversation()
