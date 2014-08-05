@@ -18,33 +18,45 @@ class TwoFactorAuthRequest[A](val identity: Identity, request: Request[A]) exten
 
 object CmActions {
 
-  def AuthAction(allowExternal: Boolean = false) = new ActionBuilder[AuthRequest] {
-    def invokeBlock[A](request: Request[A], block: AuthRequest[A] => Future[Result]) =
-      doAuthAction(allowExternal, request, block)
-  }
+  def AuthAction(allowExternal: Boolean = false, nonAuthBlock: Option[Request[Any] => Future[Result]] = None) =
+    new ActionBuilder[AuthRequest] {
+      def invokeBlock[A](request: Request[A], block: AuthRequest[A] => Future[Result]) =
+        doAuthAction(allowExternal, request, block, nonAuthBlock)
+    }
 
   def TwoFactorAuthAction() = new ActionBuilder[TwoFactorAuthRequest] {
     def invokeBlock[A](request: Request[A], block: TwoFactorAuthRequest[A] => Future[Result]) = {
       // do normal Auth and then try to elevate it to two factor auth
-      doAuthAction(allowExternal = false, request, elevate(block))
+      doAuthAction(allowExternal = false, request, elevate(block), None)
     }
   }
 
-  def doAuthAction[A](allowExternal: Boolean, request: Request[A], block: AuthRequest[A] => Future[Result]) = {
+  def doAuthAction[A](allowExternal: Boolean, request: Request[A], block: AuthRequest[A] => Future[Result], nonAuthBlock: Option[Request[A] => Future[Result]]) = {
     // check if a token is passed
     request.headers.get(REQUEST_TOKEN_HEADER_KEY) match {
-      case None => Future.successful(resUnauthorized(REQUEST_TOKEN_MISSING))
-      case Some(token) => {
+      case None =>
+        nonAuthBlock match {
+          case None          => Future.successful(resUnauthorized(REQUEST_TOKEN_MISSING))
+          case Some(nonAuth) => nonAuth(request)
+        }
+      case Some(token) =>
         Identity.findByToken(new MongoId(token)).flatMap {
-          case None => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
+          case None =>
+            nonAuthBlock match {
+              case None          => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
+              case Some(nonAuth) => nonAuth(request)
+            }
           case Some(identity) =>
             // check if identity has account
             (allowExternal, identity.accountId) match {
-              case (false, None) => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
-              case _             => block(new AuthRequest[A](identity, request))
+              case (false, None) =>
+                nonAuthBlock match {
+                  case None          => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
+                  case Some(nonAuth) => nonAuth(request)
+                }
+              case _ => block(new AuthRequest[A](identity, request))
             }
         }
-      }
     }
   }
 

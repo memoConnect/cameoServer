@@ -48,7 +48,7 @@ case class Identity(id: MongoId,
 
   def toPrivateJson: JsObject = Json.toJson(this)(Identity.privateWrites).as[JsObject]
 
-  def toPublicJson(additionalPublicKeySignatures: Option[Map[String, Signature]] = None): JsObject = {
+  def toPublicJson(additionalPublicKeySignatures: Option[Map[String, Signature]]): JsObject = {
 
     val updatedPublicKeys: Seq[PublicKey] = additionalPublicKeySignatures match {
       case None => this.publicKeys

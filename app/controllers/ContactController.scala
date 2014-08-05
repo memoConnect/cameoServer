@@ -60,7 +60,7 @@ object ContactController extends ExtendedController {
             {
               request.identity.addContact(contact).flatMap {
                 case false => Future(resBadRequest("could not create contact"))
-                case true  => contact.toJsonWithIdentity.map(js => resOk(js))
+                case true  => contact.toJsonWithIdentity(None).map(js => resOk(js))
               }
             }
         }
@@ -99,7 +99,7 @@ object ContactController extends ExtendedController {
 
       res match {
         case None          => Future(resNotFound("contact"))
-        case Some(contact) => contact.toJsonWithIdentityResult
+        case Some(contact) => contact.toJsonWithIdentity(Some(request.identity.publicKeySignatures)).map(resOk)
       }
   }
 
@@ -115,11 +115,13 @@ object ContactController extends ExtendedController {
           _.map {
             identity =>
               Contact.create(identity.id, id = Some(new MongoId(""))).toJson ++
-                Json.obj("identity" -> identity.toPublicJson()) ++
+                Json.obj("identity" -> identity.toPublicJson(Some(request.identity.publicKeySignatures))) ++
                 Json.obj("contactType" -> CONTACT_TYPE_PENDING)
           }
         }
-        futureContacts <- Future.sequence(request.identity.contacts.map(_.toJsonWithIdentity))
+        futureContacts <- Future.sequence(request.identity.contacts.map{
+          _.toJsonWithIdentity(Some(request.identity.publicKeySignatures))
+        })
       } yield {
         val all = futureContacts ++ futurePendingContacts
         // remove all empty element (they result from deleted identities)
@@ -152,11 +154,10 @@ object ContactController extends ExtendedController {
 
   def getGroup(group: String, offset: Int, limit: Int) = AuthAction().async {
     request =>
-
       val contacts = request.identity.getGroup(group)
       val limited = OutputLimits.applyLimits(contacts, offset, limit)
 
-      Future.sequence(limited.map(_.toJsonWithIdentity)).map {
+      Future.sequence(limited.map(_.toJsonWithIdentity(Some(request.identity.publicKeySignatures)))).map {
         c => resOk(c)
       }
   }
@@ -268,8 +269,8 @@ object ContactController extends ExtendedController {
                         case true =>
 
                           for {
-                            contactJs <- contact.toJsonWithIdentity
-                            otherContactJs <- otherContact.toJsonWithIdentity
+                            contactJs <- contact.toJsonWithIdentity(None)
+                            otherContactJs <- otherContact.toJsonWithIdentity(None)
                           } yield {
                             // send event to both parties
                             actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id, otherIdentity.id, request.identity.id, otherContactJs)

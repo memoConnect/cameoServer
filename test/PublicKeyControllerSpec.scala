@@ -522,8 +522,9 @@ class PublicKeyControllerSpec extends StartedApp {
       (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(newAePassphrases(1))
     }
 
-    "get other identity" in {
-
-    }
+//    "get public keys other identity" in {
+//
+//
+//    }
   }
 }

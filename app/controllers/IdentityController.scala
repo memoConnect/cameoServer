@@ -8,7 +8,7 @@ import models._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
-import play.api.mvc.Action
+import play.api.mvc.{ Result, Request, Action }
 import services.AvatarGenerator
 import traits.ExtendedController
 
@@ -22,14 +22,28 @@ import scala.concurrent.Future
  */
 object IdentityController extends ExtendedController {
 
-  def getIdentity(id: String) = Action.async {
-    //todo: external identities should only be available to contact owner and other participants in the conversation
-    val mongoId = new MongoId(id)
+  def nonAuthGetIdentity[A](id: String): Request[A] => Future[Result] = {
+    request =>
+      // todo: return external identities only to their owner and conversation members
+      val mongoId = new MongoId(id)
+      Identity.find(mongoId).map {
+        case None => resNotFound("identity")
+        case Some(identity) =>
+          identity.accountId match {
+            case None    => resNotFound("identity")
+            case Some(a) => resOk(identity.toPublicJson(None))
+          }
+      }
+  }
 
-    Identity.find(mongoId).map {
-      case None           => resNotFound("identity")
-      case Some(identity) => resOk(identity.toPublicJson())
-    }
+  def getIdentity(id: String) = AuthAction(nonAuthBlock = Some(nonAuthGetIdentity(id))).async {
+    request =>
+      val mongoId = new MongoId(id)
+
+      Identity.find(mongoId).map {
+        case None           => resNotFound("identity")
+        case Some(identity) => resOk(identity.toPublicJson(Some(request.identity.publicKeySignatures)))
+      }
   }
 
   def getOwnIdentity = AuthAction(allowExternal = true) {
@@ -90,7 +104,7 @@ object IdentityController extends ExtendedController {
                       // filter excluded identities
                       val filtered = list.filterNot(identity => exclude.exists(_.equals(identity.id)))
                       val limited = OutputLimits.applyLimits(filtered, offset, limit)
-                      resOk(limited.map { i => i.toPublicJson() })
+                      resOk(limited.map { i => i.toPublicJson(None) })
                   }
               }
           }

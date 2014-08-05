@@ -75,10 +75,22 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
-    "Get external identity without token" in {
+    "Refuse to return external identity without token" in {
       val path = basePath + "/identity/" + externalContact2IdentityId
 
       val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "Get external identity with token" in {
+      val path = basePath + "/identity/" + externalContact2IdentityId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
       if (status(res) != OK) {

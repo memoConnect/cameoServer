@@ -4,7 +4,7 @@ import actors.BroadcastEvent
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
-import play.api.{Logger, Play}
+import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.json.{ JsObject, Json }
 import traits.ExtendedController
@@ -58,11 +58,37 @@ object EventController extends ExtendedController {
 
   def broadcastEvent() = AuthAction()(parse.tolerantJson) {
     request =>
-      Logger.debug("Broadcast:@ " + request.body)
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>
           actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data)
           resOk("event send")
+      }
+  }
+  def allowedRemoteEvents: Seq[String] =
+    Seq(
+      "authenticationRequest:start",
+      "authenticationRequest:key-response",
+      "authenticationRequest:key-request",
+      "authenticationRequest:verified",
+      "authenticationRequest:cancel"
+    )
+
+  def remoteBroadcastEvent(id: String) = AuthAction()(parse.tolerantJson) {
+    request =>
+      validate(request.body, EventBroadcastRequest.format) {
+        ebr =>
+          // check if remote identity is in contacts
+          request.identity.contacts.exists(_.identityId.id.equals(id)) match {
+            case false => resNotFound("identity in contacts")
+            case true =>
+              // check if event name is in blacklist
+              allowedRemoteEvents.contains(ebr.name) match {
+                case false => resBadRequest("event not allowed")
+                case true =>
+                  actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data)
+                  resOk("event send")
+              }
+          }
       }
   }
 }
