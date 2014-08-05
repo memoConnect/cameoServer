@@ -1,3 +1,4 @@
+import org.specs2.matcher.ValueCheck
 import testHelper.StartedApp
 import play.api.Logger
 import play.api.test._
@@ -29,7 +30,7 @@ class PublicKeyControllerSpec extends StartedApp {
   val pubKeySize2 = 2048
 
   "Crypto Controller should" in {
-    
+
     "add public key to identity" in {
       val path = basePath + "/publicKey"
 
@@ -522,9 +523,124 @@ class PublicKeyControllerSpec extends StartedApp {
       (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(newAePassphrases(1))
     }
 
-//    "get public keys other identity" in {
-//
-//
-//    }
+    val testUser = createTestUser()
+    var newPubKeyId = ""
+    val keyId1 = "moep1"
+    val keyId2 = "moep2"
+    val keyId3 = "moep3"
+
+    "add public key other identity" in {
+      val path = basePath + "/publicKey"
+
+      val json = Json.obj("name" -> "mamama", "key" -> "kkkkeeeeyyyy", "keySize" -> 12)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      newPubKeyId = (data \ "id").as[String]
+      1 === 1
+
+    }
+
+    "add 2 signatures to that public key" in {
+      Seq(keyId1, keyId2).map { id =>
+        val path = basePath + "/publicKey/" + newPubKeyId + "/signature"
+
+        val json = Json.obj("keyId" -> id, "content" -> "mmooeepp")
+
+        val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser.token)).withJsonBody(json)
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+      }
+      1 === 1
+    }
+
+    "get public key with signatures of that other identity" in {
+      val path = basePath + "/identity/" + testUser.identityId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+      (pubKeys(0) \ "signatures").asOpt[Seq[JsObject]] must beSome
+      val signatures = (pubKeys(0) \ "signatures").as[Seq[JsObject]]
+      signatures must haveLength(2)
+      signatures.find(js => (js \ "keyId").as[String].equals(keyId1)) must beSome
+      signatures.find(js => (js \ "keyId").as[String].equals(keyId2)) must beSome
+    }
+
+    "add own signature to that public key" in {
+      val path = basePath + "/publicKey/" + newPubKeyId + "/signature"
+
+      val json = Json.obj("keyId" -> keyId3, "content" -> "mmooeepp")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "other identity should now contain the signature" in {
+      val path = basePath + "/identity/" + testUser.identityId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+      (pubKeys(0) \ "signatures").asOpt[Seq[JsObject]] must beSome
+      val signatures = (pubKeys(0) \ "signatures").as[Seq[JsObject]]
+      signatures must haveLength(3)
+      signatures.find(js => (js \ "keyId").as[String].equals(keyId1)) must beSome
+      signatures.find(js => (js \ "keyId").as[String].equals(keyId2)) must beSome
+      signatures.find(js => (js \ "keyId").as[String].equals(keyId3)) must beSome
+    }
+
+    "the signature should not be returned if another identity gets it" in {
+      val path = basePath + "/identity/" + testUser.identityId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+      (pubKeys(0) \ "signatures").asOpt[Seq[JsObject]] must beSome
+      val signatures = (pubKeys(0) \ "signatures").as[Seq[JsObject]]
+      signatures must haveLength(2)
+      signatures.find(js => (js \ "keyId").as[String].equals(keyId1)) must beSome
+      signatures.find(js => (js \ "keyId").as[String].equals(keyId2)) must beSome
+      signatures.find(js => (js \ "keyId").as[String].equals(keyId3)) must beNone
+    }
   }
 }

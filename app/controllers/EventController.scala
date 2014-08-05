@@ -85,7 +85,7 @@ object EventController extends ExtendedController {
               allowedRemoteEvents.contains(ebr.name) match {
                 case false => resBadRequest("event not allowed")
                 case true =>
-                  actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data)
+                  actors.eventRouter ! BroadcastEvent(new MongoId(id), ebr.name, ebr.data)
                   resOk("event send")
               }
           }

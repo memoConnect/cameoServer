@@ -21,14 +21,13 @@ class EventControllerSpec extends StartedApp {
   sequential
 
   var subscriptionId = ""
+  var subscriptionId2 = ""
   var subscription2Id = ""
-  var subscriptionOtherId = ""
-  
+  var subscription3Id = ""
+
   val testUser1 = createTestUser()
   val testUser2 = createTestUser()
   val testUser3 = createTestUser()
-
-//  makeFriends(testUser1, testUser3)
 
   def eventNameFinder(name: String): JsObject => Boolean = {
      js => (js \ "name").as[String].equals(name)
@@ -142,11 +141,11 @@ class EventControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      subscription2Id = (data \ "id").as[String]
+      subscriptionId2 = (data \ "id").as[String]
       (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
     }
 
-    "Get event subscription of other user" in {
+    "Get event subscription of user 2" in {
       val path = basePath + "/eventSubscription"
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser3.token)).withJsonBody(Json.obj())
@@ -160,9 +159,28 @@ class EventControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      subscriptionOtherId = (data \ "id").as[String]
+      subscription2Id = (data \ "id").as[String]
       (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
     }
+
+    "Get event subscription of user 3" in {
+      val path = basePath + "/eventSubscription"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser3.token)).withJsonBody(Json.obj())
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      subscription3Id = (data \ "id").as[String]
+      (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
+    }
+
 
     val friendRequestMessage = "hi_there_moep"
     "Send FriendRequest" in {
@@ -181,7 +199,7 @@ class EventControllerSpec extends StartedApp {
 
     "friendRequest:new event should appear in both subscriptions" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject): MatchResult[Option[String]] = {
         (js \ "data" \ "friendRequest" \ "message").asOpt[String] must beSome(friendRequestMessage)
@@ -194,7 +212,7 @@ class EventControllerSpec extends StartedApp {
 
     "Events should be cleared" in {
       waitForEvents(testUser1.token, subscriptionId, 0)
-      waitForEvents(testUser1.token, subscription2Id, 0)
+      waitForEvents(testUser1.token, subscriptionId2, 0)
       1===1
     }
 
@@ -214,7 +232,7 @@ class EventControllerSpec extends StartedApp {
 
     "friendRequest:accepted event should appear in both subscriptions of first user" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
@@ -228,7 +246,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "friendRequest:accepted event should appear in subscription of second user" in {
-      val events1 = waitForEvents(testUser3.token, subscriptionOtherId, 1)
+      val events1 = waitForEvents(testUser3.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
@@ -261,7 +279,7 @@ class EventControllerSpec extends StartedApp {
 
     "conversation:new events should appear in both subscriptions of first user" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
@@ -275,12 +293,12 @@ class EventControllerSpec extends StartedApp {
 
     "Events should be cleared" in {
       waitForEvents(testUser1.token, subscriptionId, 0)
-      waitForEvents(testUser1.token, subscription2Id, 0)
+      waitForEvents(testUser1.token, subscriptionId2, 0)
       1===1
     }
 
     "conversation:new events should appear in subscription of second user" in {
-      val events1 = waitForEvents(testUser3.token, subscriptionOtherId, 1)
+      val events1 = waitForEvents(testUser3.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
@@ -306,7 +324,7 @@ class EventControllerSpec extends StartedApp {
     "new-message events should appear in both subscriptions of first user" in {
 
       val events1 = waitForEvents(testUser1.token, subscriptionId, numberOfMessages)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, numberOfMessages)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, numberOfMessages)
 
       def eventCheck(js: JsObject) = (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
 
@@ -324,13 +342,13 @@ class EventControllerSpec extends StartedApp {
 
     "Events should be cleared" in {
       waitForEvents(testUser1.token, subscriptionId, 0)
-      waitForEvents(testUser1.token, subscription2Id, 0)
+      waitForEvents(testUser1.token, subscriptionId2, 0)
       1===1
     }
 
     "new-message events should appear in subscription of second user" in {
 
-      val events1 = waitForEvents(testUser3.token, subscriptionOtherId, numberOfMessages)
+      val events1 = waitForEvents(testUser3.token, subscription2Id, numberOfMessages)
 
       def eventCheck(js: JsObject) = (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
 
@@ -387,12 +405,12 @@ class EventControllerSpec extends StartedApp {
 
     "clear new-message events in both subscriptions of first user" in {
       waitForEvents(testUser1.token, subscriptionId, 1)
-      waitForEvents(testUser1.token, subscription2Id, 1)
+      waitForEvents(testUser1.token, subscriptionId2, 1)
       1===1
     }
 
     "clear new-message events in subscription of second user" in {
-      waitForEvents(testUser3.token, subscriptionOtherId, 1)
+      waitForEvents(testUser3.token, subscription2Id, 1)
       1===1
     }
 
@@ -412,7 +430,7 @@ class EventControllerSpec extends StartedApp {
 
     "new-message events should appear in both subscriptions of first user" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
@@ -425,7 +443,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "new-message events should appear in subscription of second user" in {
-      val events1 = waitForEvents(testUser3.token, subscriptionOtherId, 1)
+      val events1 = waitForEvents(testUser3.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
@@ -460,7 +478,7 @@ class EventControllerSpec extends StartedApp {
 
     "identity:update event should appear in both subscriptions of first user" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "id").asOpt[String] must beSome(testUser1.identityId)
@@ -474,7 +492,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "identity:update event should appear in subscription of second user" in {
-      val events1 = waitForEvents(testUser3.token, subscriptionOtherId, 1)
+      val events1 = waitForEvents(testUser3.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "id").asOpt[String] must beSome(testUser1.identityId)
@@ -501,7 +519,7 @@ class EventControllerSpec extends StartedApp {
 
     "new-aePassphrase event should appear in both subscriptions of first user" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "conversationIds").asOpt[Seq[String]] must beSome(contain(exactly(conversationId)))
@@ -526,7 +544,7 @@ class EventControllerSpec extends StartedApp {
 
     "identity:update event should appear in both subscriptions of first user" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "id").asOpt[String] must beSome(testUser1.identityId)
@@ -558,12 +576,84 @@ class EventControllerSpec extends StartedApp {
 
     "broadcast event should appear in both subscriptions of first user" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject) = (js \ "data").asOpt[JsObject] must beSome(eventData)
 
       checkEvent(events1, eventNameFinder(eventName), eventCheck)
       checkEvent(events2, eventNameFinder(eventName), eventCheck)
+    }
+
+    var allowedName = "authenticationRequest:key-response"
+    var forbiddenName = "identity:update"
+    "clear event subsriptions of user 3" in {
+      waitForEvents(testUser3.token, subscription3Id, 8)
+      1 === 1
+    }
+
+    "send allowed remote broadcast event from first to third user" in {
+      val path = basePath + "/event/broadcast/identity/" + testUser3.identityId
+
+      val json = Json.obj("name" -> allowedName, "data" -> eventData)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "broadcast event should appear in subscription of third user" in {
+      val events1 = waitForEvents(testUser3.token, subscription3Id, 1)
+
+      def eventCheck(js: JsObject) = (js \ "data").asOpt[JsObject] must beSome(eventData)
+
+      checkEvent(events1, eventNameFinder(allowedName), eventCheck)
+    }
+
+    "refuse to send forbidden remote broadcast event from first to third user" in {
+      val path = basePath + "/event/broadcast/identity/" + testUser3.identityId
+
+      val json = Json.obj("name" -> forbiddenName, "data" -> eventData)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "Events of third user should be empty" in {
+      waitForEvents(testUser3.token, subscription3Id, 0)
+      1===1
+    }
+
+    "clear event subsriptions of user 2" in {
+      waitForEvents(testUser2.token, subscription2Id, 1)
+      1 === 1
+    }
+
+    "refuse to send remote broadcast to identity that is not in contact book" in {
+      val path = basePath + "/event/broadcast/identity/" + testUser2.identityId
+
+      val json = Json.obj("name" -> allowedName, "data" -> eventData)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != NOT_FOUND) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "Events of second user should be empty" in {
+      waitForEvents(testUser2.token, subscription2Id, 0)
+      1===1
     }
 
     val cameoId = testUserPrefix + "_" + randomString(6)
@@ -582,7 +672,7 @@ class EventControllerSpec extends StartedApp {
 
     "identity:new event should appear in both subscriptions of first user" in {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
-      val events2 = waitForEvents(testUser1.token, subscription2Id, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "id").asOpt[String] must beSome
