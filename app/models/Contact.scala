@@ -19,7 +19,6 @@ import scala.concurrent.Future
 case class Contact(id: MongoId,
                    groups: Seq[String],
                    identityId: MongoId,
-                   signatures: Seq[Signature],
                    docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
@@ -35,7 +34,7 @@ case class Contact(id: MongoId,
 
         val identityJson = identity.accountId match {
           case None    => identity.toPrivateJson
-          case Some(a) => identity.toPublicJson
+          case Some(a) => identity.toPublicJson()
         }
 
         Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
@@ -50,17 +49,26 @@ case class Contact(id: MongoId,
 
   def update(contactUpdate: ContactUpdate): Future[Boolean] = {
 
-//    // edit groups
-//    val updatedGroups = contactUpdate.groups match {
-//      case Some(groups) =>
-//        val query = Json.obj("contacts._id" -> this.id)
-//        val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
-//        Contact.col.update(query, set).map(_.updatedExisting)
-//      case None => Future(false)
-//    }
+    // edit groups
+    val updatedGroups = contactUpdate.groups match {
+      case Some(groups) =>
+        val query = Json.obj("contacts._id" -> this.id)
+        val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
+        Contact.col.update(query, set).map(_.updatedExisting)
+      case None => Future(false)
+    }
 
-    Future(true)
-
+    Identity.find(this.identityId).flatMap {
+      case None => updatedGroups
+      case Some(identity) =>
+        // only update, if the identity does not have an account
+        identity.accountId match {
+          case Some(a) => updatedGroups
+          case None =>
+            val identityUpdate = new IdentityUpdate(VerifiedString.createOpt(contactUpdate.phoneNumber), VerifiedString.createOpt(contactUpdate.email), contactUpdate.displayName)
+            identity.update(identityUpdate)
+        }
+    }
   }
 
 }
@@ -76,7 +84,6 @@ object Contact extends SubModel[Contact, Identity] {
     Reads.pure[MongoId](IdHelper.generateContactId()) and
     ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
     Reads.pure[MongoId](identityId) and
-    Reads.pure[Seq[Signature]](Seq()) and
     Reads.pure[Int](docVersion)
   )(Contact.apply _)
 
@@ -84,7 +91,6 @@ object Contact extends SubModel[Contact, Identity] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("groups" -> c.groups) ++
-        Json.obj("signatures" -> c.signatures) ++
         Json.obj("identityId" -> c.identityId.toJson)
   }
 
@@ -93,21 +99,20 @@ object Contact extends SubModel[Contact, Identity] {
       case None      => IdHelper.generateContactId()
       case Some(cid) => cid
     }
-    new Contact(contactId, groups, identityId, Seq(), docVersion)
+    new Contact(contactId, groups, identityId, docVersion)
   }
 
   /*
    * Evolutions
    */
 
-  val docVersion = 2
+  val docVersion = 1
   val evolutions = Map(
-    0 -> ContactEvolutions.addContactType,
-    1 -> ContactEvolutions.addSignatures
+    0 -> ContactEvolutions.addContactType
   )
 
   override def createDefault(): Contact = {
-    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), Seq(), docVersion)
+    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(),  docVersion)
   }
 }
 
@@ -119,19 +124,12 @@ object ContactEvolutions {
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
       js.transform(addType andThen addVersion)
   }
-
-  val addSignatures: Reads[JsObject] = Reads {
-    js =>
-      {
-        val addArray = __.json.update((__ \ 'signatures).json.put(JsArray()))
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
-        js.transform(addArray andThen addVersion)
-      }
-  }
 }
 
 case class ContactUpdate(groups: Option[Seq[String]],
-                         signatures: Option[Seq[Signature]])
+                         displayName: Option[String],
+                         email: Option[String],
+                         phoneNumber: Option[String])
 
 object ContactUpdate {
   implicit val format = Json.format[ContactUpdate]

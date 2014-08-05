@@ -27,7 +27,7 @@ case class FriendRequest(identityId: MongoId,
   def toJsonWithIdentity: Future[JsObject] = {
     Identity.find(this.identityId).map {
       case None    => this.toJson
-      case Some(i) => Json.obj("identity" -> i.toPublicJson) ++ this.toJson
+      case Some(i) => Json.obj("identity" -> i.toPublicJson()) ++ this.toJson
     }
   }
 
@@ -35,7 +35,7 @@ case class FriendRequest(identityId: MongoId,
     this.identityId.equals(identity.id) match {
       case false =>
         Logger.error("FriendRequest.toJson: identity does not match"); this.toJson
-      case true => Json.obj("identity" -> identity.toPublicJson) ++ this.toJson
+      case true => Json.obj("identity" -> identity.toPublicJson()) ++ this.toJson
     }
   }
 }

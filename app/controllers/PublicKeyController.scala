@@ -6,6 +6,7 @@ import helper.ResultHelper._
 import models._
 import play.api.Logger
 import play.api.libs.json._
+import play.api.mvc.Result
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,7 +17,14 @@ import scala.concurrent.Future
  * Date: 22.07.14
  * Time: 17:08
  */
-object CryptoController extends ExtendedController {
+object PublicKeyController extends ExtendedController {
+
+  def isOwnKey(identity: Identity, id: String)(action: => Future[Result]): Future[Result] = {
+    identity.publicKeys.exists(_.id.id.equals(id)) match {
+      case false => Future(resNotFound("public key"))
+      case true  => action
+    }
+  }
 
   def addPublicKey() = AuthAction().async(parse.tolerantJson) {
     request =>
@@ -39,26 +47,20 @@ object CryptoController extends ExtendedController {
 
   def editPublicKey(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      // check if the public key belongs to this identity
-      request.identity.publicKeys.exists(_.id.id.equals(id)) match {
-        case false => Future(resNotFound("public key"))
-        case true =>
-          validateFuture(request.body, PublicKeyUpdate.format) {
-            pku =>
-              request.identity.editPublicKey(new MongoId(id), pku).map {
-                case false => resServerError("not updated")
-                case true  => resOk("updated")
-              }
-          }
+      isOwnKey(request.identity, id) {
+        validateFuture(request.body, PublicKeyUpdate.format) {
+          pku =>
+            request.identity.editPublicKey(new MongoId(id), pku).map {
+              case false => resServerError("not updated")
+              case true  => resOk("updated")
+            }
+        }
       }
   }
 
   def deletePublicKey(id: String) = AuthAction().async {
     request =>
-      // check if the public key belongs to this identity
-      request.identity.publicKeys.exists(_.id.id.equals(id)) match {
-        case false => Future(resNotFound("public key"))
-        case true =>
+      isOwnKey(request.identity, id) {
           request.identity.deletePublicKey(new MongoId(id)).map {
             case false => resServerError("unable to delete")
             case true =>
@@ -70,20 +72,40 @@ object CryptoController extends ExtendedController {
 
   def addSignature(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture[Signature](request.body, Signature.format) {
+     validateFuture[Signature](request.body, Signature.format) {
         signature =>
-          request.identity.addSignatureToPublicKey(new MongoId(id), signature).map {
-            case false => resBadRequest("could not update")
-            case true  => resOk(signature.toJson)
+          // check who the public key belongs to
+          request.identity.publicKeys.exists(_.id.id.equals(id)) match {
+            case true  =>
+              // add to own public key
+              request.identity.addSignatureToPublicKey(new MongoId(id), signature).map {
+                case false => resBadRequest("could not add")
+                case true  => resOk(signature.toJson)
+              }
+            case false =>
+              request.identity.addPublicKeySignature(id, signature).map {
+                case false => resBadRequest("could not add")
+                case true  => resOk(signature.toJson)                
+              }
           }
       }
   }
 
   def deleteSignature(id: String, keyId: String) = AuthAction().async {
     request =>
-      request.identity.deleteSignature(new MongoId(id), keyId).map {
-        case false => resServerError("could not delete")
-        case true  => resOk("deleted")
+      // check who the public key belongs to
+      request.identity.publicKeys.exists(_.id.id.equals(id)) match {
+        case true  =>
+          // add to own public key
+          request.identity.deleteSignatureFromPublicKey(new MongoId(id), keyId).map {
+            case false => resServerError("could not delete")
+            case true  => resOk("deleted")
+          }
+        case false =>
+          request.identity.deletePublicKeySignature(id).map {
+            case false => resServerError("could not delete")
+            case true  => resOk("deleted")
+          }
       }
   }
 

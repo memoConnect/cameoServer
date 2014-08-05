@@ -438,7 +438,7 @@ class EventControllerSpec extends StartedApp {
 
     var pubKeyId = ""
     "add public key" in {
-      val path = basePath + "/identity/publicKey"
+      val path = basePath + "/publicKey"
 
       val json = Json.obj("name" -> "moep", "key" -> "asdfasdf", "keySize" -> 123)
 
@@ -487,7 +487,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "add new aePassphrases to conversation" in {
-      val path = basePath + "/identity/publicKey/" + pubKeyId + "/aePassphrases"
+      val path = basePath + "/publicKey/" + pubKeyId + "/aePassphrases"
       val json = JsArray(Seq(Json.obj("conversationId" -> conversationId, "aePassphrase" -> "huuuup")))
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
@@ -513,7 +513,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "delete public key" in {
-      val path = basePath + "/identity/publicKey/" + pubKeyId
+      val path = basePath + "/publicKey/" + pubKeyId
 
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(testUser1.token))
       val res = route(req).get

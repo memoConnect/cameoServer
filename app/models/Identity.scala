@@ -39,6 +39,7 @@ case class Identity(id: MongoId,
                     friendRequests: Seq[FriendRequest],
                     publicKeys: Seq[PublicKey],
                     ignoredIdentities: Seq[MongoId],
+                    publicKeySignatures: Map[String, Signature], // Map: publicKeyId -> Signature
                     avatar: Option[MongoId],
                     isDefaultIdentity: Boolean = false,
                     created: Date,
@@ -47,7 +48,24 @@ case class Identity(id: MongoId,
 
   def toPrivateJson: JsObject = Json.toJson(this)(Identity.privateWrites).as[JsObject]
 
-  def toPublicJson: JsObject = Json.toJson(this)(Identity.publicWrites).as[JsObject]
+  def toPublicJson(additionalPublicKeySignatures: Option[Map[String, Signature]] = None): JsObject = {
+
+    val updatedPublicKeys: Seq[PublicKey] = additionalPublicKeySignatures match {
+      case None => this.publicKeys
+      case Some(signatures) =>
+        this.publicKeys.map {
+          publicKey =>
+            signatures.get(publicKey.id.id) match {
+              case None => publicKey
+              case Some(signature) =>
+                publicKey.copy(signatures = publicKey.signatures :+ signature)
+            }
+        }
+    }
+
+    val withAdditionalSignatures = this.copy(publicKeys = updatedPublicKeys)
+    Json.toJson(withAdditionalSignatures)(Identity.publicWrites).as[JsObject]
+  }
 
   private val query = Json.obj("_id" -> this.id)
 
@@ -109,6 +127,16 @@ case class Identity(id: MongoId,
     }
   }
 
+  def addPublicKeySignature(publicKeyId: String, signature: Signature): Future[Boolean] = {
+    val set = Json.obj("$set" -> Json.obj(("publicKeySignatures." + publicKeyId) -> signature))
+    Identity.col.update(query, set).map(_.updatedExisting)
+  }
+
+  def deletePublicKeySignature(publicKeyId: String): Future[Boolean] = {
+    val set = Json.obj("$unset" -> Json.obj(("publicKeySignatures." + publicKeyId) -> ""))
+    Identity.col.update(query, set).map(_.updatedExisting)
+  }
+
   def addIgnored(identityId: MongoId): Future[Boolean] = {
     val set = Json.obj("$addToSet" -> Json.obj("ignoredIdentities" -> identityId))
     Identity.col.update(query, set).map {
@@ -138,14 +166,14 @@ case class Identity(id: MongoId,
           case None => addSignature()
           case Some(sig) =>
             // delete old signature
-            this.deleteSignature(publicKeyId, signature.keyId).flatMap {
+            this.deleteSignatureFromPublicKey(publicKeyId, signature.keyId).flatMap {
               res => addSignature()
             }
         }
     }
   }
 
-  def deleteSignature(publicKeyId: MongoId, signatureKeyId: String): Future[Boolean] = {
+  def deleteSignatureFromPublicKey(publicKeyId: MongoId, signatureKeyId: String): Future[Boolean] = {
     val query = Json.obj("_id" -> this.id, "publicKeys._id" -> publicKeyId)
     val set = Json.obj("$pull" -> Json.obj("publicKeys.$.signatures" -> Json.obj("keyId" -> signatureKeyId)))
     Identity.col.update(query, set).map(_.updatedExisting)
@@ -212,7 +240,6 @@ case class Identity(id: MongoId,
           Future(false)
       }
   }
-
 }
 
 object Identity extends Model[Identity] with CockpitEditable[Identity] {
@@ -235,6 +262,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Reads.pure[Seq[FriendRequest]](Seq()) and
     Reads.pure[Seq[PublicKey]](Seq()) and
     Reads.pure[Seq[MongoId]](Seq()) and
+    Reads.pure[Map[String, Signature]](Map()) and
     Reads.pure[Option[MongoId]](None) and
     Reads.pure[Boolean](false) and
     Reads.pure[Date](new Date()) and
@@ -289,6 +317,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       Seq(),
       Seq(),
       Seq(),
+      Map(),
       None,
       isDefaultIdentity,
       new Date,
@@ -345,7 +374,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Identity.create(None, IdHelper.generateCameoId, None, None, false)
   }
 
-  def docVersion = 10
+  def docVersion = 11
 
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
@@ -357,7 +386,8 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     6 -> IdentityEvolutions.addIgnoredIdentities,
     7 -> IdentityEvolutions.addAuthenticationRequests,
     8 -> IdentityEvolutions.removeAuthenticationRequests,
-    9 -> IdentityEvolutions.addDefaultIdentityFlag
+    9 -> IdentityEvolutions.addDefaultIdentityFlag,
+    10 -> IdentityEvolutions.addPublicKeySignatures
   )
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -498,6 +528,15 @@ object IdentityEvolutions {
         val addBoolean = __.json.update((__ \ 'isDefaultIdentity).json.put(JsBoolean(true)))
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(10)))
         js.transform(addBoolean andThen addVersion)
+      }
+  }
+
+  val addPublicKeySignatures: Reads[JsObject] = Reads {
+    js =>
+      {
+        val addObject = __.json.update((__ \ 'publicKeySignatures).json.put(Json.obj()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(11)))
+        js.transform(addObject andThen addVersion)
       }
   }
 }

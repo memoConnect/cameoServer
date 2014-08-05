@@ -115,7 +115,7 @@ object ContactController extends ExtendedController {
           _.map {
             identity =>
               Contact.create(identity.id, id = Some(new MongoId(""))).toJson ++
-                Json.obj("identity" -> identity.toPublicJson) ++
+                Json.obj("identity" -> identity.toPublicJson()) ++
                 Json.obj("contactType" -> CONTACT_TYPE_PENDING)
           }
         }

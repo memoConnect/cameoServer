@@ -28,7 +28,7 @@ object IdentityController extends ExtendedController {
 
     Identity.find(mongoId).map {
       case None           => resNotFound("identity")
-      case Some(identity) => resOk(identity.toPublicJson)
+      case Some(identity) => resOk(identity.toPublicJson())
     }
   }
 
@@ -90,7 +90,7 @@ object IdentityController extends ExtendedController {
                       // filter excluded identities
                       val filtered = list.filterNot(identity => exclude.exists(_.equals(identity.id)))
                       val limited = OutputLimits.applyLimits(filtered, offset, limit)
-                      resOk(limited.map { i => i.toPublicJson })
+                      resOk(limited.map { i => i.toPublicJson() })
                   }
               }
           }
