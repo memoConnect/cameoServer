@@ -99,7 +99,7 @@ class NotificationActor extends Actor {
     Purl.col.insert(purl)
 
     // add footer to mail
-    val footer = "\n\n---\nRead entire conversation on cameo.io: " + Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
+    val footer = "\n\n---\nRead entire conversation on cameonet.de: " + Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
 
     // cut message, so it will fit in the sms with the footer.
     val bodyWithFooter = body + footer
