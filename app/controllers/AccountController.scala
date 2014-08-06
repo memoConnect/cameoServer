@@ -52,7 +52,7 @@ object AccountController extends ExtendedController {
                     lastError =>
                       lastError.ok match {
                         case true =>
-                          accountLowerCase.toJsonWithIdentities.map(resOk)
+                          accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
                       }
@@ -131,7 +131,7 @@ object AccountController extends ExtendedController {
         case Some(id) =>
           Account.find(id).flatMap {
             case None          => Future(resNotFound("account"))
-            case Some(account) => account.toJsonWithIdentities.map(resOk)
+            case Some(account) => account.toJsonWithIdentities(request.identity.id).map(resOk)
           }
       }
   }

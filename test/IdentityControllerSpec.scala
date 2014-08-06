@@ -630,6 +630,11 @@ class IdentityControllerSpec extends StartedApp {
       (identity \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
       (identity \ "avatar").asOpt[String] must beSome
       (identity \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      (identity \ "active").asOpt[Boolean] must beSome(false)
+
+      val identity2 = identities.find(js => (js \ "id").as[String].equals(testUser.identityId)).get
+      (identity2 \ "active").asOpt[Boolean] must beSome(true)
+
     }
 
     var newToken = ""
