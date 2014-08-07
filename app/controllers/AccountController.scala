@@ -53,7 +53,11 @@ object AccountController extends ExtendedController {
                     lastError =>
                       lastError.ok match {
                         case true =>
-                          Statsd.increment("custom.account.create")
+                          // create statd event when user is not a test user
+                          val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+                          if (accountLowerCase.loginName.startsWith(testUserPrefix.toLowerCase)){
+                            Statsd.increment("custom.account.create")
+                          }
                           accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
