@@ -315,6 +315,47 @@ Edit your identity. All values are optional. Only values contained in the json w
             "lastUpdated": "06.02.2014 15:51:46"
           }
         }
+        
+        
+### POST
+Add a new identity to your account
+        
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
+    + Body
+
+            {
+              "cameoId": "reserved cameoId",  
+              "reservationSecret": "secret",
+              "phoneNumber": "optional",
+              "email": "optional",
+              "displayName": "optional"
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "5WtjLmPMEFYVzsn62DrP",
+            "displayName": "newNick",
+            "userKey": "pSkgMI2ithOxLfsPpWD0XuEcKjEK6Prn9oPZ3Xp1",
+            "email": {
+              "value": "mail",
+              "isVerified": false
+            },
+            "phoneNumber": {
+              "value": "+49123456789",
+              "isVerified": false
+            },
+            "preferredMessageType": "default",
+            "created": "06.02.2014 15:51:46",
+            "lastUpdated": "06.02.2014 15:51:46"
+          }
+        }
 
 
 ## Add public key to identity [/identity/publicKey]
@@ -1252,8 +1293,7 @@ Manage your Contacts
               "identity": {
                 "displayName": "Ulrich",
                 "email": "c@mail.de",
-                "phoneNumber": "+491234567890",
-                "preferredMessageType": "sms/mail/default"
+                "phoneNumber": "+491234567890"
               },
               "groups": [
                 "friends",
@@ -1278,7 +1318,6 @@ Manage your Contacts
               "contacts": [],
               "email": "c@mail.de",
               "phoneNumber": "+49174560277",
-              "preferredMessageType": "sms",
               "created": "22.01.2014 16:34:55",
               "lastUpdated": "22.01.2014 16:34:55"
             }
