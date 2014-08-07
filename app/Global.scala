@@ -20,8 +20,8 @@ object AccessControllFilter extends EssentialFilter {
   // wrap action to modify the headers of every request
   def apply(action: EssentialAction): EssentialAction = EssentialAction {
     request =>
-      // todo: this check should not be done for each request...
-      Play.configuration.getString("headers.accessControl.enable") match {
+      val accessControllEnabled = Play.configuration.getString("headers.accessControl.enable")
+      accessControllEnabled match {
         case Some("true") =>
           action.apply(request).map(_.withHeaders(
             ACCESS_CONTROL_ALLOW_METHODS -> "GET, POST, DELETE, PUT, OPTIONS",
@@ -36,7 +36,6 @@ object AccessControllFilter extends EssentialFilter {
 object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter) {
 
   override def onStart(app: play.api.Application) = {
-
     // make sure that we have a connection to mongodb
     def checkMongoConnection(): Boolean =
       {
@@ -49,7 +48,6 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
           case e: Exception =>
             Logger.error("Could not connect to mongodb", e)
             Thread.sleep(1000)
-
             checkMongoConnection()
         }
       }

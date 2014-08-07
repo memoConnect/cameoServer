@@ -47,34 +47,40 @@ class NotificationActor extends Actor {
                     val error = "Could not find identityID " + recipient.identityId
                     Logger.error(error)
                   case Some(toIdentity) =>
+                    val supportIdentityId = Play.configuration.getString("support.contact.identityId").getOrElse("")
+
                     // check if identity has an event subscription
                     EventSubscription.find(Json.obj("identityId" -> toIdentity.id)).map {
-                      case Some(es) => // do nothing
-                      case None =>
-                        toIdentity.accountId match {
-                          case None =>
-                            // external user, use contacts from identity
-                            if (toIdentity.phoneNumber.isDefined) {
-                              sendSmsActor ! generateSms(message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value)
-                            } else if (toIdentity.email.isDefined) {
-                              sendMailActor ! generateMail(message, fromIdentity, toIdentity, subject, toIdentity.email.get.value)
-                            } else {
-                              Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
-                            }
-                          case Some(accountId) =>
-                            // internal user, use contacts from account
-                            Account.find(accountId).map {
-                              case Some(account) =>
-                                if (account.phoneNumber.isDefined) {
-                                  sendSmsActor ! generateSms(message, fromIdentity, toIdentity, account.phoneNumber.get.value)
-                                } else if (account.email.isDefined) {
-                                  sendMailActor ! generateMail(message, fromIdentity, toIdentity, subject, account.email.get.value)
-                                } else {
-                                  Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
-                                }
-                              case None => Logger.error("Could not find accountId: " + accountId)
-                            }
-                        }
+                      case None                                                   => sendNotification()
+                      case Some(es) if es.identityId.id.equals(supportIdentityId) => sendNotification()
+                      case Some(es)                                               => // do nothing
+                    }
+
+                    def sendNotification() {
+                      toIdentity.accountId match {
+                        case None =>
+                          // external user, use contacts from identity
+                          if (toIdentity.phoneNumber.isDefined) {
+                            sendSmsActor ! generateSms(message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value)
+                          } else if (toIdentity.email.isDefined) {
+                            sendMailActor ! generateMail(message, fromIdentity, toIdentity, subject, toIdentity.email.get.value)
+                          } else {
+                            Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
+                          }
+                        case Some(accountId) =>
+                          // internal user, use contacts from account
+                          Account.find(accountId).map {
+                            case Some(account) =>
+                              if (account.phoneNumber.isDefined) {
+                                sendSmsActor ! generateSms(message, fromIdentity, toIdentity, account.phoneNumber.get.value)
+                              } else if (account.email.isDefined) {
+                                sendMailActor ! generateMail(message, fromIdentity, toIdentity, subject, account.email.get.value)
+                              } else {
+                                Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
+                              }
+                            case None => Logger.error("Could not find accountId: " + accountId)
+                          }
+                      }
                     }
 
                 }
