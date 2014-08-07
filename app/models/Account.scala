@@ -154,12 +154,12 @@ object AccountReservation extends Model[AccountReservation] {
   }
 
   def findByLoginName(loginName: String): Future[Option[AccountReservation]] = {
-    val query = Json.obj("loginName" -> Json.obj("$regex" -> loginName, "$options" -> "i"))
+    val query = Json.obj("loginName" -> Json.obj("$regex" -> ("^" + loginName + "$"), "$options" -> "i"))
     col.find(query).one[AccountReservation]
   }
 
   def deleteReserved(loginName: String): Future[LastError] = {
-    val query = Json.obj("loginName" -> Json.obj("$regex" -> loginName, "$options" -> "i"))
+    val query = Json.obj("loginName" -> Json.obj("$regex" -> ("^" + loginName + "$"), "$options" -> "i"))
     col.remove(query)
   }
 
