@@ -8,6 +8,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
+import play.modules.statsd.api.Statsd
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -52,6 +53,7 @@ object AccountController extends ExtendedController {
                     lastError =>
                       lastError.ok match {
                         case true =>
+                          Statsd.increment("custom.account.create")
                           accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
