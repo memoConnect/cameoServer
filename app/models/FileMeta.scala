@@ -1,14 +1,16 @@
 package models
 
-import play.api.libs.json._
-import helper.JsonHelper._
-import traits.Model
 import java.util.Date
+
 import helper.IdHelper
-import scala.concurrent.{ ExecutionContext, Future }
-import reactivemongo.core.commands.LastError
-import ExecutionContext.Implicits.global
+import helper.JsonHelper._
 import helper.MongoCollections._
+import play.api.libs.json._
+import reactivemongo.core.commands.LastError
+import traits.Model
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -21,7 +23,9 @@ case class FileMeta(id: MongoId,
                     maxChunks: Int,
                     fileSize: Int,
                     fileType: String,
-                    created: Date) {
+                    isCompleted: Boolean,
+                    created: Date,
+                    docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(FileMeta.outputWrites).as[JsObject]
 
@@ -37,6 +41,11 @@ case class FileMeta(id: MongoId,
     }
   }
 
+  def setCompleted(value: Boolean): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    val set = Json.obj("$set" -> Json.obj("isCompleted" -> value))
+    FileMeta.col.update(query, set).map(_.updatedExisting)
+  }
 }
 
 object FileMeta extends Model[FileMeta] {
@@ -45,9 +54,9 @@ object FileMeta extends Model[FileMeta] {
 
   implicit val mongoFormat: Format[FileMeta] = createMongoFormat(Json.reads[FileMeta], Json.writes[FileMeta])
 
-  def docVersion = 0
+  def docVersion = 1
 
-  def evolutions = Map()
+  def evolutions = Map(0 -> FileMetaEvolutions.addCompletedFlag)
 
   val outputWrites: Writes[FileMeta] = Writes {
     fm =>
@@ -57,10 +66,11 @@ object FileMeta extends Model[FileMeta] {
         Json.obj("maxChunks" -> fm.maxChunks) ++
         Json.obj("fileSize" -> fm.fileSize) ++
         Json.obj("fileType" -> fm.fileType) ++
+        Json.obj("isCompleted" -> fm.isCompleted) ++
         addCreated(fm.created)
   }
 
-  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String): FileMeta = {
+  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String, isCompleted: Boolean = false, conversationId: Option[MongoId] = None): FileMeta = {
     new FileMeta(
       IdHelper.generateFileId(),
       chunks,
@@ -68,12 +78,37 @@ object FileMeta extends Model[FileMeta] {
       maxChunks,
       fileSize,
       fileType,
-      new Date
+      isCompleted,
+      new Date,
+      docVersion
     )
   }
 
-  override def createDefault(): FileMeta = {
-    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", new Date)
+  def deleteWithChunks(id: MongoId): Future[Boolean] = {
+    // find chunks first
+    FileMeta.find(id).flatMap {
+      case None => Future(false)
+      case Some(fileMeta) =>
+        fileMeta.chunks.map {
+          chunk => FileChunk.delete(chunk.chunkId.toString)
+        }
+        delete(id).map(_.updatedExisting)
+    }
+  }
+
+  def createDefault(): FileMeta = {
+    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, new Date, docVersion)
+  }
+}
+
+object FileMetaEvolutions {
+  def addCompletedFlag(): Reads[JsObject] = Reads {
+    js =>
+      {
+        val addFlag: Reads[JsObject] = __.json.update((__ \ 'isCompleted).json.put(JsBoolean(value = true)))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+        js.transform(addFlag andThen addVersion)
+      }
   }
 }
 

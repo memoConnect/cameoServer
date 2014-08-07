@@ -1,9 +1,10 @@
 package models
 
-import traits.Model
-import play.api.libs.json._
 import helper.IdHelper
 import helper.MongoCollections._
+import play.api.Logger
+import play.api.libs.json._
+import traits.Model
 
 /**
  * User: Björn Reimer
@@ -40,7 +41,9 @@ object Purl extends Model[Purl] {
   }
 
   def create(messageId: MongoId, identityId: MongoId): Purl = {
-    new Purl(IdHelper.generatePurl(),
+    val purl = IdHelper.generatePurl()
+    Logger.debug("Purl generated: " + purl.toString)
+    new Purl(purl,
       messageId,
       identityId)
   }

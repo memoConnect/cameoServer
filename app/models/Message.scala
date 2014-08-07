@@ -1,13 +1,12 @@
 package models
 
 import java.util.Date
-import traits.SubModel
-import play.api.libs.json._
+
 import helper.IdHelper
-import play.api.libs.functional.syntax._
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
 import helper.JsonHelper._
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import traits.SubModel
 
 /**
  * User: Björn Reimer
@@ -16,38 +15,12 @@ import helper.JsonHelper._
  */
 case class Message(id: MongoId,
                    fromIdentityId: MongoId,
-                   //messageStatus: Seq[MessageStatus],
                    plain: Option[PlainMessagePart],
                    encrypted: Option[String],
                    created: Date,
                    docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(Message.outputWrites).as[JsObject]
-
-  //  def updateAllStatus(messageStatus: Seq[MessageStatus]) = {
-  //    val update = Json.obj("$set" -> Json.obj("messages.$.messageStatus" -> messageStatus))
-  //    Conversation.col.update(arrayQuery("messages", this.id), update)
-  //  }
-  //
-  //  def updateSingleStatus(status: MessageStatus): Future[Boolean] = {
-  //    // first remove old status (mongo cant update nested arrays...)
-  //    val query = arrayQuery("messages", this.id)
-  //    val set = Json.obj("$pull" -> Json.obj("messages.$.messageStatus" -> Json.obj("identityId" -> status.identityId)))
-  //
-  //    Message.col.update(query, set).flatMap {
-  //      lastError =>
-  //        lastError.ok match {
-  //          case false => Future(false)
-  //          case true => {
-  //            // write new message status
-  //            val set2 = Json.obj("$push" -> Json.obj("messages.$.messageStatus" -> status))
-  //            Message.col.update(query, set2).map {
-  //              _.ok
-  //            }
-  //          }
-  //        }
-  //    }
-  //  }
 }
 
 object Message extends SubModel[Message, Conversation] {
@@ -78,10 +51,6 @@ object Message extends SubModel[Message, Conversation] {
         Json.obj("plain" -> m.plain.map(_.toJson)) ++
         Json.obj("encrypted" -> m.encrypted) ++
         addCreated(m.created)
-  }
-
-  def findConversation(id: MongoId): Future[Option[Conversation]] = {
-    Conversation.col.find(arrayQuery("messages", id)).one[Conversation]
   }
 
   def create(fromId: MongoId, text: String): Message = {

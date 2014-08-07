@@ -28,17 +28,35 @@ object TestConfig {
 
   lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
 
+  val testUserPrefix = "testUser23"
+
+  val domain = "cameonet.de"
+
   val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
   val cidExisting2 = "dLBDYFdfj9ymiTblElmN"
+  val cidExisting3 = "OM9QeJ4RfJcdscyo52g4"
+  val cidExisting4 = "IXhJ0BwoLjRtrRn41zIw"
   val cidExistingNonMember = "2GOdNSfdPMavyl95KUah"
+
+  val loginExisting = "2VqTftqh"
+  val loginExisting2 = "BMeSfHXQ"
+
+  val accountExisting2Tel = "560277123"
+  val accountExisting2Mail = "moep2@foo.de"
+  val accountExisting3Tel = "5602772323"
+  val accountExisting4Mail = "moep4@foo.de"
+
+  val password = "XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg="
 
   val identityExisting = "g9PWZY7xKNbeCO6LPNnx"
   val identityExisting2 = "N2HKgBdxxnWBGxlYY7Dn"
   val identityExisting3 = "xiDoJmuua853krSS5SeZ"
+  val identityExisting4 = "tfy8ZdsGVWlUI98igv2S"
 
   val cameoIdExisting = "KG5mSGTY8l3"
   val cameoIdExisting2 ="bwyVeVnCvuO"
   val cameoIdExisting3 ="m534n69eHW92DfDenrQo"
+  val cameoIdExisting4 ="4EKozMkDyz7fvvTU3TI0"
 
   val displayNameExisting = "Moeper"
   val displayNameExisting2 = "Moeper2"
@@ -46,13 +64,13 @@ object TestConfig {
   val tokenExisting = "hUbODA2qkVo2JF7YdEYVXe4NaHd82x6rvxxBxXbo"
   val tokenExisting2 = "viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ"
   val tokenExisting3 = "PszpnGzJonsFCYNmeddqif0JGsQH2jI33ZNoRRxY"
+  val tokenExisting4 = "2PnueJm3g6zpsIQib4YF7HNadad6zEN8vCcySELi"
 
   val telExisting = "+49123456789"
   val emailExisting = "test@cameo.io"
 
   val invalidPhoneNumbers = Seq("abcd", "+4912345123451234512345", "", "+!\"§$%&/()=")
   val invalidEmails = Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43")
-
 
   val purlExtern = "MSaKlj4hJP"
   val purlExtern2 = "V3Ml6hzqX9"
@@ -65,11 +83,12 @@ object TestConfig {
 
   val internalContactId = "RJaMVpSkdhMRXc0DqnfT"
   val internalContactIdentityId = "l4ytByiHOw0iJ0LA2hpz"
-
   val internalContact2CameoId = "RliVyZSsiG4e7pSVRuz2"
   val internalContact2IdentityId = "Q9nauLdsCOMhcmXmlL4p"
 
+  val externalContactIdentityId = "XjizpBmduHdbh1XnKdgM"
   val externalContact2 = "EVFrPIr2oPpyVaUZGQjV"
+  val externalContact2IdentityId = "DOZaWDTSnQE0ItFYgqEM"
 
   val validPhoneNumbers: Seq[(String, String)] =
     Seq(

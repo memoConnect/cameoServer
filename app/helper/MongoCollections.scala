@@ -1,15 +1,15 @@
 package helper
 
+import play.api.Play
+import play.api.Play.current
+import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.modules.reactivemongo.json.collection.JSONCollection
-import reactivemongo.api.indexes.{ IndexType, Index }
-import play.api.Play.current
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
-import reactivemongo.bson.BSONDocument
-import play.api.libs.json.Json
-import play.api.Play
 import reactivemongo.api.collections.default.BSONCollection
+import reactivemongo.api.indexes.{ Index, IndexType }
+import reactivemongo.bson.BSONDocument
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -29,6 +29,8 @@ object MongoCollections {
   lazy val identityCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("identities")
     col.indexesManager.ensure(Index(Seq("cameoId" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
+    col.indexesManager.ensure(Index(Seq("displayName" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(Seq("accountId" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("contacts._id" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("tokens._id" -> IndexType.Ascending)))
     col
@@ -41,6 +43,7 @@ object MongoCollections {
   lazy val accountCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("accounts")
     col.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
+    col.indexesManager.ensure(Index(List("password" -> IndexType.Ascending)))
     col
   }
   lazy val twoFactorTokenCollection: JSONCollection = {
@@ -66,7 +69,19 @@ object MongoCollections {
     col.indexesManager.ensure(Index(List("identityId" -> IndexType.Ascending)))
     col
   }
-  lazy val reservedAccountCollection: JSONCollection = mongoDB.collection[JSONCollection]("reservedAccounts")
+  lazy val testUserNotificationCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("testUserNotifications")
+    col.indexesManager.ensure(Index(Seq("identityId" -> IndexType.Ascending)))
+    col
+  }
+  lazy val reservedAccountCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("reservedAccounts")
+    // expire reservations
+    val expireAfter = Play.configuration.getInt("loginName.reservation.timeout").get * 60
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
+    col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
+    col
+  }
   lazy val purlCollection: JSONCollection = mongoDB.collection[JSONCollection]("purls")
   lazy val fileMetaCollection: JSONCollection = mongoDB.collection[JSONCollection]("fileMeta")
   lazy val globalStateCollection: JSONCollection = mongoDB.collection[JSONCollection]("globalState")

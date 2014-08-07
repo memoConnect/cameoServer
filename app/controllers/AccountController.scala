@@ -1,17 +1,16 @@
 package controllers
 
-import play.api.mvc.{Result, SimpleResult, Action}
-import play.api.libs.json._
-import traits.ExtendedController
-import models._
-import play.api.libs.concurrent.Execution.Implicits._
-import scala.concurrent.Future
-import helper.ResultHelper._
 import helper.CmActions.AuthAction
-import scala.Some
-import play.api.libs.json.Reads._
-import services.AvatarGenerator
+import helper.ResultHelper._
+import models._
 import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+import play.api.mvc.{ Action, Result }
+import traits.ExtendedController
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -22,9 +21,8 @@ object AccountController extends ExtendedController {
 
   def checkLogin(login: String): Boolean = {
     login.length >= 6 &&
-      login.length < 21 &&
+      login.length < 41 &&
       login.matches("^\\w+$")
-
   }
 
   case class AdditionalValues(reservationSecret: String, displayName: Option[String])
@@ -40,59 +38,79 @@ object AccountController extends ExtendedController {
 
       validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
         additionalValues =>
-          validateFuture[Account](jsBody, Account.createReads) {
+          validateFuture[Account](jsBody, Account.createReads()) {
             account =>
               {
                 def createAccountWithIdentity(identity: Identity): Future[Result] = {
-                  val accountWithIdentity = account.copy(identities = Seq(identity.id), loginName = account.loginName.toLowerCase)
+
+                  val accountLowerCase = account.copy(loginName = account.loginName.toLowerCase)
 
                   // add support user
-                  identity.addSupport
+                  identity.addSupport()
 
-                  Account.col.insert(accountWithIdentity).flatMap {
+                  Account.col.insert(accountLowerCase).flatMap {
                     lastError =>
                       lastError.ok match {
                         case true =>
-                          accountWithIdentity.toJsonWithIdentities.map(resOK)
+                          accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
                       }
                   }
                 }
 
-                AccountReservation.checkReserved(account.loginName.toLowerCase).flatMap {
-                  case None => Future(resBadRequest("this loginName is not reserved"))
-                  case Some(secret) =>
+                AccountReservation.checkReservationSecret(account.loginName, additionalValues.reservationSecret).flatMap {
+                  case false => Future(resBadRequest("invalid reservation secret"))
+                  case true =>
 
-                    secret.equals(additionalValues.reservationSecret) match {
-                      case false => Future(resBadRequest("invalid reservation secret"))
-                      case true =>
-                        // delete reservation secret
-                        AccountReservation.deleteReserved(account.loginName.toLowerCase)
+                    // check if there is a token
+                    request.headers.get("Authorization") match {
+                      case None =>
+                        // no token, create new identity
+                        Identity.createAndInsert(Some(account.id), account.loginName, None, None, true, additionalValues.displayName)
+                          .flatMap(createAccountWithIdentity)
 
-                        // check if there is a token
-                        request.headers.get("Authorization") match {
-                          case None =>
-                            // no token, create new identity
-                            Identity.createAndInsert(Some(account.id), account.loginName, account.email, account.phoneNumber, additionalValues.displayName)
-                              .flatMap(createAccountWithIdentity)
+                      case Some(token) =>
+                        // there is a token, check if it belongs to an external user
+                        Identity.findByToken(new MongoId(token)).flatMap {
+                          case None                                           => Future(resBadRequest("invalid token"))
+                          case Some(identity) if identity.accountId.isDefined => Future(resBadRequest("token belongs to a registered user"))
+                          case Some(identity) =>
 
-                          case Some(token) =>
-                            // there is a token, check if it belongs to an external user
-                            Identity.findByToken(new MongoId(token)).flatMap {
-                              case None => Future(resBadRequest("invalid token"))
-                              case Some(identity) =>
-                                val update = IdentityUpdate(
-                                  account.phoneNumber.map(VerifiedString.create),
-                                  account.email.map(VerifiedString.create),
-                                  additionalValues.displayName,
-                                  Some(account.loginName),
-                                  Some(account.id)
-                                )
-
-                                identity.addSupport
-
-                                identity.update(update).flatMap {
+                            // find the user that added the external contact
+                            val query = Json.obj("contacts.identityId" -> identity.id)
+                            Identity.find(query).flatMap {
+                              case None => Future(resBadRequest("this user is in nobodies contact book"))
+                              case Some(otherIdentity) =>
+                                val futureRes: Future[Boolean] = for {
+                                  // add other identity as contact
+                                  addContact <- identity.addContact(Contact.create(otherIdentity.id))
+                                  updateIdentity <- {
+                                    // add update identity with details from registration
+                                    val update = IdentityUpdate(
+                                      None,
+                                      None,
+                                      additionalValues.displayName,
+                                      Some(account.loginName),
+                                      Some(account.id),
+                                      Some(true)
+                                    )
+                                    identity.update(update)
+                                  }
+                                  deleteDetails <- {
+                                    val deleteValues =
+                                      Seq("email", "phoneNumber") ++ {
+                                        additionalValues.displayName match {
+                                          case None    => Seq("displayName")
+                                          case Some(d) => Seq()
+                                        }
+                                      }
+                                    Identity.deleteOptionalValues(identity.id, deleteValues).map(_.updatedExisting)
+                                  }
+                                } yield {
+                                  addContact && updateIdentity && deleteDetails
+                                }
+                                futureRes.flatMap {
                                   case false => Future(resServerError("unable to update identity"))
                                   case true  => createAccountWithIdentity(identity)
                                 }
@@ -100,62 +118,94 @@ object AccountController extends ExtendedController {
                         }
                     }
                 }
+
               }
           }
       }
   }
 
-  def getAccount(loginName: String) = AuthAction().async {
+  def getAccount = AuthAction().async {
     request =>
-      Account.findByLoginName(loginName).flatMap {
-        case None          => Future(resNotFound("account"))
-        case Some(account) => account.toJsonWithIdentities.map { resOK(_) }
+      request.identity.accountId match {
+        case None => Future(resBadRequest("no account"))
+        case Some(id) =>
+          Account.find(id).flatMap {
+            case None          => Future(resNotFound("account"))
+            case Some(account) => account.toJsonWithIdentities(request.identity.id).map(resOk)
+          }
       }
   }
 
+  case class CheckLoginRequest(loginName: Option[String], cameoId: Option[String])
+  object CheckLoginRequest { implicit val format = Json.format[CheckLoginRequest] }
+
   def checkLoginName = Action.async(parse.tolerantJson) {
     request =>
-      case class VerifyRequest(loginName: String)
 
-      val reads = (__ \ 'loginName).read[String].map {
-        l => VerifyRequest(l)
+      def findAlternative(value: String, count: Int = 1): Future[String] = {
+        val currentTry = value + "_" + count
+
+        val loginExists: Future[Boolean] = for {
+          account <- Account.findByLoginName(currentTry)
+          identity <- Identity.findByCameoId(currentTry)
+        } yield {
+          account.isDefined || identity.isDefined
+        }
+
+        loginExists.flatMap {
+          case true => findAlternative(value, count + 1) // recursive futures ftw!
+          case false =>
+            // check if it is reserved
+            AccountReservation.findByLoginName(currentTry).flatMap {
+              case Some(r) => findAlternative(value, count + 1)
+              case None    => Future(currentTry)
+            }
+        }
       }
 
-      validateFuture[VerifyRequest](request.body, reads) {
-        vr =>
-          val lowerLogin = vr.loginName.toLowerCase
+      def reserveOrAlternative(login: String): Future[Result] = {
 
-          if (checkLogin(vr.loginName)) {
+        checkLogin(login) match {
+          case false => Future(resBadRequest("invalid loginName/cameoId"))
+          case true =>
             // check if loginName exists or is a cameoId
-            val loginExists: Future[Boolean] = for {
-              account <- Account.findByLoginName(lowerLogin)
-              identity <- Identity.findByCameoId(vr.loginName)
+            val maybeExists: Future[Boolean] = for {
+              account <- Account.findByLoginName(login)
+              identity <- Identity.findByCameoId(login)
             } yield {
               account.isDefined || identity.isDefined
             }
 
-            loginExists.flatMap {
-              // it exists, find alternative
-              case true => Account.findAlternative(vr.loginName).map {
-                newLoginName => resKO(Json.obj("alternative" -> newLoginName))
-              }
-              // it does not exist, check if it is reserved
-              case false => AccountReservation.checkReserved(lowerLogin).flatMap {
-                // it is reserved, get alternative
-                case Some(ra) => Account.findAlternative(vr.loginName).map {
+            maybeExists.flatMap {
+              case true =>
+                // it exists, find alternative
+                findAlternative(login).map {
                   newLoginName => resKO(Json.obj("alternative" -> newLoginName))
                 }
-                // not reserved, reserve it and return reservation Secret
-                case None =>
-                  AccountReservation.reserve(lowerLogin).map {
-                    res =>
-                      resOK(res.toJson)
-                  }
-              }
+              case false =>
+                // it does not exist, check if it is reserved
+                AccountReservation.findByLoginName(login).flatMap {
+                  // it is reserved, get alternative
+                  case Some(ra) =>
+                    findAlternative(login).map {
+                      newLoginName => resKO(Json.obj("alternative" -> newLoginName))
+                    }
+                  // not reserved, reserve it and return reservation Secret
+                  case None =>
+                    AccountReservation.reserve(login).map {
+                      res =>
+                        resOk(res.toJson)
+                    }
+                }
             }
-          } else {
-            Future(resBadRequest("invalid login name"))
-          }
+        }
+      }
+
+      validateFuture[CheckLoginRequest](request.body, CheckLoginRequest.format) {
+        case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
+        case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName required"))
+        case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId)
+        case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName)
       }
   }
 
@@ -164,11 +214,30 @@ object AccountController extends ExtendedController {
       Account.col.remove[JsValue](Json.obj("loginName" -> loginName)).map {
         lastError =>
           if (lastError.updated > 0) {
-            resOK(Json.obj("deleted Account" -> loginName))
+            resOk(Json.obj("deleted Account" -> loginName))
           } else if (lastError.ok) {
             resNotFound("account")
           } else {
             resServerError(lastError.stringify)
+          }
+      }
+  }
+
+  def updateAccount() = AuthAction().async(parse.tolerantJson) {
+    request =>
+      validateFuture(request.body, AccountUpdate.reads) {
+        accountUpdate =>
+          request.identity.accountId match {
+            case None => Future(resBadRequest("no account"))
+            case Some(accountId) =>
+              Account.find(accountId).flatMap {
+                case None => Future(resNotFound("account"))
+                case Some(account) =>
+                  account.update(accountUpdate).map {
+                    case false => resServerError("could not update")
+                    case true  => resOk("updated")
+                  }
+              }
           }
       }
   }

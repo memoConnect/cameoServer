@@ -1,12 +1,14 @@
 package models
 
 import java.util.Date
-import traits.Model
-import play.api.libs.json._
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
+
 import helper.JsonHelper._
-import helper.{ MongoCollections, IdHelper }
+import helper.{ IdHelper, MongoCollections }
+import play.api.libs.json._
+import traits.Model
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -81,7 +83,11 @@ object TwoFactorSmsKey extends Model[TwoFactorSmsKey] {
   }
 
   def create(identityId: MongoId): TwoFactorSmsKey = {
-    val key = new TwoFactorSmsKey(IdHelper.generateTwoFactorSmsKey(), identityId, new Date)
+    new TwoFactorSmsKey(IdHelper.generateTwoFactorSmsKey(), identityId, new Date)
+  }
+
+  def createAndInsert(identityId: MongoId): TwoFactorSmsKey = {
+    val key = create(identityId)
     col.insert(key)
     key
   }

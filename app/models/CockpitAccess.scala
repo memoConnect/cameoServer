@@ -1,10 +1,11 @@
 package models
 
+import helper.{ IdHelper, MongoCollections }
 import play.api.libs.json._
-import scala.concurrent.{ Future, ExecutionContext }
-import helper.{ MongoCollections, IdHelper }
 import traits.Model
-import ExecutionContext.Implicits.global
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 case class CockpitAccess(id: MongoId,
                          accountId: MongoId)

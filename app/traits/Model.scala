@@ -1,16 +1,16 @@
 package traits
 
-import play.api.libs.json._
-import play.api.libs.json.Reads._
-import play.modules.reactivemongo.json.collection.JSONCollection
-import scala.concurrent.{ Await, ExecutionContext, Future }
-import ExecutionContext.Implicits.global
+import helper.JsonHelper._
 import models.MongoId
 import play.api.Logger
-import helper.JsonHelper._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.core.commands.LastError
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
-import reactivemongo.api.ReadPreference
+import scala.concurrent.{ Await, Future }
 
 /**
  * User: Björn Reimer
@@ -24,17 +24,42 @@ trait Model[A] {
 
   def find(id: MongoId): Future[Option[A]] = {
     val query = Json.obj("_id" -> id)
-    col.find(query).one[A]
+    find(query)
   }
 
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
 
+  def find(query: JsObject): Future[Option[A]] = {
+    col.find(query).one[A]
+  }
+
+  def findJs(id: MongoId): Future[Option[JsObject]] = {
+    val query = Json.obj("_id" -> id)
+    col.find(query).one[JsObject]
+  }
+
+  def findAll(query: JsObject): Future[Seq[A]] = {
+    col.find(query).cursor[A].collect[Seq]()
+  }
+
   def delete(id: MongoId): Future[LastError] = {
     val query = Json.obj("_id" -> id)
-    col.remove(query)
+    deleteAll(query)
   }
 
   def delete(id: String): Future[LastError] = delete(new MongoId(id))
+
+  def deleteAll(query: JsObject): Future[LastError] = {
+    col.remove(query)
+  }
+
+  def deleteOptionalValues(id: MongoId, values: Seq[String]): Future[LastError] = {
+    val unsetValues = values.foldLeft(Json.obj())((js, value) => js ++ Json.obj(value -> ""))
+    val set = Json.obj("$unset" -> unsetValues)
+    val query = Json.obj("_id" -> id)
+    val res = col.update(query, set)
+    res
+  }
 
   implicit def mongoFormat: Format[A]
 
@@ -51,7 +76,6 @@ trait Model[A] {
   /*
    * Helper functions
    */
-
   def createMongoWrites(writes: Writes[A]): Writes[A] = Writes {
     obj: A => Json.toJson[A](obj)(writes).transform(toMongoDates andThen toMongoId).getOrElse(Json.obj())
   }
@@ -68,11 +92,11 @@ trait Model[A] {
 
           // get whole object
           val id: MongoId = (js \ "_id").as[MongoId]
-          val futureResult = col.find(Json.obj("_id" -> id)).one[JsObject]
+          val futureResult = findJs(id)
 
           // unfortunately we need to lock until we find the object...
           Await.result(futureResult, 1.minute) match {
-            case None => throw new RuntimeException("could not find object")
+            case None => throw new RuntimeException("could not find object. Original: " + js)
             case Some(all) =>
               val currentDocVersion = (all \ "docVersion").asOpt[Int].getOrElse(0)
               val readsWithEvolution = getEvolutions(currentDocVersion)
@@ -80,22 +104,30 @@ trait Model[A] {
               all.transform(readsWithEvolution).flatMap {
                 newJs =>
                   // try to serialise after evolutions and save to db
-                  newJs.validate[A](fromMongoDates andThen fromMongoId andThen reads).map {
-                    o =>
-                      val futureRes: Future[Boolean] = save(newJs).map {
-                        _.ok
-                      }
-                      val res = Await.result(futureRes, 10.minutes)
-                      res match {
-                        case false =>
-                          Logger.error("Error saving DB evolution: " + newJs)
-                        case true =>
-                          Logger.info("DB migration successfull")
-                      }
-                      o
+                  try {
+                    newJs.validate[A](fromMongoDates andThen fromMongoId andThen reads).map {
+                      o =>
+                        val futureRes: Future[Boolean] = save(newJs).map {
+                          _.ok
+                        }
+                        // lock until the migrated object is saved
+                        val res = Await.result(futureRes, 10.minutes)
+                        res match {
+                          case false =>
+                            Logger.error("Error saving DB evolution: " + newJs)
+                          case true =>
+                            Logger.info("DB migration successfull")
+                        }
+                        o
+                    }
+                  } catch {
+                    case e: JsResultException =>
+                      Logger.error("could not serialize after migration: " + newJs, e)
+                      new JsError(Seq())
                   }
               }
           }
+
       }
 
   }

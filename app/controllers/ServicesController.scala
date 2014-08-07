@@ -1,11 +1,10 @@
 package controllers
 
-import play.api.libs.json.{ JsValue, Json }
-import traits.ExtendedController
 import helper.CheckHelper
 import helper.ResultHelper._
+import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
-import scala.Some
+import traits.ExtendedController
 
 /**
  * User: Michael Merz
@@ -21,7 +20,7 @@ object ServicesController extends ExtendedController {
       (jsBody \ "phoneNumber").asOpt[String] match {
         case Some(phoneNumber) => CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
           case None    => resBadRequest("invalid phone number")
-          case Some(p) => resOK(Json.obj("phoneNumber" -> p))
+          case Some(p) => resOk(Json.obj("phoneNumber" -> p))
         }
         case None => resBadRequest("no phoneNumber")
       }
@@ -33,7 +32,7 @@ object ServicesController extends ExtendedController {
       (jsBody \ "emailAddress").asOpt[String] match {
         case Some(email) => CheckHelper.checkAndCleanEmailAddress(email) match {
           case None    => resBadRequest("invalid emailAddress")
-          case Some(e) => resOK(Json.obj("email" -> e))
+          case Some(e) => resOk(Json.obj("email" -> e))
         }
         case None => resBadRequest("missing emailAddress")
       }

@@ -1,6 +1,6 @@
 package models.cockpit
 
-import play.api.libs.json.{ JsObject, Writes, Json }
+import play.api.libs.json.{ JsObject, Json, Writes }
 
 /**
  * User: Björn Reimer

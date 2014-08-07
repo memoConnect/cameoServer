@@ -1,16 +1,16 @@
 package controllers
 
-import traits.ExtendedController
-import models._
-import scala.concurrent.Future
-import play.api.libs.concurrent.Execution.Implicits._
-import helper.OutputLimits
+import actors.{ NewConversation, Notification }
 import helper.CmActions.AuthAction
-import play.api.libs.json._
+import helper.OutputLimits
 import helper.ResultHelper._
+import models._
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json._
 import play.api.mvc.Result
-import scala.Some
-import play.api.mvc.Result
+import traits.ExtendedController
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -22,30 +22,63 @@ object ConversationController extends ExtendedController {
   def createConversation = AuthAction().async(parse.tolerantJson) {
     request =>
       {
+        def addRecipients(conversation: Conversation): Either[Conversation, Result] = {
+          (request.body \ "recipients").asOpt[Seq[String]] match {
+            case None => Left(conversation)
+            case Some(recipientIds) =>
+              checkRecipients(recipientIds, conversation, request.identity) match {
+                case None             => Right(resKo("Invalid recipients. Not in contact book."))
+                case Some(recipients) => Left(conversation.copy(recipients = recipients ++ conversation.recipients))
+              }
+          }
+        }
+
+        def addMessages(conversation: Conversation): Either[Conversation, Result] = {
+          (request.body \ "messages").asOpt[JsArray] match {
+            case None => Left(conversation)
+            case Some(js) =>
+              js.validate(Reads.seq(Message.createReads(request.identity.id))).map {
+                messages =>
+                  // send notification for last message only
+                  messages.lastOption match {
+                    case None          => // do nothing
+                    case Some(message) => actors.notificationRouter ! Notification(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
+                  }
+                  Left(conversation.copy(messages = messages))
+              }.recoverTotal {
+                error => Right(resBadRequest(JsError.toFlatJson(error)))
+              }
+          }
+        }
+
         def insertConversation(conversation: Conversation): Future[Result] = {
           Conversation.col.insert(conversation).map {
-            le => resOK(conversation.toJson)
+            le =>
+              // send conversation:new event to all recipients
+              conversation.recipients.foreach {
+                recipient =>
+                  actors.eventRouter ! NewConversation(recipient.identityId, conversation)
+              }
+
+              resOk(conversation.toJson)
           }
         }
 
         validateFuture[ConversationUpdate](request.body, ConversationUpdate.createReads) {
-          c =>
-            val conversation = Conversation.create(c.subject, Seq(Recipient.create(request.identity.id)), c.passCaptcha, c.aePassphraseList, c.sePassphrase)
+          cu =>
+            val conversation = Conversation.create(cu.subject, Seq(Recipient.create(request.identity.id)), cu.passCaptcha, cu.aePassphraseList, cu.sePassphrase, cu.keyTransmission)
 
-            // check if there are recipients
-            (request.body \ "recipients").asOpt[Seq[String]] match {
-              case None => insertConversation(conversation)
-              case Some(recipientIds) =>
-                checkRecipients(recipientIds, conversation, request.identity) match {
-                  case None => Future(resBadRequest("Invalid recipients. Not in contact book."))
-                  case Some(recipients) =>
-                    val withRecipients = conversation.copy(recipients = recipients ++ conversation.recipients)
-                    insertConversation(withRecipients)
+            addRecipients(conversation) match {
+              case Right(result) => Future(result)
+              case Left(withRecipients) =>
+                addMessages(withRecipients) match {
+                  case Right(result) => Future(result)
+                  case Left(withMessages) =>
+                    insertConversation(withMessages)
                 }
             }
         }
       }
-
   }
 
   def getConversation(id: String, offset: Int, limit: Int, keyId: List[String]) = AuthAction(allowExternal = true).async {
@@ -55,7 +88,7 @@ object ConversationController extends ExtendedController {
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.getMissingPassphrases.map {
             missingPasshrases =>
-              resOK(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
+              resOk(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
           }
         }
       }
@@ -100,7 +133,7 @@ object ConversationController extends ExtendedController {
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.deleteRecipient(new MongoId(rid)).map {
             case false => resNotFound("recipient")
-            case true  => resOK()
+            case true  => resOk()
           }
         }
       }
@@ -111,7 +144,7 @@ object ConversationController extends ExtendedController {
       Conversation.find(id, -1, 0).flatMap {
         case None => Future(resNotFound("conversation"))
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.toSummaryJsonWithKey(keyId).map(resOK(_))
+          c.toSummaryJsonWithKey(keyId).map(resOk(_))
         }
       }
   }
@@ -127,7 +160,7 @@ object ConversationController extends ExtendedController {
           futureJson.map {
             json =>
               val res = Json.obj("conversations" -> json, "numberOfConversations" -> list.length)
-              resOK(res)
+              resOk(res)
           }
       }
   }
@@ -148,7 +181,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def addAePassphrase(id: String) = AuthAction().async(parse.tolerantJson) {
+  def addAePassphrases(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
       Conversation.find(new MongoId(id), -1, 0).flatMap {
         case None => Future.successful(resNotFound("conversation"))

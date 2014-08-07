@@ -1,13 +1,13 @@
 package controllers.cockpit
 
-import play.api.mvc.BodyParsers.parse
-import scala.concurrent.{ ExecutionContext, Future }
-import helper.ResultHelper._
-import scala.Some
-import ExecutionContext.Implicits.global
-import play.api.libs.json.JsObject
-import models.cockpit.CockpitEdit
 import helper.CmActions._
+import helper.ResultHelper._
+import models.cockpit.CockpitEdit
+import play.api.libs.json.JsObject
+import play.api.mvc.BodyParsers.parse
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 object EditController {
 
@@ -19,7 +19,7 @@ object EditController {
           case None => resNotFound(elementName + " object with id: " + id)
           case Some(attributes) =>
             val cockpitEdit = new CockpitEdit(id, attributes)
-            resOK(cockpitEdit.toJson)
+            resOk(cockpitEdit.toJson)
         }
       }
     }
@@ -34,7 +34,7 @@ object EditController {
           case Some(definition) => definition.update(id, request.body.as[JsObject]).map {
             case None        => resBadRequest("invalid element id or update values")
             case Some(false) => resServerError("error saving update")
-            case Some(true)  => resOK()
+            case Some(true)  => resOk()
           }
         }
       }

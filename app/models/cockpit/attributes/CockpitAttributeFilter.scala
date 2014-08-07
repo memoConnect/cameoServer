@@ -1,10 +1,8 @@
 package models.cockpit.attributes
 
-import traits.CockpitAttribute
-import play.api.libs.json._
-import play.api.libs.json.JsObject
-import scala.Some
 import models.MongoId
+import play.api.libs.json._
+import traits.CockpitAttribute
 
 case class CockpitAttributeFilter(name: String,
                                   displayName: String,

@@ -1,25 +1,23 @@
 package models
 
-import traits.{ CockpitEditable, CockpitAttribute, Model }
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import play.api.libs.json.Reads._
 import java.util.Date
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
+
+import constants.Messaging._
 import helper.IdHelper
-import play.api.Play
-import reactivemongo.core.commands.LastError
-import play.api.Play.current
 import helper.JsonHelper._
 import helper.MongoCollections._
-import constants.Messaging._
-import models.cockpit.attributes._
-import models.cockpit.attributes.CockpitAttributeFilter
-import scala.Some
-import models.cockpit.attributes.CockpitAttributeString
-import play.api.libs.json.JsObject
+import helper.ResultHelper._
 import models.cockpit.CockpitListFilter
+import models.cockpit.attributes._
+import play.api.{ Play, Logger }
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+import reactivemongo.core.commands.LastError
+import traits.{ CockpitAttribute, CockpitEditable, Model }
+import play.api.Play.current
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -29,25 +27,37 @@ import models.cockpit.CockpitListFilter
 case class Account(id: MongoId,
                    loginName: String,
                    password: String,
-                   identities: Seq[MongoId],
-                   phoneNumber: Option[String], // not used anymore
-                   email: Option[String], // not used anymore
+                   phoneNumber: Option[VerifiedString],
+                   email: Option[VerifiedString],
                    created: Date,
                    lastUpdated: Date) {
 
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
 
-  def toJsonWithIdentities: Future[JsObject] = {
-    val js = this.identities.map {
-      iId =>
-        Identity.find(iId).map {
-          case None    => Json.obj()
-          case Some(i) => i.toPrivateJson
-        }
+  def toJsonWithIdentities(activeIdentityId: MongoId): Future[JsObject] = {
+    Identity.findAll(Json.obj("accountId" -> this.id)).map {
+      list =>
+        this.toJson ++ Json.obj("identities" -> list.map {
+          identity =>
+            val isActive: Boolean = identity.id.equals(activeIdentityId)
+            identity.toPrivateJson ++ Json.obj("active" -> isActive)
+        })
     }
+  }
 
-    Future.sequence(js).map {
-      futureIdentities => this.toJson ++ Json.obj("identities" -> futureIdentities)
+  def update(update: AccountUpdate): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    update match {
+      case AccountUpdate(None, None, None) => Future(true)
+      case AccountUpdate(maybePhoneNumber, maybeEmail, maybePassword) =>
+
+        val set =
+          Json.obj("$set" -> (
+            maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
+            maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
+            maybeEmptyString("password", maybePassword)
+          ))
+        Account.col.update(query, set).map(_.ok)
     }
   }
 }
@@ -58,18 +68,13 @@ object Account extends Model[Account] with CockpitEditable[Account] {
 
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
 
-  def docVersion = 0
-
-  def evolutions = Map()
-
-  def createReads: Reads[Account] = {
+  def createReads(): Reads[Account] = {
     val id = IdHelper.generateAccountId()
     (Reads.pure[MongoId](id) and
       (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
-      Reads.pure[Seq[MongoId]](Seq()) and
-      (__ \ 'phoneNumber).readNullable[String](verifyPhoneNumber andThen Reads.StringReads) and
-      (__ \ 'email).readNullable[String](verifyMail andThen Reads.StringReads) and
+      (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+      (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -78,39 +83,19 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     a =>
       Json.obj("id" -> a.id.toJson) ++
         Json.obj("loginName" -> a.loginName) ++
-        Json.obj("identities" -> a.identities.map(id => id.toJson)) ++
+        maybeEmptyJsValue("phoneNumber", a.phoneNumber.map(_.toJson)) ++
+        maybeEmptyJsValue("email", a.email.map(_.toJson)) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
 
   def findByLoginName(loginName: String): Future[Option[Account]] = {
-    val query = Json.obj("loginName" -> loginName)
+    val query = Json.obj("loginName" -> loginName.toLowerCase)
     col.find(query).one[Account]
   }
 
-  def findAlternative(loginName: String, count: Int = 1): Future[String] = {
-    val currentTry = loginName + "_" + count
-
-    val loginExists: Future[Boolean] = for {
-      account <- Account.findByLoginName(currentTry)
-      identity <- Identity.findByCameoId(currentTry)
-    } yield {
-      account.isDefined || identity.isDefined
-    }
-
-    loginExists.flatMap {
-      case true => findAlternative(loginName, count + 1) // recursive futures ftw!
-      case false =>
-        // check if it is reserved
-        AccountReservation.checkReserved(currentTry).flatMap {
-          case Some(r) => findAlternative(loginName, count + 1)
-          case None    => Future(currentTry)
-        }
-    }
-  }
-
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", Seq(), None, None, new Date, new Date)
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, new Date, new Date)
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -134,6 +119,11 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
+  def docVersion = 1
+
+  def evolutions = Map(
+    0 -> AccountEvolutions.migrateToVerifiedString
+  )
 }
 
 case class AccountReservation(loginName: String,
@@ -163,37 +153,78 @@ object AccountReservation extends Model[AccountReservation] {
     }
   }
 
-  /**
-   * checks if a loginName is reserved
-   * @param loginName the loginName to be checked
-   * @return returns the secret associated with the login
-   */
-  def checkReserved(loginName: String): Future[Option[String]] = {
-    val query = Json.obj("loginName" -> loginName)
-
-    col.find(query).one[AccountReservation].flatMap {
-      case None => Future(None)
-      case Some(ar) => {
-        // check if the reservation has run out
-        if ((((new Date).getTime - ar.created.getTime) / (1000 * 60)) <
-          Play.configuration.getInt("loginName.reservation.timeout").get) {
-          Future(Some(ar.id.id))
-        } else {
-          // delete reservation
-          deleteReserved(loginName).map {
-            lastError => None
-          }
-        }
-      }
-    }
+  def findByLoginName(loginName: String): Future[Option[AccountReservation]] = {
+    val query = Json.obj("loginName" -> Json.obj("$regex" -> loginName, "$options" -> "i"))
+    col.find(query).one[AccountReservation]
   }
 
   def deleteReserved(loginName: String): Future[LastError] = {
-    val query = Json.obj("loginName" -> loginName)
+    val query = Json.obj("loginName" -> Json.obj("$regex" -> loginName, "$options" -> "i"))
     col.remove(query)
   }
 
   def createDefault(): AccountReservation = {
     new AccountReservation(IdHelper.randomString(8), IdHelper.generateMongoId(), new Date)
   }
+
+  def checkReservationSecret(value: String, secret: String): Future[Boolean] = {
+    // do not require reservation secret for test users
+    val testUserPrefix = Play.configuration.getString("testUser.prefix").get
+    value.startsWith(testUserPrefix) match {
+      case true => Future(true)
+      case false =>
+        AccountReservation.findByLoginName(value).map {
+          case None => false
+          case Some(reservation) =>
+            reservation.id.id.equals(secret) match {
+              case false => false
+              case true =>
+                AccountReservation.deleteReserved(value)
+                true
+            }
+        }
+    }
+  }
+}
+
+object AccountEvolutions {
+
+  def migrateToVerifiedString: Reads[JsObject] = Reads {
+    js =>
+      {
+        val movePhoneNumber = __.json.update((__ \ 'phoneNumber \ 'value).json.copyFrom((__ \ 'phoneNumber).json.pick[JsString]))
+        val pnAddVerified = __.json.update((__ \ 'phoneNumber \ 'isVerified).json.put(JsBoolean(false)))
+        val pnAddDate = __.json.update((__ \ 'phoneNumber \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
+        val phoneNumber: Reads[JsObject] =
+          (js \ "phoneNumber").asOpt[String] match {
+            case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
+            case Some(n) => movePhoneNumber andThen pnAddVerified andThen pnAddDate
+          }
+
+        val moveMail = __.json.update((__ \ 'email \ 'value).json.copyFrom((__ \ 'email).json.pick[JsString]))
+        val mAddVerified = __.json.update((__ \ 'email \ 'isVerified).json.put(JsBoolean(false)))
+        val mAddDate = __.json.update((__ \ 'email \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
+        val email =
+          (js \ "email").asOpt[String] match {
+            case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
+            case Some(m) => moveMail andThen mAddVerified andThen mAddDate
+          }
+
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+
+        js.transform(phoneNumber andThen email andThen addVersion)
+      }
+  }
+}
+
+case class AccountUpdate(phoneNumber: Option[VerifiedString] = None,
+                         email: Option[VerifiedString] = None,
+                         password: Option[String] = None)
+
+object AccountUpdate {
+  implicit val reads: Reads[AccountUpdate] = (
+    (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+    (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+    (__ \ "password").readNullable[String](minLength[String](8) andKeep hashPassword)
+  )(AccountUpdate.apply _)
 }

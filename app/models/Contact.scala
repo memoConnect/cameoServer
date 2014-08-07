@@ -1,15 +1,15 @@
 package models
 
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import helper.IdHelper
-import traits.SubModel
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import play.api.mvc.Result
-import helper.ResultHelper._
-import helper.JsonHelper._
 import constants.Contacts._
+import helper.IdHelper
+import helper.ResultHelper._
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import play.api.mvc.Result
+import traits.SubModel
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -44,7 +44,7 @@ case class Contact(id: MongoId,
 
   def toJsonWithIdentityResult: Future[Result] = {
     this.toJsonWithIdentity.map(
-      js => resOK(js))
+      js => resOk(js))
   }
 
   def update(contactUpdate: ContactUpdate): Future[Boolean] = {
@@ -52,7 +52,7 @@ case class Contact(id: MongoId,
     // edit groups
     val updatedGroups = contactUpdate.groups match {
       case Some(groups) =>
-        val query = arrayQuery("contacts", this.id)
+        val query = Json.obj("contacts._id" -> this.id)
         val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
         Contact.col.update(query, set).map(_.updatedExisting)
       case None => Future(false)
@@ -80,7 +80,7 @@ object Contact extends SubModel[Contact, Identity] {
 
   implicit val mongoFormat: Format[Contact] = createMongoFormat(Json.reads[Contact], Json.writes[Contact])
 
-  def createReads(identityId: MongoId, contactType: String): Reads[Contact] = (
+  def createReads(identityId: MongoId): Reads[Contact] = (
     Reads.pure[MongoId](IdHelper.generateContactId()) and
     ((__ \ 'groups).read[Seq[String]] or Reads.pure(Seq[String]())) and
     Reads.pure[MongoId](identityId) and

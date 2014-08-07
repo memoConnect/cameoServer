@@ -1,12 +1,9 @@
 package models
 
+import helper.IdHelper
+import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import traits.SubModel
-import helper.IdHelper
-import play.api.libs.json.JsObject
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
-import play.api.libs.functional.syntax._
 
 /**
  * User: Björn Reimer
@@ -41,6 +38,10 @@ object EncryptedPassphrase extends SubModel[EncryptedPassphrase, Conversation] {
     (__ \ 'encryptedPassphrase).read[String] and
     Reads.pure[Int](docVersion)
   )(EncryptedPassphrase.apply _)
+
+  def create(keyId: String, value: String): EncryptedPassphrase = {
+    new EncryptedPassphrase(IdHelper.generateMongoId(), keyId, value, docVersion)
+  }
 
   def evolutions = Map()
 

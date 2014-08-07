@@ -1,7 +1,7 @@
-
-import play.api.Logger
+import play.api.Play.current
+import play.api.{Play, Logger}
 import play.api.test._
-import play.api.libs.json.{JsString, Json, JsObject}
+import play.api.libs.json.{ JsString, Json, JsObject }
 import play.api.test.Helpers._
 import testHelper.Stuff._
 import org.specs2.mutable._
@@ -24,19 +24,6 @@ class IdentityControllerSpec extends StartedApp {
 
   var cameoId = ""
 
-  val pubKey = "asdfasdfasdf"
-  val pubKeyName = "moep"
-  var pubKeyId = ""
-  val pubKeySize = 15
-  val newPubKey = "woops"
-  val newPubKeyName = "poem"
-  val newPubKeySize = 454
-
-  val pubKey2 = "asdfasdfasdf2"
-  val pubKeyName2 = "moep2"
-  var pubKeyId2 = ""
-  val pubKeySize2 = 2048
-
   val externalContactDisplayName = "generic Display Name 15y"
 
   "IdentityController" should {
@@ -47,6 +34,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -57,10 +47,58 @@ class IdentityControllerSpec extends StartedApp {
       cameoId = (data \ "cameoId").as[String]
       (data \ "email" \ "value").asOpt[String] must beSome(emailExisting)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(telExisting)
+      (data \ "displayName").asOpt[String] must beSome
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "Get internal identity without token" in {
+      val path = basePath + "/identity/" + identityExisting
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "userKey").asOpt[String] must beNone
+      (data \ "cameoId").asOpt[String] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome(emailExisting)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(telExisting)
+      (data \ "displayName").asOpt[String] must beSome
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "Get external identity without token" in {
+      val path = basePath + "/identity/" + externalContact2IdentityId
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "userKey").asOpt[String] must beNone
+      (data \ "cameoId").asOpt[String] must beSome
+      (data \ "email" \ "value").asOpt[String] must beNone
+      (data \ "phoneNumber" \ "value").asOpt[String] must beNone
+      (data \ "displayName").asOpt[String] must beSome
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
     "Edit an identity" in {
-
       val path = basePath + "/identity"
 
       val json = Json.obj("phoneNumber" -> newTel, "email" -> newMail, "displayName" -> newName)
@@ -68,6 +106,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -78,6 +119,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -127,11 +171,14 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
 
       data.length must beEqualTo(1)
@@ -146,11 +193,14 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
 
       data.length must beEqualTo(1)
@@ -165,11 +215,14 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
 
       data.length must beEqualTo(1)
@@ -196,6 +249,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[String] = (contentAsJson(res) \ "data").as[Seq[String]]
@@ -212,6 +268,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -230,6 +289,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -248,6 +310,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -266,6 +331,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -282,6 +350,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -300,11 +371,14 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2)
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting2 + "@" + domain)
       (data(0) \ "id").asOpt[String] must beSome(identityExisting2)
 
       data.length must beEqualTo(1)
@@ -319,6 +393,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -335,6 +412,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -351,6 +431,9 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -366,6 +449,42 @@ class IdentityControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must equalTo(0)
+
+    }
+
+    "send friend request" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> identityExisting4)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+    }
+
+    "pending friend requests should be excluded in search" in {
+
+      val path = basePath + "/identity/search"
+      val json = Json.obj("search" -> cameoIdExisting4, "fields" -> Seq("cameoId"))
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -373,158 +492,321 @@ class IdentityControllerSpec extends StartedApp {
       data.length must equalTo(0)
     }
 
-    "add public key to identity" in {
-      val path = basePath + "/identity/publicKey"
+    "reject pending friend request" in {
+      val path = basePath + "/friendRequest/answer"
+      val json = Json.obj("answerType" -> "reject", "identityId" -> identityExisting)
 
-      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey, "keySize" -> pubKeySize)
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting4)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "identity should be returned again in search" in {
+      val path = basePath + "/identity/search"
+      val json = Json.obj("search" -> cameoIdExisting4, "fields" -> Seq("cameoId"))
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data: Seq[JsObject] = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must equalTo(1)
+
+      (data(0) \ "cameoId").asOpt[String] must beSome(cameoIdExisting4 + "@" + domain)
+      (data(0) \ "id").asOpt[String] must beSome(identityExisting4)
+    }
+
+    val testUser = createTestUser()
+    val newIdentityDisplayName = "Mooeepp"
+    val newIdentityTel = "+49123456"
+    val newIdentityEmail = "foo@moep.de"
+    val newIdentityCameoId = "myMoep"
+    var newIdentityId = ""
+
+    "refuse to add new identity to account without reservation secret" in {
+      val path = basePath + "/identity"
+      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "refuse to add new identity to account with invalid reservation secret" in {
+      val path = basePath + "/identity"
+      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId, "reservationSecret" -> "fooooo")
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    var regSec = ""
+    "reserve cameoId" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("cameoId" -> newIdentityCameoId)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "reservationSecret").asOpt[String] must beSome
+      regSec = (data \ "reservationSecret").as[String]
+      1 === 1
+    }
+
+    "add new identity to account with correct reservation secret" in {
+      val path = basePath + "/identity"
+      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId, "reservationSecret" -> regSec)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      pubKeyId = (data \ "id").as[String]
-      (data \ "name").asOpt[String] must beSome(pubKeyName)
-      (data \ "key").asOpt[String] must beSome(pubKey)
-      (data \ "keySize").asOpt[Int] must beSome(pubKeySize)
+      newIdentityId = (data \ "id").as[String]
+      (data \ "userKey").asOpt[String] must beSome
+      (data \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
+      (data \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (data \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
-    "add another public key to identity" in {
-      val path = basePath + "/identity/publicKey"
+    "account should now contain both identities" in {
+      val path = basePath + "/account"
 
-      val json = Json.obj("name" -> pubKeyName2, "key" -> pubKey2, "keySize" -> pubKeySize2)
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "identities").asOpt[Seq[JsObject]] must beSome
+      val identities = (data \ "identities").as[Seq[JsObject]]
+      identities.length must beEqualTo(2)
+
+      identities.find(js => (js \ "id").as[String].equals(testUser.identityId)) must beSome
+      identities.find(js => (js \ "id").as[String].equals(newIdentityId)) must beSome
+
+      val identity = identities.find(js => (js \ "id").as[String].equals(newIdentityId)).get
+      (identity \ "id").asOpt[String] must beSome
+      (identity \ "userKey").asOpt[String] must beSome
+      (identity \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
+      (identity \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (identity \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (identity \ "avatar").asOpt[String] must beSome
+      (identity \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      (identity \ "active").asOpt[Boolean] must beSome(false)
+
+      val identity2 = identities.find(js => (js \ "id").as[String].equals(testUser.identityId)).get
+      (identity2 \ "active").asOpt[Boolean] must beSome(true)
+
+    }
+
+    var newToken = ""
+    "get token for new identity" in {
+      val path = basePath + "/identity/" + newIdentityId + "/token"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+      (contentAsJson(res) \ "data" \ "token").asOpt[String] must beSome
+      newToken = (contentAsJson(res) \ "data" \ "token").as[String]
+
+      1 === 1
+    }
+
+    "get identity with new token" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
-      pubKeyId2 = (data \ "id").as[String]
-      (data \ "name").asOpt[String] must beSome(pubKeyName2)
-      (data \ "key").asOpt[String] must beSome(pubKey2)
-      (data \ "keySize").asOpt[Int] must beSome(pubKeySize2)
-
+      (data \ "userKey").asOpt[String] must beSome
+      (data \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
+      (data \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (data \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
-    "check if identity contains both added public keys" in {
-
+    var fileId = ""
+    "identity should have avatar" in {
       val path = basePath + "/identity"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
-      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
-      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
 
-      pubKeys.length must beGreaterThanOrEqualTo(2)
-
-      val key1: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)).get
-      (key1 \ "id").asOpt[String] must beSome(pubKeyId)
-      (key1 \ "name").asOpt[String] must beSome(pubKeyName)
-      (key1 \ "key").asOpt[String] must beSome(pubKey)
-      (key1 \ "keySize").asOpt[Int] must beSome(pubKeySize)
-
-      val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
-      (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
-      (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
-      (key2 \ "key").asOpt[String] must beSome(pubKey2)
-      (key2 \ "keySize").asOpt[Int] must beSome(pubKeySize2)
-
+      (data \ "avatar").asOpt[String] must beSome
+      fileId = (data \ "avatar").as[String]
+      1 === 1
     }
 
-    "edit name of public key" in {
+    "check that avatar file meta exist" in {
 
-      val path = basePath + "/identity/publicKey/" + pubKeyId
+      val path = basePath + "/file/" + fileId
 
-      val json = Json.obj("name" -> newPubKeyName)
-
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
       val res = route(req).get
 
-      status(res) must equalTo(OK)
-    }
-
-    "edit public key" in {
-
-      val path = basePath + "/identity/publicKey/" + pubKeyId
-
-      val json = Json.obj("key" -> newPubKey, "keySize" -> newPubKeySize)
-
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(OK)
-    }
-
-    "check if public key was edited" in {
-      val path = basePath + "/identity"
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
-      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
-      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
 
-      pubKeys.length must beEqualTo(2)
-
-      val key1: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)).get
-      (key1 \ "id").asOpt[String] must beSome(pubKeyId)
-      (key1 \ "name").asOpt[String] must beSome(newPubKeyName)
-      (key1 \ "key").asOpt[String] must beSome(newPubKey)
-      (key1 \ "keySize").asOpt[Int] must beSome(newPubKeySize)
-
-      val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
-      (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
-      (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
-      (key2 \ "key").asOpt[String] must beSome(pubKey2)
-      (key2 \ "keySize").asOpt[Int] must beSome(pubKeySize2)
-
+      (data \ "id").asOpt[String] must beSome(fileId)
+      (data \ "chunks").asOpt[Seq[Int]] must beSome
+      (data \ "chunks")(0).asOpt[Int] must beSome(0)
+      (data \ "chunks")(1).asOpt[Int] must beNone
+      (data \ "fileName").asOpt[String] must beSome("avatar.png")
+      (data \ "fileSize").asOpt[Int] must beSome
+      (data \ "fileType").asOpt[String] must beSome("image/png")
     }
 
-    "delete a public key" in {
-      val path = basePath + "/identity/publicKey/" + pubKeyId
+    "check that avatar file chunk exists" in {
+      val path = basePath + "/file/" + fileId + "/" + 0
 
-      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
+      val raw = contentAsBytes(res)
+
+      raw.length must beGreaterThan(100)
     }
 
-    "check if key was deleted" in {
-      val path = basePath + "/identity"
+    "identity should have support user as contact" in {
+      val path = basePath + "/contacts"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(newToken))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(1)
+      (data(0) \ "identityId").asOpt[String] must beEqualTo(Play.configuration.getString("support.contact.identityId"))
+    }
+
+    "refuse to return token for identity that is not in the same account" in {
+      val path = basePath + "/identity/" + identityExisting + "/token"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != NOT_FOUND) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "refuse to return token for external identity"in {
+      val path = basePath + "/identity/" + externalContactIdentityId + "/token"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != NOT_FOUND) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    var tokenOldIdentity = ""
+    "return token for first identity when loggin in" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((testUser.login + ":" + password).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      (contentAsJson(res) \ "data" \ "token").asOpt[String] must beSome
+      tokenOldIdentity = (contentAsJson(res) \ "data" \ "token").as[String]
+
+      1 === 1
+    }
+
+    "check that default identity is returned" in {
+      val path = basePath + "/identity"
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenOldIdentity))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
-      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
-      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
-
-      pubKeys.length must beEqualTo(1)
-
-      pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)) must beNone
-
-      val key2: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId2)).get
-      (key2 \ "id").asOpt[String] must beSome(pubKeyId2)
-      (key2 \ "name").asOpt[String] must beSome(pubKeyName2)
-      (key2 \ "key").asOpt[String] must beSome(pubKey2)
-      (key2 \ "keySize").asOpt[Int] must beSome(pubKeySize2)
-
+      (data \ "id").asOpt[String] must beSome(testUser.identityId)
     }
-
   }
 }

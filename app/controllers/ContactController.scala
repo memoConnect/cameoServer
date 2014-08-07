@@ -1,22 +1,21 @@
 package controllers
 
+import java.util.Date
+
+import actors.{ AcceptedFriendRequest, NewFriendRequest }
+import constants.Contacts._
+import helper.CmActions.AuthAction
+import helper.OutputLimits
+import helper.ResultHelper._
+import models._
+import play.api.Logger
+import play.api.libs.json._
+import play.api.mvc.Result
+import services.AvatarGenerator
 import traits.ExtendedController
 
-import play.api.libs.json._
-import models._
-import helper.OutputLimits
-import helper.CmActions.AuthAction
-import scala.concurrent.{ ExecutionContext, Future }
-import helper.ResultHelper._
-import ExecutionContext.Implicits.global
-import constants.Contacts._
-import scala.Some
-import play.api.mvc.Result
-import play.api.libs.json.JsObject
-import java.util.Date
-import play.api.Logger
-import actors.NewFriendRequest
-import services.AvatarGenerator
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -56,12 +55,12 @@ object ContactController extends ExtendedController {
       }
 
       def createContact(identityId: MongoId, contactType: String): Future[Result] = {
-        validateFuture(request.body, Contact.createReads(identityId, contactType)) {
+        validateFuture(request.body, Contact.createReads(identityId)) {
           contact =>
             {
               request.identity.addContact(contact).flatMap {
                 case false => Future(resBadRequest("could not create contact"))
-                case true  => contact.toJsonWithIdentity.map(js => resOK(js))
+                case true  => contact.toJsonWithIdentity.map(js => resOk(js))
               }
             }
         }
@@ -76,7 +75,6 @@ object ContactController extends ExtendedController {
             case Some(js) => addExternalContact(js)
           }
       }
-
   }
 
   def editContact(contactId: String) = AuthAction().async(parse.tolerantJson) {
@@ -110,7 +108,7 @@ object ContactController extends ExtendedController {
 
       // get all pending friendRequests, todo: this can be done more efficiently
       val query = Json.obj("friendRequests.identityId" -> request.identity.id)
-      val futurePendingFriendRequests = Identity.col.find(query).cursor[Identity].collect[Seq]()
+      val futurePendingFriendRequests = Identity.findAll(query)
 
       for {
         futurePendingContacts <- futurePendingFriendRequests.map {
@@ -134,7 +132,7 @@ object ContactController extends ExtendedController {
               .toLowerCase
         )
         val limited = OutputLimits.applyLimits(sorted, offset, limit)
-        resOK(limited)
+        resOk(limited)
       }
   }
 
@@ -159,14 +157,14 @@ object ContactController extends ExtendedController {
       val limited = OutputLimits.applyLimits(contacts, offset, limit)
 
       Future.sequence(limited.map(_.toJsonWithIdentity)).map {
-        c => resOK(c)
+        c => resOk(c)
       }
   }
 
   def getGroups = AuthAction().async {
     request =>
       val groups = request.identity.getGroups
-      Future(resOK(Json.toJson(groups)))
+      Future(resOk(Json.toJson(groups)))
   }
 
   def getFriendRequests = AuthAction().async {
@@ -174,7 +172,7 @@ object ContactController extends ExtendedController {
       val futureFriendRequests = request.identity.friendRequests.map(_.toJsonWithIdentity)
 
       Future.sequence(futureFriendRequests).map {
-        seq => resOK(seq)
+        seq => resOk(seq)
       }
   }
 
@@ -200,7 +198,7 @@ object ContactController extends ExtendedController {
               case Some(other) =>
                 // check if identity is ignored
                 other.ignoredIdentities.exists(_.equals(request.identity.id)) match {
-                  case true => Future(resOK())
+                  case true => Future(resOk())
                   case false =>
                     // check if there already is a friend request of this identity
                     other.friendRequests.exists(_.identityId.equals(request.identity.id)) match {
@@ -209,7 +207,7 @@ object ContactController extends ExtendedController {
                         val fr = new FriendRequest(request.identity.id, message, new Date)
                         other.addFriendRequest(fr).map {
                           case true =>
-                            actors.eventRouter ! NewFriendRequest(receiver, fr)
+                            actors.eventRouter ! NewFriendRequest(receiver, fr, request.identity, receiver)
                             resOk("request added")
                           case false =>
                             resServerError("could not update")
@@ -250,21 +248,34 @@ object ContactController extends ExtendedController {
               case FRIEND_REQUEST_REJECT =>
                 // delete friend request and do nothing else
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
-                Future(resOK())
+                Future(resOk())
               case FRIEND_REQUEST_ACCEPT =>
                 // add contact to both identites
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
                 Identity.find(afr.identityId).flatMap {
                   case None => Future(resNotFound("other identity"))
                   case Some(otherIdentity) =>
+                    val contact = Contact.create(otherIdentity.id)
+                    val otherContact = Contact.create(request.identity.id)
+
                     // check if accepting identity also has send a friendRequest and remove it
                     otherIdentity.deleteFriendRequest(request.identity.id)
                     for {
-                      le1 <- otherIdentity.addContact(Contact.create(request.identity.id))
-                      le2 <- request.identity.addContact(Contact.create(otherIdentity.id))
+                      le1 <- otherIdentity.addContact(otherContact)
+                      le2 <- request.identity.addContact(contact)
                     } yield {
                       le1 && le2 match {
-                        case true  => resOk("added contacts")
+                        case true =>
+
+                          for {
+                            contactJs <- contact.toJsonWithIdentity
+                            otherContactJs <- otherContact.toJsonWithIdentity
+                          } yield {
+                            // send event to both parties
+                            actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id, otherIdentity.id, request.identity.id, otherContactJs)
+                            actors.eventRouter ! AcceptedFriendRequest(request.identity.id, otherIdentity.id, request.identity.id, contactJs)
+                          }
+                          resOk("added contacts")
                         case false => resKo("duplicate entries")
                       }
                     }
@@ -273,7 +284,7 @@ object ContactController extends ExtendedController {
                 // delete friend request and add identity to ignore list
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
                 request.identity.addIgnored(new MongoId(afr.identityId))
-                Future(resOK())
+                Future(resOk())
               case _ => Future(resBadRequest("invalid answer type"))
             }
           }

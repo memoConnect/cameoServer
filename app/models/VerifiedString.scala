@@ -1,10 +1,11 @@
 package models
 
 import java.util.Date
-import play.api.libs.json._
-import play.api.libs.functional.syntax._
-import traits.Model
+
 import helper.MongoCollections
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import traits.Model
 
 /**
  * User: Björn Reimer

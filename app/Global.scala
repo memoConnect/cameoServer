@@ -4,21 +4,21 @@
  * Time: 4:27 PM
  */
 import helper.DbAdminUtilities
-import models.GlobalState
-import play.api.libs.json.{ JsValue, Json }
-import play.api.{ Logger, Play, GlobalSettings }
-import play.api.mvc.EssentialAction
-import play.api.http.HeaderNames._
-import scala.concurrent.duration._
-import scala.concurrent.{ Await, Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import play.api.Play.current
 import helper.MongoCollections._
+import models.{ Conversation, GlobalState }
+import play.api.Play.current
+import play.api.http.HeaderNames._
+import play.api.libs.json.{ JsValue, Json }
+import play.api.mvc.{ EssentialAction, EssentialFilter, WithFilters }
+import play.api.{ Logger, Play }
 
-object Global extends GlobalSettings {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 
+object AccessControllFilter extends EssentialFilter {
   // wrap action to modify the headers of every request
-  override def doFilter(action: EssentialAction): EssentialAction = EssentialAction {
+  def apply(action: EssentialAction): EssentialAction = EssentialAction {
     request =>
       // todo: this check should not be done for each request...
       Play.configuration.getString("headers.accessControl.enable") match {
@@ -31,8 +31,30 @@ object Global extends GlobalSettings {
         case _ => action.apply(request)
       }
   }
+}
+
+object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter) {
 
   override def onStart(app: play.api.Application) = {
+
+    // make sure that we have a connection to mongodb
+    def checkMongoConnection(): Boolean =
+      {
+        try {
+          val futureState = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
+          Await.result(futureState, 1.minute)
+          Logger.info("DB Connection OK")
+          true
+        } catch {
+          case e: Exception =>
+            Logger.error("Could not connect to mongodb", e)
+            Thread.sleep(1000)
+
+            checkMongoConnection()
+        }
+      }
+
+    checkMongoConnection()
 
     // load fixtures
     if (Play.configuration.getString("mongo.init.loadOnStart").getOrElse("fail").equalsIgnoreCase("true")) {
@@ -94,3 +116,4 @@ object Global extends GlobalSettings {
 
   }
 }
+

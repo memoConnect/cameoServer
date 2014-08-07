@@ -1,10 +1,8 @@
 package models.cockpit.attributes
 
-import traits.CockpitAttribute
-import play.api.libs.json._
 import play.api.Logger
-import play.api.libs.json.JsObject
-import scala.Some
+import play.api.libs.json._
+import traits.CockpitAttribute
 
 case class CockpitAttributeOptionList[A](name: String,
                                          displayName: String,

@@ -37,9 +37,12 @@ class FileControllerSpec extends StartedApp {
         ("X-File-Type", fileType)) :+
         tokenHeader(tokenExisting2)
 
-      val req = FakeRequest(POST, path).withHeaders(header: _*)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(Json.obj())
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -68,7 +71,10 @@ class FileControllerSpec extends StartedApp {
           val req = FakeRequest(POST, path).withHeaders(header: _*).withRawBody(body)
           val res = route(req).get
 
-          status(res) must equalTo(OK)
+          if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
       }
     }
 
@@ -113,13 +119,62 @@ class FileControllerSpec extends StartedApp {
       status(res) must equalTo(NOT_FOUND)
     }
 
-    "get file meta information" in {
+    "file should be marked as not Completed" in {
 
       val path = basePath + "/file/" + fileId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "isCompleted").asOpt[Boolean] must beSome(false)
+    }
+
+    "mark file upload as complete" in {
+      val path = basePath + "/file/" + fileId + "/completed"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(Json.obj())
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "file should now be marked as completed" in {
+
+      val path = basePath + "/file/" + fileId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "isCompleted").asOpt[Boolean] must beSome(true)
+    }
+
+    "get all file meta information" in {
+
+      val path = basePath + "/file/" + fileId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -145,7 +200,10 @@ class FileControllerSpec extends StartedApp {
           val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
           val res = route(req).get
 
-          status(res) must equalTo(OK)
+          if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
 
           val raw = contentAsBytes(res)
 
@@ -155,6 +213,7 @@ class FileControllerSpec extends StartedApp {
         }
       }
     }
+
 
     "overwrite existing chunk" in {
       val path = basePath + "/file/" + fileId
@@ -168,6 +227,9 @@ class FileControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(header: _*).withRawBody(body)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -178,6 +240,9 @@ class FileControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val raw = contentAsBytes(res)
@@ -191,6 +256,9 @@ class FileControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -247,7 +315,7 @@ class FileControllerSpec extends StartedApp {
         ("X-File-Type", fileType)) :+
         tokenHeader(tokenExisting2)
 
-      val req = FakeRequest(POST, path).withHeaders(header: _*)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(Json.obj())
       val res = route(req).get
 
       status(res) must equalTo(BAD_REQUEST)
@@ -265,9 +333,12 @@ class FileControllerSpec extends StartedApp {
         ("X-File-Type", fileType)) :+
         tokenHeader(tokenExisting2)
 
-      val req = FakeRequest(POST, path).withHeaders(header: _*)
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(Json.obj())
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]

@@ -1,13 +1,13 @@
 package actors
 
-import akka.actor.{ Props, Actor }
+import akka.actor.{ Actor, Props }
 import constants.Verification._
-import models.{ SmsMessage, MailMessage, VerificationSecret, Identity }
+import models.{ Identity, VerificationSecret }
 import play.api.Play
-import scala.concurrent.ExecutionContext
-import ExecutionContext.Implicits.global
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -34,10 +34,8 @@ class VerifyActor extends Actor {
       val from = Play.configuration.getString("verification.mail.from").get
       val subject = "[Cameo] Mail verification"
 
-      val mail = new MailMessage(from, email, body, subject)
-
       lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
-      sendMailActor ! (mail, 0)
+      sendMailActor ! Mail(from, email, body, subject)
     }
 
     case (VERIFY_TYPE_PHONENUMBER, identity: Identity) => {
@@ -55,10 +53,8 @@ class VerifyActor extends Actor {
 
       val from = Play.configuration.getString("verification.sms.from").get
 
-      val sms = new SmsMessage(from, number, body)
-
       lazy val sendSmsActor = Akka.system.actorOf(Props[SendSmsActor])
-      sendSmsActor ! (sms, 0)
+      sendSmsActor ! Sms(from, number, body)
     }
   }
 

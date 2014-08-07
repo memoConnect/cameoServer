@@ -1,4 +1,3 @@
-
 import play.api.libs.json._
 import play.api.libs.json.JsObject
 import play.api.test._
@@ -39,6 +38,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -54,15 +56,19 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "lastUpdated").asOpt[Long] must beSome
     }
 
+    val keyTransmission = "moepSecure"
     "Create a new conversation with subject" in {
       val path = basePath + "/conversation"
 
       val subject = "test subject"
-      val json = Json.obj("subject" -> subject)
+      val json = Json.obj("subject" -> subject, "keyTransmission" -> keyTransmission)
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -75,6 +81,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "subject").asOpt[String] must beSome(subject)
+      (data \ "keyTransmission").asOpt[String] must beSome(keyTransmission)
     }
 
     "Create a new conversation without subject" in {
@@ -83,6 +90,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(Json.obj()).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -105,6 +115,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -128,6 +141,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -148,6 +164,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -161,12 +180,73 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
     }
 
+    "Refuse to create new conversation with recipients that are not in the address book" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> Seq(identityExisting2))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != 232) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(232)
+    }
+
+    var cidNew4 = ""
+    val messageText = "moepmoepmoepmoepmoep"
+    "Create a new conversation with messages" in {
+      val path = basePath + "/conversation"
+      val json = Json.obj("messages" -> Seq(Json.obj("plain" -> Json.obj("text" -> messageText))))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      cidNew4 = (data \ "id").as[String]
+
+      (data \ "messages")(0).asOpt[JsObject] must beSome
+      val message = (data \ "messages")(0).as[JsObject]
+      (message \ "plain" \ "text").asOpt[String] must beSome(messageText)
+    }
+
+    "Get the created conversation" in {
+      val path = basePath + "/conversation/" + cidNew4
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages")(0).asOpt[JsObject] must beSome
+      val message = (data \ "messages")(0).as[JsObject]
+      (message \ "plain" \ "text").asOpt[String] must beSome(messageText)
+    }
+
     "Get an existing conversation with messages" in {
       val path = basePath + "/conversation/" + cidExisting
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -188,6 +268,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -212,6 +295,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -246,6 +332,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -266,6 +355,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -287,6 +379,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -306,6 +401,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -315,11 +413,45 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "subject").asOpt[String] must beSome(newSubject)
+    }
+
+    val newKeyTransmission = "veryMoepSecure"
+    "Edit keyTransmission of an conversation" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val json = Json.obj("keyTransmission" -> newKeyTransmission)
+
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "Check if keyTransmission has changed" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "keyTransmission").asOpt[String] must beSome(newKeyTransmission)
     }
 
     "Refuse non-member to edit subject of an conversation" in {
@@ -345,6 +477,9 @@ class ConversationControllerSpec extends StartedApp {
         Logger.debug("response: " + contentAsString(res))
       }
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -356,6 +491,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -376,6 +514,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -422,6 +563,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -441,6 +585,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -470,6 +617,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -530,6 +680,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -545,6 +698,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -558,6 +714,40 @@ class ConversationControllerSpec extends StartedApp {
       (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(encryptedPassphrase(0)._2)
       (encPasses(1) \ "keyId").asOpt[String] must beSome(encryptedPassphrase(1)._1)
       (encPasses(1) \ "encryptedPassphrase").asOpt[String] must beSome(encryptedPassphrase(1)._2)
+    }
+
+    val newEncryptedPassphrase = (encryptedPassphrase(0)._1, "someNewKey")
+    "add another encrypted passphrase with same keyId" in {
+      val path = basePath + "/conversation/" + cidExisting
+
+      val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> newEncryptedPassphrase._1, "encryptedPassphrase" -> newEncryptedPassphrase._2)))
+
+      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "return only the new encrypted passphrase for that keyId" in {
+
+      val path = basePath + "/conversation/" + cidExisting + "?keyId=" + newEncryptedPassphrase._1
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "aePassphraseList").asOpt[Seq[JsObject]] must beSome
+      val encPasses = (data \ "aePassphraseList").as[Seq[JsObject]]
+
+      encPasses.length must beEqualTo(1)
+
+      (encPasses(0) \ "keyId").asOpt[String] must beSome(newEncryptedPassphrase._1)
+      (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(newEncryptedPassphrase._2)
+
     }
 
     "refuse non-members to edit encrypted passphrase list" in {
@@ -582,6 +772,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -602,6 +795,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -618,6 +814,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -638,6 +837,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -651,6 +853,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -667,6 +872,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -685,6 +893,9 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -693,72 +904,79 @@ class ConversationControllerSpec extends StartedApp {
       cidNew3 = (data \ "id").as[String]
       1===1
     }
-    var missingPassphrases:Seq[JsObject] = Seq()
+
+    var missingPassphrasesLength = 0
     "return missing encrypted passphrases" in {
       val path = basePath + "/conversation/" + cidNew3
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "missingAePassphrase").asOpt[Seq[JsObject]] must beSome
-      missingPassphrases = (data \ "missingAePassphrase").as[Seq[JsObject]]
+      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
+      val missingPassphrases = (data \ "missingAePassphrase").as[Seq[String]]
 
       missingPassphrases.length must beGreaterThanOrEqualTo(3)
-      (missingPassphrases(0) \ "keyId").asOpt[String] must beSome
-      (missingPassphrases(0) \ "identityId").asOpt[String] must beSome
-      missingPassphrases.find(js => (js \ "keyId").as[String].equals(pubKeyId)) must beSome(Json.obj("keyId"->pubKeyId,"identityId"->identityExisting))
-      missingPassphrases.find(js => (js \ "identityId").as[String].equals(validRecipients(0))) must beSome
-      missingPassphrases.find(js => (js \ "identityId").as[String].equals(validRecipients(1))) must beSome
+      missingPassphrasesLength = missingPassphrases.length
+      missingPassphrases.find(_.equals(pubKeyId)) must beSome
     }
 
     "add encrypted passphrase for one key to conversation" in {
 
-      val path = basePath + "/conversation/" + cidNew3 + "/aePassphrase"
+      val path = basePath + "/conversation/" + cidNew3 + "/aePassphrases"
 
       val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> pubKeyId, "encryptedPassphrase" -> "moep")))
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
+    var missingPassphrases: Seq[String] = Seq()
     "missing encrypted passphrases should not contain added key" in {
       val path = basePath + "/conversation/" + cidNew3
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "missingAePassphrase").asOpt[Seq[JsObject]] must beSome
-      missingPassphrases = (data \ "missingAePassphrase").as[Seq[JsObject]]
+      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
+      missingPassphrases = (data \ "missingAePassphrase").as[Seq[String]]
 
-      missingPassphrases.length must beGreaterThanOrEqualTo(1)
-      (missingPassphrases(0) \ "keyId").asOpt[String] must beSome
-      (missingPassphrases(0) \ "identityId").asOpt[String] must beSome
-      missingPassphrases.find(js => (js \ "keyId").as[String].equals(pubKeyId)) must beNone
-      missingPassphrases.find(js => (js \ "identityId").as[String].equals(validRecipients(0))) must beSome
-      missingPassphrases.find(js => (js \ "identityId").as[String].equals(validRecipients(1))) must beSome
+      missingPassphrases.length must beEqualTo(missingPassphrasesLength - 1)
+      missingPassphrases.find(_.equals(pubKeyId)) must beNone
     }
 
     "add encrypted passphrase for remaining keys" in {
 
-      val path = basePath + "/conversation/" + cidNew3  + "/aePassphrase"
+      val path = basePath + "/conversation/" + cidNew3  + "/aePassphrases"
 
-      val list = missingPassphrases.map(mp => Json.obj("keyId" -> (mp \ "keyId").as[String], "encryptedPassphrase" -> "moep"))
+      val list = missingPassphrases.map(mp => Json.obj("keyId" -> mp, "encryptedPassphrase" -> "moep"))
 
       val json = Json.obj("aePassphraseList" -> list)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
     }
 
@@ -768,11 +986,14 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "missingAePassphrase").asOpt[Seq[JsObject]] must beSome
+      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
       val missingPassphrases = (data \ "missingAePassphrase").as[Seq[JsObject]]
 
       missingPassphrases.length must beEqualTo(0)

@@ -1,13 +1,14 @@
 package controllers.cockpit
 
-import play.api.mvc.Result
-import play.api.libs.json.{ Reads, Json }
-import scala.concurrent.{ ExecutionContext, Future }
-import models.{ CockpitAccess, MongoId, Account, Identity }
-import traits.{ CockpitEditableDefinition, ExtendedController }
-import ExecutionContext.Implicits.global
 import helper.CmActions._
 import helper.ResultHelper._
+import models.{ Account, CockpitAccess, Identity, MongoId }
+import play.api.libs.json.{ Json, Reads }
+import play.api.mvc.Result
+import traits.{ CockpitEditableDefinition, ExtendedController }
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -43,7 +44,7 @@ object ListController extends ExtendedController {
     request =>
       checkAccessList(request.identity.accountId) {
         val allNames: Seq[String] = allEditables.map(_.name)
-        Future(resOK(Json.obj("lists" -> Json.toJson(allNames))))
+        Future(resOk(Json.obj("lists" -> Json.toJson(allNames))))
       }
   }
 
@@ -68,7 +69,7 @@ object ListController extends ExtendedController {
                 case None => Future(resNotFound("elementName"))
                 case Some(definition) => definition.getList(listOptions).map {
                   list =>
-                    resOK(list.toJson)
+                    resOk(list.toJson)
                 }
               }
             }
@@ -94,7 +95,7 @@ object ListController extends ExtendedController {
     checkAccessList(request.identity.accountId) {
       getEditable(elementName) match {
         case None      => Future(resNotFound("elementName"))
-        case Some(obj) => Future(resOK(obj.create.toJson))
+        case Some(obj) => Future(resOk(obj.create.toJson))
       }
     }
   }

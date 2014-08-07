@@ -1,10 +1,13 @@
 package services
 
-import models.{ TwoFactorSmsKey, SmsMessage, VerifiedString, Identity }
-import scala.concurrent.{ ExecutionContext, Future }
-import play.api.libs.concurrent.Akka
+import actors.Sms
+import models.{ Account, Identity, TwoFactorSmsKey, VerifiedString }
+import play.api.Logger
 import play.api.Play.current
-import ExecutionContext.Implicits.global
+import play.api.libs.concurrent.Akka
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -13,17 +16,27 @@ import ExecutionContext.Implicits.global
  */
 object TwoFactorAuth {
 
-  def sendNewKey(identity: Identity): Option[String] = {
-    // check if the user has a phonenumber TODO: require that the phonenumber is verified
-    identity.phoneNumber match {
-      case Some(VerifiedString(_, number, _)) => {
-        val key = TwoFactorSmsKey.create(identity.id)
-        val sms = new SmsMessage("CameoAuth", number, key.toString)
-        val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
-        sendSmsActor ! (sms, 0)
-        None
-      }
-      case _ => Some("identity has no phone number")
+  def sendNewKey(identity: Identity): Future[Option[String]] = {
+
+    // get phonenumber of account
+    identity.accountId match {
+      case None => Future(Some("identity is external"))
+      case Some(accountId) =>
+        Logger.debug("finding key")
+        Account.find(accountId).map {
+          case None => Some("could not find account")
+          case Some(account) =>
+            Logger.debug("found key")
+            account.phoneNumber match {
+              case None => Some("account has no phone number")
+              case Some(number) =>
+                val key = TwoFactorSmsKey.createAndInsert(identity.id)
+                val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
+                Logger.info("Sending Two Factor Auth Key: " + key.toString + " to " + number)
+                sendSmsActor ! Sms("CameoAuth", number.value, key.toString)
+                None
+            }
+        }
     }
   }
 

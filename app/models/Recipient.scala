@@ -1,10 +1,8 @@
 package models
 
-import traits.SubModel
-import play.api.libs.json.{ Format, JsObject, Writes, Json }
-import scala.concurrent.{ ExecutionContext, Future }
-import ExecutionContext.Implicits.global
 import helper.IdHelper
+import play.api.libs.json.{ Format, JsObject, Json, Writes }
+import traits.SubModel
 
 /**
  * User: Björn Reimer
@@ -13,15 +11,7 @@ import helper.IdHelper
  */
 
 case class Recipient(identityId: MongoId) {
-
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
-
-  def toJsonWithIdentity: Future[JsObject] = {
-    Identity.find(this.identityId).map {
-      case None    => Json.obj()
-      case Some(i) => Json.obj("identity" -> i.toPublicJson) ++ this.toJson
-    }
-  }
 }
 
 object Recipient extends SubModel[Recipient, Conversation] {

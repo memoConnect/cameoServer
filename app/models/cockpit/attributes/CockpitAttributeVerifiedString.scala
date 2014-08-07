@@ -1,9 +1,9 @@
 package models.cockpit.attributes
 
-import play.api.libs.json._
-import play.api.Logger
-import traits.CockpitAttribute
 import models.VerifiedString
+import play.api.Logger
+import play.api.libs.json._
+import traits.CockpitAttribute
 
 case class CockpitAttributeVerifiedString(name: String,
                                           displayName: String,

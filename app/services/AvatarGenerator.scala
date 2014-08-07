@@ -1,20 +1,22 @@
 package services
 
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import org.w3c.dom.{ Document, DOMImplementation }
-import org.apache.batik.dom.GenericDOMImplementation
-import org.apache.batik.svggen.SVGGraphics2D
 import java.awt._
 import java.io._
-import play.api.{ Play, Logger }
+
+import helper.{ IdHelper, Utils }
+import models._
+import org.apache.batik.dom.GenericDOMImplementation
+import org.apache.batik.dom.svg.SVGDOMImplementation
+import org.apache.batik.svggen.SVGGraphics2D
 import org.apache.batik.transcoder._
 import org.apache.batik.transcoder.image.PNGTranscoder
-import org.apache.batik.dom.svg.SVGDOMImplementation
-import helper.{ IdHelper, Utils }
+import org.w3c.dom.{ DOMImplementation, Document }
 import play.api.Play.current
+import play.api.{ Logger, Play }
 import sun.misc.BASE64Encoder
-import models.{ ChunkMeta, FileMeta, FileChunk, Identity }
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -50,7 +52,7 @@ object AvatarGenerator {
         new Color(r, b, g)
       }
 
-  def generate(identity: Identity): Future[Boolean] = {
+  def generate(identity: Identity): Future[Option[MongoId]] = {
 
     // Get a DOMImplementation.
     val domImpl: DOMImplementation = GenericDOMImplementation.getDOMImplementation
@@ -149,16 +151,15 @@ object AvatarGenerator {
     baos.toByteArray
   }
 
-  private def saveAvatar(png: Array[Byte], identity: Identity): Future[Boolean] = {
+  private def saveAvatar(png: Array[Byte], identity: Identity): Future[Option[MongoId]] = {
 
     val prefix = "data:image/png;base64,"
-    val base64: String = new BASE64Encoder().encode(png).replace("\n", "")
+    val base64: String = new BASE64Encoder().encode(png).replace(System.getProperty("line.separator"), "")
     val data: Array[Byte] = (prefix + base64).getBytes
 
     // Create Chunk and MetaData
     val chunkMeta = new ChunkMeta(0, IdHelper.generateChunkId, data.size)
-    val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png")
-
+    val fileMeta = FileMeta.create(Seq(chunkMeta), "avatar.png", 1, chunkMeta.chunkSize, "image/png", isCompleted = true)
     // write to db and add to identity
     for {
       chunk <- FileChunk.insert(chunkMeta.chunkId.id, data)
@@ -166,7 +167,13 @@ object AvatarGenerator {
       setAvatar <- identity.setAvatar(fileMeta.id)
     } yield {
       Logger.info("avatar generated for id: " + identity.id)
-      chunk.ok && meta.ok && setAvatar
+      chunk.ok && meta.ok && setAvatar match {
+        case false =>
+          Logger.error("could not save avatar id: " + fileMeta.id)
+          None
+        case true =>
+          Some(fileMeta.id)
+      }
     }
   }
 }

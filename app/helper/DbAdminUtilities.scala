@@ -1,20 +1,22 @@
 package helper
 
-import play.modules.reactivemongo.json.collection.JSONCollection
 import java.io.{ File, FileWriter }
-import scala.concurrent.{ Await, Future, ExecutionContext }
-import ExecutionContext.Implicits.global
-import play.api.{ Play, Logger }
-import scala.io.Source
-import models.{ Identity, GlobalState, MongoId }
-import play.api.libs.iteratee.Iteratee
-import play.api.libs.json._
-import play.api.libs.json.Reads._
-import scala.concurrent.duration._
+
 import helper.MongoCollections._
+import models.{ GlobalState, Identity, MongoId }
 import play.api.Play.current
-import services.AvatarGenerator
+import play.api.libs.iteratee.Iteratee
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+import play.api.{ Logger, Play }
 import play.modules.reactivemongo.ReactiveMongoPlugin
+import play.modules.reactivemongo.json.collection.JSONCollection
+import services.AvatarGenerator
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
+import scala.io.Source
 
 /**
  * User: Björn Reimer
@@ -98,7 +100,7 @@ object DbAdminUtilities {
     }
   }
 
-  val latestDbVersion = 4
+  val latestDbVersion = 5
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -257,16 +259,28 @@ object DbAdminUtilities {
     val enumerator = identityCollection.find(Json.obj()).cursor[Identity].enumerate()
 
     val iteratee: Iteratee[Identity, Boolean] = Iteratee.foldM(true) {
-      (result, identity) => AvatarGenerator.generate(identity).map(r => r && result)
+      (result, identity) => AvatarGenerator.generate(identity).map(r => r.isDefined && result)
     }
 
     enumerator.run(iteratee)
+  }
 
+  def setDefaultIdentity: Any => Future[Boolean] = foo => {
+    Logger.info("setting as default identity")
+
+    val enumerator = identityCollection.find(Json.obj()).cursor[Identity].enumerate()
+
+    val iteratee: Iteratee[Identity, Boolean] = Iteratee.foldM(true) {
+      (result, identity) => Future(identity.isDefaultIdentity && result)
+    }
+    enumerator.run(iteratee)
   }
 
   def migrations: Map[Int, Any => Future[Boolean]] = Map(
     0 -> migrateTokensWithIteratee,
     1 -> migrateRecipients,
     2 -> loginNamesToLowerCase,
-    3 -> addAvatars)
+    3 -> addAvatars,
+    4 -> setDefaultIdentity
+  )
 }

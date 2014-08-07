@@ -1,8 +1,9 @@
 package helper
 
-import play.api.libs.json.JsObject
 import java.util.concurrent.TimeoutException
+
 import play.api.Logger
+import play.api.libs.json.JsObject
 
 /**
  * User: Björn Reimer
@@ -20,7 +21,7 @@ object TestValueStore {
       blocked = true
     } else {
       var maxWait = 100
-      // wait untill block is lifted
+      // wait until block is lifted
       while (blocked && maxWait > 0) {
         Logger.debug("waiting: " + maxWait)
         Thread.sleep(50)
@@ -30,7 +31,7 @@ object TestValueStore {
         values = Seq()
         blocked = true
       } else {
-        throw new TimeoutException("timed out waiting for block to be lifted")
+        throw new TimeoutException("timed out waiting for block on value store to be lifted")
       }
     }
   }
@@ -44,5 +45,9 @@ object TestValueStore {
     values = values :+ (key, value)
   }
 
-  def getValues(key: String): Seq[JsObject] = values.filter(_._1.equals(key)).map { _._2 }
+  def getValues(key: String): Seq[JsObject] = {
+    values.filter(_._1.equals(key)).map {
+      _._2
+    }
+  }
 }

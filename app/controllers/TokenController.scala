@@ -1,12 +1,16 @@
 package controllers
 
-import play.api.mvc._
-import scala.concurrent.Future
-import org.mindrot.jbcrypt.BCrypt
-import traits.ExtendedController
-import models.{ Identity, Account, Token }
-import play.api.libs.concurrent.Execution.Implicits._
 import helper.ResultHelper._
+import models.{ Account, Identity, Token }
+import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json
+import play.api.mvc._
+import traits.ExtendedController
+import helper.CmActions.AuthAction
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -34,40 +38,30 @@ object TokenController extends ExtendedController {
     request =>
       {
         request.headers.get("Authorization") match {
-          case None => {
-            Future.successful(resBadRequest("No Authorization field in header"))
-          }
-          case Some(basicAuth) if !basicAuth.contains("Basic") => {
+          case None => Future.successful(resBadRequest("No Authorization field in header"))
+          case Some(basicAuth) if !basicAuth.contains("Basic") =>
             Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
-          }
           case Some(basicAuth) =>
-            {
-              val (loginName, password) = decodeBasicAuth(basicAuth)
-              val loginNameLower = loginName.toLowerCase
-              //find account and get first identity
-              Account.findByLoginName(loginNameLower).flatMap {
-                case None => Future(resUnauthorized("Invalid password/loginName"))
-                case Some(account) => if (account.identities.nonEmpty) {
-                  val identityId = account.identities(0)
-
-                  Identity.find(identityId).map {
-                    case None => resNotFound("identity")
-                    case Some(identity) => {
-                      // check loginNames and passwords match
-                      if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
-                        // everything is ok
-                        val token = Token.createDefault
-                        identity.addToken(token)
-                        resOK(token.toJson)
-                      } else {
-                        resUnauthorized("Invalid password/loginName")
-                      }
+            val (loginName, password) = decodeBasicAuth(basicAuth)
+            val loginNameLower = loginName.toLowerCase
+            //find account and get first identity
+            Account.findByLoginName(loginNameLower).flatMap {
+              case None => Future(resUnauthorized("Invalid password/loginName"))
+              case Some(account) =>
+                Identity.findAll(Json.obj("accountId" -> account.id, "isDefaultIdentity" -> true)).map {
+                  case Seq() => resNotFound("default identity")
+                  case Seq(identity) =>
+                    // check loginNames and passwords match
+                    if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
+                      // everything is ok
+                      val token = Token.createDefault()
+                      identity.addToken(token)
+                      resOk(token.toJson)
+                    } else {
+                      resUnauthorized("Invalid password/loginName")
                     }
-                  }
-                } else {
-                  Future.successful(resUnauthorized("Invalid password/loginName"))
+                  case _ => resServerError("more than one default identity")
                 }
-              }
             }
         }
       }
@@ -95,4 +89,20 @@ object TokenController extends ExtendedController {
   //
   //  }
 
+  def getToken(id: String) = AuthAction().async {
+    request =>
+      request.identity.accountId match {
+        case None => Future(resBadRequest("identity has no account"))
+        case Some(accountId) =>
+          Identity.findAll(Json.obj("accountId" -> accountId)).map { list =>
+            list.find(_.id.id.equals(id)) match {
+              case None => resNotFound("identity within account")
+              case Some(identity) =>
+                val token = Token.createDefault()
+                Identity.addTokenToIdentity(identity.id, token)
+                resOk(token.toJson)
+            }
+          }
+      }
+  }
 }

@@ -1,13 +1,14 @@
 package controllers
 
-import traits.ExtendedController
 import helper.CmActions.AuthAction
-import services.TwoFactorAuth
 import helper.ResultHelper._
-import play.api.libs.json.{ Json, Reads }
 import models.TwoFactorToken
-import scala.concurrent.{ Future, ExecutionContext }
-import ExecutionContext.Implicits.global
+import play.api.libs.json.{ Json, Reads }
+import services.TwoFactorAuth
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -18,9 +19,9 @@ object TwoFactorController extends ExtendedController {
 
   def initiate() = AuthAction().async {
     request =>
-      TwoFactorAuth.sendNewKey(request.identity) match {
-        case None        => Future(resOK())
-        case Some(error) => Future(resBadRequest(error))
+      TwoFactorAuth.sendNewKey(request.identity).map {
+        case None        => resOk()
+        case Some(error) => resBadRequest(error)
       }
   }
 
@@ -35,7 +36,7 @@ object TwoFactorController extends ExtendedController {
           case false => BadRequest("invalid key")
           case true =>
             val newToken = TwoFactorToken.createAndInsert(request.identity.id)
-            resOK(newToken.toJson)
+            resOk(newToken.toJson)
         }
       }
   }

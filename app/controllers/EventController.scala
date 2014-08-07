@@ -1,23 +1,24 @@
 package controllers
 
-import play.api.mvc.Controller
+import actors.BroadcastEvent
 import helper.CmActions.AuthAction
-import models.{ MongoId, EventSubscription }
 import helper.ResultHelper._
-import scala.concurrent.ExecutionContext
+import models.{ EventSubscription, MongoId }
 import play.api.{Logger, Play}
 import play.api.Play.current
-import ExecutionContext.Implicits.global
-import play.api.libs.json.Json
+import play.api.libs.json.{ JsObject, Json }
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
  * Date: 09.05.14
  * Time: 13:42
  */
-object EventController extends Controller {
+object EventController extends ExtendedController {
 
-  def newSubscription() = AuthAction().async(parse.tolerantJson) {
+  def newSubscription() = AuthAction(allowExternal = true).async(parse.tolerantJson) {
     request =>
       // check if a secret is used to disable max subscription
       val limitEnabled: Boolean = Play.configuration.getString("events.subscription.debug.secret") match {
@@ -39,16 +40,28 @@ object EventController extends Controller {
         case _ =>
           val subscription = EventSubscription.create(request.identity.id)
           EventSubscription.col.insert(subscription)
-          resOK(subscription.toJson)
+          resOk(subscription.toJson)
       }
   }
 
-  def getSubscription(id: String) = AuthAction().async {
+  def getSubscription(id: String) = AuthAction(allowExternal = true).async {
     request =>
       EventSubscription.findAndClear(MongoId(id)).map {
         case None => resNotFound("subscription id")
         case Some(subscription) =>
-          resOK(subscription.toJson)
+          resOk(subscription.toJson)
+      }
+  }
+
+  case class EventBroadcastRequest(data: JsObject, name: String)
+  object EventBroadcastRequest { implicit val format = Json.format[EventBroadcastRequest] }
+
+  def broadcastEvent() = AuthAction()(parse.tolerantJson) {
+    request =>
+      validate(request.body, EventBroadcastRequest.format) {
+        ebr =>
+          actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data)
+          resOk("event send")
       }
   }
 }

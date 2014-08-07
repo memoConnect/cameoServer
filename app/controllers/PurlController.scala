@@ -1,13 +1,13 @@
 package controllers
 
-import play.api.libs.json.{ JsObject, Json }
-import traits.ExtendedController
+import helper.ResultHelper._
 import models._
 import play.api.libs.concurrent.Execution.Implicits._
-import scala.concurrent.Future
-import helper.ResultHelper._
+import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.{ Action, Result }
-import scala.Some
+import traits.ExtendedController
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -38,7 +38,7 @@ object PurlController extends ExtendedController {
                 Json.obj("conversation" -> conversation.toJson) ++
                   Json.obj("identity" -> identity.toPrivateJson) ++
                   Json.obj("token" -> token.id.toJson)
-              resOK(res)
+              resOk(res)
             }
         }
       }
@@ -65,7 +65,7 @@ object PurlController extends ExtendedController {
                           val res: JsObject =
                             Json.obj("conversation" -> conversation.toJson) ++
                               Json.obj("identity" -> identity.toPrivateJson)
-                          resOK(res)
+                          resOk(res)
                         }
                     }
                 }

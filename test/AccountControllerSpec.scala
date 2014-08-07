@@ -8,7 +8,7 @@ import scala.Some
 import testHelper.Stuff._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
-import play.api.{Play, Logger}
+import play.api.{ Play, Logger }
 import testHelper.{ TestConfig, StartedApp, Stuff }
 import org.specs2.mutable._
 import testHelper.TestConfig._
@@ -40,10 +40,31 @@ class AccountControllerSpec extends StartedApp {
 
   "AccountController" should {
 
+    "Get existing account" in {
+      val path = basePath + "/account"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "id").asOpt[String] must beSome
+      (data \ "loginName").asOpt[String] must beSome
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome
+      (data \ "phoneNumber" \ "isVerified").asOpt[Boolean] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome
+      (data \ "email" \ "isVerified").asOpt[Boolean] must beSome
+      (data \ "identities").asOpt[Seq[JsObject]] must beSome
+    }
+
     "Refuse invalid Logins" in {
       val path = basePath + "/account/check"
 
-      val logins = Seq("asdf", "asdfasdfasdfasdfasdfa", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\", "asdf.asdf.asdf", "asd@df")
+      val logins = Seq("asdf", "asdfasdfasdfasdfasdfaasdfasdfasdfasdfasdf", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\", "asdf.asdf.asdf", "asd@df")
 
       logins.map {
         l =>
@@ -65,7 +86,11 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
+
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       val regSeqOpt = (data \ "reservationSecret").asOpt[String]
@@ -84,6 +109,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
@@ -182,6 +210,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -196,6 +227,10 @@ class AccountControllerSpec extends StartedApp {
 
       identityOpt must beSome
       (data \ "id").asOpt[String] must beSome
+
+      (identity \ "id").asOpt[String] must beSome
+      (identity \ "displayName").asOpt[String] must beSome(displayName)
+      (identity \ "userKey").asOpt[String] must beSome
     }
 
     "Refuse to register again with same secret" in {
@@ -244,6 +279,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -263,6 +301,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -275,16 +316,19 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome
       (data \ "userKey").asOpt[String] must beSome
-      (data \ "cameoId").asOpt[String] must beSome(login)
+      (data \ "cameoId").asOpt[String] must beSome(login + "@" + domain)
       (data \ "displayName").asOpt[String] must beSome(displayName)
-      (data \ "email" \ "value").asOpt[String] must beSome(mail)
-      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(cleanedTel)
+      (data \ "email" \ "value").asOpt[String] must beNone
+      (data \ "phoneNumber" \ "value").asOpt[String] must beNone
     }
 
     var fileId = ""
@@ -294,6 +338,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -310,6 +357,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -329,6 +379,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
       val raw = contentAsBytes(res)
 
@@ -341,6 +394,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
@@ -357,6 +413,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -377,6 +436,10 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path)
       val res = route(req).get
 
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -394,6 +457,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -404,7 +470,6 @@ class AccountControllerSpec extends StartedApp {
     }
 
     "register user with token of external user" in {
-
       val path = basePath + "/account"
       val json = createUser(loginExternal, pass, Some(tel2), Some(mail2)) ++
         Json.obj("reservationSecret" -> regSecExternal) ++
@@ -413,6 +478,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(externalToken))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -420,14 +488,13 @@ class AccountControllerSpec extends StartedApp {
       val identity = (data \ "identities")(0).as[JsObject]
 
       (identity \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
-      (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(tel2)
-      (identity \ "email" \ "value").asOpt[String] must beSome(mail2)
+      (identity \ "phoneNumber" \ "value").asOpt[String] must beNone
+      (identity \ "email" \ "value").asOpt[String] must beNone
       (identity \ "displayName").asOpt[String] must beSome(displayName2)
-
     }
 
+    var purlExternIdentityToken = ""
     "get token of new account" in {
-
       val path = basePath + "/token"
 
       val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExternal + ":" + pass).getBytes)
@@ -435,9 +502,15 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
-      (contentAsJson(res) \ "data").asOpt[JsObject] must beSome
+      (contentAsJson(res) \ "data" \ "token").asOpt[String] must beSome
+      purlExternIdentityToken = (contentAsJson(res) \ "data" \ "token").as[String]
+
+      1 === 1
     }
 
     "get identity of new account" in {
@@ -447,14 +520,36 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
-      (data \ "cameoId").asOpt[String] must beSome(loginExternal)
+      (data \ "cameoId").asOpt[String] must beSome(loginExternal + "@" + domain)
       (data \ "avatar").asOpt[String] must beSome
       (data \ "displayName").asOpt[String] must beSome(displayName2)
+    }
+
+    "identity should have sender as contact" in {
+
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(purlExternIdentityToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(2)
+
+      data.find(js => (js \ "identityId").asOpt[String].equals(Some(identityExisting2))) must beSome
     }
 
     "Reserve another login" in {
@@ -464,6 +559,9 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
@@ -474,7 +572,6 @@ class AccountControllerSpec extends StartedApp {
     }
 
     "refuse to register with token of internal user" in {
-
       val path = basePath + "/account"
       val json = createUser(loginExternal, pass, Some(tel2), Some(mail2)) ++
         Json.obj("reservationSecret" -> regSecExternal) ++
@@ -484,6 +581,100 @@ class AccountControllerSpec extends StartedApp {
       val res = route(req).get
 
       status(res) must equalTo(BAD_REQUEST)
+    }
+
+    val newPhoneNumber = "+49123456"
+    val newEmail = "asdfasdf@moep.de"
+    val newPassword = "asdfasdfasdf"
+
+    "update phoneNumber and email of account" in {
+
+      val path = basePath + "/account"
+      val json = Json.obj("phoneNumber" -> newPhoneNumber, "email" -> newEmail)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "account should contain new values" in {
+      val path = basePath + "/account"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "loginName").asOpt[String] must beSome
+      (data \ "identities").asOpt[Seq[JsObject]] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome(newEmail)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newPhoneNumber)
+    }
+
+    "get token with old password" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExisting2 + ":" + password).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "update account password" in {
+      val path = basePath + "/account"
+      val json = Json.obj("password" -> newPassword)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "refuse login with old password" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExisting2 + ":" + password).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(UNAUTHORIZED)
+
+    }
+
+    "allow login with new password" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginExisting2 + ":" + newPassword).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
     }
   }
 }

@@ -1,19 +1,17 @@
 package helper
 
-import play.api.libs.json._
-import play.api.libs.json.Reads._
-import play.api.libs.functional.syntax._
 import java.util.Date
-import reactivemongo.bson.BSONDocument
-import play.modules.reactivemongo.json.BSONFormats
-import models.{ MongoId, VerifiedString }
+
+import models.VerifiedString
 import org.mindrot.jbcrypt.BCrypt
-import play.api.libs.json.JsArray
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.JsObject
-import play.api.libs.json.JsString
-import scala.Some
-import play.api.libs.json.JsNumber
+import play.api.Play
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
+import play.modules.reactivemongo.json.BSONFormats
+import reactivemongo.bson.BSONDocument
+import reactivemongo.core.commands.Match
+import play.api.Play.current
 
 /**
  * User: Björn Reimer
@@ -84,6 +82,11 @@ object JsonHelper {
     }
   }
 
+  def getCameoId(base: String): JsObject = {
+    val domain = Play.configuration.getString("domain").get
+    Json.obj("cameoId" -> (base + "@" + domain))
+  }
+
   def getNewValueVerifiedString(old: Option[VerifiedString], newValue: VerifiedString): Option[VerifiedString] = {
     if (old.isDefined && old.get.value.equals(newValue.value)) {
       None
@@ -104,6 +107,10 @@ object JsonHelper {
     BSONFormats.toBSON(json).asOpt.map(_.asInstanceOf[BSONDocument])
   }
 
+  def toMatch(json: JsValue): Match = {
+    Match(toBson(json).get)
+  }
+
   val hashPassword: Reads[String] = Reads[String] {
     js =>
       js.asOpt[String] match {
@@ -114,8 +121,6 @@ object JsonHelper {
         })
       }
   }
-
-  def arrayQuery(arrayName: String, id: MongoId): JsObject = Json.obj(arrayName -> Json.obj("$elemMatch" -> Json.obj("_id" -> id)))
 
   def limitArray(name: String, limit: Int, offset: Int): JsObject = {
 

@@ -1,20 +1,21 @@
 package controllers
 
-import traits.ExtendedController
-import play.api.libs.json.Json
-import models.{ FileChunk, ChunkMeta, FileMeta }
-import helper.{ MongoCollections, IdHelper, Utils }
+import actors.NewMessage
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
-import scala.concurrent.{ ExecutionContext, Future }
+import helper.{ IdHelper, Utils }
+import models._
 import play.api.Play
-import ExecutionContext.Implicits.global
 import play.api.Play.current
-import play.api.mvc.{Result, BodyParser, Headers, SimpleResult}
 import play.api.libs.iteratee.Iteratee
-import reactivemongo.bson.{ Subtype, BSONBinary, BSONDocument }
-import scala.util.control.NonFatal
+import play.api.libs.json.Json
+import play.api.mvc.{ BodyParser, Headers, Result }
+import traits.ExtendedController
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.control.Exception._
+import scala.util.control.NonFatal
 
 /**
  * User: Björn Reimer
@@ -47,11 +48,12 @@ object FileController extends ExtendedController {
           fileSize.get.toInt <= Play.configuration.getInt("files.size.max").get match {
             case false => Future(resBadRequest(Json.obj("maxFileSize" -> Play.configuration.getInt("files.size.max").get)))
             case true =>
+
               val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get)
               FileMeta.col.insert(fileMeta).map { lastError =>
                 lastError.ok match {
                   case false => resServerError("could not save chunk")
-                  case true  => resOK(fileMeta.toJson)
+                  case true  => resOk(fileMeta.toJson)
                 }
               }
           }
@@ -98,7 +100,7 @@ object FileController extends ExtendedController {
               case false => resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize)
               case true =>
                 fileMeta.addChunk(request.body)
-                resOK()
+                resOk()
             }
         }
       }
@@ -121,7 +123,7 @@ object FileController extends ExtendedController {
         FileMeta.find(id).map {
           case None => resNotFound("file")
           case Some(fileMeta) =>
-            resOK(fileMeta.toJson)
+            resOk(fileMeta.toJson)
         }
       }
   }
@@ -147,6 +149,48 @@ object FileController extends ExtendedController {
                 }
             }
         }
+      }
+  }
+
+  case class FileComplete(messageId: Option[String])
+  object FileComplete {
+    implicit val format = Json.format[FileComplete]
+  }
+
+  def uploadFileComplete(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      FileMeta.find(id).flatMap {
+        case None => Future(resNotFound("file"))
+        case Some(fileMeta) =>
+          fileMeta.setCompleted(true).flatMap {
+            case false => Future(resServerError("unable to update"))
+            case true =>
+              // check if there is a messageId given, if yes send event to all recipients
+              validateFuture(request.body, FileComplete.format) { fc =>
+                fc.messageId match {
+                  case None => Future(resOk("completed"))
+                  case Some(messageId) =>
+                    Message.findParent(new MongoId(messageId)).map {
+                      case None => resNotFound("messageId")
+                      case Some(conversation) =>
+                        val message = conversation.messages.find(_.id.id.equals(messageId)).get
+                        conversation.recipients.foreach {
+                          recipient =>
+                            actors.eventRouter ! NewMessage(recipient.identityId, conversation.id, message)
+                        }
+                        resOk("completed")
+                    }
+                }
+              }
+          }
+      }
+  }
+
+  def deleteFile(id: String) = AuthAction().async {
+    request =>
+      FileMeta.deleteWithChunks(new MongoId(id)).map {
+        case false => resServerError("could not delete")
+        case true  => resOk("deleted")
       }
   }
 }

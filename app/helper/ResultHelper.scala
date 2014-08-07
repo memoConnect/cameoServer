@@ -1,10 +1,9 @@
 package helper
 
-import play.api.mvc.Results._
-import play.api.libs.json._
 import constants.Notifications._
-import play.api.libs.json.JsObject
+import play.api.libs.json._
 import play.api.mvc.Result
+import play.api.mvc.Results._
 
 /**
  * User: Björn Reimer
@@ -17,15 +16,15 @@ object ResultHelper {
   val CAMEO_ERROR_CODE = 232
 
   // OK
-  def resOK(): Result = Ok(Json.obj("res" -> "OK"))
+  def resOk(): Result = Ok(Json.obj("res" -> "OK"))
 
-  def resOK(data: JsValue): Result =
+  def resOk(data: JsValue): Result =
     Ok(Json.obj("res" -> "OK") ++
       Json.obj("data" -> data))
   //      ++
   //      addMessagesOrEmpty(notifications))
 
-  def resOK(data: Seq[JsValue]): Result =
+  def resOk(data: Seq[JsValue]): Result =
     Ok(Json.obj("res" -> "OK") ++
       Json.obj("data" -> data))
   //      ++

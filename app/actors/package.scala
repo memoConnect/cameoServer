@@ -1,9 +1,9 @@
-import actors.testActors.SendSmsTestActor
+import actors.testActors.{SendMailTestActor, SendSmsTestActor}
 import akka.actor.{ ActorRef, Props }
 import akka.routing.RoundRobinPool
+import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.{ Logger, Play }
-import play.api.Play.current
 
 /**
  * User: Björn Reimer
@@ -22,9 +22,23 @@ package object actors {
     }
   }
 
+  def SendMailActorProps: Props = {
+    if (Play.isTest) {
+      Logger.debug("Using Mail Test Actor")
+      Props[SendMailTestActor]
+    } else {
+      Props[SendMailActor]
+    }
+  }
+
   lazy val eventRouter: ActorRef = {
     val props = RoundRobinPool(5).props(Props[EventActor])
     Akka.system.actorOf(props, "event_router")
+  }
+
+  lazy val notificationRouter: ActorRef = {
+    val props = RoundRobinPool(5).props(Props[NotificationActor])
+    Akka.system.actorOf(props, "notification_router")
   }
 
 }

@@ -2,7 +2,6 @@ package helper
 
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat
-import scala.Some
 
 /**
  * User: Björn Reimer

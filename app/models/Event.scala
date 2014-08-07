@@ -1,6 +1,6 @@
 package models
 
-import play.api.libs.json.{ Json, Format, Reads, JsObject }
+import play.api.libs.json.{ Format, JsObject, Json, Reads }
 import traits.SubModel
 
 /**

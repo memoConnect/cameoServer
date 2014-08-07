@@ -7,7 +7,7 @@ new and improved ;)
 
 # Group Authentication
 
-## Create new Token [/api/v1/token]
+## Create new Token [/token]
 
 ### GET
 
@@ -25,7 +25,7 @@ new and improved ;)
           }
         }
 
-## Delete Token [/api/token/{token}]
+## Delete Token [/token/{token}]
 
 ### DELETE
 
@@ -40,6 +40,26 @@ new and improved ;)
             "deletedToken": "34AmUnliV2SXqj9vOTfHDiymmu5XF9B7KGEVV126"
           }
         }
+
+## Get token for another identity of current account [/identity/:id/token]
+
+### GET
+
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
++ Response 200
+    
+        {
+          "res": "OK",
+          "data": {
+            "token": "FPqYIrbvPdTmxUE5fb2TIRfy1Gmy7JS1OxfdIhNJ",
+            "created": "22.01.2014 16:34:54"
+          }
+        }
+
 
 
 # Group Accounts
@@ -75,9 +95,10 @@ Account Management
           }
         }
 
-## Create Account [/account]
+## Manage Accounts [/account]
 
 ### POST
+Create new account
 
 + Request (application/json)
 
@@ -104,13 +125,8 @@ Account Management
             "lastUpdated": "22.01.2014 16:34:54"
         }
 
-
-## Get Account details [/account/{loginName}]
-
 ### GET
-
-+ Parameters
-    + loginName
+Get Account details of current user
 
 + Request
     + Headers
@@ -123,32 +139,35 @@ Account Management
         {
           "res": "OK",
           "data": {
-            "loginName": "test",
+            "id": "iuMQFnJAZLgyDw7GwV2t",
+            "loginName": "2vqtftqh",
+            "phoneNumber": {
+              "value": "560277",
+              "isVerified": false
+            },
+            "email": {
+              "value": "foo@baa.de",
+              "isVerified": false
+            },
+            "created": 1392301163329,
+            "lastUpdated": 1392301163329,
             "identities": [
-              "ZVtXkxMmPj4WtLYea8ci"
-            ],
-            "phoneNumber": "12335",
-            "email": "mail",
-            "created": "22.01.2014 16:34:54",
-            "lastUpdated": "22.01.2014 16:34:54"
-        }
-
-### delete a Account [DELETE]
-
-+ Parameters
-    + loginName
-    
-+ Request
-    + Headers
-    
-            Authorization: {token}
-
-+ Response 200
-
-        {
-          "res": "OK",
-          "data": {
-            "deleted Account": "test1"
+              {
+                "id": "g9PWZY7xKNbeCO6LPNnx",
+                "cameoId": "KG5mSGTY8l3",
+                "avatar": "eQhldI981mHiZdOyPD2z",
+                "displayName": "Moeper",
+                "publicKeys": [],
+                "email": {
+                  "value": "test@cameo.io",
+                  "isVerified": false
+                },
+                "phoneNumber": {
+                  "value": "+49123456789",
+                  "isVerified": false
+                }
+              }
+            ]
           }
         }
 
@@ -209,7 +228,8 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
                {
                  "id": "4TXpnSAa6IPNGdbLX7Mh",
                  "name": "some Name",
-                 "key": "theKey"
+                 "key": "theKey",
+                 "created" : 12354565
                }
              ]
           }
@@ -247,7 +267,8 @@ Get your identity
               {
                 "id": "4TXpnSAa6IPNGdbLX7Mh",
                 "name": "some Name",
-                "key": "theKey"
+                "key": "theKey",
+                "created" : 12354565
               }
             ],
             "userType": "internal",
@@ -321,7 +342,8 @@ Edit your identity. All values are optional. Only values contained in the json w
             "id": "4TXpnSAa6IPNGdbLX7Mh",
             "name": "some Name",
             "key": "theKey",
-            "size": "keySize"
+            "size": "keySize",
+            "created" : 12354565
           }
         }
 
@@ -373,6 +395,172 @@ Edit your identity. All values are optional. Only values contained in the json w
         }
 
 
+## Rekeying of AePassphrases [/identity/publicKey/{id}/aePassphrases{?newKeyId,limit}]
+
++   Parameters
+    + id ... all aePassphrases of this public key will be returned
+    + newKeyId ... Id of the new key, only conversations that have no aePassphrase for this keyId will be returned
+    + limit ... maximum number of aePassphrases to return
+
+
+### GET
+Get AePassphrases for rekying
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": [
+            {
+              "conversationId": "OM9QeJ4RfJcdscyo52g4",
+              "aePassphrase": "encrypted passphrase 1"
+            },
+            {
+              "conversationId": "dLBDYFdfj9ymiTblElmN",
+              "aePassphrase": "encrypted passphrase 2"
+            },
+            {
+              "conversationId": "IXhJ0BwoLjRtrRn41zIw",
+              "aePassphrase": "encrypted passphrase 3"
+            }
+          ]
+        }
+
+
+## Rekeying of AePassphrases [/identity/publicKey/{id}/aePassphrases]
+
++   Parameters
+    + id ... the keyId for which the aePassphrases will be stored (newKeyId)
+
+
+### POST
+Store new aePassphrases
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+            
+    + Body
+    
+            {
+              "res": "OK",
+              "data": [
+                {
+                  "conversationId": "OM9QeJ4RfJcdscyo52g4",
+                  "aePassphrase": " new encrypted passphrase 1"
+                },
+                {
+                  "conversationId": "dLBDYFdfj9ymiTblElmN",
+                  "aePassphrase": " new encrypted passphrase 2"
+                },
+                {
+                  "conversationId": "IXhJ0BwoLjRtrRn41zIw",
+                  "aePassphrase": " new encrypted passphrase 3"
+                }
+              ]
+            }
+
+    
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "updated"
+        }
+
+
+## Add signature to public key [/identity/publicKey/{id}/signature]
+
++   Parameters
+    + id ... Id of the public key
+
+
+### POST
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "keyId":"keyId of public key that created the signature",
+                "content":"some signature"
+            }
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data":{signature object}
+        }
+
+## Add authentication request [/identity/authenticationRequest]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "fromKeyId": "key new Device",
+                "toKeyId": "key old Device",
+                "encryptedTransactionSecret": "encrypted",
+                "signature":"blob"
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "fromKeyId": "key new Device",
+            "toKeyId": "key old Device",
+            "encryptedTransactionSecret": "encrypted",
+            "signature":"blob",
+            "id": "adVtKitsqCSrkc0NWGyb",
+            "created": 1405679129745
+          }
+        }
+
+
+## Manage authentication requests [/identity/authenticationRequest/{id}]
+
++   Parameters
+    + id ... Id of the authentication request
+
+### DELETE
+
++ Request
+
+    + Headers
+
+            Authorization: {token}
+
+
++ Response 200
+
+        {
+            "res":"OK",
+            "data":"deleted"
+        }
+
+
+
 
 ## Search for cameoIds [/identity/search{?offset,limit}]
 
@@ -419,7 +607,7 @@ Sending and reading messages
               "subject": "new subject",
               "passCaptcha": "fileID",
               "aePassphrase": "someEncryptedString",
-              "eaPassphraseList": [
+              "aePassphraseList": [
                 "keyId": "some Id",
                 "encryptedPassphrase": "someEncryptedString"
               ]
@@ -541,9 +729,10 @@ Sending and reading messages
                   "subject": "new subject",
                   "passCaptcha": "fileID",
                   "aePassphrase": "someEncryptedString",
-                  "eaPassphraseList": [
+                  "aePassphraseList": [{
                     "keyId": "some Id",
                     "encryptedPassphrase": "someEncryptedString"
+                    }
                   ]
                 }
 
@@ -825,6 +1014,38 @@ Sending and reading messages
         }
 
 
+## add aePassphrases to conversation [/conversation/{id}/aePassphrases]
+
+### POST
+
++ Parameters
+    + id ... Conversation id
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+    
+    + Body
+    
+            {
+              "eaPassphraseList": 
+              [{
+                  "keyId": "some Id",
+                  "encryptedPassphrase": "someEncryptedString"
+               }
+              ]
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "updated"
+        }
+        
+
 ## Get single Message [/message/{id}]
 
 ### GET
@@ -873,7 +1094,6 @@ Handle file up and download
             X-Max-Chunks: Total number of chunks
             X-File-Size: FileSize in Bytes
             X-File-Type: FileType
-
 
 + Response 200
 
@@ -951,9 +1171,35 @@ Get meta-information of a file
             "maxChunks": 10,
             "fileSize": 1234567,
             "fileType": "some_type",
+            "isCompleted" : true
             "created": "21.02.2014 12:20:28"
           }
         }
+
+
+## Mark upload completed [/file/{id}/completed]
+
+### POST
++ Request
+    + Headers
+
+            Authorization: {token}
+            
+            
+    + Body
+            
+            {
+                "messaageId":"id (optional)"
+            }
+
+            
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "completed"
+        }
+        
 
 ## Download chunk [/file/{id}/{chunkIndex}]
 Download chunks of a file
@@ -1496,19 +1742,68 @@ Events will be deleted after each call
          "data": {
            "events": [
              {
-               "type": "conversation:new-message",
-               "content": {
+               "name": "conversation:new-message",
+               "data": {
                  "conversationId": "O5DjLp2CZ6Q3BVroM4mX",
                  "message": {message object}
                }
              },
              {
-               "type": "friendRequest:new",
-               "content": { friendRequest object }
+               "name": "conversation:new",
+               "data": { conversation object }
+             },
+             {
+               "name": "friendRequest:new",
+               "data": { 
+                 "friendRequest":{ object },
+                 "to": "identityId"
+               }
+             },
+             {
+               "name": "friendRequest:accepted",
+               "data": { 
+                 "from": "identityId",
+                 "to": "identityId"
+               }
+             },
+             {
+               "name": "identity:updated",
+               "data": { identity object (updated fields only)}
+             },
+             {
+               "name": "identity:new",
+               "data": { identity object  }
+             },
+             {
+               "name": "conversation:new-aePassphrase",
+               "data": {
+                 "keyId": "EWhm5RVlKxVLpKvUiKUI",
+                 "conversationIds": [
+                   "VqkdgXcpj9HnGK7V1dVI"
+                 ]
                }
              }
+           }
            ],
            "id": "QvySbPNwtdKPXm5SUami"
          }
+        }
+        
+## broadcast event to all eventSubscriptions [/api/v1/event/broadcast]
+
+### POST
+
++ Request
+
+        {
+            "name" : "eventname",
+            "data" : "eventdata"
+        }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "event send"
         }
         

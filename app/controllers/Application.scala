@@ -1,13 +1,15 @@
 package controllers
 
-import play.api.mvc._
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.Json
 import helper.DbAdminUtilities
-import play.api.Play
 import helper.ResultHelper._
 import models.Account
+import play.api.Play
 import play.api.Play.current
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json
+import play.api.mvc._
+
+import scala.concurrent.Future
 
 object Application extends Controller {
 
@@ -15,9 +17,20 @@ object Application extends Controller {
     Redirect(url)
   }
 
-  def index = Action {
+  def index = Action.async {
     request =>
-      Ok(views.html.index())
+      // get mongodb version
+      //      mongoDB.command(reactivemongo.core.commands.Status).map{
+      //        res =>
+      //          val dbVersion = res.get("version") match {
+      //            case Some(BSONString(version)) => version
+      //            case _ => "na"
+      //          }
+      //          Logger.debug("SERVERSTATUS: " + res.toString)
+      //          Ok(views.html.index(dbVersion))
+      //      }
+
+      Future(Ok(views.html.index("2.6.3")))
   }
 
   def dumpDb() = Action {
@@ -40,12 +53,9 @@ object Application extends Controller {
     }
   }
 
-  def staticAssets(path: String, file: String, foo: String) =
-    controllers.Assets.at(path, file)
-
   def checkApp = Action.async {
     Account.col.find(Json.obj()).one[Account].map {
-      case Some(wummel) => resOK()
+      case Some(wummel) => resOk()
       case None         => resKo("database connection down!")
     }
   }

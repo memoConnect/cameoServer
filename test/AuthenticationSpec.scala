@@ -47,6 +47,8 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/v/$id<[^/]+>"),
       (GET, "/p/$id<[^/]+>"),
       (GET, "/a/v1/purl/$id<[^/]+>"),
+      (GET, "/a/v1/testUser/$id<[^/]+>"),
+      (DELETE, "/a/v1/testUser/$id<[^/]+>"),
       (POST, "/a/v1/callStack")
     )
 
@@ -61,6 +63,8 @@ class AuthenticationSpec extends StartedApp {
       (POST, "/a/v1/conversation/$id<[^/]+>/message"),
       (GET, "/a/v1/message/$id<[^/]+>"),
       (GET, "/a/v1/identity"),
+      (GET, "/a/v1/eventSubscription/$id<[^/]+>"),
+      (POST, "/a/v1/eventSubscription"),
       (GET, "/a/v1/file/$id<[^/]+>"),
       (GET, "/a/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>")
     )
@@ -71,6 +75,7 @@ class AuthenticationSpec extends StartedApp {
     // dont test utils and webapp
     val filteredAuthRoutes = authRoutes.filterNot(r =>
       r._2.startsWith("/m") ||
+      r._2.startsWith("/d") ||
         r._2.startsWith("/dl") ||
         r._2.startsWith("/c") ||
         r._2.equals("/") ||
@@ -146,6 +151,9 @@ class AuthenticationSpec extends StartedApp {
       val req = FakeRequest(GET, path)
       val res = route(req).get
 
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
       status(res) must equalTo(OK)
       val data = (contentAsJson(res) \ "data").as[JsObject]
       tokenExternal = (data \ "token").as[String]
