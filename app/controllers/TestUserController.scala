@@ -83,7 +83,7 @@ object TestUserController extends ExtendedController {
   def deleteAllTestUsers() = Action.async {
     request =>
       val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo").toLowerCase
-      val query  = Json.obj("$regex" -> testUserPrefix, "$options" -> "i")
+      val query  = Json.obj("loginName" -> Json.obj("$regex" -> ("^" + testUserPrefix), "$options" -> "i"))
       Account.findAll(query).map {
         list =>
           list.seq.foreach{
