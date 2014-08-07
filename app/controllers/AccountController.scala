@@ -3,7 +3,7 @@ package controllers
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models._
-import play.api.Logger
+import play.api.{Play, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
@@ -53,7 +53,11 @@ object AccountController extends ExtendedController {
                     lastError =>
                       lastError.ok match {
                         case true =>
-                          Statsd.increment("custom.account.create")
+                          // create statd event when user is not a test user
+                          val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+                          if (accountLowerCase.loginName.startsWith(testUserPrefix.toLowerCase)){
+                            Statsd.increment("custom.account.create")
+                          }
                           accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
