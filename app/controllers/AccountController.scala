@@ -55,7 +55,7 @@ object AccountController extends ExtendedController {
                         case true =>
                           // create statd event when user is not a test user
                           val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
-                          if (accountLowerCase.loginName.startsWith(testUserPrefix.toLowerCase)){
+                          if (!accountLowerCase.loginName.startsWith(testUserPrefix.toLowerCase)){
                             Statsd.increment("custom.account.create")
                           }
                           accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
