@@ -1,5 +1,5 @@
 package controllers
-
+import play.api.Play.current
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models._
