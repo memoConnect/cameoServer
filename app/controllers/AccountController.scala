@@ -3,11 +3,12 @@ package controllers
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models._
-import play.api.Logger
+import play.api.{Play, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
+import play.modules.statsd.api.Statsd
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -52,6 +53,8 @@ object AccountController extends ExtendedController {
                     lastError =>
                       lastError.ok match {
                         case true =>
+                          val statsdPrefix = Play.configuration.getString("statsd.stat.prefix").getOrElse("none")
+                          Statsd.increment(statsdPrefix + ".custom.account.create")
                           accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
