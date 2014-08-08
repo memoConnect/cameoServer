@@ -221,11 +221,8 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
     + Body
 
             {
-              "cameoId": "reserved cameoId",  
-              "reservationSecret": "secret",
-              "phoneNumber": "optional",
-              "email": "optional",
-              "displayName": "optional"
+              "identity": { identity object },
+              "token" : { token object }
             }
 
 + Response 200

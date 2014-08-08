@@ -147,7 +147,15 @@ object IdentityController extends ExtendedController {
                           Identity.findAll(Json.obj("accountId" -> accountId)).map { list =>
                             list.foreach(i => actors.eventRouter ! NewIdentity(i.id, insertedIdentity))
                           }
-                          resOk(insertedIdentity.toPrivateJson)
+                          // create token for new identity
+                          val token = Token.createDefault()
+                          insertedIdentity.addToken(token)
+
+                          resOk(
+                            Json.obj(
+                              "identity" -> insertedIdentity.toPrivateJson,
+                              "token" -> token.toJson
+                            ))
                       }
                   }
               }
