@@ -23,7 +23,7 @@ case class Contact(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
-  def toJsonWithIdentity: Future[JsObject] =
+  def toJsonWithIdentity(publicKeySignatures: Option[Map[String, Signature]]): Future[JsObject] = {
     Identity.find(this.identityId).map {
       case None => Json.obj()
       case Some(identity) =>
@@ -34,17 +34,13 @@ case class Contact(id: MongoId,
 
         val identityJson = identity.accountId match {
           case None    => identity.toPrivateJson
-          case Some(a) => identity.toPublicJson
+          case Some(a) => identity.toPublicJson(publicKeySignatures)
         }
 
         Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
           Json.obj("identity" -> identityJson) ++
           Json.obj("contactType" -> contactType)
     }
-
-  def toJsonWithIdentityResult: Future[Result] = {
-    this.toJsonWithIdentity.map(
-      js => resOk(js))
   }
 
   def update(contactUpdate: ContactUpdate): Future[Boolean] = {
@@ -106,18 +102,23 @@ object Contact extends SubModel[Contact, Identity] {
    * Evolutions
    */
 
-  val evolutionAddContactType: Reads[JsObject] = Reads[JsObject] {
+  val docVersion = 1
+  val evolutions = Map(
+    0 -> ContactEvolutions.addContactType
+  )
+
+  override def createDefault(): Contact = {
+    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), docVersion)
+  }
+}
+
+object ContactEvolutions {
+
+  val addContactType: Reads[JsObject] = Reads[JsObject] {
     js =>
       val addType = __.json.update((__ \ 'contactType).json.put(JsString(CONTACT_TYPE_INTERNAL)))
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
       js.transform(addType andThen addVersion)
-  }
-
-  val docVersion = 1
-  val evolutions = Map(0 -> evolutionAddContactType)
-
-  override def createDefault(): Contact = {
-    new Contact(IdHelper.generateContactId(), Seq(), IdHelper.generateMongoId(), docVersion)
   }
 }
 

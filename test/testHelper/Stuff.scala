@@ -168,4 +168,5 @@ object Stuff {
     sendFriendRequest()
     acceptFriendRequest()
   }
+
 }

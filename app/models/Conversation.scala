@@ -3,7 +3,7 @@ package models
 import java.util.Date
 
 import constants.KeyTransmission
-import controllers.CryptoController.AePassphrase
+import controllers.PublicKeyController.AePassphrase
 import helper.JsonHelper._
 import helper.MongoCollections._
 import helper.ResultHelper._
