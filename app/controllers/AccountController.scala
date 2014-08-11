@@ -1,13 +1,14 @@
 package controllers
-
+import play.api.Play.current
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models._
-import play.api.Logger
+import play.api.{Play, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
+import play.modules.statsd.api.Statsd
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -52,7 +53,12 @@ object AccountController extends ExtendedController {
                     lastError =>
                       lastError.ok match {
                         case true =>
-                          accountLowerCase.toJsonWithIdentities.map(resOk)
+                          // create statd event when user is not a test user
+                          val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+                          if (!accountLowerCase.loginName.startsWith(testUserPrefix.toLowerCase)){
+                            Statsd.increment("custom.account.create")
+                          }
+                          accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
                       }
@@ -131,7 +137,7 @@ object AccountController extends ExtendedController {
         case Some(id) =>
           Account.find(id).flatMap {
             case None          => Future(resNotFound("account"))
-            case Some(account) => account.toJsonWithIdentities.map(resOk)
+            case Some(account) => account.toJsonWithIdentities(request.identity.id).map(resOk)
           }
       }
   }

@@ -34,10 +34,14 @@ case class Account(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
 
-  def toJsonWithIdentities: Future[JsObject] = {
+  def toJsonWithIdentities(activeIdentityId: MongoId): Future[JsObject] = {
     Identity.findAll(Json.obj("accountId" -> this.id)).map {
       list =>
-        this.toJson ++ Json.obj("identities" -> list.map(_.toPrivateJson))
+        this.toJson ++ Json.obj("identities" -> list.map {
+          identity =>
+            val isActive: Boolean = identity.id.equals(activeIdentityId)
+            identity.toPrivateJson ++ Json.obj("active" -> isActive)
+        })
     }
   }
 
@@ -150,12 +154,12 @@ object AccountReservation extends Model[AccountReservation] {
   }
 
   def findByLoginName(loginName: String): Future[Option[AccountReservation]] = {
-    val query = Json.obj("loginName" -> Json.obj("$regex" -> loginName, "$options" -> "i"))
+    val query = Json.obj("loginName" -> Json.obj("$regex" -> ("^" + loginName + "$"), "$options" -> "i"))
     col.find(query).one[AccountReservation]
   }
 
   def deleteReserved(loginName: String): Future[LastError] = {
-    val query = Json.obj("loginName" -> Json.obj("$regex" -> loginName, "$options" -> "i"))
+    val query = Json.obj("loginName" -> Json.obj("$regex" -> ("^" + loginName + "$"), "$options" -> "i"))
     col.remove(query)
   }
 
