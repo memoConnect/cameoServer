@@ -32,3 +32,4 @@ conf/version*
 /UPDATING
 /public/
 /public
+/atlassian-ide-plugin.xml
