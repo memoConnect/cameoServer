@@ -118,6 +118,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
   }
 
   override def onStop(app: play.api.Application) = {
+    Logger.info("Shutting down app")
     Statsd.increment("custom.instances",-1)
   }
 }
