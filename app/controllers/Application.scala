@@ -58,7 +58,7 @@ object Application extends Controller {
   def checkApp = Action.async {
     Account.col.find(Json.obj()).one[Account].map {
       case Some(wummel) => resOk()
-      case None         => resKo("database connection down!")
+      case None         => resServerError("database connection down!")
     }
   }
 }

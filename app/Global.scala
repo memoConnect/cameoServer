@@ -11,6 +11,7 @@ import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ EssentialAction, EssentialFilter, WithFilters }
 import play.api.{ Logger, Play }
+import play.modules.statsd.api.Statsd
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -110,8 +111,14 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
       }
 
       Await.result(migrate, 6.hours)
+
+      Statsd.increment("custom.instances")
     }
 
+  }
+
+  override def onStop(app: play.api.Application) = {
+    Statsd.increment("custom.instances",-1)
   }
 }
 
