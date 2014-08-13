@@ -37,4 +37,13 @@ object ServicesController extends ExtendedController {
         case None => resBadRequest("missing emailAddress")
       }
   }
+
+  def getBrowserInfo() = Action {
+    request =>
+      val language = request.acceptLanguages.headOption match{
+        case None => "en"
+        case Some(lang) => lang.language
+      }
+      resOk(Json.obj("language" -> language))
+  }
 }

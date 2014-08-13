@@ -92,6 +92,7 @@ POST           /a/v1/event/broadcast/identity/:id           controllers.EventCon
 # Services
 POST           /a/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber
 POST           /a/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
+GET            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfo
 
 # Cockpit API
 GET            /a/cockpit/v1/twoFactorAuth                  controllers.TwoFactorController.initiate()
@@ -112,9 +113,9 @@ GET            /a/v1/util/dumpDb                            controllers.Applicat
 GET            /a/v1/util/loadDb                            controllers.Application.loadFixtures()
 
 # TEST USERS
-GET            /a/v1/testUser/:id                                   controllers.TestUserController.getNotifications(id)
-DELETE         /a/v1/testUser/:id                                   controllers.TestUserController.deleteTestUser(id)
-DELETE         /a/v1/testUsers                                      controllers.TestUserController.deleteAllTestUsers()
+GET            /a/v1/testUser/:id                           controllers.TestUserController.getNotifications(id)
+DELETE         /a/v1/testUser/:id                           controllers.TestUserController.deleteTestUser(id)
+DELETE         /a/v1/testUsers                              controllers.TestUserController.deleteAllTestUsers()
 
 # check app to support monitoring
 GET            /a/v1/util/checkApp                          controllers.Application.checkApp()
