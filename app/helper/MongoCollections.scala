@@ -33,6 +33,7 @@ object MongoCollections {
     col.indexesManager.ensure(Index(Seq("accountId" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("contacts._id" -> IndexType.Ascending)))
     col.indexesManager.ensure(Index(Seq("tokens._id" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(Seq("publicKeys._id" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
     col
   }
   lazy val verificationCollection: JSONCollection = {

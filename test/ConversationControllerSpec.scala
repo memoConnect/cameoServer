@@ -865,7 +865,7 @@ class ConversationControllerSpec extends StartedApp {
 
     var pubKeyId = ""
     "add public key to identity" in {
-      val path = basePath + "/identity/publicKey"
+      val path = basePath + "/publicKey"
 
       val json = Json.obj("name" -> "name1", "key" -> "moep", "keySize" -> 123)
 

@@ -49,6 +49,7 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/a/v1/purl/$id<[^/]+>"),
       (GET, "/a/v1/testUser/$id<[^/]+>"),
       (DELETE, "/a/v1/testUser/$id<[^/]+>"),
+      (DELETE, "/a/v1/testUsers"),
       (POST, "/a/v1/callStack")
     )
 

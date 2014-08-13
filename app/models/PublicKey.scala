@@ -34,7 +34,7 @@ object PublicKey extends SubModel[PublicKey, Identity] {
   implicit val mongoFormat: Format[PublicKey] = createMongoFormat(Json.reads[PublicKey], Json.writes[PublicKey])
 
   def createReads: Reads[PublicKey] = (
-    Reads.pure[MongoId](IdHelper.generatePublicKeyId) and
+    Reads.pure[MongoId](IdHelper.generateMongoId()) and
     (__ \ 'name).readNullable[String] and
     (__ \ 'key).read[String] and
     (__ \ 'keySize).read[Int] and
@@ -63,7 +63,7 @@ object PublicKey extends SubModel[PublicKey, Identity] {
   def docVersion = 3
 
   override def createDefault(): PublicKey = {
-    new PublicKey(IdHelper.generatePublicKeyId, None, "", 0, Seq(), new Date, docVersion)
+    new PublicKey(IdHelper.generateMongoId, None, "", 0, Seq(), new Date, docVersion)
   }
 }
 

@@ -138,6 +138,45 @@ class AccountControllerSpec extends StartedApp {
       (data \ "alternative").asOpt[String] must beSome(login + "_1")
     }
 
+    "allow to reserve loginName that contains a reserved name" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> (login + "moep"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "allow to reserve loginName that contains a reserved name" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> ("moep" + login))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "allow to reserve loginName that contains a reserved name" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> ("moep" + login + "moep"))
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
     "Refuse to reserve reserved loginName with different capitalization" in {
       val path = basePath + "/account/check"
       val loginUpper = login.toUpperCase

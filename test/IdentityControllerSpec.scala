@@ -75,10 +75,22 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
-    "Get external identity without token" in {
+    "Refuse to return external identity without token" in {
       val path = basePath + "/identity/" + externalContact2IdentityId
 
       val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(NOT_FOUND)
+    }
+
+    "Get external identity with token" in {
+      val path = basePath + "/identity/" + externalContact2IdentityId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -591,15 +603,19 @@ class IdentityControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "id").asOpt[String] must beSome
-      newIdentityId = (data \ "id").as[String]
-      (data \ "userKey").asOpt[String] must beSome
-      (data \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
-      (data \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
-      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
-      (data \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
-      (data \ "avatar").asOpt[String] must beSome
-      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      (data \ "identity").asOpt[JsObject] must beSome
+      (data \ "token" \ "token").asOpt[String] must beSome
+
+      var identity = (data \ "identity").as[JsObject]
+      (identity \ "id").asOpt[String] must beSome
+      newIdentityId = (identity \ "id").as[String]
+      (identity \ "userKey").asOpt[String] must beSome
+      (identity \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
+      (identity \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (identity \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (identity \ "avatar").asOpt[String] must beSome
+      (identity \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
     "account should now contain both identities" in {

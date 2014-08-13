@@ -2,7 +2,7 @@ package controllers
 
 import helper.DbAdminUtilities
 import helper.ResultHelper._
-import models.Account
+import models.{Signature, MongoId, Account}
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -29,8 +29,10 @@ object Application extends Controller {
       //          Logger.debug("SERVERSTATUS: " + res.toString)
       //          Ok(views.html.index(dbVersion))
       //      }
+      val foo: Map[String, Signature] = Map("fooo" -> Signature("id", "content"))
 
-      Future(Ok(views.html.index("2.6.3")))
+      Future(resOk(Json.toJson(foo)))
+//      Future(Ok(views.html.index("2.6.3")))
   }
 
   def dumpDb() = Action {
@@ -56,7 +58,7 @@ object Application extends Controller {
   def checkApp = Action.async {
     Account.col.find(Json.obj()).one[Account].map {
       case Some(wummel) => resOk()
-      case None         => resKo("database connection down!")
+      case None         => resServerError("database connection down!")
     }
   }
 }
