@@ -45,6 +45,6 @@ object ServicesController extends ExtendedController {
         case None => Play.configuration.getString("language.default").getOrElse("enUS")
         case Some(lang) => lang.code
       }
-      resOk(Json.obj("language" -> language))
+      resOk(Json.obj("languageCode" -> language))
   }
 }

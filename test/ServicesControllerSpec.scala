@@ -99,7 +99,7 @@ class ServicesControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
-      (data \ "language").asOpt[String] must beSome
+      (data \ "languageCode").asOpt[String] must beSome
     }
   }
 
