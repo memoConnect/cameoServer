@@ -1,6 +1,12 @@
 package helper
 
+import java.security.MessageDigest
+
 import models.MongoId
+import org.apache.commons.codec.binary.Base64
+import org.mindrot.jbcrypt.BCrypt
+import play.api.Logger
+import play.api.libs.Crypto
 
 /**
  * User: Björn Reimer
@@ -98,8 +104,13 @@ object IdHelper {
     new MongoId(randomString(defaultLength))
   }
 
-  def generatePublicKeyId: MongoId = {
-    new MongoId(randomString(defaultLength))
+  def generatePublicKeyId(publicKey: String): MongoId = {
+    // generate sha256 hash of public key
+    val md: MessageDigest = MessageDigest.getInstance("SHA-256")
+    md.update(publicKey.getBytes("UTF-8"))
+    val id = new String(Base64.encodeBase64URLSafe(md.digest()))
+    Logger.debug(id)
+    new MongoId(id)
   }
 
 }

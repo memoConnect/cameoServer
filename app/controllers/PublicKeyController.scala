@@ -2,6 +2,7 @@ package controllers
 
 import actors.{ NewAePassphrases, UpdatedIdentity }
 import helper.CmActions._
+import helper.IdHelper
 import helper.ResultHelper._
 import models._
 import play.api.Logger
@@ -30,7 +31,10 @@ object PublicKeyController extends ExtendedController {
     request =>
       validateFuture(request.body, PublicKey.createReads) {
         publicKey =>
-          request.identity.addPublicKey(publicKey).map {
+
+          val withId = publicKey.copy(id = IdHelper.generatePublicKeyId(publicKey.key))
+
+          request.identity.addPublicKey(withId).map {
             case false => resServerError("unable to add")
             case true =>
               // send event to all people in address book
