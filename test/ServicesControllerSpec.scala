@@ -86,6 +86,21 @@ class ServicesControllerSpec extends StartedApp {
           resStatus aka "result status KO" must beEqualTo("KO")
       }
     }
+
+    "Return browser info" in {
+      val path = basePath + "/services/getBrowserInfo"
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "language").asOpt[String] must beSome
+    }
   }
 
 }
