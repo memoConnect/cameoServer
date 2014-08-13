@@ -20,16 +20,16 @@ class PublicKeyControllerSpec extends StartedApp {
 
   val pubKey = "asdfasdfasdf"
   val pubKeyName = "moep"
-  var pubKeyId = ""
+  val pubKeyId = "Qhx213Vjr6GRSEawEL0WTzlb00whAuXpngy5zxc8HYc"
   val pubKeySize = 15
   val newPubKeyName = "poem"
 
   val pubKey2 = "asdfasdfasdf2"
   val pubKeyName2 = "moep2"
-  var pubKeyId2 = ""
+  val pubKeyId2 = "lwVCPOvBydpuXjTm2AvRxi2OWMG56UzPpwzkm5MSXFU"
   val pubKeySize2 = 2048
 
-  "Crypto Controller should" in {
+  "Public Key Controller should" in {
 
     "add public key to identity" in {
       val path = basePath + "/publicKey"
@@ -46,12 +46,39 @@ class PublicKeyControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "id").asOpt[String] must beSome
-      pubKeyId = (data \ "id").as[String]
+      (data \ "id").asOpt[String] must beSome(pubKeyId)
       (data \ "name").asOpt[String] must beSome(pubKeyName)
       (data \ "key").asOpt[String] must beSome(pubKey)
       (data \ "keySize").asOpt[Int] must beSome(pubKeySize)
       (data \ "signatures").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "refuse to add the same key twice" in {
+      val path = basePath + "/publicKey"
+
+      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey, "keySize" -> pubKeySize)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "refuse to add the same key to another identity" in {
+      val path = basePath + "/publicKey"
+
+      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey, "keySize" -> pubKeySize)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     "add another public key to identity" in {
@@ -69,8 +96,7 @@ class PublicKeyControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "id").asOpt[String] must beSome
-      pubKeyId2 = (data \ "id").as[String]
+      (data \ "id").asOpt[String] must beSome(pubKeyId2)
       (data \ "name").asOpt[String] must beSome(pubKeyName2)
       (data \ "key").asOpt[String] must beSome(pubKey2)
       (data \ "keySize").asOpt[Int] must beSome(pubKeySize2)

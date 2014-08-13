@@ -1,6 +1,7 @@
 package traits
 
 import models.MongoId
+import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
@@ -23,7 +24,12 @@ trait SubModel[A, Parent] extends Model[A] {
   val col = parentModel.col
 
   override def find(id: MongoId): Future[Option[A]] = {
-    find(Json.obj("_id" -> id))
+    val query = Json.obj(elementName + "." + idName -> id)
+    val projection = Json.obj(elementName -> Json.obj("$elemMatch" -> Json.obj(idName -> id)))
+    parentModel.col.find(query, projection).one[JsValue].map {
+      case None     => None
+      case Some(js) => Some((js \ elementName)(0).as[A])
+    }
   }
 
   override def find(subQuery: JsObject): Future[Option[A]] = {

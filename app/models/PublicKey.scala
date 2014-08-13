@@ -34,7 +34,7 @@ object PublicKey extends SubModel[PublicKey, Identity] {
   implicit val mongoFormat: Format[PublicKey] = createMongoFormat(Json.reads[PublicKey], Json.writes[PublicKey])
 
   def createReads: Reads[PublicKey] = (
-    Reads.pure[MongoId](IdHelper.generateMongoId) and
+    Reads.pure[MongoId](IdHelper.generateMongoId()) and
     (__ \ 'name).readNullable[String] and
     (__ \ 'key).read[String] and
     (__ \ 'keySize).read[Int] and

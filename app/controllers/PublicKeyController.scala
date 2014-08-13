@@ -31,20 +31,23 @@ object PublicKeyController extends ExtendedController {
     request =>
       validateFuture(request.body, PublicKey.createReads) {
         publicKey =>
-
           val withId = publicKey.copy(id = IdHelper.generatePublicKeyId(publicKey.key))
-
-          request.identity.addPublicKey(withId).map {
-            case false => resServerError("unable to add")
-            case true =>
-              // send event to all people in address book
-              request.identity.contacts.foreach {
-                contact =>
-                  actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(publicKey.toJson)))
+          // check if this id already exists
+          PublicKey.find(withId.id).flatMap {
+            case Some(p) => Future(resBadRequest("key already uploaded"))
+            case None =>
+              request.identity.addPublicKey(withId).map {
+                case false => resServerError("unable to add")
+                case true =>
+                  // send event to all people in address book
+                  request.identity.contacts.foreach {
+                    contact =>
+                      actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                  }
+                  // send event to ourselves
+                  actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                  resOk(withId.toJson)
               }
-              // send event to ourselves
-              actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(publicKey.toJson)))
-              resOk(publicKey.toJson)
           }
       }
   }
@@ -65,22 +68,22 @@ object PublicKeyController extends ExtendedController {
   def deletePublicKey(id: String) = AuthAction().async {
     request =>
       isOwnKey(request.identity, id) {
-          request.identity.deletePublicKey(new MongoId(id)).map {
-            case false => resServerError("unable to delete")
-            case true =>
-              actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
-              resOk("deleted")
-          }
+        request.identity.deletePublicKey(new MongoId(id)).map {
+          case false => resServerError("unable to delete")
+          case true =>
+            actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
+            resOk("deleted")
+        }
       }
   }
 
   def addSignature(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-     validateFuture[Signature](request.body, Signature.format) {
+      validateFuture[Signature](request.body, Signature.format) {
         signature =>
           // check who the public key belongs to
           request.identity.publicKeys.exists(_.id.id.equals(id)) match {
-            case true  =>
+            case true =>
               // add to own public key
               request.identity.addSignatureToPublicKey(new MongoId(id), signature).map {
                 case false => resBadRequest("could not add")
@@ -89,7 +92,7 @@ object PublicKeyController extends ExtendedController {
             case false =>
               request.identity.addPublicKeySignature(id, signature).map {
                 case false => resBadRequest("could not add")
-                case true  => resOk(signature.toJson)                
+                case true  => resOk(signature.toJson)
               }
           }
       }
@@ -99,7 +102,7 @@ object PublicKeyController extends ExtendedController {
     request =>
       // check who the public key belongs to
       request.identity.publicKeys.exists(_.id.id.equals(id)) match {
-        case true  =>
+        case true =>
           // add to own public key
           request.identity.deleteSignatureFromPublicKey(new MongoId(id), keyId).map {
             case false => resServerError("could not delete")
