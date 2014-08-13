@@ -2,6 +2,7 @@ package controllers
 
 import helper.CheckHelper
 import helper.ResultHelper._
+import play.api.Play
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
 import traits.ExtendedController
@@ -41,8 +42,8 @@ object ServicesController extends ExtendedController {
   def getBrowserInfo() = Action {
     request =>
       val language = request.acceptLanguages.headOption match{
-        case None => "en"
-        case Some(lang) => lang.language
+        case None => Play.configuration.getString("language.default").getOrElse("enUS")
+        case Some(lang) => lang.code
       }
       resOk(Json.obj("language" -> language))
   }
