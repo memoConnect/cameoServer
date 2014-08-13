@@ -6,6 +6,7 @@ import play.api.Play
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
 import traits.ExtendedController
+import play.api.Play.current
 
 /**
  * User: Michael Merz
