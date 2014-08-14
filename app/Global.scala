@@ -34,6 +34,18 @@ object AccessControllFilter extends EssentialFilter {
   }
 }
 
+object ApiStatsFilter extends EssentialFilter{
+
+  def apply(action: EssentialAction): EssentialAction = EssentialAction{
+    request =>
+      request.path.startsWith("/a/v1/") match{
+        case true => Logger.debug("API call")
+        case false => Logger.debug("Not API")
+      }
+      action.apply(request)
+  }
+}
+
 object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter) {
 
   override def onStart(app: play.api.Application) = {

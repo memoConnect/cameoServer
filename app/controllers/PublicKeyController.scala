@@ -32,21 +32,26 @@ object PublicKeyController extends ExtendedController {
       validateFuture(request.body, PublicKey.createReads) {
         publicKey =>
           val withId = publicKey.copy(id = IdHelper.generatePublicKeyId(publicKey.key))
-          // check if this id already exists
-          PublicKey.find(withId.id).flatMap {
-            case Some(p) => Future(resBadRequest("key already uploaded"))
+          // check if this key has already been uploaded by this user
+          request.identity.publicKeys.find(_.id.equals(withId.id)) match {
+            case Some(existingKey) => Future(resOk(existingKey.toJson))
             case None =>
-              request.identity.addPublicKey(withId).map {
-                case false => resServerError("unable to add")
-                case true =>
-                  // send event to all people in address book
-                  request.identity.contacts.foreach {
-                    contact =>
-                      actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+              // check if this id already exists
+              PublicKey.find(withId.id).flatMap {
+                case Some(p) => Future(resBadRequest("key uploaded by someone else"))
+                case None =>
+                  request.identity.addPublicKey(withId).map {
+                    case false => resServerError("unable to add")
+                    case true =>
+                      // send event to all people in address book
+                      request.identity.contacts.foreach {
+                        contact =>
+                          actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                      }
+                      // send event to ourselves
+                      actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                      resOk(withId.toJson)
                   }
-                  // send event to ourselves
-                  actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
-                  resOk(withId.toJson)
               }
           }
       }

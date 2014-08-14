@@ -53,18 +53,26 @@ class PublicKeyControllerSpec extends StartedApp {
       (data \ "signatures").asOpt[Seq[JsObject]] must beSome
     }
 
-    "refuse to add the same key twice" in {
+    "add the same key a second time" in {
       val path = basePath + "/publicKey"
 
-      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey, "keySize" -> pubKeySize)
+      val json = Json.obj("name" -> (pubKeyName + "foo"), "key" -> pubKey, "keySize" -> pubKeySize)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
-      if (status(res) != BAD_REQUEST) {
+      if (status(res) != OK) {
         Logger.error("Response: " + contentAsString(res))
       }
-      status(res) must equalTo(BAD_REQUEST)
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(pubKeyId)
+      (data \ "name").asOpt[String] must beSome(pubKeyName)
+      (data \ "key").asOpt[String] must beSome(pubKey)
+      (data \ "keySize").asOpt[Int] must beSome(pubKeySize)
+      (data \ "signatures").asOpt[Seq[JsObject]] must beSome
     }
 
     "refuse to add the same key to another identity" in {
