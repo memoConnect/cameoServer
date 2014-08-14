@@ -52,6 +52,7 @@ object StatsFilter extends EssentialFilter{
         case path if path.startsWith("/m") => Statsd.increment("custom.request.m")
         case path if path.startsWith("/c") => Statsd.increment("custom.request.cockpit")
         case path if path.startsWith("/p") => Statsd.increment("custom.request.purl")
+        case _ =>
       }
 
       action.apply(request)
