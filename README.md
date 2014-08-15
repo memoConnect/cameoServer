@@ -38,7 +38,7 @@ Deploy on server
 * press "Ctrl-D" to keep the server running in the background
 
 
-LICENSE
+Licence
 ----------------
 
 cameoNet source files are made available under the terms of the GNU Affero General Public License (AGPL).

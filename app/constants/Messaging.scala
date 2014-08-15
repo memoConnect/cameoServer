@@ -19,7 +19,9 @@ object Messaging {
 
   val MESSAGE_MAX_TRY_COUNT = 0
 
-  val MESSAGE_TEXT_REPLACE_ENCRYPTED = "-= encrypted Message =-"
+  val MESSAGE_SMS_REPLACE_ENCRYPTED = "I have send you an encrypted message via cameoNet.de. Click here to read the message and answer: "
+  val MESSAGE_MAIL_REPLACE_ENCRYPTED_DE = "Ich habe Ihnen eine verschlüsselte Nachricht über cameoNet.de gesendet.\nBitte klicken Sie auf folgenden Link um den gesamten Talk zu lesen und zu antworten: "
+  val MESSAGE_MAIL_REPLACE_ENCRYPTED_EN = "I have send you an encrypted message via cameoNet.de.\nPlease click the following link to read it and answer: "
 
 }
 
