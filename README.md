@@ -7,19 +7,19 @@ The [web client](https://github.com/memoConnect/cameoJSClient) can be optionally
 
 
 API Documentation
-================
+----------------
 
 The documentation of the API can be found [here](http://docs.cameo.apiary.io/) 
 
 
 Dependencies
-================
+----------------
 
 * Java 7
 
 
 Run locally for testing and development
-================
+----------------
 
 * run './sbt run' in the project folder
 * a mongoDB instance with some test data will be started in memory
@@ -29,7 +29,7 @@ Run locally for testing and development
 
 
 Deploy on server
-================
+----------------
 
 * A mongoDB v2.6.3 instance is required
 * Adjust configuration in "conf/application_prod.conf"
@@ -39,6 +39,6 @@ Deploy on server
 
 
 LICENSE
-================
+----------------
 
 cameoNet source files are made available under the terms of the GNU Affero General Public License (AGPL).
