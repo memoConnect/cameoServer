@@ -34,7 +34,32 @@ object AccessControllFilter extends EssentialFilter {
   }
 }
 
-object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter) {
+object StatsFilter extends EssentialFilter{
+
+  def apply(action: EssentialAction): EssentialAction = EssentialAction{
+    request =>
+
+      request.path match {
+        case path if path.startsWith("/a/v1/") =>
+          Statsd.increment("custom.request.api.combined")
+          request.method match {
+            case method if method.equalsIgnoreCase("GET") => Statsd.increment("custom.request.api.GET")
+            case method if method.equalsIgnoreCase("POST") => Statsd.increment("custom.request.api.POST")
+            case method if method.equalsIgnoreCase("PUT") => Statsd.increment("custom.request.api.PUT")
+            case method if method.equalsIgnoreCase("DELETE") => Statsd.increment("custom.request.api.DELETE")
+            case method if method.equalsIgnoreCase("OPTIONS") => Statsd.increment("custom.request.api.OPTIONS")
+          }
+        case path if path.startsWith("/m") => Statsd.increment("custom.request.m")
+        case path if path.startsWith("/c") => Statsd.increment("custom.request.cockpit")
+        case path if path.startsWith("/p") => Statsd.increment("custom.request.purl")
+        case _ =>
+      }
+
+      action.apply(request)
+  }
+}
+
+object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter) {
 
   override def onStart(app: play.api.Application) = {
     // make sure that we have a connection to mongodb

@@ -90,46 +90,41 @@ class NotificationActor extends Actor {
   }
 
   def generateMail(message: models.Message, fromIdentity: Identity, toIdentity: Identity, subject: String, email: String): Mail = {
+
+    // create purl
+    val purl = Purl.create(message.id, toIdentity.id)
+    Purl.col.insert(purl)
+    val url = Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
+
     // get identity of sender
     val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
     val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
     val mailSubject = "[cameo.io] - " + subject
     val to: String = email
+
     val body: String = message.plain match {
-      case Some(PlainMessagePart(Some(text), _)) => text
-      case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
+      case Some(PlainMessagePart(Some(text), _)) =>
+        text + "\n\n---\nRead the entire conversation and answer on cameoNet.de: " + url
+      case _                                     =>
+        MESSAGE_MAIL_REPLACE_ENCRYPTED_EN + url + "\n\n" + MESSAGE_MAIL_REPLACE_ENCRYPTED_DE + url
     }
+    Logger.debug("body: " + body)
 
-    // create purl
-    val purl = Purl.create(message.id, toIdentity.id)
-    Purl.col.insert(purl)
-
-    // add footer to mail
-    val footer = "\n\n---\nRead entire conversation on cameonet.de: " + Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
-
-    // cut message, so it will fit in the sms with the footer.
-    val bodyWithFooter = body + footer
-
-    new Mail(from, to, bodyWithFooter, mailSubject)
+    new Mail(from, to, body, mailSubject)
   }
 
   def generateSms(message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String): Sms = {
-    val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
-    val to: String = phoneNumber
-    val body: String = message.plain match {
-      case Some(PlainMessagePart(Some(text), _)) => text
-      case _                                     => MESSAGE_TEXT_REPLACE_ENCRYPTED
-    }
 
     // create purl
     val purl = Purl.create(message.id, toIdentity.id)
     Purl.col.insert(purl)
+    val url = Play.configuration.getString("shortUrl.address").get + "/p/" + purl.id
 
-    // add footer to sms
-    val footer = "... more: " + Play.configuration.getString("shortUrl.address").getOrElse("none") + "/p/" + purl.id
+    val from: String = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
+    val to: String = phoneNumber
 
-    // cut message, so it will fit in the sms with the footer.
-    val bodyWithFooter: String = {
+    def shortenBody(body: String): String = {
+      val footer = "... read more: " + url
       if (footer.length + body.length > 160) {
         body.substring(0, 160 - footer.length) + footer
       } else {
@@ -137,19 +132,26 @@ class NotificationActor extends Actor {
       }
     }
 
+    val body: String = message.plain match {
+      case Some(PlainMessagePart(Some(text), _)) => shortenBody(text + " ")
+      case _                                     => MESSAGE_SMS_REPLACE_ENCRYPTED + url
+    }
+
+    Logger.debug("body: " + body)
+
     // check if we have a test user and save message
     val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
     toIdentity.cameoId.startsWith(testUserPrefix) match {
       case false =>
-      case true  => TestUserNotification.createAndInsert(toIdentity.id, "sms", bodyWithFooter, false)
+      case true  => TestUserNotification.createAndInsert(toIdentity.id, "sms", body, false)
     }
 
     // check if this message comes from a test user and save it
     fromIdentity.cameoId.startsWith(testUserPrefix) match {
       case false =>
-      case true  => TestUserNotification.createAndInsert(fromIdentity.id, "sms", bodyWithFooter, true)
+      case true  => TestUserNotification.createAndInsert(fromIdentity.id, "sms", body, true)
     }
 
-    new Sms(from, to, bodyWithFooter)
+    new Sms(from, to, body)
   }
 }

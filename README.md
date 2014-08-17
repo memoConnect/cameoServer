@@ -1,70 +1,44 @@
 cameoServer
 ================
 
-cameo - The secure messenger hub with social elements
+The backend for the [cameoNet](https://cameonet.de) messenger. It is developed in Scala using the [Play Framework](https://www.playframework.com/).
 
-cameo aims to be the new open multimedia messenger and social platform hub, that connects to the existing platforms - like jabber, SMS, email, Skype, faceboook, … -  and it is open soucre.
+The [web client](https://github.com/memoConnect/cameoJSClient) can be optionally installed to /public. See the client repository for installation instructions.
 
-cameo integrates all your important messenger and social services into one new universe, that is still connected to the existing outside communication islands.
 
-cameo is:
+API Documentation
+----------------
 
-* end-to-end encrypted (RAS4096, AES256)
-* easy to use
-* enables users to reach all of their friends, does
+The documentation of the API can be found [here](http://docs.cameo.apiary.io/) 
 
-Furthermore it is a European/German start up…
 
-Join this new success story …
+Dependencies
+----------------
 
-cameo Client
-================
+* Java 7
 
-[here](https://github.com/memoConnect/cameoJSClient) you can find cameo web client
 
-Technology Stack
-================
+Run locally for testing and development
+----------------
 
-* Playframework2
-* Scala
-* Akka
-* mongodb
-* OpenStack
-* AngularJS
-    * Phonegap
-    * Bootstrap
+* run './sbt run' in the project folder
+* a mongoDB instance with some test data will be started in memory
+* all dependencies will be downloaded and the instance will listen on port 9000
 
-API
-===
+* the tests can be run with "./sbt test"
 
-cameo Server offers a API. API docs can be found [here](http://docs.cameo.apiary.io/)
 
-Getting started
-================
+Deploy on server
+----------------
 
-1. git clone git@github.com:memoConnect/cameoServer.git
-1. cd cameoServer
-1. ./cleanRun.sh
-1. open in browser http://localhost:9000
+* A mongoDB v2.6.3 instance is required
+* Adjust configuration in "conf/application_prod.conf"
+* run './sbt "start -Dconfig.file=conf/application_prod.conf"' in the project folder
+* all dependencies will be downloaded and the instance will listen on port 9000
+* press "Ctrl-D" to keep the server running in the background
 
-Using Typesafe Console (dev only)
-=================================
 
-1. git clone git@github.com:memoConnect/cameoServer.git (or pull if you have already a clone on your disk)
-1. cd cameoServer
-1. ./cleanRun.sh console
+Licence
+----------------
 
-App: <http://localhost:9000/>
-
-Console: <http://localhost:9900/>
-
-Test to get some actors working, using testdata in dev mode:
-
-    curl -X POST -H "Content-Type: application/json" -H "Authorization:viRlhZZ1VDAhqcgrljvfzEXCwKj0B2dyAKw5suFZ" -d '{"messageBody": "text"}' http://localhost:9000/api/v1/conversation/OM9QeJ4RfJcdscyo52g4/message
-
-More doku about it here at [Typesafe](http://typesafe.com/platform/runtime/console)
-
-LICENSE
-================
-
-cameo source files are made available under the terms of the GNU Affero General Public License (AGPL). See individual files for details.
+cameoNet source files are made available under the terms of the GNU Affero General Public License (AGPL).

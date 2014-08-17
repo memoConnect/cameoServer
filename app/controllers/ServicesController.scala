@@ -2,9 +2,11 @@ package controllers
 
 import helper.CheckHelper
 import helper.ResultHelper._
+import play.api.Play
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
 import traits.ExtendedController
+import play.api.Play.current
 
 /**
  * User: Michael Merz
@@ -36,5 +38,14 @@ object ServicesController extends ExtendedController {
         }
         case None => resBadRequest("missing emailAddress")
       }
+  }
+
+  def getBrowserInfo() = Action {
+    request =>
+      val language = request.acceptLanguages.headOption match{
+        case None => Play.configuration.getString("language.default").getOrElse("enUS")
+        case Some(lang) => lang.code
+      }
+      resOk(Json.obj("languageCode" -> language))
   }
 }
