@@ -46,7 +46,7 @@ object EventController extends ExtendedController {
 
   def getSubscription(id: String) = AuthAction(allowExternal = true).async {
     request =>
-      EventSubscription.findAndClear(MongoId(id)).map {
+      EventSubscription.findAndClear(MongoId(id), request.identity.id).map {
         case None => resNotFound("subscription id")
         case Some(subscription) =>
           resOk(subscription.toJson)

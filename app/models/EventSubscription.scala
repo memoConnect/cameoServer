@@ -59,14 +59,15 @@ object EventSubscription extends Model[EventSubscription] {
   }
 
   // get all events for subscriptions and clear them
-  def findAndClear(id: MongoId): Future[Option[EventSubscription]] = {
-    val query = BSONDocument("_id" -> toBSON(Json.toJson(id)).get)
+  def findAndClear(id: MongoId, identityId: MongoId): Future[Option[EventSubscription]] = {
+    val query = Json.obj("_id" -> id, "identityId" -> identityId)
+    val bsonQuery = BSONDocument("_id" -> toBSON(Json.toJson(id)).get, "identityId" -> toBSON(Json.toJson(identityId)).get)
     val set = Json.obj("$set" -> Json.obj("events" -> JsArray(), "lastAccessed" -> Json.obj("$date" -> new Date)))
     val setBson = JsonHelper.toBson(set).get
 
     val command = FindAndModify(
       col.name,
-      query,
+      bsonQuery,
       Update(setBson, fetchNewObject = false))
 
     MongoCollections.mongoDB.command(command).map {
