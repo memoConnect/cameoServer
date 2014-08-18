@@ -23,8 +23,6 @@ class NotificationActor extends Actor {
 
     case Notification(message, conversationId, recipients, subject) =>
 
-      //      Logger.info("SendMessageActor: Processing message with id " + message.id)
-
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
         case None =>
@@ -136,8 +134,6 @@ class NotificationActor extends Actor {
       case Some(PlainMessagePart(Some(text), _)) => shortenBody(text + " ")
       case _                                     => MESSAGE_SMS_REPLACE_ENCRYPTED + url
     }
-
-    Logger.debug("body: " + body)
 
     // check if we have a test user and save message
     val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")

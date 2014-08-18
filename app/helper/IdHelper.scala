@@ -20,13 +20,11 @@ object IdHelper {
 
   def randomString(n: Int): String = {
     def alphabet: String = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    //TODO check whether random.setSeed is needed
     Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
   }
 
   def randomUpperString(n: Int): String = {
     def alphabet: String = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    //TODO check whether random.setSeed is needed
     Stream.continually(random.nextInt(alphabet.size)).map(alphabet).take(n).mkString
   }
 
