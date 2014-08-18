@@ -107,24 +107,15 @@ class EventControllerSpec extends StartedApp {
       (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
     }
 
-    "Only allow limited amount per user" in {
-      val max = Play.configuration.getInt("events.subscription.user.limit").get + 1
-      val path = basePath + "/eventSubscription"
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser2.token)).withJsonBody(Json.obj())
+    "Refuse to get events from other user"in {
+      val path = basePath + "/eventSubscription/" + subscriptionId
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser2.token))
+      val res = route(req).get
 
-      (1 to max).seq.foreach { i =>
-        val res = route(req).get
-        i match {
-          case j if j >= max => status(res) must equalTo(BAD_REQUEST)
-          case _ =>
-            if (status(res) != OK) {
-              Logger.error("Response: " + contentAsString(res))
-            }
-            status(res) must equalTo(OK)
-        }
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
       }
-
-      1 === 1
+      status(res) must equalTo(NOT_FOUND)
     }
 
     "Get another event subscription" in {
@@ -145,10 +136,32 @@ class EventControllerSpec extends StartedApp {
       (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
     }
 
-    "Get event subscription of user 2" in {
+    "Only allow limited amount per user" in {
+      val max = Play.configuration.getInt("events.subscription.user.limit").get + 1
+      val path = basePath + "/eventSubscription"
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(Json.obj())
+
+      (3 to max).seq.foreach { i =>
+        val res = route(req).get
+        i match {
+          case j if j >= max => status(res) must equalTo(BAD_REQUEST)
+          case _ =>
+            if (status(res) != OK) {
+              Logger.error("Response: " + contentAsString(res))
+            }
+            status(res) must equalTo(OK)
+        }
+      }
+
+      1 === 1
+    }
+
+
+
+    "Get event subscription for user 2" in {
       val path = basePath + "/eventSubscription"
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser3.token)).withJsonBody(Json.obj())
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser2.token)).withJsonBody(Json.obj())
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -163,7 +176,7 @@ class EventControllerSpec extends StartedApp {
       (data \ "events").asOpt[Seq[JsObject]] must beSome(haveLength[Seq[JsObject]](0))
     }
 
-    "Get event subscription of user 3" in {
+    "Get event subscription for user 3" in {
       val path = basePath + "/eventSubscription"
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser3.token)).withJsonBody(Json.obj())
@@ -188,7 +201,7 @@ class EventControllerSpec extends StartedApp {
 
       val json = Json.obj("identityId" -> testUser1.identityId, "message" -> friendRequestMessage)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser3.token)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser2.token)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -219,7 +232,7 @@ class EventControllerSpec extends StartedApp {
     "Accept friend request" in {
       val path = basePath + "/friendRequest/answer"
 
-      val json = Json.obj("answerType" -> "accept", "identityId" -> testUser3.identityId)
+      val json = Json.obj("answerType" -> "accept", "identityId" -> testUser2.identityId)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
       val res = route(req).get
@@ -236,7 +249,7 @@ class EventControllerSpec extends StartedApp {
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
-        (js \ "data" \ "from").asOpt[String] must beSome(testUser3.identityId)
+        (js \ "data" \ "from").asOpt[String] must beSome(testUser2.identityId)
         (js \ "data" \ "contact" \ "id").asOpt[String] must beSome
         (js \ "data" \ "contact" \ "identity").asOpt[JsObject] must beSome
       }
@@ -246,11 +259,11 @@ class EventControllerSpec extends StartedApp {
     }
 
     "friendRequest:accepted event should appear in subscription of second user" in {
-      val events1 = waitForEvents(testUser3.token, subscription2Id, 1)
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
-        (js \ "data" \ "from").asOpt[String] must beSome(testUser3.identityId)
+        (js \ "data" \ "from").asOpt[String] must beSome(testUser2.identityId)
         (js \ "data" \ "contact" \ "id").asOpt[String] must beSome
         (js \ "data" \ "contact" \ "identity").asOpt[JsObject] must beSome
       }
@@ -264,7 +277,7 @@ class EventControllerSpec extends StartedApp {
     "Create conversation" in {
       // create conversation
       val path = basePath + "/conversation"
-      val json = Json.obj("recipients" -> Seq(testUser3.identityId))
+      val json = Json.obj("recipients" -> Seq(testUser2.identityId))
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser1.token))
       val res = route(req).get
       if (status(res) != OK) {
@@ -298,7 +311,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "conversation:new events should appear in subscription of second user" in {
-      val events1 = waitForEvents(testUser3.token, subscription2Id, 1)
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
@@ -348,7 +361,7 @@ class EventControllerSpec extends StartedApp {
 
     "new-message events should appear in subscription of second user" in {
 
-      val events1 = waitForEvents(testUser3.token, subscription2Id, numberOfMessages)
+      val events1 = waitForEvents(testUser2.token, subscription2Id, numberOfMessages)
 
       def eventCheck(js: JsObject) = (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
 
@@ -410,7 +423,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "clear new-message events in subscription of second user" in {
-      waitForEvents(testUser3.token, subscription2Id, 1)
+      waitForEvents(testUser2.token, subscription2Id, 1)
       1===1
     }
 
@@ -443,7 +456,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "new-message events should appear in subscription of second user" in {
-      val events1 = waitForEvents(testUser3.token, subscription2Id, 1)
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
@@ -493,7 +506,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "identity:update event should appear in subscription of second user" in {
-      val events1 = waitForEvents(testUser3.token, subscription2Id, 1)
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = {
         (js \ "data" \ "id").asOpt[String] must beSome(testUser1.identityId)
@@ -587,13 +600,9 @@ class EventControllerSpec extends StartedApp {
 
     var allowedName = "authenticationRequest:key-response"
     var forbiddenName = "identity:update"
-    "clear event subsriptions of user 3" in {
-      waitForEvents(testUser3.token, subscription3Id, 8)
-      1 === 1
-    }
 
-    "send allowed remote broadcast event from first to third user" in {
-      val path = basePath + "/event/broadcast/identity/" + testUser3.identityId
+    "send allowed remote broadcast event from first to second user" in {
+      val path = basePath + "/event/broadcast/identity/" + testUser2.identityId
 
       val json = Json.obj("name" -> allowedName, "data" -> eventData)
 
@@ -606,8 +615,8 @@ class EventControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "broadcast event should appear in subscription of third user" in {
-      val events1 = waitForEvents(testUser3.token, subscription3Id, 1)
+    "broadcast event should appear in subscription of second user" in {
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
 
       def eventCheck(js: JsObject) = (js \ "data").asOpt[JsObject] must beSome(eventData)
 
@@ -615,7 +624,7 @@ class EventControllerSpec extends StartedApp {
     }
 
     "refuse to send forbidden remote broadcast event from first to third user" in {
-      val path = basePath + "/event/broadcast/identity/" + testUser3.identityId
+      val path = basePath + "/event/broadcast/identity/" + testUser2.identityId
 
       val json = Json.obj("name" -> forbiddenName, "data" -> eventData)
 
@@ -628,18 +637,13 @@ class EventControllerSpec extends StartedApp {
       status(res) must equalTo(BAD_REQUEST)
     }
 
-    "Events of third user should be empty" in {
-      waitForEvents(testUser3.token, subscription3Id, 0)
+    "Events of second user should be empty" in {
+      waitForEvents(testUser2.token, subscription2Id, 0)
       1===1
     }
 
-    "clear event subsriptions of user 2" in {
-      waitForEvents(testUser2.token, subscription2Id, 1)
-      1 === 1
-    }
-
     "refuse to send remote broadcast to identity that is not in contact book" in {
-      val path = basePath + "/event/broadcast/identity/" + testUser2.identityId
+      val path = basePath + "/event/broadcast/identity/" + testUser3.identityId
 
       val json = Json.obj("name" -> allowedName, "data" -> eventData)
 
@@ -652,8 +656,8 @@ class EventControllerSpec extends StartedApp {
       status(res) must equalTo(NOT_FOUND)
     }
 
-    "Events of second user should be empty" in {
-      waitForEvents(testUser2.token, subscription2Id, 0)
+    "Events of third user should be empty" in {
+      waitForEvents(testUser3.token, subscription3Id, 0)
       1===1
     }
 
@@ -684,7 +688,6 @@ class EventControllerSpec extends StartedApp {
 
       checkEvent(events1, eventNameFinder("identity:new"), eventCheck)
       checkEvent(events2, eventNameFinder("identity:new"), eventCheck)
-
     }
   }
 }
