@@ -23,8 +23,6 @@ class NotificationActor extends Actor {
 
     case Notification(message, conversationId, recipients, subject) =>
 
-      //      Logger.info("SendMessageActor: Processing message with id " + message.id)
-
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
         case None =>
@@ -98,7 +96,7 @@ class NotificationActor extends Actor {
 
     // get identity of sender
     val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
-    val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
+    val fromMail = Play.configuration.getString("mail.from").get
     val mailSubject = "[cameo.io] - " + subject
     val to: String = email
 
@@ -110,7 +108,7 @@ class NotificationActor extends Actor {
     }
     Logger.debug("body: " + body)
 
-    new Mail(from, to, body, mailSubject)
+    new Mail(fromName, fromMail, to, body, mailSubject)
   }
 
   def generateSms(message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String): Sms = {
@@ -136,8 +134,6 @@ class NotificationActor extends Actor {
       case Some(PlainMessagePart(Some(text), _)) => shortenBody(text + " ")
       case _                                     => MESSAGE_SMS_REPLACE_ENCRYPTED + url
     }
-
-    Logger.debug("body: " + body)
 
     // check if we have a test user and save message
     val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")

@@ -1,5 +1,7 @@
 package actors
 
+import javax.mail.internet.MimeUtility
+
 import akka.actor.Actor
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail.model._
@@ -18,7 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Date: 6/12/13
  * Time: 8:01 PM
  */
-case class Mail(from: String, to: String, body: String, subject: String)
+case class Mail(fromName: String, fromMail: String, to: String, body: String, subject: String)
 object Mail { implicit val format = Json.format[Mail] }
 
 
@@ -27,7 +29,7 @@ class SendMailActor extends Actor {
   def receive = {
 
     case mail: Mail =>
-      Logger.debug("SendMailActor: Sending email to " + mail.to + " from " + mail.from + " with subject \'" + mail.subject + "\'")
+      Logger.debug("SendMailActor: Sending email to " + mail.to + " from " + mail.fromName + " with subject \'" + mail.subject + "\'")
 
       // check if there are there are credentials in the config
       val accessKey = Play.configuration.getString("aws.accessKey")
@@ -43,7 +45,8 @@ class SendMailActor extends Actor {
           val sendEmailRequest = new SendEmailRequest()
           val dest = new Destination().withToAddresses(mail.to)
           sendEmailRequest.setDestination(dest)
-          sendEmailRequest.setSource(mail.from)
+          val from: String = MimeUtility.encodeText(mail.fromName) + "<" + mail.fromMail + ">"
+          sendEmailRequest.setSource(from)
           val awsBody = new Body().withText(new Content().withData(mail.body))
           val awsMessage = new model.Message().withBody(awsBody).withSubject(new Content().withData(mail.subject))
           sendEmailRequest.setMessage(awsMessage)

@@ -35,7 +35,7 @@ class VerifyActor extends Actor {
       val subject = "[Cameo] Mail verification"
 
       lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
-      sendMailActor ! Mail(from, email, body, subject)
+      sendMailActor ! Mail("Verification", from, email, body, subject)
     }
 
     case (VERIFY_TYPE_PHONENUMBER, identity: Identity) => {
