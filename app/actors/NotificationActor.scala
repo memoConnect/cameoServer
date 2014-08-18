@@ -96,7 +96,7 @@ class NotificationActor extends Actor {
 
     // get identity of sender
     val fromName = fromIdentity.displayName.getOrElse(fromIdentity.cameoId)
-    val from: String = fromName + "<" + Play.configuration.getString("mail.from").get + ">"
+    val fromMail = Play.configuration.getString("mail.from").get
     val mailSubject = "[cameo.io] - " + subject
     val to: String = email
 
@@ -108,7 +108,7 @@ class NotificationActor extends Actor {
     }
     Logger.debug("body: " + body)
 
-    new Mail(from, to, body, mailSubject)
+    new Mail(fromName, fromMail, to, body, mailSubject)
   }
 
   def generateSms(message: Message, fromIdentity: Identity, toIdentity: Identity, phoneNumber: String): Sms = {

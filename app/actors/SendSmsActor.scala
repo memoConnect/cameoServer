@@ -24,13 +24,14 @@ class SendSmsActor extends Actor {
   def removeSpecialCharacters(value: String): String = {
     val allowed = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-    val converted: List[String] = value.toList.map{
-      case c if allowed.contains(c) => Logger.debug("Char:" + c) ;c.toString
-      case 'ä' => "ae"
-      case 'ö' => "oe"
-      case 'ü' => "ue"
-      case 'ß' => "ss"
-      case _ => " "
+    val converted: List[String] = value.toList.map {
+      case c if allowed.contains(c) =>
+        Logger.debug("Char:" + c); c.toString
+      case 'ä'                      => "ae"
+      case 'ö'                      => "oe"
+      case 'ü'                      => "ue"
+      case 'ß'                      => "ss"
+      case _                        => " "
     }
     converted.mkString
   }
@@ -41,8 +42,6 @@ class SendSmsActor extends Actor {
       val key = Play.configuration.getString("nexmo.key")
       val secret = Play.configuration.getString("nexmo.secret")
 
-      Logger.debug("FROM: " + sms.from)
-
       key.isEmpty || secret.isEmpty match {
         case true =>
           Logger.warn("No Nexmo credentials")
@@ -52,39 +51,35 @@ class SendSmsActor extends Actor {
               "api_key" -> JsString(key.get),
               "api_secret" -> JsString(secret.get),
               "from" -> removeSpecialCharacters(sms.from),
-                "to" -> sms.to,
+              "to" -> sms.to,
               "text" -> sms.body
             )
 
           val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)
 
-          Logger.debug(postBody.toString)
-
           response.map {
-            nexmoResponse => {
-
-              Logger.debug(nexmoResponse.json.toString)
-
-              nexmoResponse.status match {
-                case s if s < 300 =>
-                  val msg = (nexmoResponse.json \ "messages")(0).asOpt[JsValue].getOrElse(Json.obj())
-                  (msg \ "status").asOpt[String] match {
-                    case Some("0") =>
-                      val id = (msg \ "message-id").asOpt[String].getOrElse("none")
-                      val cost = (msg \ "message-price").asOpt[String].getOrElse("none")
-                      Logger.info(
-                        "SendSMSActor: Sent SMS to " + sms.to +
-                          " from " + sms.from +
-                          " content: " + sms.body +
-                          " NexmoId: " + id +
-                          " cost: " + cost)
-                    case _ =>
-                      Logger.error("SendSMSActor: error sending sms: " + msg)
-                  }
-                case s =>
-                  Logger.error("SendSMSActor: error connection to nexmo: " + nexmoResponse.json)
+            nexmoResponse =>
+              {
+                nexmoResponse.status match {
+                  case s if s < 300 =>
+                    val msg = (nexmoResponse.json \ "messages")(0).asOpt[JsValue].getOrElse(Json.obj())
+                    (msg \ "status").asOpt[String] match {
+                      case Some("0") =>
+                        val id = (msg \ "message-id").asOpt[String].getOrElse("none")
+                        val cost = (msg \ "message-price").asOpt[String].getOrElse("none")
+                        Logger.info(
+                          "SendSMSActor: Sent SMS to " + sms.to +
+                            " from " + sms.from +
+                            " content: " + sms.body +
+                            " NexmoId: " + id +
+                            " cost: " + cost)
+                      case _ =>
+                        Logger.error("SendSMSActor: error sending sms: " + msg)
+                    }
+                  case s =>
+                    Logger.error("SendSMSActor: error connection to nexmo: " + nexmoResponse.json)
+                }
               }
-            }
           }
       }
   }
