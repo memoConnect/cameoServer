@@ -346,7 +346,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
   def findByCameoId(cameoId: String): Future[Option[Identity]] = {
     // cameoIds are not case sensitive
-    val query = Json.obj("cameoId" -> Json.obj("$regex" -> cameoId, "$options" -> "i"))
+    val query = Json.obj("cameoId" -> Json.obj("$regex" -> ("^" + cameoId + "$"), "$options" -> "i"))
     col.find(query).one[Identity]
   }
 
