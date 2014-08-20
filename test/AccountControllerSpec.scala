@@ -1,4 +1,5 @@
 
+import org.specs2.matcher.MatchResult
 import play.api.libs.json.JsArray
 import play.api.test._
 import play.api.libs.json.{ JsArray, Json, JsObject }
@@ -138,9 +139,37 @@ class AccountControllerSpec extends StartedApp {
       (data \ "alternative").asOpt[String] must beSome(login + "_1")
     }
 
-    "allow to reserve loginName that contains a reserved name" in {
+    "Refuse to reserve existing login and return alternative" in {
       val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> (login + "moep"))
+      val json = Json.obj("loginName" -> loginExisting)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(232)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "alternative").asOpt[String] must beSome(loginExisting + "_1")
+    }
+
+    "Refuse to reserve reserved existing cameoId and return alternative" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> cameoIdExisting)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      status(res) must equalTo(232)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "alternative").asOpt[String] must beSome(cameoIdExisting + "_1")
+    }
+
+    def checkLogin(loginName: String): MatchResult[Int] = {
+      val path = basePath + "/account/check"
+      val json = Json.obj("loginName" -> loginName)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
       val res = route(req).get
@@ -152,29 +181,51 @@ class AccountControllerSpec extends StartedApp {
     }
 
     "allow to reserve loginName that contains a reserved name" in {
-      val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> ("moep" + login))
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
+      checkLogin(login + "moep")
     }
 
     "allow to reserve loginName that contains a reserved name" in {
-      val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> ("moep" + login + "moep"))
+      checkLogin("moep" + login)
+    }
 
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
+    "allow to reserve loginName that contains a reserved name" in {
+      checkLogin("moep" + login + "moep")
+    }
 
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
+    "allow to reserve loginName that is a substring of a reserved name" in {
+      checkLogin(login.substring(2))
+    }
+
+    "allow to reserve loginName that contains an existing login" in {
+      checkLogin(loginExisting + "moep")
+    }
+
+    "allow to reserve loginName that contains an existing login" in {
+      checkLogin(loginExisting + login)
+    }
+
+    "allow to reserve loginName that contains an existing login" in {
+      checkLogin(loginExisting + login + "moep")
+    }
+
+    "allow to reserve loginName that is a substring of an existing login" in {
+      checkLogin(loginExisting.substring(2))
+    }
+
+    "allow to reserve loginName that contains an existing cameoId" in {
+      checkLogin(cameoIdExisting + "moep")
+    }
+
+    "allow to reserve loginName that contains an existing cameoId" in {
+      checkLogin(cameoIdExisting + login)
+    }
+
+    "allow to reserve loginName that contains an existing cameoId" in {
+      checkLogin(cameoIdExisting + login + "moep")
+    }
+
+    "allow to reserve loginName that is a substring of an existing cameoId" in {
+      checkLogin(cameoIdExisting.substring(2))
     }
 
     "Refuse to reserve reserved loginName with different capitalization" in {
@@ -474,7 +525,6 @@ class AccountControllerSpec extends StartedApp {
 
       val req = FakeRequest(GET, path)
       val res = route(req).get
-
 
       if (status(res) != OK) {
         Logger.error("Response: " + contentAsString(res))
