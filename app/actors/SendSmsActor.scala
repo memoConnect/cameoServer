@@ -26,7 +26,6 @@ class SendSmsActor extends Actor {
 
     val converted: List[String] = value.toList.map {
       case c if allowed.contains(c) =>
-        Logger.debug("Char:" + c); c.toString
       case 'ä'                      => "ae"
       case 'ö'                      => "oe"
       case 'ü'                      => "ue"
