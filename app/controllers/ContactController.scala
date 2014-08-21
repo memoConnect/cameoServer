@@ -119,7 +119,7 @@ object ContactController extends ExtendedController {
                 Json.obj("contactType" -> CONTACT_TYPE_PENDING)
           }
         }
-        futureContacts <- Future.sequence(request.identity.contacts.map{
+        futureContacts <- Future.sequence(request.identity.contacts.map {
           _.toJsonWithIdentity(Some(request.identity.publicKeySignatures))
         })
       } yield {

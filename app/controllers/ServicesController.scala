@@ -42,8 +42,8 @@ object ServicesController extends ExtendedController {
 
   def getBrowserInfo() = Action {
     request =>
-      val language = request.acceptLanguages.headOption match{
-        case None => Play.configuration.getString("language.default").getOrElse("enUS")
+      val language = request.acceptLanguages.headOption match {
+        case None       => Play.configuration.getString("language.default").getOrElse("enUS")
         case Some(lang) => lang.code
       }
       resOk(Json.obj("languageCode" -> language))

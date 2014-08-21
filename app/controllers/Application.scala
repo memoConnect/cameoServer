@@ -2,7 +2,7 @@ package controllers
 
 import helper.DbAdminUtilities
 import helper.ResultHelper._
-import models.{Signature, MongoId, Account}
+import models.{ Signature, MongoId, Account }
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -32,7 +32,7 @@ object Application extends Controller {
       val foo: Map[String, Signature] = Map("fooo" -> Signature("id", "content"))
 
       Future(resOk(Json.toJson(foo)))
-//      Future(Ok(views.html.index("2.6.3")))
+    //      Future(Ok(views.html.index("2.6.3")))
   }
 
   def dumpDb() = Action {

@@ -1,10 +1,10 @@
 package actors.testActors
 
-import actors.{Mail, Sms}
+import actors.{ Mail, Sms }
 import akka.actor.Actor
 import helper.TestValueStore
 import play.api.Logger
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{ JsObject, Json }
 
 /**
  * User: Björn Reimer

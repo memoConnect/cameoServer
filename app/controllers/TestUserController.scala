@@ -5,12 +5,12 @@ import helper.ResultHelper._
 import models.{ Account, FileMeta, Identity, TestUserNotification }
 import play.api.Play.current
 import play.api.libs.json.Json
-import play.api.mvc.{Result, Action}
+import play.api.mvc.{ Result, Action }
 import play.api.{ Logger, Play }
 import traits.ExtendedController
 import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{ Await, Future }
 
 /**
  * User: Björn Reimer
@@ -83,10 +83,10 @@ object TestUserController extends ExtendedController {
   def deleteAllTestUsers() = Action.async {
     request =>
       val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo").toLowerCase
-      val query  = Json.obj("loginName" -> Json.obj("$regex" -> ("^" + testUserPrefix), "$options" -> "i"))
+      val query = Json.obj("loginName" -> Json.obj("$regex" -> ("^" + testUserPrefix), "$options" -> "i"))
       Account.findAll(query).map {
         list =>
-          list.seq.foreach{
+          list.seq.foreach {
             account =>
               Await.result(deleteAccount(account), 10.minutes)
           }

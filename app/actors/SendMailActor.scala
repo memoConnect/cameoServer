@@ -23,7 +23,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 case class Mail(fromName: String, fromMail: String, to: String, body: String, subject: String)
 object Mail { implicit val format = Json.format[Mail] }
 
-
 class SendMailActor extends Actor {
 
   def receive = {

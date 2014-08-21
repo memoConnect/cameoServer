@@ -103,7 +103,7 @@ class NotificationActor extends Actor {
     val body: String = message.plain match {
       case Some(PlainMessagePart(Some(text), _)) =>
         text + "\n\n---\nRead the entire conversation and answer on cameoNet.de: " + url
-      case _                                     =>
+      case _ =>
         MESSAGE_MAIL_REPLACE_ENCRYPTED_EN + url + "\n\n" + MESSAGE_MAIL_REPLACE_ENCRYPTED_DE + url
     }
     Logger.debug("body: " + body)
