@@ -2,7 +2,6 @@ package controllers
 
 import java.util.Date
 
-import actors.{ AcceptedFriendRequest, NewFriendRequest }
 import constants.Contacts._
 import helper.CmActions.AuthAction
 import helper.OutputLimits
@@ -11,7 +10,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.AvatarGenerator
+import services.{AcceptedFriendRequest, NewFriendRequest, AvatarGenerator}
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -102,8 +102,8 @@ object Contact extends SubModel[Contact, Identity] {
    * Evolutions
    */
 
-  val docVersion = 1
-  val evolutions = Map(
+  def docVersion = 1
+  def evolutions = Map(
     0 -> ContactEvolutions.addContactType
   )
 

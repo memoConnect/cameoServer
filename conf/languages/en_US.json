@@ -1,0 +1,6 @@
+{
+    "PUSHMESSAGE":{
+        "NEW_MESSAGE" : "Mew Message",
+        "FRIEND_REQUEST" : "New friend request"
+    }
+}

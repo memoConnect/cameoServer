@@ -1,6 +1,5 @@
 package controllers
 
-import actors.NewMessage
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, Utils }
@@ -10,6 +9,7 @@ import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Json
 import play.api.mvc.{ BodyParser, Headers, Result }
+import services.NewMessage
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

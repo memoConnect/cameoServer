@@ -21,13 +21,13 @@ case class Event(id: MongoId,
 
 object Event extends SubModel[Event, EventSubscription] {
 
-  override def parentModel = EventSubscription
+  def parentModel = EventSubscription
 
-  override def elementName: String = "events"
+  def elementName: String = "events"
 
-  override implicit def mongoFormat: Format[Event] = createMongoFormat(Json.reads[Event], Json.writes[Event])
+  implicit def mongoFormat: Format[Event] = createMongoFormat(Json.reads[Event], Json.writes[Event])
 
-  override def createDefault(): Event = new Event(new MongoId(""), "foo", Json.obj())
-  override def docVersion: Int = 0
-  override def evolutions: Map[Int, Reads[JsObject]] = Map()
+  def createDefault(): Event = new Event(new MongoId(""), "foo", Json.obj())
+  def docVersion: Int = 0
+  def evolutions: Map[Int, Reads[JsObject]] = Map()
 }

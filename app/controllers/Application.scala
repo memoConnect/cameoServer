@@ -1,13 +1,16 @@
 package controllers
 
-import helper.DbAdminUtilities
+import actors.PushNotification
+import com.puship.Credentials
+import helper.{MongoCollections, DbAdminUtilities}
 import helper.ResultHelper._
 import models.{ Signature, MongoId, Account }
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
+import reactivemongo.bson.BSONString
 
 import scala.concurrent.Future
 
@@ -19,20 +22,18 @@ object Application extends Controller {
 
   def index = Action.async {
     request =>
-      // get mongodb version
-      //      mongoDB.command(reactivemongo.core.commands.Status).map{
-      //        res =>
-      //          val dbVersion = res.get("version") match {
-      //            case Some(BSONString(version)) => version
-      //            case _ => "na"
-      //          }
-      //          Logger.debug("SERVERSTATUS: " + res.toString)
-      //          Ok(views.html.index(dbVersion))
-      //      }
-      val foo: Map[String, Signature] = Map("fooo" -> Signature("id", "content"))
+//      get mongodb version
+      MongoCollections.mongoDB.command(reactivemongo.core.commands.Status).map{
+              res =>
+                val dbVersion = res.get("version") match {
+                  case Some(BSONString(version)) => version
+                  case _ => "na"
+                }
+                Logger.debug("SERVERSTATUS: " + res.toString)
+                Ok(views.html.index(dbVersion))
+            }
 
-      Future(resOk(Json.toJson(foo)))
-    //      Future(Ok(views.html.index("2.6.3")))
+      Future(Ok(views.html.index("2.6.3")))
   }
 
   def dumpDb() = Action {

@@ -8,6 +8,7 @@ import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
+import services.NewMessage
 
 /**
  * User: Björn Reimer
@@ -15,13 +16,13 @@ import play.api.libs.json.Json
  * Time: 5:36 PM
  */
 
-case class Notification(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
+case class ExternalMessage(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
 
-class NotificationActor extends Actor {
+class ExternalMessageActor extends Actor {
 
   def receive = {
 
-    case Notification(message, conversationId, recipients, subject) =>
+    case ExternalMessage(message, conversationId, recipients, subject) =>
 
       // get identity of sender
       Identity.find(message.fromIdentityId).map {

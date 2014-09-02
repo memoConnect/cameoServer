@@ -20,7 +20,8 @@ libraryDependencies ++= Seq(
   "com.googlecode.libphonenumber" % "libphonenumber" % "5.9",
   "batik" % "batik-svggen" % "1.6-1",
   "batik" % "batik-transcoder" % "1.6-1",
-  "com.typesafe.play.plugins" %% "play-statsd" % "2.3.0"
+  "com.typesafe.play.plugins" %% "play-statsd" % "2.3.0",
+  "org.json" % "org.json" % "chargebee-1.0" // needed of puship API
 )
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")
