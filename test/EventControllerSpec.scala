@@ -1,4 +1,3 @@
-import actors.NewMessage
 import org.specs2.matcher.{MatchResult, Matcher, SomeMatcher}
 import play.api.libs.json.{JsArray, Json, JsObject}
 import play.api.{Logger, Play}

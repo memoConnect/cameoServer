@@ -29,6 +29,7 @@ case class Account(id: MongoId,
                    password: String,
                    phoneNumber: Option[VerifiedString],
                    email: Option[VerifiedString],
+                   deviceIds: Seq[String],
                    created: Date,
                    lastUpdated: Date) {
 
@@ -60,6 +61,12 @@ case class Account(id: MongoId,
         Account.col.update(query, set).map(_.ok)
     }
   }
+
+  def deleteDeviceId(deviceId: String): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id)
+    val update = Json.obj("$pull" -> Json.obj("deviceIds" -> deviceId))
+    Account.col.update(query, update).map(_.updatedExisting)
+  }
 }
 
 object Account extends Model[Account] with CockpitEditable[Account] {
@@ -75,6 +82,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+      Reads.pure[Seq[String]](Seq()) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -85,21 +93,38 @@ object Account extends Model[Account] with CockpitEditable[Account] {
         Json.obj("loginName" -> a.loginName) ++
         maybeEmptyJsValue("phoneNumber", a.phoneNumber.map(_.toJson)) ++
         maybeEmptyJsValue("email", a.email.map(_.toJson)) ++
+        Json.obj("deviceIds" -> a.deviceIds) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
 
   def findByLoginName(loginName: String): Future[Option[Account]] = {
     val query = Json.obj("loginName" -> loginName.toLowerCase)
-    col.find(query).one[Account]
+    find(query)
   }
 
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, new Date, new Date)
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, Seq(), new Date, new Date)
+  }
+
+  def addDeviceId(accountId: MongoId, deviceId: String): Future[Boolean] = {
+    // check if another account has this deviceId
+    val deviceQuery = Json.obj("deviceIds" -> deviceId)
+    find(deviceQuery)
+      .flatMap {
+        case Some(account) => account.deleteDeviceId(deviceId)
+        case None          => Future(true) // do nothing
+      }
+      .flatMap {
+        case false => Future(false)
+        case true =>
+          val query = Json.obj("_id" -> accountId)
+          val update = Json.obj("$addToSet" -> Json.obj("deviceIds" -> deviceId))
+          col.update(query, update).map(_.updatedExisting)
+      }
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
-    val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
 
     Seq(
       CockpitAttributeString[String](name = "loginName", displayName = "Login Name", nullValue = "", showInList = true),
@@ -119,10 +144,11 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 1
+  def docVersion = 2
 
   def evolutions = Map(
-    0 -> AccountEvolutions.migrateToVerifiedString
+    0 -> AccountEvolutions.migrateToVerifiedString,
+    1 -> AccountEvolutions.addDeviceIds
   )
 }
 
@@ -191,29 +217,34 @@ object AccountEvolutions {
 
   def migrateToVerifiedString: Reads[JsObject] = Reads {
     js =>
-      {
-        val movePhoneNumber = __.json.update((__ \ 'phoneNumber \ 'value).json.copyFrom((__ \ 'phoneNumber).json.pick[JsString]))
-        val pnAddVerified = __.json.update((__ \ 'phoneNumber \ 'isVerified).json.put(JsBoolean(false)))
-        val pnAddDate = __.json.update((__ \ 'phoneNumber \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
-        val phoneNumber: Reads[JsObject] =
-          (js \ "phoneNumber").asOpt[String] match {
-            case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
-            case Some(n) => movePhoneNumber andThen pnAddVerified andThen pnAddDate
-          }
+      val movePhoneNumber = __.json.update((__ \ 'phoneNumber \ 'value).json.copyFrom((__ \ 'phoneNumber).json.pick[JsString]))
+      val pnAddVerified = __.json.update((__ \ 'phoneNumber \ 'isVerified).json.put(JsBoolean(false)))
+      val pnAddDate = __.json.update((__ \ 'phoneNumber \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
+      val phoneNumber: Reads[JsObject] =
+        (js \ "phoneNumber").asOpt[String] match {
+          case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
+          case Some(n) => movePhoneNumber andThen pnAddVerified andThen pnAddDate
+        }
 
-        val moveMail = __.json.update((__ \ 'email \ 'value).json.copyFrom((__ \ 'email).json.pick[JsString]))
-        val mAddVerified = __.json.update((__ \ 'email \ 'isVerified).json.put(JsBoolean(false)))
-        val mAddDate = __.json.update((__ \ 'email \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
-        val email =
-          (js \ "email").asOpt[String] match {
-            case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
-            case Some(m) => moveMail andThen mAddVerified andThen mAddDate
-          }
+      val moveMail = __.json.update((__ \ 'email \ 'value).json.copyFrom((__ \ 'email).json.pick[JsString]))
+      val mAddVerified = __.json.update((__ \ 'email \ 'isVerified).json.put(JsBoolean(false)))
+      val mAddDate = __.json.update((__ \ 'email \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
+      val email =
+        (js \ "email").asOpt[String] match {
+          case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
+          case Some(m) => moveMail andThen mAddVerified andThen mAddDate
+        }
 
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
 
-        js.transform(phoneNumber andThen email andThen addVersion)
-      }
+      js.transform(phoneNumber andThen email andThen addVersion)
+  }
+
+  def addDeviceIds: Reads[JsObject] = Reads {
+    js =>
+      val addArray = __.json.update((__ \ 'deviceIds).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+      js.transform(addArray andThen addVersion)
   }
 }
 

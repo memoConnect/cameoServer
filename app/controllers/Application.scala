@@ -23,15 +23,15 @@ object Application extends Controller {
   def index = Action.async {
     request =>
 //      get mongodb version
-      MongoCollections.mongoDB.command(reactivemongo.core.commands.Status).map{
-              res =>
-                val dbVersion = res.get("version") match {
-                  case Some(BSONString(version)) => version
-                  case _ => "na"
-                }
-                Logger.debug("SERVERSTATUS: " + res.toString)
-                Ok(views.html.index(dbVersion))
-            }
+//      MongoCollections.mongoDB.command(reactivemongo.core.commands.Status).map{
+//              res =>
+//                val dbVersion = res.get("version") match {
+//                  case Some(BSONString(version)) => version
+//                  case _ => "na"
+//                }
+//                Logger.debug("SERVERSTATUS: " + res.toString)
+//                Ok(views.html.index(dbVersion))
+//            }
 
       Future(Ok(views.html.index("2.6.3")))
   }

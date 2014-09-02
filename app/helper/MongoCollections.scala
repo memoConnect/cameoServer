@@ -45,6 +45,7 @@ object MongoCollections {
     val col = mongoDB.collection[JSONCollection]("accounts")
     col.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
     col.indexesManager.ensure(Index(List("password" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(List("deviceIds" -> IndexType.Ascending)))
     col
   }
   lazy val twoFactorTokenCollection: JSONCollection = {

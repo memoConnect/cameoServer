@@ -89,6 +89,10 @@ GET            /a/v1/eventSubscription/:id                  controllers.EventCon
 POST           /a/v1/event/broadcast                        controllers.EventController.broadcastEvent()
 POST           /a/v1/event/broadcast/identity/:id           controllers.EventController.remoteBroadcastEvent(id)
 
+# PUSH NOTIFICATIONS
+POST           /a/v1/deviceId                               controllers.PushNotificationController.addDeviceId
+DELETE         /a/v1/deviceId/:id                           controllers.PushNotificationController.deleteDeviceId(id)
+
 # Services
 POST           /a/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber
 POST           /a/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
