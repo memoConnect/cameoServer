@@ -28,10 +28,10 @@ trait EventDefinition {
 }
 
 trait PushEvent {
-  def languageKey: String
+  def messageKey: String
 
-  def getMessageText: String = {
-    Messages.get(languageKey, Lang("en-US"))
+  def getMessageText(language: Lang): String = {
+    Messages.get(messageKey, language)
   }
 
 }
@@ -45,7 +45,7 @@ case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message:
     "message" -> message.toJson
   )
 
-  def languageKey = "NEW_MESSAGE"
+  def messageKey = "PUSH_MESSAGE.NEW_MESSAGE"
 }
 
 case class NewConversation(sendToIdentity: MongoId, conversation: Conversation) extends EventDefinition {

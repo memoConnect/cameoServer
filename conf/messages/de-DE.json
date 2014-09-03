@@ -1,5 +1,5 @@
 {
-    "PUSHMESSAGE":{
+    "PUSH_MESSAGE":{
         "NEW_MESSAGE" : "Neue Nachricht",
         "FRIEND_REQUEST" : "Neue Freundschaftsanfrage"
     }

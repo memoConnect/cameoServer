@@ -16,12 +16,12 @@ import scala.collection.immutable.HashSet
  */
 
 case class PushNotification(message: String,
-                            deviceToken: String)
+                            deviceId: String)
 object PushNotification { implicit val format = Json.format[PushNotification] }
 
 class PushNotificationActor extends Actor {
   def receive = {
-    case PushNotification(message, deviceToken) =>
+    case PushNotification(message, deviceId) =>
 
       val username = Play.configuration.getString("pushIp.username")
       val password = Play.configuration.getString("pushIp.password")
@@ -42,7 +42,7 @@ class PushNotificationActor extends Actor {
           javaMap.put("Message", message)
 
           val javaSet = new java.util.HashSet[String]()
-          javaSet.add(deviceToken)
+          javaSet.add(deviceId)
 
           javaMap.put("Devices", javaSet)
           //

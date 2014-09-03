@@ -4,6 +4,8 @@ import play.api.Logger
 import play.api.i18n.Lang
 import play.api.libs.json.{JsObject, JsValue, Json}
 
+import scala.annotation.tailrec
+import scala.annotation.tailrec
 import scala.io.Source
 
 /**
@@ -25,9 +27,24 @@ object Messages {
 
   }
 
+  @tailrec
   def get(key: String, language: Lang): String = {
+
+    @tailrec
+    def getValue(json: JsObject, key: String): String = {
+      key.split('.').toList match {
+        case Nil =>
+          key
+        case value :: Nil =>
+          (json \ value).asOpt[String].getOrElse(key)
+        case value :: rest =>
+          val reduced = (json \ value).asOpt[JsObject].getOrElse(Json.obj())
+          getValue(reduced, rest.mkString("."))
+      }
+    }
+
     messages.get(language) match {
-      case Some(json) => (json \ key).asOpt[String].getOrElse(key)
+      case Some(json) => getValue(json, key)
       case None => get(key, defaultLanguage)
     }
   }

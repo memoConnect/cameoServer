@@ -1,6 +1,7 @@
+import helper.TestValueStore
 import play.api.Logger
-import play.api.libs.json.{JsObject, Json}
-import testHelper.StartedApp
+import play.api.libs.json.{ JsObject, Json }
+import testHelper.{Stuff, StartedApp}
 import testHelper.TestConfig._
 import testHelper.Stuff._
 import play.api.libs.json.{ JsArray, Json, JsObject }
@@ -22,6 +23,8 @@ class PushNotificationControllerSpec extends StartedApp {
     val platform1 = "meopPlatform1"
     val deviceId2 = "moepDevice2"
     val platform2 = "meopPlatform2"
+    val deviceId3 = "moepDevice3"
+    val platform3 = "meopPlatform3"
 
     val languageValidEn = "en-US"
     val languageValidEn2 = "en-GB"
@@ -91,7 +94,7 @@ class PushNotificationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "account should contain the second device id"  in {
+    "account should contain the second device id" in {
       val path = basePath + "/account"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -125,7 +128,7 @@ class PushNotificationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "account should still contain the same devices with updated information"  in {
+    "account should still contain the same devices with updated information" in {
       val path = basePath + "/account"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -236,7 +239,7 @@ class PushNotificationControllerSpec extends StartedApp {
 
       val json = Json.obj("deviceId" -> deviceId1, "platform" -> platform1, "language" -> languageValidEn)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -248,9 +251,9 @@ class PushNotificationControllerSpec extends StartedApp {
     "add another device with a language that does not exist" in {
       val path = basePath + "/pushDevice"
 
-      val json = Json.obj("deviceId" -> deviceId1, "platform" -> platform1, "language" -> languageValidFr)
+      val json = Json.obj("deviceId" -> deviceId3, "platform" -> platform3, "language" -> languageValidFr)
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -258,5 +261,47 @@ class PushNotificationControllerSpec extends StartedApp {
       }
       status(res) must equalTo(OK)
     }
+
+    step(TestValueStore.start())
+
+    "create conversation and add message" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> Seq(identityExisting), "messages" -> Seq(Json.obj("plain" -> Json.obj("text" -> "moep"))))
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(internalContactToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "user should receive three push notifications in the right languages" in {
+      Stuff.waitFor(TestValueStore.getValues("push").length == 3 )
+
+      val pushMessages = TestValueStore.getValues("push")
+
+      pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId1)) must beSome
+      pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId2)) must beSome
+      pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId3)) must beSome
+
+      val english = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId1)).get
+      (english \ "message").asOpt[String] must beSome
+      val englishText = (english \ "message").as[String]
+
+      val german = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId2)).get
+      (german \ "message").asOpt[String] must beSome
+      val germanText = (german \ "message").as[String]
+      germanText must not equalTo(englishText)
+
+      val french = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId3)).get
+      (french \ "message").asOpt[String] must beSome
+      val frenchText = (french \ "message").as[String]
+      frenchText must equalTo(englishText)
+    }
+
+    step(TestValueStore.stop())
   }
 }
