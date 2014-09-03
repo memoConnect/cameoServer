@@ -2,8 +2,6 @@ FORMAT: 1A
 HOST: http://cameo.io
 
 # Cameo API
-new and improved ;)
-
 
 # Group Authentication
 
@@ -209,44 +207,6 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
             "data": "verified"
         }
 
-## Add a new identity to your account [/identity]
-
-### POST
-        
-+ Request
-    + Headers
-    
-            Authorization: {token}
-    
-    + Body
-
-            {
-              "identity": { identity object },
-              "token" : { token object }
-            }
-
-+ Response 200
-
-        {
-          "res": "OK",
-          "data": {
-            "id": "5WtjLmPMEFYVzsn62DrP",
-            "displayName": "newNick",
-            "cameoId": "cameoId",
-            "userKey": "pSkgMI2ithOxLfsPpWD0XuEcKjEK6Prn9oPZ3Xp1",
-            "email": {
-              "value": "mail",
-              "isVerified": false
-            },
-            "phoneNumber": {
-              "value": "+49123456789",
-              "isVerified": false
-            },
-            "created": "06.02.2014 15:51:46",
-            "lastUpdated": "06.02.2014 15:51:46"
-          }
-        }
-
 
 ## Get public information of identity [/identity/{id}]
 
@@ -273,7 +233,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
              ]
           }
         }
-        
+       
         
 ## Manage your identity [/identity]
 
@@ -355,6 +315,44 @@ Edit your identity. All values are optional. Only values contained in the json w
           }
         }
         
+### POST
+Add a new identity to account
+        
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
+    + Body
+
+            {
+              "identity": { identity object },
+              "token" : { token object }
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "5WtjLmPMEFYVzsn62DrP",
+            "displayName": "newNick",
+            "cameoId": "cameoId",
+            "userKey": "pSkgMI2ithOxLfsPpWD0XuEcKjEK6Prn9oPZ3Xp1",
+            "email": {
+              "value": "mail",
+              "isVerified": false
+            },
+            "phoneNumber": {
+              "value": "+49123456789",
+              "isVerified": false
+            },
+            "created": "06.02.2014 15:51:46",
+            "lastUpdated": "06.02.2014 15:51:46"
+          }
+        }
+        
+
         
 ## Add public key to identity [/identity/publicKey]
 
@@ -626,6 +624,28 @@ Returns all existing cameoIds that contain the string
                 }
             ]
         }
+
+
+## Add Puship-DeviceId for Push Notifications [/deviceId]
+
+### POST
+
++ Request
+
+        {
+            "deviceId":"id"
+        }
+        
++ Response 200
+
+## Delete deviceId [/deviceId/{id}]
+
+### DELETE
+ 
++   Parameters
+    + id ... device id
+    
++   Response 200
 
 
 # Group Messaging
