@@ -1,6 +1,7 @@
 package services
 
 import models._
+import play.api.i18n.Lang
 import play.api.libs.json.{JsObject, Json}
 
 /**
@@ -28,6 +29,11 @@ trait EventDefinition {
 
 trait PushEvent {
   def languageKey: String
+
+  def getMessageText: String = {
+    Messages.get(languageKey, Lang("en-US"))
+  }
+
 }
 
 case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition with PushEvent {

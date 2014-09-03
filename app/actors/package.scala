@@ -1,4 +1,4 @@
-import actors.testActors.{ SendMailTestActor, SendSmsTestActor }
+import actors.testActors.{PushNotificationTestActor, SendMailTestActor, SendSmsTestActor}
 import akka.actor.{ ActorRef, Props }
 import akka.routing.RoundRobinPool
 import play.api.Play.current
@@ -31,6 +31,15 @@ package object actors {
     }
   }
 
+  def PushNotificationActorProps: Props = {
+    if (Play.isTest) {
+      Logger.debug("Using Push Notification Test Actor")
+      Props[PushNotificationTestActor]
+    } else {
+      Props[PushNotificationActor]
+    }
+  }
+
   lazy val eventRouter: ActorRef = {
     val props = RoundRobinPool(5).props(Props[EventActor])
     Akka.system.actorOf(props, "event_router")
@@ -42,8 +51,7 @@ package object actors {
   }
 
   lazy val pushNotificationRouter: ActorRef = {
-    val props = RoundRobinPool(1).props(Props[PushNotificationActor])
+    val props = RoundRobinPool(1).props(PushNotificationActorProps)
     Akka.system.actorOf(props, "push_notification_router")
   }
-
 }

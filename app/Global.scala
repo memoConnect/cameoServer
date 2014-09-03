@@ -139,7 +139,6 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
       Statsd.increment("custom.instances")
     }
-
   }
 
   override def onStop(app: play.api.Application) = {

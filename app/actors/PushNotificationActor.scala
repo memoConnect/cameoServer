@@ -1,8 +1,9 @@
 package actors
 
 import akka.actor.Actor
-import com.puship.{PushipUtil, CoreApi, Credentials}
-import play.api.{Logger, Play}
+import com.puship.{ PushipUtil, CoreApi, Credentials }
+import play.api.libs.json.Json
+import play.api.{ Logger, Play }
 import services.{ PushEvent, EventDefinition }
 import play.api.Play.current
 
@@ -16,6 +17,7 @@ import scala.collection.immutable.HashSet
 
 case class PushNotification(message: String,
                             deviceToken: String)
+object PushNotification { implicit val format = Json.format[PushNotification] }
 
 class PushNotificationActor extends Actor {
   def receive = {
@@ -33,20 +35,19 @@ class PushNotificationActor extends Actor {
         case false =>
           val credentials: Credentials = new Credentials(username.get, password.get)
           val coreApi: CoreApi = new CoreApi(appId.get, credentials)
-//          coreApi.EnableDebug = true
+          //          coreApi.EnableDebug = true
           PushipUtil.SetTimeZone("Europe/Berlin")
 
           val javaMap = new java.util.HashMap[String, AnyRef]()
           javaMap.put("Message", message)
 
-          val javaSet= new java.util.HashSet[String]()
+          val javaSet = new java.util.HashSet[String]()
           javaSet.add(deviceToken)
 
           javaMap.put("Devices", javaSet)
-//
+          //
           val response = coreApi.SendPushMessageByDevice(javaMap)
           Logger.info("Puship response: " + response)
-
 
       }
   }
