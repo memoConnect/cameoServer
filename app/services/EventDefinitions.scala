@@ -55,7 +55,7 @@ case class NewConversation(sendToIdentity: MongoId, conversation: Conversation) 
   def toEventContent: JsObject = conversation.toJson
 }
 
-case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendRequest, fromIdentity: Identity, toIdentityId: MongoId) extends EventDefinition {
+case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendRequest, fromIdentity: Identity, toIdentityId: MongoId) extends EventDefinition  with PushEvent {
 
   def eventType = "friendRequest:new"
 
@@ -64,6 +64,8 @@ case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendReques
       "friendRequest" -> friendRequest.toJsonWithIdentity(fromIdentity),
       "to" -> toIdentityId.toJson
     )
+
+  def messageKey: String = "PUSH_MESSAGE.FRIEND_REQUEST"
 }
 
 case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId, contact: JsObject) extends EventDefinition {
