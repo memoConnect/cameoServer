@@ -29,7 +29,7 @@ case class Account(id: MongoId,
                    password: String,
                    phoneNumber: Option[VerifiedString],
                    email: Option[VerifiedString],
-                   deviceIds: Seq[String],
+                   pushDevices: Seq[PushDevice],
                    created: Date,
                    lastUpdated: Date) {
 
@@ -61,12 +61,6 @@ case class Account(id: MongoId,
         Account.col.update(query, set).map(_.ok)
     }
   }
-
-  def deleteDeviceId(deviceId: String): Future[Boolean] = {
-    val query = Json.obj("_id" -> this.id)
-    val update = Json.obj("$pull" -> Json.obj("deviceIds" -> deviceId))
-    Account.col.update(query, update).map(_.updatedExisting)
-  }
 }
 
 object Account extends Model[Account] with CockpitEditable[Account] {
@@ -82,7 +76,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-      Reads.pure[Seq[String]](Seq()) and
+      Reads.pure[Seq[PushDevice]](Seq()) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -93,7 +87,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
         Json.obj("loginName" -> a.loginName) ++
         maybeEmptyJsValue("phoneNumber", a.phoneNumber.map(_.toJson)) ++
         maybeEmptyJsValue("email", a.email.map(_.toJson)) ++
-        Json.obj("deviceIds" -> a.deviceIds) ++
+        Json.obj("pushDevices" -> a.pushDevices.map(_.toJson)) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
@@ -105,23 +99,6 @@ object Account extends Model[Account] with CockpitEditable[Account] {
 
   def createDefault(): Account = {
     new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, Seq(), new Date, new Date)
-  }
-
-  def addDeviceId(accountId: MongoId, deviceId: String): Future[Boolean] = {
-    // check if another account has this deviceId
-    val deviceQuery = Json.obj("deviceIds" -> deviceId)
-    find(deviceQuery)
-      .flatMap {
-        case Some(account) => account.deleteDeviceId(deviceId)
-        case None          => Future(true) // do nothing
-      }
-      .flatMap {
-        case false => Future(false)
-        case true =>
-          val query = Json.obj("_id" -> accountId)
-          val update = Json.obj("$addToSet" -> Json.obj("deviceIds" -> deviceId))
-          col.update(query, update).map(_.updatedExisting)
-      }
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -144,11 +121,12 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 2
+  def docVersion = 3
 
   def evolutions = Map(
     0 -> AccountEvolutions.migrateToVerifiedString,
-    1 -> AccountEvolutions.addDeviceIds
+    1 -> AccountEvolutions.addDeviceIds,
+    2 -> AccountEvolutions.convertToPushDevice
   )
 }
 
@@ -245,6 +223,14 @@ object AccountEvolutions {
       val addArray = __.json.update((__ \ 'deviceIds).json.put(JsArray()))
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
       js.transform(addArray andThen addVersion)
+  }
+
+  def convertToPushDevice: Reads[JsObject] = Reads {
+    js =>
+      val deleteArray = (__ \ 'deviceIds).json.prune
+      val addArray = __.json.update((__ \ 'pushDevices).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+      js.transform(deleteArray andThen addArray andThen addVersion)
   }
 }
 

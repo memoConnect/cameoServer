@@ -5,6 +5,7 @@ import java.util.Date
 import models.VerifiedString
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Play
+import play.api.i18n.Lang
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
@@ -119,6 +120,20 @@ object JsonHelper {
           val hashed = BCrypt.hashpw(pass, BCrypt.gensalt())
           hashed
         })
+      }
+  }
+
+  val verifyLanguageId: Reads[String] = Reads[String] {
+    js =>
+      js.asOpt[String] match {
+        case None => JsError("no language")
+        case Some(lang) =>
+          try {
+            val l = Lang(lang)
+            JsSuccess(lang)
+          } catch {
+            case e: RuntimeException => JsError("invalid language code")
+          }
       }
   }
 

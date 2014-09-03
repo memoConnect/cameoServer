@@ -147,7 +147,13 @@ Get Account details of current user
               "value": "foo@baa.de",
               "isVerified": false
             },
-            "deviceIds":["id1","id2"],
+            "pushDevices": [
+                {
+                  "deviceId": "id",
+                  "language": "en-US",
+                  "platform": "android"
+                }
+          ],
             "created": 1392301163329,
             "lastUpdated": 1392301163329,
             "identities": [
@@ -627,14 +633,16 @@ Returns all existing cameoIds that contain the string
         }
 
 
-## Add Puship-DeviceId for Push Notifications [/deviceId]
+## Add Puship-DeviceId for Push Notifications [/pushDevice]
 
 ### POST
 
 + Request
 
         {
-            "deviceId":"id"
+            "deviceId":"id",
+            "language":"en-US",
+            "platform":"android"
         }
         
 + Response 200

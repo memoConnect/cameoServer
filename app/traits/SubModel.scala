@@ -83,12 +83,15 @@ trait SubModel[A, Parent] extends Model[A] {
   def appendOrUpdate(parentId: MongoId, appendee: A, customIdName: String = this.idName): Future[LastError] = {
     // mongodb does not support this operation directly, so we need two steps
     // first we try to update
-    update(parentId, Json.toJson(appendee).as[JsObject], customIdName).flatMap { lastError =>
-      // if we updated something we're good, else we need to add a new element
-      lastError.updatedExisting match {
-        case true  => Future(lastError)
-        case false => append(parentId, appendee)
-      }
+    update(parentId, Json.toJson(appendee).as[JsObject], customIdName).flatMap {
+      lastError =>
+        // if we updated something we're good, else we need to add a new element
+        lastError.updatedExisting match {
+          case true  =>
+            Logger.debug("UPDATED")
+            Future(lastError)
+          case false => append(parentId, appendee)
+        }
     }
   }
 
