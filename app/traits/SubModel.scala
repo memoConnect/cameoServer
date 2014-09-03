@@ -88,7 +88,6 @@ trait SubModel[A, Parent] extends Model[A] {
         // if we updated something we're good, else we need to add a new element
         lastError.updatedExisting match {
           case true  =>
-            Logger.debug("UPDATED")
             Future(lastError)
           case false => append(parentId, appendee)
         }
