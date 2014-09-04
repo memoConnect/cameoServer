@@ -3,7 +3,7 @@
  * Date: 5/25/13
  * Time: 4:27 PM
  */
-import helper.DbAdminUtilities
+import helper.{ MongoCollections, DbAdminUtilities }
 import helper.MongoCollections._
 import models.{ Conversation, GlobalState }
 import play.api.Play.current
@@ -12,6 +12,8 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ EssentialAction, EssentialFilter, WithFilters }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
+import reactivemongo.bson.{BSONArray, BSONString, BSONDocument}
+import reactivemongo.core.commands._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -61,14 +63,28 @@ object StatsFilter extends EssentialFilter {
 
 object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter) {
 
+  var mongoVersion = "na"
+
   override def onStart(app: play.api.Application) = {
     // make sure that we have a connection to mongodb
-    def checkMongoConnection(): Boolean =
-      {
-        try {
-          val futureState = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
-          Await.result(futureState, 1.minute)
-          Logger.info("DB Connection OK")
+    def checkMongoConnection(): Boolean = {
+
+      // command to get the database version
+      case class BuildInfo() extends Command[BSONDocument] {
+        override def makeDocuments = BSONDocument("buildinfo" -> 1)
+
+        object ResultMaker extends BSONCommandResultMaker[BSONDocument] {
+          def apply(document: BSONDocument) = CommandError.checkOk(document, None).toLeft(document)
+        }
+      }
+
+      try {
+          val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
+//          val futureState = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
+          val buildInfo = Await.result(futureBuildInfo, 1.minute)
+          val version = buildInfo.getAs[String]("version").getOrElse("na")
+          Logger.info("DB Connection OK. Version: " + version)
+          DbAdminUtilities.mongoVersion = version
           true
         } catch {
           case e: Exception =>

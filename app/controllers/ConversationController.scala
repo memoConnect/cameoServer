@@ -84,13 +84,16 @@ object ConversationController extends ExtendedController {
 
   def getConversation(id: String, offset: Int, limit: Int, keyId: List[String]) = AuthAction(allowExternal = true).async {
     request =>
-      Conversation.find(id, limit, offset).flatMap {
-        case None => Future(resNotFound("conversation"))
-        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.getMissingPassphrases.map {
-            missingPasshrases =>
-              resOk(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
-          }
+      Conversation.find(id, limit, offset).map {
+        case None => resNotFound("conversation")
+        case Some(c) => c.hasMemberResult(request.identity.id) {
+          resOk(c.toJsonWithKey(keyId))
+
+          // missing passphrase are not used anymore
+          //          c.getMissingPassphrases.map {
+          //            missingPasshrases =>
+          //              resOk(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
+          //          }
         }
       }
   }

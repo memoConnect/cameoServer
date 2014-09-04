@@ -5,6 +5,7 @@ import com.puship.Credentials
 import helper.{MongoCollections, DbAdminUtilities}
 import helper.ResultHelper._
 import models.{ Signature, MongoId, Account }
+import play.GlobalSettings
 import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -22,18 +23,7 @@ object Application extends Controller {
 
   def index = Action.async {
     request =>
-//      get mongodb version
-//      MongoCollections.mongoDB.command(reactivemongo.core.commands.Status).map{
-//              res =>
-//                val dbVersion = res.get("version") match {
-//                  case Some(BSONString(version)) => version
-//                  case _ => "na"
-//                }
-//                Logger.debug("SERVERSTATUS: " + res.toString)
-//                Ok(views.html.index(dbVersion))
-//            }
-
-      Future(Ok(views.html.index("2.6.3")))
+      Future(Ok(views.html.index(DbAdminUtilities.mongoVersion)))
   }
 
   def dumpDb() = Action {

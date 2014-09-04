@@ -31,7 +31,6 @@ trait PushEvent {
   def localizationKey: String
 
   def localizationVariables: Map[String, String]
-
 }
 
 case class NewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, message: Message) extends EventDefinition with PushEvent {

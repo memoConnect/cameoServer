@@ -39,12 +39,14 @@ object DbAdminUtilities {
     cockpitAccessCollection
   ) :+ ReactiveMongoPlugin.db.collection[JSONCollection](fileChunkCollection.name)
 
+  var mongoVersion = "na"
+
+
   def findColByName(name: String): Option[JSONCollection] = {
     collections.find(_.name.equals(name))
   }
 
   def dumpDb() = {
-
     val path = "fixtures/dump"
 
     collections.map {
