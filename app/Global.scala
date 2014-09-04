@@ -12,9 +12,9 @@ import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ EssentialAction, EssentialFilter, WithFilters }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
-import reactivemongo.bson.{BSONArray, BSONString, BSONDocument}
+import reactivemongo.bson.{ BSONValue, BSONArray, BSONString, BSONDocument }
 import reactivemongo.core.commands._
-
+import play.modules.reactivemongo.json.BSONFormats._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
@@ -70,29 +70,32 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     def checkMongoConnection(): Boolean = {
 
       // command to get the database version
-      case class BuildInfo() extends Command[BSONDocument] {
+      case class BuildInfo() extends Command[Map[String, BSONValue]] {
         override def makeDocuments = BSONDocument("buildinfo" -> 1)
 
-        object ResultMaker extends BSONCommandResultMaker[BSONDocument] {
-          def apply(document: BSONDocument) = CommandError.checkOk(document, None).toLeft(document)
+        object ResultMaker extends BSONCommandResultMaker[Map[String, BSONValue]] {
+          def apply(document: BSONDocument) = Right(document.elements.toMap)
         }
       }
 
       try {
-          val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
-//          val futureState = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
-          val buildInfo = Await.result(futureBuildInfo, 1.minute)
-          val version = buildInfo.getAs[String]("version").getOrElse("na")
-          Logger.info("DB Connection OK. Version: " + version)
-          DbAdminUtilities.mongoVersion = version
-          true
-        } catch {
-          case e: Exception =>
-            Logger.error("Could not connect to mongodb", e)
-            Thread.sleep(1000)
-            checkMongoConnection()
+        val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
+        val buildInfo = Await.result(futureBuildInfo, 1.minute)
+        val version = buildInfo.get("version") match {
+          case Some(BSONString(str)) => str
+          case _                     => "na"
         }
+        Logger.debug("BuildInfo: " + buildInfo)
+        Logger.info("DB Connection OK. Version: " + version)
+        DbAdminUtilities.mongoVersion = version
+        true
+      } catch {
+        case e: Exception =>
+          Logger.error("Could not connect to mongodb", e)
+          Thread.sleep(1000)
+          checkMongoConnection()
       }
+    }
 
     checkMongoConnection()
 
