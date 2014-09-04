@@ -31,14 +31,10 @@ trait PushEvent {
   def localizationKey: String
 
   def localizationVariables: Map[String, String]
-//
-//  def getMessageText(language: Lang, additionalVariables: Map[String,String] = Map()): String = {
-//    LocalizationMessages.get(localizationKey, language, localizationVariables ++ additionalVariables)
-//  }
 
 }
 
-case class NewMessage(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, message: Message) extends EventDefinition with PushEvent {
+case class NewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, message: Message) extends EventDefinition with PushEvent {
 
   def eventType = "conversation:new-message"
 
@@ -54,9 +50,8 @@ case class NewMessage(sendToIdentity: MongoId, messageSender: Identity, conversa
   }
 }
 
-case class FileUploadComplete(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition  {
+case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition  {
 
-  // send new message for now
   def eventType = "conversation:new-message"
 
   def toEventContent = Json.obj(
