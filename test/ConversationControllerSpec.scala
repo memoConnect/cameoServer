@@ -905,99 +905,99 @@ class ConversationControllerSpec extends StartedApp {
       1===1
     }
 
-    var missingPassphrasesLength = 0
-    "return missing encrypted passphrases" in {
-      val path = basePath + "/conversation/" + cidNew3
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
-      val missingPassphrases = (data \ "missingAePassphrase").as[Seq[String]]
-
-      missingPassphrases.length must beGreaterThanOrEqualTo(3)
-      missingPassphrasesLength = missingPassphrases.length
-      missingPassphrases.find(_.equals(pubKeyId)) must beSome
-    }
-
-    "add encrypted passphrase for one key to conversation" in {
-
-      val path = basePath + "/conversation/" + cidNew3 + "/aePassphrases"
-
-      val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> pubKeyId, "encryptedPassphrase" -> "moep")))
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    var missingPassphrases: Seq[String] = Seq()
-    "missing encrypted passphrases should not contain added key" in {
-      val path = basePath + "/conversation/" + cidNew3
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
-      missingPassphrases = (data \ "missingAePassphrase").as[Seq[String]]
-
-      missingPassphrases.length must beEqualTo(missingPassphrasesLength - 1)
-      missingPassphrases.find(_.equals(pubKeyId)) must beNone
-    }
-
-    "add encrypted passphrase for remaining keys" in {
-
-      val path = basePath + "/conversation/" + cidNew3  + "/aePassphrases"
-
-      val list = missingPassphrases.map(mp => Json.obj("keyId" -> mp, "encryptedPassphrase" -> "moep"))
-
-      val json = Json.obj("aePassphraseList" -> list)
-
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    "missing encrypted passphrases should now be empty" in {
-      val path = basePath + "/conversation/" + cidNew3
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
-      val missingPassphrases = (data \ "missingAePassphrase").as[Seq[JsObject]]
-
-      missingPassphrases.length must beEqualTo(0)
-    }
+//    var missingPassphrasesLength = 0
+//    "return missing encrypted passphrases" in {
+//      val path = basePath + "/conversation/" + cidNew3
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[JsObject]
+//
+//      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
+//      val missingPassphrases = (data \ "missingAePassphrase").as[Seq[String]]
+//
+//      missingPassphrases.length must beGreaterThanOrEqualTo(3)
+//      missingPassphrasesLength = missingPassphrases.length
+//      missingPassphrases.find(_.equals(pubKeyId)) must beSome
+//    }
+//
+//    "add encrypted passphrase for one key to conversation" in {
+//
+//      val path = basePath + "/conversation/" + cidNew3 + "/aePassphrases"
+//
+//      val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> pubKeyId, "encryptedPassphrase" -> "moep")))
+//
+//      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//    }
+//
+//    var missingPassphrases: Seq[String] = Seq()
+//    "missing encrypted passphrases should not contain added key" in {
+//      val path = basePath + "/conversation/" + cidNew3
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[JsObject]
+//
+//      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
+//      missingPassphrases = (data \ "missingAePassphrase").as[Seq[String]]
+//
+//      missingPassphrases.length must beEqualTo(missingPassphrasesLength - 1)
+//      missingPassphrases.find(_.equals(pubKeyId)) must beNone
+//    }
+//
+//    "add encrypted passphrase for remaining keys" in {
+//
+//      val path = basePath + "/conversation/" + cidNew3  + "/aePassphrases"
+//
+//      val list = missingPassphrases.map(mp => Json.obj("keyId" -> mp, "encryptedPassphrase" -> "moep"))
+//
+//      val json = Json.obj("aePassphraseList" -> list)
+//
+//      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//    }
+//
+//    "missing encrypted passphrases should now be empty" in {
+//      val path = basePath + "/conversation/" + cidNew3
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[JsObject]
+//
+//      (data \ "missingAePassphrase").asOpt[Seq[String]] must beSome
+//      val missingPassphrases = (data \ "missingAePassphrase").as[Seq[JsObject]]
+//
+//      missingPassphrases.length must beEqualTo(0)
+//    }
 
   }
 
