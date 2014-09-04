@@ -36,16 +36,19 @@ class ExternalMessageActor extends Actor {
 
           recipients.map {
             recipient =>
-              // send event
-              eventRouter ! NewMessage(recipient.identityId, conversationId, message)
 
-              // dont send back to sender
+              // send event
+              eventRouter ! NewMessage(recipient.identityId, fromIdentity, conversationId, message)
+
+              // don't send external message to sender
               if (!recipient.identityId.equals(fromIdentity.id)) {
+
                 Identity.find(recipient.identityId).map {
                   case None =>
                     val error = "Could not find identityID " + recipient.identityId
                     Logger.error(error)
                   case Some(toIdentity) =>
+
                     val supportIdentityId = Play.configuration.getString("support.contact.identityId").getOrElse("")
 
                     // check if identity has an event subscription

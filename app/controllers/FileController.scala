@@ -9,7 +9,7 @@ import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Json
 import play.api.mvc.{ BodyParser, Headers, Result }
-import services.NewMessage
+import services.{FileUploadComplete, NewMessage}
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -176,7 +176,7 @@ object FileController extends ExtendedController {
                         val message = conversation.messages.find(_.id.id.equals(messageId)).get
                         conversation.recipients.foreach {
                           recipient =>
-                            actors.eventRouter ! NewMessage(recipient.identityId, conversation.id, message)
+                            actors.eventRouter ! FileUploadComplete(recipient.identityId, conversation.id, message)
                         }
                         resOk("completed")
                     }

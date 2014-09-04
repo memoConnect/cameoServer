@@ -278,7 +278,7 @@ class PushNotificationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "user should receive three push notifications in the right languages" in {
+    "user should receive three push notifications for the message in the right languages" in {
       Stuff.waitFor(TestValueStore.getValues("push").length == 3 )
 
       val pushMessages = TestValueStore.getValues("push")
@@ -288,20 +288,63 @@ class PushNotificationControllerSpec extends StartedApp {
       pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId3)) must beSome
 
       val english = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId1)).get
-      (english \ "message").asOpt[String] must beSome
+      (english \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(internalContactCameoId))
       val englishText = (english \ "message").as[String]
 
       val german = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId2)).get
-      (german \ "message").asOpt[String] must beSome
+      (german \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(internalContactCameoId))
       val germanText = (german \ "message").as[String]
       germanText must not equalTo(englishText)
 
       val french = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId3)).get
-      (french \ "message").asOpt[String] must beSome
+      (french \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(internalContactCameoId))
       val frenchText = (french \ "message").as[String]
       frenchText must equalTo(englishText)
     }
 
     step(TestValueStore.stop())
+
+    step(TestValueStore.start())
+
+    "send FriendRequest" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> identityExisting, "message" -> "friendMopeMessage")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting4)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "user should receive three push notifications for the friend request in the right languages" in {
+      Stuff.waitFor(TestValueStore.getValues("push").length == 3 )
+
+      val pushMessages = TestValueStore.getValues("push")
+
+      pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId1)) must beSome
+      pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId2)) must beSome
+      pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId3)) must beSome
+
+      val english = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId1)).get
+      (english \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting4))
+      val englishText = (english \ "message").as[String]
+
+      val german = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId2)).get
+      (german \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting4))
+      val germanText = (german \ "message").as[String]
+      germanText must not equalTo(englishText)
+
+      val french = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId3)).get
+      (french \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting4))
+      val frenchText = (french \ "message").as[String]
+      frenchText must equalTo(englishText)
+    }
+
+    step(TestValueStore.stop())
+
   }
 }

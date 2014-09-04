@@ -33,6 +33,9 @@ class PushNotificationActor extends Actor {
         case true =>
           Logger.warn("No PushIp credentials")
         case false =>
+
+          Logger.debug("Sending Push Notification to " + deviceId + " : " + message)
+
           val credentials: Credentials = new Credentials(username.get, password.get)
           val coreApi: CoreApi = new CoreApi(appId.get, credentials)
           //          coreApi.EnableDebug = true

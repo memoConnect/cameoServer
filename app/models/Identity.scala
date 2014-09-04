@@ -240,6 +240,10 @@ case class Identity(id: MongoId,
           Future(false)
       }
   }
+
+  def getDisplayName: String = {
+    this.displayName.getOrElse(this.cameoId)
+  }
 }
 
 object Identity extends Model[Identity] with CockpitEditable[Identity] {

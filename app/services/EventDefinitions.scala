@@ -28,15 +28,17 @@ trait EventDefinition {
 }
 
 trait PushEvent {
-  def messageKey: String
+  def localizationKey: String
 
-  def getMessageText(language: Lang): String = {
-    Messages.get(messageKey, language)
-  }
+  def localizationVariables: Map[String, String]
+//
+//  def getMessageText(language: Lang, additionalVariables: Map[String,String] = Map()): String = {
+//    LocalizationMessages.get(localizationKey, language, localizationVariables ++ additionalVariables)
+//  }
 
 }
 
-case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition with PushEvent {
+case class NewMessage(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, message: Message) extends EventDefinition with PushEvent {
 
   def eventType = "conversation:new-message"
 
@@ -45,7 +47,22 @@ case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message:
     "message" -> message.toJson
   )
 
-  def messageKey = "PUSH_MESSAGE.NEW_MESSAGE"
+  def localizationKey = "PUSH_MESSAGE.NEW_MESSAGE"
+  
+  def localizationVariables = Map{
+    "sender" -> messageSender.getDisplayName
+  }
+}
+
+case class FileUploadComplete(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition  {
+
+  // send new message for now
+  def eventType = "conversation:new-message"
+
+  def toEventContent = Json.obj(
+    "conversationId" -> conversationId.toJson,
+    "message" -> message.toJson
+  )
 }
 
 case class NewConversation(sendToIdentity: MongoId, conversation: Conversation) extends EventDefinition {
@@ -65,7 +82,11 @@ case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendReques
       "to" -> toIdentityId.toJson
     )
 
-  def messageKey: String = "PUSH_MESSAGE.FRIEND_REQUEST"
+  def localizationKey: String = "PUSH_MESSAGE.FRIEND_REQUEST"
+
+  def localizationVariables = Map{
+    "sender" -> fromIdentity.getDisplayName
+  }
 }
 
 case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId, contact: JsObject) extends EventDefinition {

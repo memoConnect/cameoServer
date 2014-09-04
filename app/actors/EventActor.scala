@@ -5,7 +5,7 @@ import models._
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.libs.json.{ JsObject, Json }
-import services.{PushEvent, EventDefinition}
+import services.{LocalizationMessages, PushEvent, EventDefinition}
 import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * User: Björn Reimer
@@ -19,29 +19,34 @@ class EventActor extends Actor {
     case msg: EventDefinition with PushEvent =>
       // send push notification
       // get push devices
+      // todo: find a way to avoid these two db calls
       Identity.find(msg.sendToIdentity).map {
         case None => // do nothing
-        case Some (identity) =>
+        case Some(identity) =>
           identity.accountId match {
             case None => // do nothing
             case Some(accountId) =>
               Account.find(accountId).map {
                 case None => // do nothing
                 case Some(account) =>
-                  account.pushDevices.foreach{
+                  account.pushDevices.foreach {
                     pushDevice =>
                       try {
                         val language = Lang(pushDevice.language)
-                        val pushNotification = PushNotification(msg.getMessageText(language), pushDevice.deviceId.toString)
+                        val prefix = identity.getDisplayName + ": "
+                        val message = prefix + LocalizationMessages.get(msg.localizationKey, language, msg.localizationVariables)
+                        val pushNotification = PushNotification(message, pushDevice.deviceId.toString)
                         pushNotificationRouter ! pushNotification
-                      }  catch {
-                        case e: RuntimeException => Logger.error("Could not parse language id: " + pushDevice.language)
+                      } catch {
+                        case e: RuntimeException if e.getMessage.contains("Unrecognized language") =>
+                          Logger.error("Could not parse language id: " + pushDevice.language, e)
+                        case e: RuntimeException =>
+                          Logger.error("Error getting translated Message", e)
                       }
                   }
               }
           }
       }
-
 
       EventSubscription.storeEvent(msg.sendToIdentity, msg.toEvent)
     case msg: EventDefinition =>
