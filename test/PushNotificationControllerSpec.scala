@@ -311,7 +311,7 @@ class PushNotificationControllerSpec extends StartedApp {
 
       val json = Json.obj("identityId" -> identityExisting, "message" -> "friendMopeMessage")
 
-      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting4)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting3)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -330,16 +330,16 @@ class PushNotificationControllerSpec extends StartedApp {
       pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId3)) must beSome
 
       val english = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId1)).get
-      (english \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting4))
+      (english \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting3))
       val englishText = (english \ "message").as[String]
 
       val german = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId2)).get
-      (german \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting4))
+      (german \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting3))
       val germanText = (german \ "message").as[String]
       germanText must not equalTo(englishText)
 
       val french = pushMessages.find(js => (js \ "deviceId").as[String].equals(deviceId3)).get
-      (french \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting4))
+      (french \ "message").asOpt[String] must beSome(contain(displayNameExisting) and contain(cameoIdExisting3))
       val frenchText = (french \ "message").as[String]
       frenchText must equalTo(englishText)
     }
