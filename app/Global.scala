@@ -63,8 +63,6 @@ object StatsFilter extends EssentialFilter {
 
 object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter) {
 
-  var mongoVersion = "na"
-
   override def onStart(app: play.api.Application) = {
     // make sure that we have a connection to mongodb
     def checkMongoConnection(): Boolean = {
@@ -79,6 +77,9 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
       }
 
       try {
+        val conversationResult = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
+        Await.result(conversationResult, 1.minute)
+
         val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
         val buildInfo = Await.result(futureBuildInfo, 1.minute)
         val version = buildInfo.get("version") match {
