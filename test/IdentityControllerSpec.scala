@@ -115,7 +115,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val json = Json.obj("phoneNumber" -> newTel, "email" -> newMail, "displayName" -> newName)
 
-      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting4))
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -128,7 +128,7 @@ class IdentityControllerSpec extends StartedApp {
 
       val path = basePath + "/identity"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting4))
       val res = route(req).get
 
       if (status(res) != OK) {
