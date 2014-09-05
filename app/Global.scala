@@ -85,7 +85,6 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
           case Some(BSONString(str)) => str
           case _                     => "na"
         }
-        Logger.debug("BuildInfo: " + buildInfo)
         Logger.info("DB Connection OK. Version: " + version)
         DbAdminUtilities.mongoVersion = version
         true
