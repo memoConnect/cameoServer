@@ -1,7 +1,6 @@
 package traits
 
 import models.MongoId
-import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
@@ -87,7 +86,7 @@ trait SubModel[A, Parent] extends Model[A] {
       lastError =>
         // if we updated something we're good, else we need to add a new element
         lastError.updatedExisting match {
-          case true  =>
+          case true =>
             Future(lastError)
           case false => append(parentId, appendee)
         }

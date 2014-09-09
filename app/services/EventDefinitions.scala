@@ -1,8 +1,7 @@
 package services
 
 import models._
-import play.api.i18n.Lang
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{ JsObject, Json }
 
 /**
  * User: Björn Reimer
@@ -43,13 +42,13 @@ case class NewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, 
   )
 
   def localizationKey = "PUSH_MESSAGE.NEW_MESSAGE"
-  
-  def localizationVariables = Map{
+
+  def localizationVariables = Map {
     "sender" -> messageSender.getDisplayName
   }
 }
 
-case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition  {
+case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition {
 
   def eventType = "conversation:new-message"
 
@@ -66,7 +65,7 @@ case class NewConversation(sendToIdentity: MongoId, conversation: Conversation) 
   def toEventContent: JsObject = conversation.toJson
 }
 
-case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendRequest, fromIdentity: Identity, toIdentityId: MongoId) extends EventDefinition  with PushEvent {
+case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendRequest, fromIdentity: Identity, toIdentityId: MongoId) extends EventDefinition with PushEvent {
 
   def eventType = "friendRequest:new"
 
@@ -78,7 +77,7 @@ case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendReques
 
   def localizationKey: String = "PUSH_MESSAGE.FRIEND_REQUEST"
 
-  def localizationVariables = Map{
+  def localizationVariables = Map {
     "sender" -> fromIdentity.getDisplayName
   }
 }

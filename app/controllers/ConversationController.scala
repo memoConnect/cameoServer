@@ -1,6 +1,6 @@
 package controllers
 
-import actors.{ ExternalMessage }
+import actors.ExternalMessage
 import helper.CmActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._

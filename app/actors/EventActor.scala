@@ -4,8 +4,8 @@ import akka.actor.Actor
 import models._
 import play.api.Logger
 import play.api.i18n.Lang
-import play.api.libs.json.{ JsObject, Json }
-import services.{LocalizationMessages, PushEvent, EventDefinition}
+import services.{ EventDefinition, LocalizationMessages, PushEvent }
+
 import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * User: Björn Reimer

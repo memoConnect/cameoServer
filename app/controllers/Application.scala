@@ -1,17 +1,13 @@
 package controllers
 
-import actors.PushNotification
-import com.puship.Credentials
-import helper.{MongoCollections, DbAdminUtilities}
+import helper.DbAdminUtilities
 import helper.ResultHelper._
-import models.{ Signature, MongoId, Account }
-import play.GlobalSettings
-import play.api.{Logger, Play}
+import models.Account
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
-import reactivemongo.bson.BSONString
 
 import scala.concurrent.Future
 

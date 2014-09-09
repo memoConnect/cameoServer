@@ -1,7 +1,7 @@
 package services
 
 import actors.Sms
-import models.{ Account, Identity, TwoFactorSmsKey, VerifiedString }
+import models.{ Account, Identity, TwoFactorSmsKey }
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka

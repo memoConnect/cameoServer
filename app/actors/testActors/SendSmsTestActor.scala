@@ -3,7 +3,6 @@ package actors.testActors
 import actors.Sms
 import akka.actor.Actor
 import helper.TestValueStore
-import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 
 /**

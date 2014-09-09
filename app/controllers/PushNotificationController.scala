@@ -1,11 +1,10 @@
 package controllers
 
-import models.{ PushDevice, MongoId, Account }
-import play.api.Logger
-import play.api.libs.json.Json
-import traits.ExtendedController
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
+import models.{ MongoId, PushDevice }
+import traits.ExtendedController
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -32,7 +31,7 @@ object PushNotificationController extends ExtendedController {
                 }
                 .flatMap {
                   case false => Future(false)
-                  case true  =>
+                  case true =>
                     PushDevice.appendOrUpdate(accountId, pushDevice).map(_.updatedExisting)
                 }
                 .map {

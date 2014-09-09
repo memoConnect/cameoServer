@@ -3,10 +3,10 @@ package controllers
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
-import play.api.mvc.Result
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{ JsObject, Json }
+import play.api.mvc.Result
 import services.BroadcastEvent
 import traits.ExtendedController
 

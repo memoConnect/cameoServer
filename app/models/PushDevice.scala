@@ -1,14 +1,11 @@
 package models
 
 import helper.IdHelper
-import play.api.Logger
-import play.api.i18n.Lang
-import play.api.libs.json.{ Json, Format, JsObject, Reads }
-import traits.{ Model, SubModel }
+import helper.JsonHelper._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json._
-import helper.JsonHelper._
+import play.api.libs.json.{ Format, JsObject, Json, Reads, _ }
+import traits.SubModel
 
 /**
  * User: Björn Reimer

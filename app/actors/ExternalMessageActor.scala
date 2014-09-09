@@ -1,13 +1,13 @@
 package actors
 
-import akka.actor.{ Actor, Props }
+import akka.actor.Actor
 import constants.Messaging._
 import models._
-import play.api.{ Play, Logger }
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
+import play.api.{ Logger, Play }
 import services.{ NewMessage, NewMessageWithPush }
 
 /**

@@ -3,9 +3,8 @@ package services
 import com.fasterxml.jackson.core.JsonParseException
 import play.api.Logger
 import play.api.i18n.Lang
-import play.api.libs.json.{ JsObject, JsValue, Json }
+import play.api.libs.json.{ JsObject, Json }
 
-import scala.annotation.tailrec
 import scala.annotation.tailrec
 import scala.io.Source
 
@@ -67,7 +66,7 @@ object LocalizationMessages {
             case endIndex =>
               val variableName = message.substring(startIndex + 2, endIndex)
               val replaceWith = variables.getOrElse(variableName, "")
-              val replaced = message.replaceAll("\\{\\{"+variableName + "\\}\\}", replaceWith)
+              val replaced = message.replaceAll("\\{\\{" + variableName + "\\}\\}", replaceWith)
               replaceVariables(replaced)
           }
       }

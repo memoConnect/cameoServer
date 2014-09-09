@@ -41,7 +41,6 @@ object DbAdminUtilities {
 
   var mongoVersion = "na"
 
-
   def findColByName(name: String): Option[JSONCollection] = {
     collections.find(_.name.equals(name))
   }

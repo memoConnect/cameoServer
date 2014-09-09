@@ -7,13 +7,9 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail.model._
 import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailServiceClient, model }
 import com.amazonaws.{ AmazonClientException, AmazonServiceException }
-import constants.Messaging._
-import models._
 import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.{ Logger, Play }
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer

@@ -7,7 +7,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.{NewAePassphrases, UpdatedIdentity}
+import services.{ NewAePassphrases, UpdatedIdentity }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

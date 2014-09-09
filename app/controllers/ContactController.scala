@@ -10,7 +10,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.{AcceptedFriendRequest, NewFriendRequest, AvatarGenerator}
+import services.{ AcceptedFriendRequest, AvatarGenerator, NewFriendRequest }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

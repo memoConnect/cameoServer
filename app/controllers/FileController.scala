@@ -9,7 +9,7 @@ import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Json
 import play.api.mvc.{ BodyParser, Headers, Result }
-import services.{NewMessage, NewMessageWithPush}
+import services.NewMessage
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -1,13 +1,10 @@
 package actors
 
 import akka.actor.Actor
-import com.puship.{ PushipUtil, CoreApi, Credentials }
+import com.puship.{ CoreApi, Credentials, PushipUtil }
+import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.{ Logger, Play }
-import services.{ PushEvent, EventDefinition }
-import play.api.Play.current
-
-import scala.collection.immutable.HashSet
 
 /**
  * User: Björn Reimer

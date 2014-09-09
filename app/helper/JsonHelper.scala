@@ -5,6 +5,7 @@ import java.util.Date
 import models.VerifiedString
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Play
+import play.api.Play.current
 import play.api.i18n.Lang
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -12,7 +13,6 @@ import play.api.libs.json._
 import play.modules.reactivemongo.json.BSONFormats
 import reactivemongo.bson.BSONDocument
 import reactivemongo.core.commands.Match
-import play.api.Play.current
 
 /**
  * User: Björn Reimer
