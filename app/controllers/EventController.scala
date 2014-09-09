@@ -3,6 +3,7 @@ package controllers
 import helper.CmActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
+import play.api.mvc.Result
 import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.json.{ JsObject, Json }
@@ -54,7 +55,10 @@ object EventController extends ExtendedController {
   }
 
   case class EventBroadcastRequest(data: JsObject, name: String)
-  object EventBroadcastRequest { implicit val format = Json.format[EventBroadcastRequest] }
+
+  object EventBroadcastRequest {
+    implicit val format = Json.format[EventBroadcastRequest]
+  }
 
   def broadcastEvent() = AuthAction()(parse.tolerantJson) {
     request =>
@@ -64,6 +68,7 @@ object EventController extends ExtendedController {
           resOk("event send")
       }
   }
+
   def allowedRemoteEvents: Seq[String] =
     Seq(
       "authenticationRequest:start",
@@ -75,18 +80,27 @@ object EventController extends ExtendedController {
 
   def remoteBroadcastEvent(id: String) = AuthAction()(parse.tolerantJson) {
     request =>
+
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>
-          // check if remote identity is in contacts
-          request.identity.contacts.exists(_.identityId.id.equals(id)) match {
-            case false => resNotFound("identity in contacts")
-            case true =>
-              // check if event name is in blacklist
-              allowedRemoteEvents.contains(ebr.name) match {
-                case false => resBadRequest("event not allowed")
+          def sendEvent: Result = {
+            actors.eventRouter ! BroadcastEvent(new MongoId(id), ebr.name, ebr.data)
+            resOk("event send")
+          }
+
+          // check if this identity is our own
+          request.identity.id.id.equals(id) match {
+            case true => sendEvent
+            case false =>
+              // check if remote identity is in contacts
+              request.identity.contacts.exists(_.identityId.id.equals(id)) match {
+                case false => resNotFound("identity in contacts")
                 case true =>
-                  actors.eventRouter ! BroadcastEvent(new MongoId(id), ebr.name, ebr.data)
-                  resOk("event send")
+                  // check if event name is in blacklist
+                  allowedRemoteEvents.contains(ebr.name) match {
+                    case false => resBadRequest("event not allowed")
+                    case true  => sendEvent
+                  }
               }
           }
       }
