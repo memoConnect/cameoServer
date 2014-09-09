@@ -1,15 +1,18 @@
 package controllers
 
-import helper.CmActions.AuthAction
+import java.io.{ ByteArrayOutputStream, OutputStream }
+
+import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, Utils }
 import models._
-import play.api.Play
+import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Json
 import play.api.mvc.{ BodyParser, Headers, Result }
 import services.NewMessage
+import sun.misc.{ BASE64Decoder, BASE64Encoder }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -191,6 +194,61 @@ object FileController extends ExtendedController {
       FileMeta.deleteWithChunks(new MongoId(id)).map {
         case false => resServerError("could not delete")
         case true  => resOk("deleted")
+      }
+  }
+
+  def getFileFromChunks(chunks: Seq[ChunkMeta]): Future[Either[Array[Byte], Result]] = {
+    val futureChunks = chunks.map {
+      chunkMeta =>
+        FileChunk.find(chunkMeta.chunkId.id)
+    }
+    Future.sequence(futureChunks).map {
+      chunks =>
+        chunks.forall(_.isDefined) match {
+          case false => Right(resBadRequest("missing some chunks "))
+          case true =>
+            // join chunks
+            val builder = new StringBuilder()
+
+            chunks.map(_.get).seq.foreach {
+              chunk =>
+                val chunkString = new String(chunk)
+                val replaced = chunkString.replaceAll("^data:.*?;?base64,", "")
+                builder.append(replaced)
+            }
+            // todo default image
+            Left(new BASE64Decoder().decodeBuffer(builder.toString()))
+        }
+    }
+  }
+
+  def getRawFile(id: String) = AuthAction(allowExternal = true).async {
+    request =>
+      checkEtag(request.headers) {
+        FileMeta.find(id).flatMap {
+          case None => Future(resNotFound("file"))
+          case Some(fileMeta) =>
+            getFileFromChunks(fileMeta.chunks).map {
+              case Right(result) => result
+              case Left(bytes) =>
+                resOKWithCache(bytes, fileMeta.id.id)
+                  .withHeaders(("Content-Type", fileMeta.fileType))
+            }
+        }
+      }
+  }
+
+  def getScaledFile(id: String, size: Int) = AuthAction(allowExternal = true).async {
+    request =>
+      checkEtag(request.headers) {
+        FileMeta.find(id).flatMap {
+          case None => Future(resNotFound("file"))
+          case Some(fileMeta) =>
+            getFileFromChunks(fileMeta.chunks).map {
+              case Right(result) => result
+              case Left(bytes) => Ok("")
+            }
+        }
       }
   }
 }

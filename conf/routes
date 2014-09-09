@@ -74,6 +74,8 @@ POST           /a/v1/file                                   controllers.FileCont
 POST           /a/v1/file/:id                               controllers.FileController.uploadFileChunks(id)
 POST           /a/v1/file/:id/completed                     controllers.FileController.uploadFileComplete(id)
 GET            /a/v1/file/:id                               controllers.FileController.getFile(id)
+GET            /a/v1/file/:id/raw                           controllers.FileController.getRawFile(id)
+#GET            /a/v1/file/:id/scaled/:size                  controllers.FileController.getScaledFile(id,size)
 GET            /a/v1/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
@@ -90,8 +92,8 @@ POST           /a/v1/event/broadcast                        controllers.EventCon
 POST           /a/v1/event/broadcast/identity/:id           controllers.EventController.remoteBroadcastEvent(id)
 
 # PUSH NOTIFICATIONS
-POST           /a/v1/pushDevice                               controllers.PushNotificationController.addPushDevice
-DELETE         /a/v1/pushDevice/:id                           controllers.PushNotificationController.deletePushDevice(id)
+POST           /a/v1/pushDevice                             controllers.PushNotificationController.addPushDevice
+DELETE         /a/v1/pushDevice/:id                         controllers.PushNotificationController.deletePushDevice(id)
 
 # Services
 POST           /a/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber

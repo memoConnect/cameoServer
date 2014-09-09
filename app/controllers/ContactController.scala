@@ -3,7 +3,7 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
-import helper.CmActions.AuthAction
+import helper.AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._

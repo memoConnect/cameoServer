@@ -77,7 +77,7 @@ class AuthenticationSpec extends StartedApp {
     // dont test utils and webapp
     val filteredAuthRoutes = authRoutes.filterNot(r =>
       r._2.startsWith("/m") ||
-      r._2.startsWith("/d") ||
+        r._2.startsWith("/d") ||
         r._2.startsWith("/dl") ||
         r._2.startsWith("/c") ||
         r._2.equals("/") ||
@@ -140,7 +140,19 @@ class AuthenticationSpec extends StartedApp {
         val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must not equalTo (UNAUTHORIZED)
+        status(res) must not equalTo UNAUTHORIZED
+      }
+
+      "WITH AUTH - " + r._1 + " " + r._2 + "\t: should work with valid token as query parameter" in {
+        val method = r._1
+        val path = r._2 + "?token=" + tokenExisting
+
+        val json = Json.obj()
+
+        val req = FakeRequest(method, path).withJsonBody(json)
+        val res = route(req).get
+
+        status(res) must not equalTo UNAUTHORIZED
       }
     }
 
