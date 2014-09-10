@@ -1,3 +1,7 @@
+import java.awt.image.BufferedImage
+import java.io.ByteArrayInputStream
+import javax.imageio.ImageIO
+
 import play.api.test._
 import play.api.libs.json.{ JsValue, Json, JsObject }
 import play.api.test.Helpers._
@@ -372,7 +376,103 @@ class FileControllerSpec extends StartedApp {
       }
 
       (error \ "error").asOpt[String] must beSome(contain("actual fileSize is bigger than submitted value"))
-
     }
+
+    "return raw image file" in {
+      val path = basePath + "/file/" + fileIdImage + "/raw?token=" + tokenExisting
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val image: BufferedImage = ImageIO.read(new ByteArrayInputStream(contentAsBytes(res)))
+      image.getHeight must beEqualTo(imageHeight)
+      image.getWidth must beEqualTo(imageWidth)
+    }
+
+    "return blank image if file is not found" in {
+      val path = basePath + "/file/moep/raw?token=" + tokenExisting
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val image: BufferedImage = ImageIO.read(new ByteArrayInputStream(contentAsBytes(res)))
+      image.getHeight must beEqualTo(1)
+      image.getWidth must beEqualTo(1)
+    }
+
+    "scale image" in {
+      val path = basePath + "/file/" + fileIdImage + "/scale/400?token=" + tokenExisting
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val image: BufferedImage = ImageIO.read(new ByteArrayInputStream(contentAsBytes(res)))
+      image.getHeight must beLessThan(400)
+      image.getWidth must beEqualTo(400)
+    }
+
+    "not scale image when contrains are larger than original" in {
+      val path = basePath + "/file/" + fileIdImage + "/scale/4000?token=" + tokenExisting
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val image: BufferedImage = ImageIO.read(new ByteArrayInputStream(contentAsBytes(res)))
+      image.getHeight must beEqualTo(imageHeight)
+      image.getWidth must beEqualTo(imageWidth)
+    }
+
+    "return blank image, when scaling invalid image" in {
+      val path = basePath + "/file/" + fileIdAudio + "/scale/200?token=" + tokenExisting
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val image: BufferedImage = ImageIO.read(new ByteArrayInputStream(contentAsBytes(res)))
+      image.getHeight must beEqualTo(1)
+      image.getWidth must beEqualTo(1)
+    }
+
+    "return blank image, when scaling a file that does not exist" in {
+      val path = basePath + "/file/moep/scale/200?token=" + tokenExisting
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val image: BufferedImage = ImageIO.read(new ByteArrayInputStream(contentAsBytes(res)))
+      image.getHeight must beEqualTo(1)
+      image.getWidth must beEqualTo(1)
+    }
+
   }
 }
