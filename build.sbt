@@ -6,6 +6,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
+scalaVersion := "2.11.2"
+
 libraryDependencies ++= Seq(
   cache,
   ws,

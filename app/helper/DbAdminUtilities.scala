@@ -51,18 +51,16 @@ object DbAdminUtilities {
     collections.map {
       col =>
         {
-          try {
-            col.find(Json.obj()).cursor[JsObject].collect[List](1000, stopOnError = false).map {
-              list =>
-                Logger.debug("Dumping: " + col.name)
-                val fw = new FileWriter(path + "/" + col.name + ".json", false)
-                try {
-                  list.seq.foreach {
-                    js =>
-                      fw.write(js.toString + "\n")
-                  }
-                } finally fw.close()
-            }
+          col.find(Json.obj()).cursor[JsObject].collect[List](1000, stopOnError = false).map {
+            list =>
+              Logger.debug("Dumping: " + col.name)
+              val fw = new FileWriter(path + "/" + col.name + ".json", false)
+              try {
+                list.seq.foreach {
+                  js =>
+                    fw.write(js.toString + "\n")
+                }
+              } finally fw.close()
           }
         }
     }
@@ -123,7 +121,7 @@ object DbAdminUtilities {
             migrations.get(i) match {
               case None =>
                 Logger.error("no migration found for version " + i); Future(false)
-              case Some(migrationFunction) => migrationFunction()
+              case Some(migrationFunction) => migrationFunction("foo")
             }
         }
         Future.sequence(res).map(_.forall(b => b))

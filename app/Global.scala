@@ -4,19 +4,15 @@
  * Time: 4:27 PM
  */
 
-import java.io.IOException
-
 import de.flapdoodle.embed.mongo.{ MongodProcess, MongodExecutable, MongodStarter }
 import de.flapdoodle.embed.mongo.config.{ RuntimeConfigBuilder, MongodConfigBuilder, Net, IMongodConfig }
 import de.flapdoodle.embed.mongo.distribution.{ Versions, Version }
-import de.flapdoodle.embed.mongo.tests.MongodForTestsFactory
 import de.flapdoodle.embed.process.config.io.ProcessOutput
 import de.flapdoodle.embed.process.distribution.GenericVersion
 import de.flapdoodle.embed.process.runtime.Network
 import helper.MongoCollections._
 import helper.{ DbAdminUtilities, MongoCollections }
 import models.{ Conversation, GlobalState }
-import play.api.Play.current
 import play.api.http.HeaderNames._
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ EssentialAction, EssentialFilter, WithFilters }
@@ -24,7 +20,8 @@ import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import reactivemongo.bson.{ BSONDocument, BSONString, BSONValue }
 import reactivemongo.core.commands._
-
+import java.util.logging.{ Logger => JavaLogger }
+import de.flapdoodle.embed.mongo.{ Command => MongoCommand }
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -193,7 +190,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     Logger.info("Starting embedded mongo. Port: " + mongoPort + " Version: " + mongoVersion)
 
     val runtimeConfig = new RuntimeConfigBuilder()
-      .defaults(de.flapdoodle.embed.mongo.Command.MongoD)
+      .defaultsWithLogger(MongoCommand.MongoD, JavaLogger.getLogger("embed.mongo"))
       .processOutput(ProcessOutput.getDefaultInstanceSilent)
       .build()
 
