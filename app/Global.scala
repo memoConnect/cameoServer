@@ -7,9 +7,11 @@
 import java.io.IOException
 
 import de.flapdoodle.embed.mongo.{ MongodProcess, MongodExecutable, MongodStarter }
-import de.flapdoodle.embed.mongo.config.{ Net, IMongodConfig, MongodConfigBuilder }
-import de.flapdoodle.embed.mongo.distribution.Version
+import de.flapdoodle.embed.mongo.config.{ RuntimeConfigBuilder, MongodConfigBuilder, Net, IMongodConfig }
+import de.flapdoodle.embed.mongo.distribution.{ Versions, Version }
 import de.flapdoodle.embed.mongo.tests.MongodForTestsFactory
+import de.flapdoodle.embed.process.config.io.ProcessOutput
+import de.flapdoodle.embed.process.distribution.GenericVersion
 import de.flapdoodle.embed.process.runtime.Network
 import helper.MongoCollections._
 import helper.{ DbAdminUtilities, MongoCollections }
@@ -23,6 +25,7 @@ import play.modules.statsd.api.Statsd
 import reactivemongo.bson.{ BSONDocument, BSONString, BSONValue }
 import reactivemongo.core.commands._
 
+import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
@@ -73,6 +76,11 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
   override def onStart(app: play.api.Application) = {
 
+    // start embedded mongo
+    if (Play.configuration.getBoolean("embed.mongo.enabled").get) {
+      startLocalMongo()
+    }
+
     checkMongoConnection()
 
     // load fixtures
@@ -88,7 +96,6 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
       Await.result(futureRes, 5.minutes)
       Logger.debug("finished loading fixtures")
-
     }
 
     // global database migrations
@@ -139,9 +146,11 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
   override def onStop(app: play.api.Application) = {
     Logger.info("Shutting down app")
     Statsd.increment("custom.instances", -1)
+    stopLocalMongo()
   }
 
   // make sure that we have a connection to mongodb
+  @tailrec
   private def checkMongoConnection(): Boolean = {
 
     // command to get the database version
@@ -174,21 +183,43 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     }
   }
 
-  private def startLocalMongo(): Boolean = {
+  var mongodExecutable: MongodExecutable = _
+  var mongodProcess: MongodProcess = _
 
+  private def startLocalMongo() = {
     val mongoPort = Play.configuration.getInt("embed.mongo.port").get
     val mongoVersion = Play.configuration.getString("embed.mongo.dbversion").get
 
-    val starter: MongodStarter = MongodStarter.getDefaultInstance
+    Logger.info("Starting embedded mongo. Port: " + mongoPort + " Version: " + mongoVersion)
+
+    val runtimeConfig = new RuntimeConfigBuilder()
+      .defaults(de.flapdoodle.embed.mongo.Command.MongoD)
+      .processOutput(ProcessOutput.getDefaultInstanceSilent)
+      .build()
+
+    val starter: MongodStarter = MongodStarter.getInstance(runtimeConfig)
 
     val mongodConfig: IMongodConfig = new MongodConfigBuilder()
-      .version(new Version(mongoVersion))
+      .version(Versions.withFeatures(new GenericVersion(mongoVersion)))
       .net(new Net(mongoPort, Network.localhostIsIPv6()))
       .build()
 
-    val mongodExecutable: MongodExecutable = starter.prepare(mongodConfig)
-    val mongod: MongodProcess = mongodExecutable.start()
+    mongodExecutable = starter.prepare(mongodConfig)
+    mongodProcess = mongodExecutable.start()
+  }
 
+  private def stopLocalMongo() = {
+    try {
+      if (mongodExecutable != null) {
+        Logger.info("stopping embedded mongo")
+        mongodExecutable.stop()
+      }
+    } finally {
+      if (mongodProcess != null) {
+        Logger.info("killing embedded mongo")
+        mongodProcess.stop()
+      }
+    }
   }
 
 }
