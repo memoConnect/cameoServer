@@ -1284,6 +1284,29 @@ Download chunks of a file
             "chunk":"some blob"
         }
 
+## Download raw file [/file/{id}/raw{?token}]
+
++ Parameters
+    + id ... fileId
+    + token ... authorization token
+    
++ Response 200  
+    
+        Raw File
+
+
+## Scale image [/file/{id}/scale/{size}{?token}]
+
++ Parameters
+    + id ... fileId
+    + size ... size of the boundary square for the image
+    + token ... authorization token
+    
++ Response 200
+    
+        Scaled Image or Blank image
+
+
 # Group Purl
 
 ## Use a purl [/purl/{secret}]
