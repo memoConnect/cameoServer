@@ -26,6 +26,7 @@ import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
+import play.api.Play.current
 
 object AccessControllFilter extends EssentialFilter {
   // wrap action to modify the headers of every request
