@@ -68,7 +68,9 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/a/v1/eventSubscription/$id<[^/]+>"),
       (POST, "/a/v1/eventSubscription"),
       (GET, "/a/v1/file/$id<[^/]+>"),
-      (GET, "/a/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>")
+      (GET, "/a/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>"),
+      (GET, "/a/v1/file/$id<[^/]+>/raw"),
+      (GET, "/a/v1/file/$id<[^/]+>/scale/$size<[^/]+>")
     )
 
     // all routes not specified as nonAuth, allowExternal or twoFactorAuth are assumed to be auth
@@ -77,7 +79,7 @@ class AuthenticationSpec extends StartedApp {
     // dont test utils and webapp
     val filteredAuthRoutes = authRoutes.filterNot(r =>
       r._2.startsWith("/m") ||
-      r._2.startsWith("/d") ||
+        r._2.startsWith("/d") ||
         r._2.startsWith("/dl") ||
         r._2.startsWith("/c") ||
         r._2.equals("/") ||
@@ -140,7 +142,19 @@ class AuthenticationSpec extends StartedApp {
         val req = FakeRequest(method, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
         val res = route(req).get
 
-        status(res) must not equalTo (UNAUTHORIZED)
+        status(res) must not equalTo UNAUTHORIZED
+      }
+
+      "WITH AUTH - " + r._1 + " " + r._2 + "\t: should work with valid token as query parameter" in {
+        val method = r._1
+        val path = r._2 + "?token=" + tokenExisting
+
+        val json = Json.obj()
+
+        val req = FakeRequest(method, path).withJsonBody(json)
+        val res = route(req).get
+
+        status(res) must not equalTo UNAUTHORIZED
       }
     }
 

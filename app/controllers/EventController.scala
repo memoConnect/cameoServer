@@ -1,6 +1,6 @@
 package controllers
 
-import helper.CmActions.AuthAction
+import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
 import play.api.Play
@@ -72,9 +72,6 @@ object EventController extends ExtendedController {
   def allowedRemoteEvents: Seq[String] =
     Seq(
       "authenticationRequest:start",
-      "authenticationRequest:key-response",
-      "authenticationRequest:key-request",
-      "authenticationRequest:verified",
       "authenticationRequest:cancel"
     )
 

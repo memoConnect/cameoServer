@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ExternalMessage
-import helper.CmActions.AuthAction
+import helper.AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._

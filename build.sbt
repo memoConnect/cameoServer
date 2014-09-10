@@ -7,7 +7,6 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 resolvers += "Sonatype Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
 libraryDependencies ++= Seq(
-  jdbc,
   cache,
   ws,
   "org.reactivemongo" %% "play2-reactivemongo" % "0.10.5.akka23-SNAPSHOT",
@@ -19,6 +18,7 @@ libraryDependencies ++= Seq(
   "batik" % "batik-svggen" % "1.6-1",
   "batik" % "batik-transcoder" % "1.6-1",
   "com.typesafe.play.plugins" %% "play-statsd" % "2.3.0",
+  "org.imgscalr" % "imgscalr-lib" % "4.2", // image scaler
   "org.json" % "org.json" % "chargebee-1.0" // needed of puship API
 )
 

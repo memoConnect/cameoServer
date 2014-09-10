@@ -111,8 +111,6 @@ class ExternalMessageActor extends Actor {
       case _ =>
         MESSAGE_MAIL_REPLACE_ENCRYPTED_EN + url + "\n\n" + MESSAGE_MAIL_REPLACE_ENCRYPTED_DE + url
     }
-    Logger.debug("body: " + body)
-
     new Mail(fromName, fromMail, to, body, mailSubject)
   }
 

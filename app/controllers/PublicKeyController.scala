@@ -1,6 +1,6 @@
 package controllers
 
-import helper.CmActions._
+import helper.AuthenticationActions._
 import helper.IdHelper
 import helper.ResultHelper._
 import models._

@@ -92,6 +92,11 @@ object TestConfig {
   val externalContact2 = "EVFrPIr2oPpyVaUZGQjV"
   val externalContact2IdentityId = "DOZaWDTSnQE0ItFYgqEM"
 
+  val fileIdImage = "cqlBuWN2lzYffbx6U8d0"
+  val imageHeight = 1800
+  val imageWidth = 2880
+  val fileIdAudio = "XlDQEoyUJtKg9xhyl7uI"
+
   val validPhoneNumbers: Seq[(String, String)] =
     Seq(
       (" 0173-12  34dd5678"     , "+4917312345678"),
