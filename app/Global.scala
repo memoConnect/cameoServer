@@ -3,6 +3,14 @@
  * Date: 5/25/13
  * Time: 4:27 PM
  */
+
+import java.io.IOException
+
+import de.flapdoodle.embed.mongo.{ MongodProcess, MongodExecutable, MongodStarter }
+import de.flapdoodle.embed.mongo.config.{ Net, IMongodConfig, MongodConfigBuilder }
+import de.flapdoodle.embed.mongo.distribution.Version
+import de.flapdoodle.embed.mongo.tests.MongodForTestsFactory
+import de.flapdoodle.embed.process.runtime.Network
 import helper.MongoCollections._
 import helper.{ DbAdminUtilities, MongoCollections }
 import models.{ Conversation, GlobalState }
@@ -64,38 +72,6 @@ object StatsFilter extends EssentialFilter {
 object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter) {
 
   override def onStart(app: play.api.Application) = {
-    // make sure that we have a connection to mongodb
-    def checkMongoConnection(): Boolean = {
-
-      // command to get the database version
-      case class BuildInfo() extends Command[Map[String, BSONValue]] {
-        override def makeDocuments = BSONDocument("buildinfo" -> 1)
-
-        object ResultMaker extends BSONCommandResultMaker[Map[String, BSONValue]] {
-          def apply(document: BSONDocument) = Right(document.elements.toMap)
-        }
-      }
-
-      try {
-        val conversationResult = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
-        Await.result(conversationResult, 1.minute)
-
-        val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
-        val buildInfo = Await.result(futureBuildInfo, 1.minute)
-        val version = buildInfo.get("version") match {
-          case Some(BSONString(str)) => str
-          case _                     => "na"
-        }
-        Logger.info("DB Connection OK. Version: " + version)
-        DbAdminUtilities.mongoVersion = version
-        true
-      } catch {
-        case e: Exception =>
-          Logger.error("Could not connect to mongodb", e)
-          Thread.sleep(1000)
-          checkMongoConnection()
-      }
-    }
 
     checkMongoConnection()
 
@@ -164,5 +140,56 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     Logger.info("Shutting down app")
     Statsd.increment("custom.instances", -1)
   }
+
+  // make sure that we have a connection to mongodb
+  private def checkMongoConnection(): Boolean = {
+
+    // command to get the database version
+    case class BuildInfo() extends Command[Map[String, BSONValue]] {
+      override def makeDocuments = BSONDocument("buildinfo" -> 1)
+
+      object ResultMaker extends BSONCommandResultMaker[Map[String, BSONValue]] {
+        def apply(document: BSONDocument) = Right(document.elements.toMap)
+      }
+    }
+
+    try {
+      val conversationResult = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
+      Await.result(conversationResult, 1.minute)
+
+      val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
+      val buildInfo = Await.result(futureBuildInfo, 1.minute)
+      val version = buildInfo.get("version") match {
+        case Some(BSONString(str)) => str
+        case _                     => "na"
+      }
+      Logger.info("DB Connection OK. Version: " + version)
+      DbAdminUtilities.mongoVersion = version
+      true
+    } catch {
+      case e: Exception =>
+        Logger.error("Could not connect to mongodb", e)
+        Thread.sleep(1000)
+        checkMongoConnection()
+    }
+  }
+
+  private def startLocalMongo(): Boolean = {
+
+    val mongoPort = Play.configuration.getInt("embed.mongo.port").get
+    val mongoVersion = Play.configuration.getString("embed.mongo.dbversion").get
+
+    val starter: MongodStarter = MongodStarter.getDefaultInstance
+
+    val mongodConfig: IMongodConfig = new MongodConfigBuilder()
+      .version(new Version(mongoVersion))
+      .net(new Net(mongoPort, Network.localhostIsIPv6()))
+      .build()
+
+    val mongodExecutable: MongodExecutable = starter.prepare(mongodConfig)
+    val mongod: MongodProcess = mongodExecutable.start()
+
+  }
+
 }
 
