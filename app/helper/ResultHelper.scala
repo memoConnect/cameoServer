@@ -34,10 +34,14 @@ object ResultHelper {
 
   // 5 weeks
   val expire = 60 * 60 * 24 * 7 * 5
-  def resOKWithCache(data: Array[Byte], etag: String): Result =
+  def resOkWithCache(data: Array[Byte], etag: String): Result =
     Ok(data)
       .withHeaders(("ETAG", etag))
       .withHeaders(("Cache-Control", "max-age=" + expire))
+  
+  def resOkWithCache(data: Array[Byte], etag: String, fileType: String): Result =
+    resOkWithCache(data, etag)
+      .withHeaders(("Content-Type", fileType))
 
   def resNotModified(): Result = NotModified
 

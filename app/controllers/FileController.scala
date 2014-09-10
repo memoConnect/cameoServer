@@ -1,11 +1,15 @@
 package controllers
 
-import java.io.{ ByteArrayOutputStream, OutputStream }
+import java.awt.{Color, Graphics2D}
+import java.awt.image.BufferedImage
+import java.io.{ IOException, ByteArrayInputStream, ByteArrayOutputStream, OutputStream }
+import javax.imageio.ImageIO
 
 import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, Utils }
 import models._
+import org.imgscalr.Scalr
 import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
@@ -17,6 +21,7 @@ import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Random
 import scala.util.control.Exception._
 import scala.util.control.NonFatal
 
@@ -147,7 +152,7 @@ object FileController extends ExtendedController {
                     FileChunk.find(meta.chunkId.id).map {
                       case None => resServerError("unable to retrieve chunk")
                       case Some(data) =>
-                        resOKWithCache(data, meta.chunkId.toString)
+                        resOkWithCache(data, meta.chunkId.toString)
                     }
                 }
             }
@@ -208,16 +213,17 @@ object FileController extends ExtendedController {
           case false => Right(resBadRequest("missing some chunks "))
           case true =>
             // join chunks
-            val builder = new StringBuilder()
+            val baos = new ByteArrayOutputStream()
 
             chunks.map(_.get).seq.foreach {
               chunk =>
                 val chunkString = new String(chunk)
                 val replaced = chunkString.replaceAll("^data:.*?;?base64,", "")
-                builder.append(replaced)
+                baos.write(replaced.getBytes)
             }
             // todo default image
-            Left(new BASE64Decoder().decodeBuffer(builder.toString()))
+            val bais = new ByteArrayInputStream(baos.toByteArray)
+            Left(new BASE64Decoder().decodeBuffer(bais))
         }
     }
   }
@@ -226,27 +232,54 @@ object FileController extends ExtendedController {
     request =>
       checkEtag(request.headers) {
         FileMeta.find(id).flatMap {
-          case None => Future(resNotFound("file"))
+          case None => Future(returnBlankImage)
           case Some(fileMeta) =>
             getFileFromChunks(fileMeta.chunks).map {
               case Right(result) => result
               case Left(bytes) =>
-                resOKWithCache(bytes, fileMeta.id.id)
-                  .withHeaders(("Content-Type", fileMeta.fileType))
+                resOkWithCache(bytes, fileMeta.id.id, fileMeta.fileType)
             }
         }
       }
   }
 
-  def getScaledFile(id: String, size: Int) = AuthAction(allowExternal = true).async {
+  def returnBlankImage: Result = {
+    val etag = "blankImage"    
+    val img : BufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
+    val g:Graphics2D  = img.createGraphics()
+    g.setColor(new Color(0, true))
+    g.fillRect(0, 0, 1, 1)
+    g.dispose()
+    val baos = new ByteArrayOutputStream()
+    ImageIO.write(img, "png", baos)
+    resOkWithCache(baos.toByteArray,etag, "image/png")
+  }
+
+  def getScaledFile(id: String, size: String) = AuthAction(allowExternal = true).async {
     request =>
       checkEtag(request.headers) {
-        FileMeta.find(id).flatMap {
-          case None => Future(resNotFound("file"))
-          case Some(fileMeta) =>
-            getFileFromChunks(fileMeta.chunks).map {
-              case Right(result) => result
-              case Left(bytes) => Ok("")
+        Utils.safeStringToInt(size) match {
+          case None => Future(resBadRequest("invalid size"))
+          case Some(sizeInt) =>
+            FileMeta.find(id).flatMap {
+              case None => Future(returnBlankImage)
+              case Some(fileMeta) =>
+                getFileFromChunks(fileMeta.chunks).map {
+                  case Right(result) => result
+                  case Left(bytes) =>
+                    val bais: ByteArrayInputStream = new ByteArrayInputStream(bytes)
+                    try {
+                      val image: BufferedImage = ImageIO.read(bais)
+                      val targetSize = Math.min(sizeInt, Math.max(image.getHeight, image.getWidth))
+                      val thumb: BufferedImage = Scalr.resize(image, targetSize)
+                      val baos = new ByteArrayOutputStream()
+                      ImageIO.write(thumb, "png", baos)
+                      resOkWithCache(baos.toByteArray, fileMeta.id.id, fileMeta.fileType)
+                    } catch {
+                      case e: IOException          => returnBlankImage
+                      case e: NullPointerException => returnBlankImage
+                    }
+                }
             }
         }
       }

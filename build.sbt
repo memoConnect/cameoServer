@@ -18,6 +18,7 @@ libraryDependencies ++= Seq(
   "batik" % "batik-svggen" % "1.6-1",
   "batik" % "batik-transcoder" % "1.6-1",
   "com.typesafe.play.plugins" %% "play-statsd" % "2.3.0",
+  "org.imgscalr" % "imgscalr-lib" % "4.2", // image scaler
   "org.json" % "org.json" % "chargebee-1.0" // needed of puship API
 )
 
