@@ -72,6 +72,9 @@ object EventController extends ExtendedController {
   def allowedRemoteEvents: Seq[String] =
     Seq(
       "authenticationRequest:start",
+      "authenticationRequest:key-response",
+      "authenticationRequest:key-request",
+      "authenticationRequest:verified",
       "authenticationRequest:cancel"
     )
 
@@ -93,7 +96,7 @@ object EventController extends ExtendedController {
               request.identity.contacts.exists(_.identityId.id.equals(id)) match {
                 case false => resNotFound("identity in contacts")
                 case true =>
-                  // check if event name is in blacklist
+                  // check if event name is in whitelist
                   allowedRemoteEvents.contains(ebr.name) match {
                     case false => resBadRequest("event not allowed")
                     case true  => sendEvent
