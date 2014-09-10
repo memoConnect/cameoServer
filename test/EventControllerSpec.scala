@@ -597,7 +597,7 @@ class EventControllerSpec extends StartedApp {
       checkEvent(events2, eventNameFinder(eventName), eventCheck)
     }
 
-    var allowedName = "authenticationRequest:key-response"
+    var allowedName = "authenticationRequest:start"
     var forbiddenName = "identity:update"
 
     "send allowed remote broadcast event from first to second user" in {

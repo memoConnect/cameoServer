@@ -71,7 +71,7 @@ object EventController extends ExtendedController {
 
   def allowedRemoteEvents: Seq[String] =
     Seq(
-      "authenticationRequest:transmit",
+      "authenticationRequest:start",
       "authenticationRequest:cancel"
     )
 

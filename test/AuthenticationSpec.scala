@@ -68,7 +68,9 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/a/v1/eventSubscription/$id<[^/]+>"),
       (POST, "/a/v1/eventSubscription"),
       (GET, "/a/v1/file/$id<[^/]+>"),
-      (GET, "/a/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>")
+      (GET, "/a/v1/file/$id<[^/]+>/$chunkIndex<[^/]+>"),
+      (GET, "/a/v1/file/$id<[^/]+>/raw"),
+      (GET, "/a/v1/file/$id<[^/]+>/scale/$size<[^/]+>")
     )
 
     // all routes not specified as nonAuth, allowExternal or twoFactorAuth are assumed to be auth
