@@ -95,12 +95,13 @@ POST           /a/v1/event/broadcast/identity/:id           controllers.EventCon
 POST           /a/v1/pushDevice                             controllers.PushNotificationController.addPushDevice
 DELETE         /a/v1/pushDevice/:id                         controllers.PushNotificationController.deletePushDevice(id)
 
-# Services
+# SERVICES
 POST           /a/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber
 POST           /a/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
-GET            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfo
+GET            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoGet
+POST            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoPost
 
-# Cockpit API
+# COCKPIT
 GET            /a/cockpit/v1/twoFactorAuth                  controllers.TwoFactorController.initiate()
 POST           /a/cockpit/v1/twoFactorAuth/confirm          controllers.TwoFactorController.confirmKey()
 GET            /a/cockpit/v1/lists                          controllers.cockpit.ListController.getAllLists()
