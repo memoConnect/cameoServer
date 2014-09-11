@@ -37,6 +37,7 @@ class AuthenticationSpec extends StartedApp {
       (POST, "/a/v1/services/checkEmailAddress"),
       (POST, "/a/v1/services/checkPhoneNumber"),
       (GET, "/a/v1/services/getBrowserInfo"),
+      (POST, "/a/v1/services/getBrowserInfo"),
       // (POST, "/a/v1/identity/search"),
       (POST, "/a/v1/account"),
       (POST, "/a/v1/account/check"),
