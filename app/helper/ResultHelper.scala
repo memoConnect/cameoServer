@@ -38,7 +38,7 @@ object ResultHelper {
     Ok(data)
       .withHeaders(("ETAG", etag))
       .withHeaders(("Cache-Control", "max-age=" + expire))
-  
+
   def resOkWithCache(data: Array[Byte], etag: String, fileType: String): Result =
     resOkWithCache(data, etag)
       .withHeaders(("Content-Type", fileType))

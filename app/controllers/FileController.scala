@@ -1,6 +1,6 @@
 package controllers
 
-import java.awt.{Color, Graphics2D}
+import java.awt.{ Color, Graphics2D }
 import java.awt.image.BufferedImage
 import java.io.{ IOException, ByteArrayInputStream, ByteArrayOutputStream, OutputStream }
 import javax.imageio.ImageIO
@@ -244,15 +244,15 @@ object FileController extends ExtendedController {
   }
 
   def returnBlankImage: Result = {
-    val etag = "blankImage"    
-    val img : BufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
-    val g:Graphics2D  = img.createGraphics()
+    val etag = "blankImage"
+    val img: BufferedImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB)
+    val g: Graphics2D = img.createGraphics()
     g.setColor(new Color(0, true))
     g.fillRect(0, 0, 1, 1)
     g.dispose()
     val baos = new ByteArrayOutputStream()
     ImageIO.write(img, "png", baos)
-    resOkWithCache(baos.toByteArray,etag, "image/png")
+    resOkWithCache(baos.toByteArray, etag, "image/png")
   }
 
   def getScaledFile(id: String, size: String) = AuthAction(allowExternal = true).async {

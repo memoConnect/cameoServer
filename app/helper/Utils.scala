@@ -2,7 +2,7 @@ package helper
 
 import java.math.BigInteger
 
-import play.api.{Logger, Play}
+import play.api.{ Logger, Play }
 import play.api.Play.current
 
 import scala.annotation.tailrec
@@ -58,8 +58,8 @@ object Utils {
     val aInt = versionA.split('.').toList.map(safeStringToInt(_).getOrElse(throw new InvalidVersionException(versionA)))
     val bInt = versionB.split('.').toList.map(safeStringToInt(_).getOrElse(throw new InvalidVersionException(versionB)))
 
-    if(aInt.isEmpty) throw new InvalidVersionException(versionA)
-    if(bInt.isEmpty) throw new InvalidVersionException(versionB)
+    if (aInt.isEmpty) throw new InvalidVersionException(versionA)
+    if (bInt.isEmpty) throw new InvalidVersionException(versionB)
 
     @tailrec
     def check(listA: List[Int], listB: List[Int]): Boolean = {

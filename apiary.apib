@@ -361,7 +361,7 @@ Add a new identity to account
         
 
         
-## Add public key to identity [/identity/publicKey]
+## Add public key to identity [/publicKey]
 
 ### POST
 
@@ -392,7 +392,7 @@ Add a new identity to account
         }
 
 
-## Manage public keys [/identity/publicKey/{id}]
+## Manage public keys [/publicKey/{id}]
 
 +   Parameters
     + id ... Id of the public key
@@ -439,7 +439,7 @@ Add a new identity to account
         }
 
 
-## Rekeying of AePassphrases [/identity/publicKey/{id}/aePassphrases{?newKeyId,limit}]
+## Rekeying of AePassphrases [/publicKey/{id}/aePassphrases{?newKeyId,limit}]
 
 +   Parameters
     + id ... all aePassphrases of this public key will be returned
@@ -477,7 +477,7 @@ Get AePassphrases for rekying
         }
 
 
-## Rekeying of AePassphrases [/identity/publicKey/{id}/aePassphrases]
+## Rekeying of AePassphrases [/publicKey/{id}/aePassphrases]
 
 +   Parameters
     + id ... the keyId for which the aePassphrases will be stored (newKeyId)
@@ -521,7 +521,7 @@ Store new aePassphrases
         }
 
 
-## Add signature to public key [/identity/publicKey/{id}/signature]
+## Add signature to public key [/publicKey/{id}/signature]
 
 +   Parameters
     + id ... Id of the public key
