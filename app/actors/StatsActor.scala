@@ -41,7 +41,7 @@ class StatsActor extends Actor {
               case None => Logger.error("Could not get message count")
               case Some(bson) =>
                 val count = (Json.toJson(bson) \ "count").as[Int]
-                Logger.debug("MessageCount: " + count)
+//                Logger.debug("MessageCount: " + count)
                 Statsd.gauge("messages.total", count)
             }
         }
@@ -53,7 +53,7 @@ class StatsActor extends Actor {
 
       MongoCollections.mongoDB.command(command).map {
         count =>
-          Logger.debug("AccountCount: " + count)
+//          Logger.debug("AccountCount: " + count)
           Statsd.gauge("accounts.total", count)
       }
 
