@@ -4,6 +4,8 @@
  * Time: 4:27 PM
  */
 
+import actors.{AccountCount, MessageCount, StatsActor}
+import akka.actor.Props
 import de.flapdoodle.embed.mongo.{ MongodProcess, MongodExecutable, MongodStarter }
 import de.flapdoodle.embed.mongo.config.{ RuntimeConfigBuilder, MongodConfigBuilder, Net, IMongodConfig }
 import de.flapdoodle.embed.mongo.distribution.{ Versions, Version }
@@ -14,6 +16,7 @@ import helper.MongoCollections._
 import helper.{ DbAdminUtilities, MongoCollections }
 import models.{ Conversation, GlobalState }
 import play.api.http.HeaderNames._
+import play.api.libs.concurrent.Akka
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.{ EssentialAction, EssentialFilter, WithFilters }
 import play.api.{ Logger, Play }
@@ -137,7 +140,11 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
       Await.result(migrate, 6.hours)
 
-      Statsd.increment("custom.instances")
+      // initiate stats
+      val statsActor = Akka.system.actorOf(Props[StatsActor])
+      Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, MessageCount)
+      Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, AccountCount)
+
     }
   }
 
