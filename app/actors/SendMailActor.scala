@@ -46,6 +46,8 @@ class SendMailActor extends Actor {
           val awsMessage = new model.Message().withBody(awsBody).withSubject(new Content().withData(mail.subject))
           sendEmailRequest.setMessage(awsMessage)
 
+          Logger.debug("JavaCharset: " + MimeUtility.getDefaultJavaCharset)
+
           try {
             val result = client.sendEmail(sendEmailRequest)
             Logger.info("Mail send. Id: " + result.getMessageId)
