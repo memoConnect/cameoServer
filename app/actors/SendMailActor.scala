@@ -40,13 +40,11 @@ class SendMailActor extends Actor {
           val sendEmailRequest = new SendEmailRequest()
           val dest = new Destination().withToAddresses(mail.to)
           sendEmailRequest.setDestination(dest)
-          val from: String = MimeUtility.encodeText(mail.fromName) + "<" + mail.fromMail + ">"
+          val from: String = MimeUtility.encodeText(mail.fromName, "utf-8", null) + "<" + mail.fromMail + ">"
           sendEmailRequest.setSource(from)
           val awsBody = new Body().withText(new Content().withData(mail.body))
           val awsMessage = new model.Message().withBody(awsBody).withSubject(new Content().withData(mail.subject))
           sendEmailRequest.setMessage(awsMessage)
-
-          Logger.debug("JavaCharset: " + MimeUtility.getDefaultJavaCharset)
 
           try {
             val result = client.sendEmail(sendEmailRequest)
