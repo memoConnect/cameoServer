@@ -17,11 +17,14 @@ trait EventDefinition {
 
   def toEventContent: JsObject
 
+  def fromIdentityId: Option[MongoId] = None
+
   def toEvent: Event = {
     Event(
       helper.IdHelper.generateEventId(),
       this.eventType,
-      this.toEventContent
+      this.toEventContent,
+      fromIdentityId
     )
   }
 }
@@ -109,6 +112,9 @@ case class NewIdentity(sendToIdentity: MongoId, identity: Identity) extends Even
   def toEventContent = identity.toPrivateJson
 }
 
-case class BroadcastEvent(sendToIdentity: MongoId, eventType: String, content: JsObject) extends EventDefinition {
+case class BroadcastEvent(sendToIdentity: MongoId, eventType: String, content: JsObject, fromIdentity: Identity) extends EventDefinition {
+
+  override def fromIdentityId = Some(fromIdentity.id)
+  
   def toEventContent: JsObject = content
 }

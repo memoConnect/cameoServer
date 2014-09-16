@@ -1,5 +1,6 @@
 package models
 
+import helper.JsonHelper
 import play.api.libs.json.{ Format, JsObject, Json, Reads }
 import traits.SubModel
 
@@ -10,13 +11,14 @@ import traits.SubModel
  */
 case class Event(id: MongoId,
                  eventName: String,
-                 data: JsObject) {
+                 data: JsObject,
+                 fromIdentityId: Option[MongoId]) {
 
   def toJson: JsObject =
     Json.obj(
       "name" -> this.eventName,
-      "data" -> this.data)
-
+      "data" -> this.data) ++
+      JsonHelper.maybeEmptyString("fromIdentityId", this.fromIdentityId.map(_.toString))
 }
 
 object Event extends SubModel[Event, EventSubscription] {
@@ -27,7 +29,7 @@ object Event extends SubModel[Event, EventSubscription] {
 
   implicit def mongoFormat: Format[Event] = createMongoFormat(Json.reads[Event], Json.writes[Event])
 
-  def createDefault(): Event = new Event(new MongoId(""), "foo", Json.obj())
+  def createDefault(): Event = new Event(new MongoId(""), "foo", Json.obj(), None)
   def docVersion: Int = 0
   def evolutions: Map[Int, Reads[JsObject]] = Map()
 }
