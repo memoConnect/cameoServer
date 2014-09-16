@@ -56,7 +56,8 @@ class ExternalMessageActor extends Actor {
                     EventSubscription.find(Json.obj("identityId" -> toIdentity.id)).map {
                       case None                                                   => sendNotification()
                       case Some(es) if es.identityId.id.equals(supportIdentityId) => sendNotification()
-                      case Some(es)                                               => // do nothing
+                      case Some(es) =>
+                        Logger.info("Not sending external Message " + message.id.id + " to identity " + toIdentity.id.id + ". There is an event subscription")
                     }
 
                     def sendNotification() {

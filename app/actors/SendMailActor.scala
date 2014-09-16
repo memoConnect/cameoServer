@@ -50,12 +50,8 @@ class SendMailActor extends Actor {
             val result = client.sendEmail(sendEmailRequest)
             Logger.info("Mail send. Id: " + result.getMessageId)
           } catch {
-            case ce: AmazonClientException => {
-              Logger.error("ACE", ce)
-            }
-            case se: AmazonServiceException => {
-              Logger.error("ACE", se)
-            }
+            case ce: AmazonClientException  => Logger.error("ACE", ce)
+            case se: AmazonServiceException => Logger.error("ACE", se)
           }
       }
   }
