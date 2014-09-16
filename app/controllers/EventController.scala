@@ -64,7 +64,7 @@ object EventController extends ExtendedController {
     request =>
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>
-          actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data)
+          actors.eventRouter ! BroadcastEvent(request.identity.id, ebr.name, ebr.data, request.identity)
           resOk("event send")
       }
   }
@@ -84,7 +84,7 @@ object EventController extends ExtendedController {
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>
           def sendEvent: Result = {
-            actors.eventRouter ! BroadcastEvent(new MongoId(id), ebr.name, ebr.data)
+            actors.eventRouter ! BroadcastEvent(new MongoId(id), ebr.name, ebr.data, request.identity)
             resOk("event send")
           }
 

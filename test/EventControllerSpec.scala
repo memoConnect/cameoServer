@@ -565,8 +565,10 @@ class EventControllerSpec extends StartedApp {
       val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
       val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
 
-      def eventCheck(js: JsObject) = (js \ "data").asOpt[JsObject] must beSome(eventData)
-
+      def eventCheck(js: JsObject) = {
+        (js \ "data").asOpt[JsObject] must beSome(eventData)
+        (js \ "fromIdentityId").asOpt[String] must beSome(testUser1.identityId)
+       }
       checkEvent(events1, eventNameFinder(eventName), eventCheck)
       checkEvent(events2, eventNameFinder(eventName), eventCheck)
     }
@@ -591,7 +593,10 @@ class EventControllerSpec extends StartedApp {
     "broadcast event should appear in subscription of second user" in {
       val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
 
-      def eventCheck(js: JsObject) = (js \ "data").asOpt[JsObject] must beSome(eventData)
+      def eventCheck(js: JsObject) = {
+        (js \ "data").asOpt[JsObject] must beSome(eventData)
+        (js \ "fromIdentityId").asOpt[String] must beSome(testUser1.identityId)
+      }
 
       checkEvent(events1, eventNameFinder(allowedName), eventCheck)
     }
