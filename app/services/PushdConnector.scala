@@ -42,10 +42,10 @@ object PushdConnector {
       case MPNS => "mpns"
     }
 
-    val body: Map[String, Seq[String]] = Map(
-      "proto" -> Seq(proto),
-      "token" -> Seq(token),
-      "lang" -> Seq(language.code)
+    val body: Map[String, String] = Map(
+      "proto" -> proto,
+      "token" -> token,
+      "lang" -> language.code
     )
 
     postRequest("/subscribers", body).map {
@@ -58,8 +58,8 @@ object PushdConnector {
     }
   }
 
-  def setSubscriptions(subscriberId: String, eventNames: Seq[String]): Future[Boolean] = {
-    val body = eventNames.map(e => e -> Json.obj("ignore_message" -> false)).toMap
+  def setSubscriptions(subscriberId: String, eventIds: Seq[String]): Future[Boolean] = {
+    val body = eventIds.map(e => e -> Json.obj("ignore_message" -> false)).toMap
 
     postRequest("/subscriber/" + subscriberId + "/subscriptions", Json.toJson(body)).map {
       response =>
@@ -71,14 +71,41 @@ object PushdConnector {
     }
   }
 
+  def sendEvent(eventId: String, titles: Map[Lang, String], content: Map[Lang, String]): Future[Boolean] = {
+
+    val body: Map[String, String] = Map(
+      "title" -> titles.get(LocalizationMessages.defaultLanguage).get,
+      "msg" -> content.get(LocalizationMessages.defaultLanguage).get
+    ) ++ content.map {
+        case (lang, msg) => "msg." + lang.code -> msg
+      } ++ titles.map {
+        case (lang, title) => "title." + lang.code -> title
+      }
+
+    Logger.debug("Sending pushd event eventId: " + body)
+
+    postRequest("/event/" + eventId, body).map {
+      response =>
+        response.status < 400
+    }.recover {
+      case e: Exception =>
+        Logger.error("Could not connect to pushd", e)
+        false
+    }
+
+  }
+
   def postRequest(path: String, body: JsValue): Future[WSResponse] = {
     // intellij does not like this for some reason, but it compiles...
     WS.url(url + path).post(body)
   }
 
-  def postRequest(path: String, body: Map[String, Seq[String]]): Future[WSResponse] = {
+  def postRequest(path: String, body: Map[String, String]): Future[WSResponse] = {
+    val bodyWithSeq = body.map {
+      case (key, value) => key -> Seq(value)
+    }
     // intellij does not like this for some reason, but it compiles...
-    WS.url(url + path).post(body)
+    WS.url(url + path).post(bodyWithSeq)
   }
 
 }

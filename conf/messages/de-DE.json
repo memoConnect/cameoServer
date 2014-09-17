@@ -1,6 +1,8 @@
 {
     "PUSH_MESSAGE":{
-        "NEW_MESSAGE" : "Nachricht von {{sender}}",
-        "FRIEND_REQUEST" : "Freundschaftsanfrage von {{sender}}"
+        "NEW_MESSAGE.TITLE" : "Neue Nachricht",
+        "NEW_MESSAGE.MSG" : "Nachricht von {{sender}}",
+        "FRIEND_REQUEST.TITLE" : "Freundschaftsanfrage",
+        "FRIEND_REQUEST.MSG" : "Freundschaftsanfrage von {{sender}}"
     }
 }

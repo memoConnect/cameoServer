@@ -2,7 +2,7 @@ package controllers
 
 import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
-import models.{ MongoId }
+import models.{Identity, Account, MongoId}
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.libs.Crypto
@@ -36,7 +36,6 @@ object PushNotificationController extends ExtendedController {
             }
         }
     }
-
     implicit val reads = Json.reads[AddPushDevice]
   }
 
@@ -48,10 +47,18 @@ object PushNotificationController extends ExtendedController {
           PushdConnector.getSubscriberId(pushDevice.deviceToken, pushDevice.platform, pushDevice.language).flatMap {
             case None => Future(resKo("Pushd is down"))
             case Some(id) =>
-              // set subscription to identityId of this user
-              setSubscriptions(id, Seq(request.identity.id.id)).map {
-                case false => resKo("Pushd is down")
-                case true  => resOk()
+              // set subscription to identityIds of this account
+              request.identity.accountId match {
+                case None => Future(resBadRequest("no account"))
+                case Some(accountId) =>
+                  Identity.findAll(Json.obj("accountId" -> accountId)).flatMap {
+                    identities =>
+                      val identityIds = identities.map(_.id.id)
+                      setSubscriptions(id, identityIds).map {
+                        case false => resKo("Pushd is down")
+                        case true  => resOk()
+                      }
+                  }
               }
           }
       }
