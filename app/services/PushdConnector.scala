@@ -1,7 +1,7 @@
 package services
 
 import play.api.i18n.Lang
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json._
 import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.http.{ ContentTypeOf, Writeable }
@@ -23,6 +23,16 @@ object PushdConnector {
   case object GCM extends PushdPlatform
   case object APNS extends PushdPlatform
   case object MPNS extends PushdPlatform
+
+  implicit val platformReads: Reads[PushdPlatform] = Reads {
+    js =>
+      js.asOpt[String] match {
+        case Some("ios") => JsSuccess(APNS)
+        case Some("and") => JsSuccess(GCM)
+        case Some("win") => JsSuccess(MPNS)
+        case _           => JsError("invalid platform")
+      }
+  }
 
   def getSubscriberId(token: String, platform: PushdPlatform, language: Lang): Future[Option[String]] = {
 

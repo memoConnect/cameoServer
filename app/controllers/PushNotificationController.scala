@@ -21,10 +21,9 @@ import scala.concurrent.Future
  */
 object PushNotificationController extends ExtendedController {
 
-  case class AddPushDevice(deviceToken: String, platform: String, language: Lang)
+  case class AddPushDevice(deviceToken: String, platform: PushdPlatform, language: Lang)
 
   object AddPushDevice {
-
     implicit val langReads: Reads[Lang] = Reads {
       js =>
         js.asOpt[String] match {
@@ -38,49 +37,41 @@ object PushNotificationController extends ExtendedController {
         }
     }
 
-    implicit val langWrites: Writes[Lang] = Writes {
-      lang => JsString(lang.code)
-    }
-
-    implicit val format = Json.format[AddPushDevice]
+    implicit val reads = Json.reads[AddPushDevice]
   }
 
   def addPushDevice() = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, AddPushDevice.format) {
+      validateFuture(request.body, AddPushDevice.reads) {
         pushDevice =>
-
-          val platform: PushdPlatform = pushDevice.platform match {
-            case "ios" => APNS
-            case "and" => GCM
-            case "win" => MPNS
-          }
-
           // get id for this token
-          PushdConnector.getSubscriberId(pushDevice.deviceToken, platform, pushDevice.language).flatMap {
+          PushdConnector.getSubscriberId(pushDevice.deviceToken, pushDevice.platform, pushDevice.language).flatMap {
             case None => Future(resKo("Pushd is down"))
             case Some(id) =>
               // set subscription to identityId of this user
               setSubscriptions(id, Seq(request.identity.id.id)).map {
                 case false => resKo("Pushd is down")
-                case true => resOk()
+                case true  => resOk()
               }
           }
       }
   }
 
-  def deletePushDevice(id: String) = AuthAction() {
+  def deletePushDevice(id: String, platform: String) = AuthAction().async {
     request =>
-      resOk()
-
-    //      request.identity.accountId match {
-    //        case None => Future(resBadRequest("identity has no account"))
-    //        case Some(accountId) =>
-    //          PushDevice.delete(accountId, MongoId(id)).map(_.updatedExisting).map {
-    //            case false => resBadRequest("could not delete")
-    //            case true  => resOk()
-    //          }
-    //      }
+      validateFuture(JsString(platform), PushdConnector.platformReads) {
+        platform =>
+        // get id for this token
+        PushdConnector.getSubscriberId(id, platform, Lang("en-US")).flatMap {
+          case None => Future(resKo("Pushd is down"))
+          case Some(subscriberId) =>
+            // set subscription to identityId of this user
+            setSubscriptions(subscriberId, Seq()).map {
+              case false => resKo("Pushd is down")
+              case true => resOk()
+            }
+        }
+      }
   }
 }
 
