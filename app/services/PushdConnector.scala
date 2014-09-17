@@ -53,7 +53,7 @@ object PushdConnector {
         (response.json \ "id").asOpt[String]
     }.recover {
       case e: Exception =>
-        Logger.error("Could not connect to pushd", e)
+        if(!Play.isTest) Logger.error("Could not connect to pushd", e)
         None
     }
   }
@@ -66,7 +66,7 @@ object PushdConnector {
         response.status < 400
     }.recover {
       case e: Exception =>
-        Logger.error("Could not connect to pushd", e)
+        if(!Play.isTest) Logger.error("Could not connect to pushd", e)
         false
     }
   }
@@ -89,7 +89,7 @@ object PushdConnector {
         response.status < 400
     }.recover {
       case e: Exception =>
-        Logger.error("Could not connect to pushd", e)
+        if(!Play.isTest) Logger.error("Could not connect to pushd", e)
         false
     }
 
