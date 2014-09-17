@@ -3,7 +3,12 @@ package controllers
 import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ MongoId }
-import play.api.libs.json.Json
+import play.api.Logger
+import play.api.i18n.Lang
+import play.api.libs.Crypto
+import play.api.libs.json._
+import services.PushdConnector
+import services.PushdConnector._
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,35 +21,51 @@ import scala.concurrent.Future
  */
 object PushNotificationController extends ExtendedController {
 
-  case class AddPushDevice(deviceToken: String, platform: String, language: String)
-  object AddPushDevice {implicit val format = Json.format[AddPushDevice]}
+  case class AddPushDevice(deviceToken: String, platform: String, language: Lang)
+
+  object AddPushDevice {
+
+    implicit val langReads: Reads[Lang] = Reads {
+      js =>
+        js.asOpt[String] match {
+          case None => JsError("no language")
+          case Some(lang) =>
+            try {
+              JsSuccess(Lang(lang))
+            } catch {
+              case e: RuntimeException => JsError("invalid language code")
+            }
+        }
+    }
+
+    implicit val langWrites: Writes[Lang] = Writes {
+      lang => JsString(lang.code)
+    }
+
+    implicit val format = Json.format[AddPushDevice]
+  }
 
   def addPushDevice() = AuthAction().async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, AddPushDevice.format) {
         pushDevice =>
-          Future(resOk(Json.toJson(pushDevice)))
 
-//          request.identity.accountId match {
-//            case None => Future(resBadRequest("identity has no account"))
-//            case Some(accountId) =>
-//              // check if another account has this deviceId
-//              PushDevice.findParent(pushDevice.deviceId)
-//                .flatMap {
-//                  case Some(account) if !account.id.equals(accountId) =>
-//                    PushDevice.delete(account.id, pushDevice.deviceId).map(_.updatedExisting)
-//                  case _ => Future(true)
-//                }
-//                .flatMap {
-//                  case false => Future(false)
-//                  case true =>
-//                    PushDevice.appendOrUpdate(accountId, pushDevice).map(_.updatedExisting)
-//                }
-//                .map {
-//                  case false => resBadRequest("could not add push device")
-//                  case true  => resOk()
-//                }
-//          }
+          val platform: PushdPlatform = pushDevice.platform match {
+            case "ios" => APNS
+            case "and" => GCM
+            case "win" => MPNS
+          }
+
+          // get id for this token
+          PushdConnector.getSubscriberId(pushDevice.deviceToken, platform, pushDevice.language).flatMap {
+            case None => Future(resKo("Pushd is down"))
+            case Some(id) =>
+              // set subscription to identityId of this user
+              setSubscriptions(id, Seq(request.identity.id.id)).map {
+                case false => resKo("Pushd is down")
+                case true => resOk()
+              }
+          }
       }
   }
 
@@ -52,14 +73,14 @@ object PushNotificationController extends ExtendedController {
     request =>
       resOk()
 
-//      request.identity.accountId match {
-//        case None => Future(resBadRequest("identity has no account"))
-//        case Some(accountId) =>
-//          PushDevice.delete(accountId, MongoId(id)).map(_.updatedExisting).map {
-//            case false => resBadRequest("could not delete")
-//            case true  => resOk()
-//          }
-//      }
+    //      request.identity.accountId match {
+    //        case None => Future(resBadRequest("identity has no account"))
+    //        case Some(accountId) =>
+    //          PushDevice.delete(accountId, MongoId(id)).map(_.updatedExisting).map {
+    //            case false => resBadRequest("could not delete")
+    //            case true  => resOk()
+    //          }
+    //      }
   }
 }
 
