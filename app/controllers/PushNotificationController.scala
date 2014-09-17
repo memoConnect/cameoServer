@@ -21,7 +21,7 @@ import scala.concurrent.Future
  */
 object PushNotificationController extends ExtendedController {
 
-  case class AddPushDevice(token: String, platform: PushdPlatform, language: Lang)
+  case class AddPushDevice(deviceToken: String, platform: PushdPlatform, language: Lang)
 
   object AddPushDevice {
     implicit val langReads: Reads[Lang] = Reads {
@@ -47,7 +47,7 @@ object PushNotificationController extends ExtendedController {
       validateFuture(request.body, AddPushDevice.reads) {
         pushDevice =>
           // get id for this token
-          PushdConnector.getSubscriberId(pushDevice.token, pushDevice.platform, pushDevice.language).flatMap {
+          PushdConnector.getSubscriberId(pushDevice.deviceToken, pushDevice.platform, pushDevice.language).flatMap {
             case None => Future(resKo("Invalid token or platform"))
             case Some(id) =>
               // set subscription to identityIds of this account
