@@ -60,7 +60,6 @@ class AccountControllerSpec extends StartedApp {
       (data \ "email" \ "value").asOpt[String] must beSome
       (data \ "email" \ "isVerified").asOpt[Boolean] must beSome
       (data \ "identities").asOpt[Seq[JsObject]] must beSome
-      (data \ "pushDevices").asOpt[Seq[JsObject]] must beSome
     }
 
     "Refuse invalid Logins" in {

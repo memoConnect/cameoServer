@@ -29,21 +29,21 @@ class EventActor extends Actor {
               Account.find(accountId).map {
                 case None => // do nothing
                 case Some(account) =>
-                  account.pushDevices.foreach {
-                    pushDevice =>
-                      try {
-                        val language = Lang(pushDevice.language)
-                        val prefix = identity.getDisplayName + ": "
-                        val message = prefix + LocalizationMessages.get(msg.localizationKey, language, msg.localizationVariables)
-                        val pushNotification = PushNotification(message, pushDevice.deviceId.toString)
-                        pushNotificationRouter ! pushNotification
-                      } catch {
-                        case e: RuntimeException if e.getMessage.contains("Unrecognized language") =>
-                          Logger.error("Could not parse language id: " + pushDevice.language, e)
-                        case e: RuntimeException =>
-                          Logger.error("Error getting translated Message", e)
-                      }
-                  }
+//                  account.pushDevices.foreach {
+//                    pushDevice =>
+//                      try {
+//                        val language = Lang(pushDevice.language)
+//                        val prefix = identity.getDisplayName + ": "
+//                        val message = prefix + LocalizationMessages.get(msg.localizationKey, language, msg.localizationVariables)
+//                        val pushNotification = PushNotification(message, pushDevice.deviceId.toString)
+//                        pushNotificationRouter ! pushNotification
+//                      } catch {
+//                        case e: RuntimeException if e.getMessage.contains("Unrecognized language") =>
+//                          Logger.error("Could not parse language id: " + pushDevice.language, e)
+//                        case e: RuntimeException =>
+//                          Logger.error("Error getting translated Message", e)
+//                      }
+//                  }
               }
           }
       }
