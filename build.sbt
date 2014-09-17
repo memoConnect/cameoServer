@@ -21,7 +21,8 @@ libraryDependencies ++= Seq(
   "batik" % "batik-transcoder" % "1.6-1",
   "com.typesafe.play.plugins" %% "play-statsd" % "2.3.0",
   "org.imgscalr" % "imgscalr-lib" % "4.2", // image scaler
-  "org.json" % "org.json" % "chargebee-1.0" // needed of puship API
+  "org.json" % "org.json" % "chargebee-1.0", // needed of puship API
+  "net.sf.uadetector" % "distribution" % "2014.08"
 )
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature")

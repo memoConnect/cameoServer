@@ -75,7 +75,7 @@ POST           /a/v1/file/:id                               controllers.FileCont
 POST           /a/v1/file/:id/completed                     controllers.FileController.uploadFileComplete(id)
 GET            /a/v1/file/:id                               controllers.FileController.getFile(id)
 GET            /a/v1/file/:id/raw                           controllers.FileController.getRawFile(id)
-GET            /a/v1/file/:id/scale/:size                  controllers.FileController.getScaledFile(id,size)
+GET            /a/v1/file/:id/scale/:size                   controllers.FileController.getScaledFile(id,size)
 GET            /a/v1/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
@@ -99,7 +99,7 @@ DELETE         /a/v1/pushDevice/:id                         controllers.PushNoti
 POST           /a/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber
 POST           /a/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
 GET            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoGet
-POST            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoPost
+POST           /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoPost
 
 # COCKPIT
 GET            /a/cockpit/v1/twoFactorAuth                  controllers.TwoFactorController.initiate()
@@ -152,6 +152,9 @@ GET            /m/*file                                     controllers.Assets.a
 GET            /d/                                          controllers.Assets.at(path="/public/docs", file="index.html")
 GET            /d                                           controllers.Application.redirect(url = "/d/")
 GET            /d/*file                                     controllers.Assets.at(path="/public/docs", file)
+
+# App Redirector
+GET            /apr                                          controllers.AppRedirector.redirectToApp()
 
 # Redirect / to /app
 GET            /                                            controllers.Application.redirect(url = "/m/")
