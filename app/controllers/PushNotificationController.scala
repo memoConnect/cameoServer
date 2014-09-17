@@ -45,7 +45,7 @@ object PushNotificationController extends ExtendedController {
         pushDevice =>
           // get id for this token
           PushdConnector.getSubscriberId(pushDevice.deviceToken, pushDevice.platform, pushDevice.language).flatMap {
-            case None => Future(resKo("Pushd is down"))
+            case None => Future(resKo("Invalid token or platform"))
             case Some(id) =>
               // set subscription to identityIds of this account
               request.identity.accountId match {
@@ -55,7 +55,7 @@ object PushNotificationController extends ExtendedController {
                     identities =>
                       val identityIds = identities.map(_.id.id)
                       setSubscriptions(id, identityIds).map {
-                        case false => resKo("Pushd is down")
+                        case false => resKo("could not set subscription")
                         case true  => resOk()
                       }
                   }
