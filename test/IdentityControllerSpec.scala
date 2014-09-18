@@ -21,10 +21,13 @@ class IdentityControllerSpec extends StartedApp {
   val newTelCleaned = validPhoneNumbers(1)._2
   val newMail = validEmails(1)
   val newName = "newNameasdfasdf"
+  val newAvatar = "moepId"
+
 
   var cameoId = ""
 
   val externalContactDisplayName = "generic Display Name 15y"
+
 
   "IdentityController" should {
 
@@ -113,7 +116,7 @@ class IdentityControllerSpec extends StartedApp {
     "Edit an identity" in {
       val path = basePath + "/identity"
 
-      val json = Json.obj("phoneNumber" -> newTel, "email" -> newMail, "displayName" -> newName)
+      val json = Json.obj("phoneNumber" -> newTel, "email" -> newMail, "displayName" -> newName, "avatar" -> newAvatar)
 
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting4))
       val res = route(req).get
@@ -143,6 +146,7 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "email" \ "value").asOpt[String] must beSome(newMail)
       (data \ "email" \ "isVerified").asOpt[Boolean] must beSome(false)
       (data \ "displayName").asOpt[String] must beSome(newName)
+      (data \ "avatar").asOpt[String] must beSome(newAvatar)
 
     }
 

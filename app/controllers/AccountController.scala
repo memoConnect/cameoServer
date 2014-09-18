@@ -97,6 +97,7 @@ object AccountController extends ExtendedController {
                                       None,
                                       additionalValues.displayName,
                                       Some(account.loginName),
+                                      None,
                                       Some(account.id),
                                       Some(true)
                                     )
