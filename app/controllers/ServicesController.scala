@@ -7,6 +7,7 @@ import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
+import play.modules.statsd.api.Statsd
 import traits.ExtendedController
 
 /**
@@ -52,6 +53,9 @@ object ServicesController extends ExtendedController {
     request =>
       validate(request.body, GetBrowserInfo.format) {
         getBrowserInfo =>
+
+          Statsd.increment("custom.version." + getBrowserInfo.version)
+
           val language = request.acceptLanguages.headOption match {
             case None       => Play.configuration.getString("language.default").getOrElse("en-US")
             case Some(lang) => lang.code
