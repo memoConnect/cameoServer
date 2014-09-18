@@ -1,2 +1,1 @@
-380:info.schleichardt.play2.embed.mongo.EmbedMongoPlugin
 400:play.modules.reactivemongo.ReactiveMongoPlugin

@@ -4,9 +4,7 @@ import java.security.MessageDigest
 
 import models.MongoId
 import org.apache.commons.codec.binary.Base64
-import org.mindrot.jbcrypt.BCrypt
 import play.api.Logger
-import play.api.libs.Crypto
 
 /**
  * User: Björn Reimer

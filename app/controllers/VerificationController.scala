@@ -3,7 +3,7 @@ package controllers
 import actors.VerifyActor
 import akka.actor.Props
 import constants.Verification._
-import helper.CmActions.AuthAction
+import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ Identity, IdentityUpdate, MongoId, VerificationSecret }
 import play.api.Play.current

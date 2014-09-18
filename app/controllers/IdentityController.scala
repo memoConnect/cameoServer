@@ -1,15 +1,14 @@
 package controllers
 
-import actors.{ NewIdentity, NewMessage }
-import helper.CmActions.AuthAction
+import helper.AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
-import play.api.mvc.{ Result, Request, Action }
-import services.AvatarGenerator
+import play.api.mvc.{ Request, Result }
+import services.{ AvatarGenerator, NewIdentity }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

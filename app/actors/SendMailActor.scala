@@ -7,13 +7,9 @@ import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.simpleemail.model._
 import com.amazonaws.services.simpleemail.{ AmazonSimpleEmailServiceClient, model }
 import com.amazonaws.{ AmazonClientException, AmazonServiceException }
-import constants.Messaging._
-import models._
 import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.{ Logger, Play }
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -44,7 +40,7 @@ class SendMailActor extends Actor {
           val sendEmailRequest = new SendEmailRequest()
           val dest = new Destination().withToAddresses(mail.to)
           sendEmailRequest.setDestination(dest)
-          val from: String = MimeUtility.encodeText(mail.fromName) + "<" + mail.fromMail + ">"
+          val from: String = MimeUtility.encodeText(mail.fromName, "utf-8", null) + "<" + mail.fromMail + ">"
           sendEmailRequest.setSource(from)
           val awsBody = new Body().withText(new Content().withData(mail.body))
           val awsMessage = new model.Message().withBody(awsBody).withSubject(new Content().withData(mail.subject))
@@ -54,12 +50,8 @@ class SendMailActor extends Actor {
             val result = client.sendEmail(sendEmailRequest)
             Logger.info("Mail send. Id: " + result.getMessageId)
           } catch {
-            case ce: AmazonClientException => {
-              Logger.error("ACE", ce)
-            }
-            case se: AmazonServiceException => {
-              Logger.error("ACE", se)
-            }
+            case ce: AmazonClientException  => Logger.error("ACE", ce)
+            case se: AmazonServiceException => Logger.error("ACE", se)
           }
       }
   }

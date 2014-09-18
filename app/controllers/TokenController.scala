@@ -1,14 +1,13 @@
 package controllers
 
+import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ Account, Identity, Token }
 import org.mindrot.jbcrypt.BCrypt
-import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
 import traits.ExtendedController
-import helper.CmActions.AuthAction
 
 import scala.concurrent.Future
 

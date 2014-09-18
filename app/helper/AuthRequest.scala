@@ -16,7 +16,7 @@ import scala.concurrent.Future
 class AuthRequest[A](val identity: Identity, request: Request[A]) extends WrappedRequest[A](request)
 class TwoFactorAuthRequest[A](val identity: Identity, request: Request[A]) extends WrappedRequest[A](request)
 
-object CmActions {
+object AuthenticationActions {
 
   def AuthAction(allowExternal: Boolean = false, nonAuthBlock: Option[Request[Any] => Future[Result]] = None) =
     new ActionBuilder[AuthRequest] {
@@ -32,35 +32,45 @@ object CmActions {
   }
 
   def doAuthAction[A](allowExternal: Boolean, request: Request[A], block: AuthRequest[A] => Future[Result], nonAuthBlock: Option[Request[A] => Future[Result]]) = {
-    // check if a token is passed
+
+    def processToken(token: String): Future[Result] = {
+      Identity.findByToken(new MongoId(token)).flatMap {
+        case None =>
+          nonAuthBlock match {
+            case None          => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
+            case Some(nonAuth) => nonAuth(request)
+          }
+        case Some(identity) =>
+          // check if identity has account
+          (allowExternal, identity.accountId) match {
+            case (false, None) =>
+              nonAuthBlock match {
+                case None          => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
+                case Some(nonAuth) => nonAuth(request)
+              }
+            case _ => block(new AuthRequest[A](identity, request))
+          }
+      }
+    }
+
+    // check if a token is in the header
     request.headers.get(REQUEST_TOKEN_HEADER_KEY) match {
+      case Some(token) => processToken(token)
       case None =>
-        nonAuthBlock match {
-          case None          => Future.successful(resUnauthorized(REQUEST_TOKEN_MISSING))
-          case Some(nonAuth) => nonAuth(request)
-        }
-      case Some(token) =>
-        Identity.findByToken(new MongoId(token)).flatMap {
+        // check if the token is a query parameter
+        request.queryString.get("token") match {
+          case Some(Seq(token)) => processToken(token)
           case None =>
+            // execute request for unauthorized users
             nonAuthBlock match {
-              case None          => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
+              case None          => Future.successful(resUnauthorized(REQUEST_TOKEN_MISSING))
               case Some(nonAuth) => nonAuth(request)
-            }
-          case Some(identity) =>
-            // check if identity has account
-            (allowExternal, identity.accountId) match {
-              case (false, None) =>
-                nonAuthBlock match {
-                  case None          => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))
-                  case Some(nonAuth) => nonAuth(request)
-                }
-              case _ => block(new AuthRequest[A](identity, request))
             }
         }
     }
   }
 
-  // elevate  authLevel from regular to twoFactor, return error if not authorized
+  // elevate authLevel from regular to twoFactor, return error if not authorized
   def elevate[A](block: TwoFactorAuthRequest[A] => Future[Result]): (AuthRequest[A] => Future[Result]) = {
     authRequest =>
       authRequest.headers.get(REQUEST_TWO_FACTOR_TOKEN_HEADER_KEY) match {

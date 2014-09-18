@@ -83,12 +83,19 @@ object TestConfig {
 
   val internalContactId = "RJaMVpSkdhMRXc0DqnfT"
   val internalContactIdentityId = "l4ytByiHOw0iJ0LA2hpz"
+  val internalContactToken = "b6sCo31N4iLvzIHg8IfYIzsm8uX46pEpegkeCxLv"
+  val internalContactCameoId = "9kxZWFFbOCh0K9DZoHrv"
   val internalContact2CameoId = "RliVyZSsiG4e7pSVRuz2"
   val internalContact2IdentityId = "Q9nauLdsCOMhcmXmlL4p"
 
   val externalContactIdentityId = "XjizpBmduHdbh1XnKdgM"
   val externalContact2 = "EVFrPIr2oPpyVaUZGQjV"
   val externalContact2IdentityId = "DOZaWDTSnQE0ItFYgqEM"
+
+  val fileIdImage = "cqlBuWN2lzYffbx6U8d0"
+  val imageHeight = 1800
+  val imageWidth = 2880
+  val fileIdAudio = "XlDQEoyUJtKg9xhyl7uI"
 
   val validPhoneNumbers: Seq[(String, String)] =
     Seq(

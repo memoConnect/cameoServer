@@ -74,6 +74,8 @@ POST           /a/v1/file                                   controllers.FileCont
 POST           /a/v1/file/:id                               controllers.FileController.uploadFileChunks(id)
 POST           /a/v1/file/:id/completed                     controllers.FileController.uploadFileComplete(id)
 GET            /a/v1/file/:id                               controllers.FileController.getFile(id)
+GET            /a/v1/file/:id/raw                           controllers.FileController.getRawFile(id)
+GET            /a/v1/file/:id/scale/:size                   controllers.FileController.getScaledFile(id,size)
 GET            /a/v1/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
@@ -89,12 +91,17 @@ GET            /a/v1/eventSubscription/:id                  controllers.EventCon
 POST           /a/v1/event/broadcast                        controllers.EventController.broadcastEvent()
 POST           /a/v1/event/broadcast/identity/:id           controllers.EventController.remoteBroadcastEvent(id)
 
-# Services
+# PUSH NOTIFICATIONS
+POST           /a/v1/pushDevice                             controllers.PushNotificationController.addPushDevice
+DELETE         /a/v1/pushDevice/:platform/:id               controllers.PushNotificationController.deletePushDevice(id, platform)
+
+# SERVICES
 POST           /a/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber
 POST           /a/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
-GET            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfo
+GET            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoGet
+POST           /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoPost
 
-# Cockpit API
+# COCKPIT
 GET            /a/cockpit/v1/twoFactorAuth                  controllers.TwoFactorController.initiate()
 POST           /a/cockpit/v1/twoFactorAuth/confirm          controllers.TwoFactorController.confirmKey()
 GET            /a/cockpit/v1/lists                          controllers.cockpit.ListController.getAllLists()

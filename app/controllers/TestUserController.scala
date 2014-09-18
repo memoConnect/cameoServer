@@ -5,11 +5,12 @@ import helper.ResultHelper._
 import models.{ Account, FileMeta, Identity, TestUserNotification }
 import play.api.Play.current
 import play.api.libs.json.Json
-import play.api.mvc.{ Result, Action }
+import play.api.mvc.Action
 import play.api.{ Logger, Play }
 import traits.ExtendedController
-import scala.concurrent.duration._
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 
 /**

@@ -1,11 +1,10 @@
 package controllers
-import play.api.Play.current
-import helper.CmActions.AuthAction
+import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models._
-import play.api.{ Play, Logger }
+import play.api.Play
+import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
 import play.modules.statsd.api.Statsd
@@ -98,6 +97,7 @@ object AccountController extends ExtendedController {
                                       None,
                                       additionalValues.displayName,
                                       Some(account.loginName),
+                                      None,
                                       Some(account.id),
                                       Some(true)
                                     )

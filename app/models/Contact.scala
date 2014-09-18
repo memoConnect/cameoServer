@@ -2,10 +2,8 @@ package models
 
 import constants.Contacts._
 import helper.IdHelper
-import helper.ResultHelper._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import play.api.mvc.Result
 import traits.SubModel
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -102,8 +100,8 @@ object Contact extends SubModel[Contact, Identity] {
    * Evolutions
    */
 
-  val docVersion = 1
-  val evolutions = Map(
+  def docVersion = 1
+  def evolutions = Map(
     0 -> ContactEvolutions.addContactType
   )
 

@@ -1,6 +1,6 @@
 package controllers.cockpit
 
-import helper.CmActions._
+import helper.AuthenticationActions._
 import helper.ResultHelper._
 import models.{ Account, CockpitAccess, Identity, MongoId }
 import play.api.libs.json.{ Json, Reads }

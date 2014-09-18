@@ -2,8 +2,6 @@ FORMAT: 1A
 HOST: http://cameo.io
 
 # Cameo API
-new and improved ;)
-
 
 # Group Authentication
 
@@ -149,6 +147,13 @@ Get Account details of current user
               "value": "foo@baa.de",
               "isVerified": false
             },
+            "pushDevices": [
+                {
+                  "deviceId": "id",
+                  "language": "en-US",
+                  "platform": "android"
+                }
+          ],
             "created": 1392301163329,
             "lastUpdated": 1392301163329,
             "identities": [
@@ -209,44 +214,6 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
             "data": "verified"
         }
 
-## Add a new identity to your account [/identity]
-
-### POST
-        
-+ Request
-    + Headers
-    
-            Authorization: {token}
-    
-    + Body
-
-            {
-              "identity": { identity object },
-              "token" : { token object }
-            }
-
-+ Response 200
-
-        {
-          "res": "OK",
-          "data": {
-            "id": "5WtjLmPMEFYVzsn62DrP",
-            "displayName": "newNick",
-            "cameoId": "cameoId",
-            "userKey": "pSkgMI2ithOxLfsPpWD0XuEcKjEK6Prn9oPZ3Xp1",
-            "email": {
-              "value": "mail",
-              "isVerified": false
-            },
-            "phoneNumber": {
-              "value": "+49123456789",
-              "isVerified": false
-            },
-            "created": "06.02.2014 15:51:46",
-            "lastUpdated": "06.02.2014 15:51:46"
-          }
-        }
-
 
 ## Get public information of identity [/identity/{id}]
 
@@ -273,7 +240,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
              ]
           }
         }
-        
+       
         
 ## Manage your identity [/identity]
 
@@ -355,8 +322,46 @@ Edit your identity. All values are optional. Only values contained in the json w
           }
         }
         
+### POST
+Add a new identity to account
         
-## Add public key to identity [/identity/publicKey]
++ Request
+    + Headers
+    
+            Authorization: {token}
+    
+    + Body
+
+            {
+              "identity": { identity object },
+              "token" : { token object }
+            }
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "5WtjLmPMEFYVzsn62DrP",
+            "displayName": "newNick",
+            "cameoId": "cameoId",
+            "userKey": "pSkgMI2ithOxLfsPpWD0XuEcKjEK6Prn9oPZ3Xp1",
+            "email": {
+              "value": "mail",
+              "isVerified": false
+            },
+            "phoneNumber": {
+              "value": "+49123456789",
+              "isVerified": false
+            },
+            "created": "06.02.2014 15:51:46",
+            "lastUpdated": "06.02.2014 15:51:46"
+          }
+        }
+        
+
+        
+## Add public key to identity [/publicKey]
 
 ### POST
 
@@ -387,7 +392,7 @@ Edit your identity. All values are optional. Only values contained in the json w
         }
 
 
-## Manage public keys [/identity/publicKey/{id}]
+## Manage public keys [/publicKey/{id}]
 
 +   Parameters
     + id ... Id of the public key
@@ -434,7 +439,7 @@ Edit your identity. All values are optional. Only values contained in the json w
         }
 
 
-## Rekeying of AePassphrases [/identity/publicKey/{id}/aePassphrases{?newKeyId,limit}]
+## Rekeying of AePassphrases [/publicKey/{id}/aePassphrases{?newKeyId,limit}]
 
 +   Parameters
     + id ... all aePassphrases of this public key will be returned
@@ -472,7 +477,7 @@ Get AePassphrases for rekying
         }
 
 
-## Rekeying of AePassphrases [/identity/publicKey/{id}/aePassphrases]
+## Rekeying of AePassphrases [/publicKey/{id}/aePassphrases]
 
 +   Parameters
     + id ... the keyId for which the aePassphrases will be stored (newKeyId)
@@ -516,7 +521,7 @@ Store new aePassphrases
         }
 
 
-## Add signature to public key [/identity/publicKey/{id}/signature]
+## Add signature to public key [/publicKey/{id}/signature]
 
 +   Parameters
     + id ... Id of the public key
@@ -626,6 +631,30 @@ Returns all existing cameoIds that contain the string
                 }
             ]
         }
+
+
+## Add Puship-DeviceId for Push Notifications [/pushDevice]
+
+### POST
+
++ Request
+
+        {
+            "deviceId":"id",
+            "language":"en-US",
+            "platform":"android"
+        }
+        
++ Response 200
+
+## Delete deviceId [/deviceId/{id}]
+
+### DELETE
+ 
++   Parameters
+    + id ... device id
+    
++   Response 200
 
 
 # Group Messaging
@@ -1255,6 +1284,33 @@ Download chunks of a file
             "chunk":"some blob"
         }
 
+## Download raw file [/file/{id}/raw{?token}]
+
+### GET
+
++ Parameters
+    + id ... fileId
+    + token ... authorization token
+    
++ Response 200  
+    
+        Raw File
+
+
+## Scale image [/file/{id}/scale/{size}{?token}]
+
+### GET
+
++ Parameters
+    + id ... fileId
+    + size ... size of the boundary square for the image
+    + token ... authorization token
+    
++ Response 200
+    
+        Scaled Image or Blank image
+
+
 # Group Purl
 
 ## Use a purl [/purl/{secret}]
@@ -1685,10 +1741,29 @@ check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]
         {
             "res": "OK",
             "data": {
-                "language": "en"
+                "language": "en",
+                "versionIsSupported" : true
             }
         }
+    
         
+### POST
+        
++ Request 
+        
+        {
+          "version" : "client version"
+        }
+        
++ Response 200 
+       
+        {
+           "res": "OK",
+           "data": {
+               "language": "en",
+               "versionIsSupported" : true
+           }
+        }
         
 # Group Util
 

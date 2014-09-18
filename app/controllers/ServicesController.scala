@@ -1,12 +1,14 @@
 package controllers
 
-import helper.CheckHelper
+import helper.Utils.InvalidVersionException
+import helper.{ Utils, CheckHelper }
 import helper.ResultHelper._
 import play.api.Play
+import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
+import play.modules.statsd.api.Statsd
 import traits.ExtendedController
-import play.api.Play.current
 
 /**
  * User: Michael Merz
@@ -40,12 +42,42 @@ object ServicesController extends ExtendedController {
       }
   }
 
-  def getBrowserInfo() = Action {
+  case class GetBrowserInfo(version: String)
+  object GetBrowserInfo { implicit val format = Json.format[GetBrowserInfo] }
+
+  case class GetBrowserInfoResponse(languageCode: String,
+                                    versionIsSupported: Boolean)
+  object GetBrowserInfoResponse { implicit val format = Json.format[GetBrowserInfoResponse] }
+
+  def getBrowserInfoPost = Action(parse.tolerantJson) {
+    request =>
+      validate(request.body, GetBrowserInfo.format) {
+        getBrowserInfo =>
+
+          Statsd.increment("custom.version." + getBrowserInfo.version)
+
+          val language = request.acceptLanguages.headOption match {
+            case None       => Play.configuration.getString("language.default").getOrElse("en-US")
+            case Some(lang) => lang.code
+          }
+
+          val supportedVersion = Play.configuration.getString("client.version.min").getOrElse("0")
+          try {
+            val supported = Utils.compareVersions(supportedVersion, getBrowserInfo.version)
+            val res = GetBrowserInfoResponse(language, supported)
+            resOk(Json.toJson(res))
+          } catch {
+            case InvalidVersionException(msg) => resBadRequest("Invalid version: " + msg)
+          }
+      }
+  }
+
+  def getBrowserInfoGet = Action {
     request =>
       val language = request.acceptLanguages.headOption match {
         case None       => Play.configuration.getString("language.default").getOrElse("enUS")
         case Some(lang) => lang.code
       }
-      resOk(Json.obj("languageCode" -> language))
+      resOk(Json.toJson(GetBrowserInfoResponse(language, true)))
   }
 }

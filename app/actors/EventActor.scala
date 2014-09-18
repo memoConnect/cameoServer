@@ -2,89 +2,24 @@ package actors
 
 import akka.actor.Actor
 import models._
-import play.api.libs.json.{ JsObject, Json }
-import traits.EventMessage
+import play.api.Logger
+import play.api.i18n.Lang
+import services.{PushdConnector, EventDefinition, LocalizationMessages, PushEvent}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * User: Björn Reimer
  * Date: 12.05.14
  * Time: 13:28
  */
 
-case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventMessage {
-
-  def eventType = "conversation:new-message"
-
-  def toEventContent = Json.obj(
-    "conversationId" -> conversationId.toJson,
-    "message" -> message.toJson
-  )
-}
-
-case class NewConversation(sendToIdentity: MongoId, conversation: Conversation) extends EventMessage {
-
-  def eventType: String = "conversation:new"
-
-  def toEventContent: JsObject = conversation.toJson
-}
-
-case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendRequest, fromIdentity: Identity, toIdentityId: MongoId) extends EventMessage {
-
-  def eventType = "friendRequest:new"
-
-  def toEventContent =
-    Json.obj(
-      "friendRequest" -> friendRequest.toJsonWithIdentity(fromIdentity),
-      "to" -> toIdentityId.toJson
-    )
-}
-
-case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId, contact: JsObject) extends EventMessage {
-
-  def eventType = "friendRequest:accepted"
-
-  def toEventContent =
-    Json.obj(
-      "from" -> fromIdentity.toJson,
-      "to" -> toIdentityId.toJson,
-      "contact" -> contact
-    )
-}
-
-case class UpdatedIdentity(sendToIdentity: MongoId, identityId: MongoId, updatedValues: JsObject) extends EventMessage {
-
-  def eventType = "identity:update"
-
-  def toEventContent = updatedValues ++ Json.obj("id" -> identityId.toJson)
-
-}
-
-case class NewIdentity(sendToIdentity: MongoId, identity: Identity) extends EventMessage {
-
-  def eventType = "identity:new"
-
-  def toEventContent = identity.toPrivateJson
-}
-
-case class NewAePassphrases(sendToIdentity: MongoId, keyId: String, conversationIds: Seq[String]) extends EventMessage {
-  def eventType = "conversation:new-aePassphrase"
-
-  def toEventContent =
-    Json.obj(
-      "keyId" -> keyId,
-      "conversationIds" -> conversationIds
-    )
-}
-
-case class BroadcastEvent(sendToIdentity: MongoId, eventType: String, content: JsObject) extends EventMessage {
-  def toEventContent: JsObject = content
-}
-
 class EventActor extends Actor {
 
-  def receive() = {
-    case msg: EventMessage =>
-      EventSubscription.pushEvent(msg.sendToIdentity, msg.toEvent)
+  def receive = {
+    case event: EventDefinition with PushEvent =>
+      pushNotificationRouter ! PushNotification(event)
+      EventSubscription.storeEvent(event.sendToIdentity, event.toEvent)
+    case event: EventDefinition =>
+      EventSubscription.storeEvent(event.sendToIdentity, event.toEvent)
   }
-
 }

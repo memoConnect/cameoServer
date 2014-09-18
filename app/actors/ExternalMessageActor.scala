@@ -1,13 +1,14 @@
 package actors
 
-import akka.actor.{ Actor, Props }
+import akka.actor.Actor
 import constants.Messaging._
 import models._
-import play.api.{ Play, Logger }
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
+import play.api.{ Logger, Play }
+import services.{ NewMessage, NewMessageWithPush }
 
 /**
  * User: Björn Reimer
@@ -15,13 +16,13 @@ import play.api.libs.json.Json
  * Time: 5:36 PM
  */
 
-case class Notification(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
+case class ExternalMessage(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
 
-class NotificationActor extends Actor {
+class ExternalMessageActor extends Actor {
 
   def receive = {
 
-    case Notification(message, conversationId, recipients, subject) =>
+    case ExternalMessage(message, conversationId, recipients, subject) =>
 
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
@@ -35,23 +36,28 @@ class NotificationActor extends Actor {
 
           recipients.map {
             recipient =>
-              // send event
-              eventRouter ! NewMessage(recipient.identityId, conversationId, message)
 
-              // dont send back to sender
-              if (!recipient.identityId.equals(fromIdentity.id)) {
+              // don't send external message to sender
+              if (recipient.identityId.equals(fromIdentity.id)) {
+                // send event
+                eventRouter ! NewMessage(recipient.identityId, conversationId, message)
+              } else {
+                // send event
+                eventRouter ! NewMessageWithPush(recipient.identityId, fromIdentity, conversationId, message)
                 Identity.find(recipient.identityId).map {
                   case None =>
                     val error = "Could not find identityID " + recipient.identityId
                     Logger.error(error)
                   case Some(toIdentity) =>
+
                     val supportIdentityId = Play.configuration.getString("support.contact.identityId").getOrElse("")
 
                     // check if identity has an event subscription
                     EventSubscription.find(Json.obj("identityId" -> toIdentity.id)).map {
                       case None                                                   => sendNotification()
                       case Some(es) if es.identityId.id.equals(supportIdentityId) => sendNotification()
-                      case Some(es)                                               => // do nothing
+                      case Some(es) =>
+                        Logger.info("Not sending external Message " + message.id.id + " to identity " + toIdentity.id.id + ". There is an event subscription")
                     }
 
                     def sendNotification() {
@@ -106,8 +112,6 @@ class NotificationActor extends Actor {
       case _ =>
         MESSAGE_MAIL_REPLACE_ENCRYPTED_EN + url + "\n\n" + MESSAGE_MAIL_REPLACE_ENCRYPTED_DE + url
     }
-    Logger.debug("body: " + body)
-
     new Mail(fromName, fromMail, to, body, mailSubject)
   }
 

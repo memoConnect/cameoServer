@@ -179,16 +179,18 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set).map(_.updatedExisting)
   }
 
+  //todo: find generic way for updates
   def update(update: IdentityUpdate): Future[Boolean] = {
     update match {
-      case IdentityUpdate(None, None, None, None, None, None) => Future(true)
-      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAccountId, maybeIsDefault) =>
+      case IdentityUpdate(None, None, None, None, None, None, None) => Future(true)
+      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAvatar, maybeAccountId, maybeIsDefault) =>
 
         val set =
           Json.obj("$set" -> (
             maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
             maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
             maybeEmptyString("displayName", maybeDisplayName) ++
+            maybeEmptyJsValue("avatar", maybeAvatar.map(s => Json.toJson(MongoId(s)))) ++
             maybeEmptyString("cameoId", maybeCameoId) ++
             maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_))) ++
             maybeEmptyJsValue("isDefaultIdentity", maybeIsDefault.map(JsBoolean))
@@ -239,6 +241,10 @@ case class Identity(id: MongoId,
           Logger.error("Inital Support Contact not configured")
           Future(false)
       }
+  }
+
+  def getDisplayName: String = {
+    this.displayName.getOrElse(this.cameoId)
   }
 }
 
@@ -424,6 +430,7 @@ case class IdentityUpdate(phoneNumber: Option[VerifiedString] = None,
                           email: Option[VerifiedString] = None,
                           displayName: Option[String] = None,
                           cameoId: Option[String] = None,
+                          avatar: Option[String] = None,
                           accountId: Option[MongoId] = None,
                           isDefaultIdentity: Option[Boolean] = None)
 
@@ -434,6 +441,7 @@ object IdentityUpdate {
     (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
     (__ \ "displayName").readNullable[String] and
     Reads.pure(None) and
+    (__ \ "avatar").readNullable[String] and
     Reads.pure(None) and
     Reads.pure(None)
   )(IdentityUpdate.apply _)

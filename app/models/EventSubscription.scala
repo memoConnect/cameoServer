@@ -48,14 +48,14 @@ object EventSubscription extends Model[EventSubscription] {
     MongoCollections.mongoDB.command[Int](Count(col.name, Some(query)))
   }
 
-  // push events to all event queues of an identity
-  def pushEvent(identityId: MongoId, events: Seq[Event]): Future[Boolean] = {
+  // store events to all event queues of an identity
+  def storeEvent(identityId: MongoId, events: Seq[Event]): Future[Boolean] = {
     val query = Json.obj("identityId" -> identityId)
     val set = Json.obj("$push" -> Json.obj("events" -> Json.obj("$each" -> events)))
     col.update(query, set, multi = true).map { _.ok }
   }
-  def pushEvent(identityId: MongoId, event: Event): Future[Boolean] = {
-    pushEvent(identityId, Seq(event))
+  def storeEvent(identityId: MongoId, event: Event): Future[Boolean] = {
+    storeEvent(identityId, Seq(event))
   }
 
   // get all events for subscriptions and clear them

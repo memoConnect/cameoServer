@@ -1,13 +1,13 @@
 package controllers
 
-import actors.{ NewAePassphrases, UpdatedIdentity }
-import helper.CmActions._
+import helper.AuthenticationActions._
 import helper.IdHelper
 import helper.ResultHelper._
 import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
+import services.{ UpdatedIdentity }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -151,9 +151,6 @@ object PublicKeyController extends ExtendedController {
                   case true  => Logger.debug("updated")
                 }
           }
-          val event = NewAePassphrases(request.identity.id, id, list.map(_.conversationId))
-          Logger.debug(event.toString)
-          actors.eventRouter ! NewAePassphrases(request.identity.id, id, list.map(_.conversationId))
           resOk("updated")
       }
   }

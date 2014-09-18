@@ -1,7 +1,7 @@
 package services
 
 import actors.Sms
-import models.{ Account, Identity, TwoFactorSmsKey, VerifiedString }
+import models.{ Account, Identity, TwoFactorSmsKey }
 import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
@@ -17,7 +17,6 @@ import scala.concurrent.Future
 object TwoFactorAuth {
 
   def sendNewKey(identity: Identity): Future[Option[String]] = {
-
     // get phonenumber of account
     identity.accountId match {
       case None => Future(Some("identity is external"))
@@ -41,7 +40,6 @@ object TwoFactorAuth {
   }
 
   def verifyKey(key: String, identity: Identity): Future[Boolean] = {
-
     TwoFactorSmsKey.find(key).map {
       case None => false
       case Some(twoFactorSmsKey) =>

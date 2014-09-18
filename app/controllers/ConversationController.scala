@@ -1,13 +1,14 @@
 package controllers
 
-import actors.{ NewConversation, Notification }
-import helper.CmActions.AuthAction
+import actors.ExternalMessage
+import helper.AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
+import services.NewConversation
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -42,7 +43,7 @@ object ConversationController extends ExtendedController {
                   // send notification for last message only
                   messages.lastOption match {
                     case None          => // do nothing
-                    case Some(message) => actors.notificationRouter ! Notification(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
+                    case Some(message) => actors.externalMessageRouter ! ExternalMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
                   }
                   Left(conversation.copy(messages = messages))
               }.recoverTotal {
@@ -83,13 +84,16 @@ object ConversationController extends ExtendedController {
 
   def getConversation(id: String, offset: Int, limit: Int, keyId: List[String]) = AuthAction(allowExternal = true).async {
     request =>
-      Conversation.find(id, limit, offset).flatMap {
-        case None => Future(resNotFound("conversation"))
-        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.getMissingPassphrases.map {
-            missingPasshrases =>
-              resOk(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
-          }
+      Conversation.find(id, limit, offset).map {
+        case None => resNotFound("conversation")
+        case Some(c) => c.hasMemberResult(request.identity.id) {
+          resOk(c.toJsonWithKey(keyId))
+
+          // missing passphrase are not used anymore
+          //          c.getMissingPassphrases.map {
+          //            missingPasshrases =>
+          //              resOk(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
+          //          }
         }
       }
   }

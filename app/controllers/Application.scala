@@ -2,7 +2,7 @@ package controllers
 
 import helper.DbAdminUtilities
 import helper.ResultHelper._
-import models.{ Signature, MongoId, Account }
+import models.Account
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -19,20 +19,7 @@ object Application extends Controller {
 
   def index = Action.async {
     request =>
-      // get mongodb version
-      //      mongoDB.command(reactivemongo.core.commands.Status).map{
-      //        res =>
-      //          val dbVersion = res.get("version") match {
-      //            case Some(BSONString(version)) => version
-      //            case _ => "na"
-      //          }
-      //          Logger.debug("SERVERSTATUS: " + res.toString)
-      //          Ok(views.html.index(dbVersion))
-      //      }
-      val foo: Map[String, Signature] = Map("fooo" -> Signature("id", "content"))
-
-      Future(resOk(Json.toJson(foo)))
-    //      Future(Ok(views.html.index("2.6.3")))
+      Future(Ok(views.html.index(DbAdminUtilities.mongoVersion)))
   }
 
   def dumpDb() = Action {
