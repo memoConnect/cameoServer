@@ -3,7 +3,7 @@ package controllers
 import helper.Utils.InvalidVersionException
 import helper.{ Utils, CheckHelper }
 import helper.ResultHelper._
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
@@ -63,8 +63,12 @@ object ServicesController extends ExtendedController {
 
           val supportedVersion = Play.configuration.getString("client.version.min").getOrElse("0")
           try {
+            Logger.debug("version"+ supportedVersion+ ":" +getBrowserInfo.version)
+
             val supported = Utils.compareVersions(supportedVersion, getBrowserInfo.version)
-            val res = GetBrowserInfoResponse(language, supported)
+            // quickfix
+//            val res = GetBrowserInfoResponse(language, supported)
+            val res = GetBrowserInfoResponse(language, true)
             resOk(Json.toJson(res))
           } catch {
             case InvalidVersionException(msg) => resBadRequest("Invalid version: " + msg)
