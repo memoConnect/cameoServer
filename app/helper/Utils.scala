@@ -67,8 +67,8 @@ object Utils {
         case (Nil, Nil) => true
         case (Nil, _)   => true
         case (_, Nil)   => false
-        case (headA :: restA, headB :: restB) if headA <= headB =>
-          check(restA, restB)
+        case (headA :: restA, headB :: restB) if headA < headB => true
+        case (headA :: restA, headB :: restB) if headA == headB => check(restA, restB)
         case _ => false
       }
     }
