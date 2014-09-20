@@ -154,7 +154,7 @@ GET            /d                                           controllers.Applicat
 GET            /d/*file                                     controllers.Assets.at(path="/public/docs", file)
 
 # App Redirector
-GET            /apr                                          controllers.AppRedirector.redirectToApp()
+GET            /as                                          controllers.ServicesController.redirectToApp()
 
 # Redirect / to /app
 GET            /                                            controllers.Application.redirect(url = "/m/")

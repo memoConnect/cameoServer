@@ -203,8 +203,16 @@ class ServicesControllerSpec extends StartedApp {
         }
     }
 
-    "1is1" in {
-      1 === 1
+    "redirect to Apple App Store" in {
+      val path = "/as"
+
+      val req = FakeRequest(GET, path).withHeaders(("User-Agent", "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16"))
+      val res = route(req).get
+
+      if (status(res) != TEMPORARY_REDIRECT) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(TEMPORARY_REDIRECT)
     }
   }
 

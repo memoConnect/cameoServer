@@ -1,13 +1,18 @@
 package controllers
 
-import helper.Utils.InvalidVersionException
-import helper.{ Utils, CheckHelper }
 import helper.ResultHelper._
+import helper.Utils.InvalidVersionException
+import helper.{CheckHelper, Utils}
+import net.sf.uadetector.OperatingSystemFamily
+import net.sf.uadetector.service.UADetectorServiceFactory
+import play.Logger
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Action
 import traits.ExtendedController
+
+import scala.collection.immutable.HashMap
 
 /**
  * User: Michael Merz
@@ -22,7 +27,7 @@ object ServicesController extends ExtendedController {
       val jsBody: JsValue = request.body
       (jsBody \ "phoneNumber").asOpt[String] match {
         case Some(phoneNumber) => CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
-          case None    => resBadRequest("invalid phone number")
+          case None => resBadRequest("invalid phone number")
           case Some(p) => resOk(Json.obj("phoneNumber" -> p))
         }
         case None => resBadRequest("no phoneNumber")
@@ -34,7 +39,7 @@ object ServicesController extends ExtendedController {
       val jsBody: JsValue = request.body
       (jsBody \ "emailAddress").asOpt[String] match {
         case Some(email) => CheckHelper.checkAndCleanEmailAddress(email) match {
-          case None    => resBadRequest("invalid emailAddress")
+          case None => resBadRequest("invalid emailAddress")
           case Some(e) => resOk(Json.obj("email" -> e))
         }
         case None => resBadRequest("missing emailAddress")
@@ -42,18 +47,24 @@ object ServicesController extends ExtendedController {
   }
 
   case class GetBrowserInfo(version: String)
-  object GetBrowserInfo { implicit val format = Json.format[GetBrowserInfo] }
+
+  object GetBrowserInfo {
+    implicit val format = Json.format[GetBrowserInfo]
+  }
 
   case class GetBrowserInfoResponse(languageCode: String,
                                     versionIsSupported: Boolean)
-  object GetBrowserInfoResponse { implicit val format = Json.format[GetBrowserInfoResponse] }
+
+  object GetBrowserInfoResponse {
+    implicit val format = Json.format[GetBrowserInfoResponse]
+  }
 
   def getBrowserInfoPost = Action(parse.tolerantJson) {
     request =>
       validate(request.body, GetBrowserInfo.format) {
         getBrowserInfo =>
           val language = request.acceptLanguages.headOption match {
-            case None       => Play.configuration.getString("language.default").getOrElse("en-US")
+            case None => Play.configuration.getString("language.default").getOrElse("en-US")
             case Some(lang) => lang.code
           }
 
@@ -71,9 +82,37 @@ object ServicesController extends ExtendedController {
   def getBrowserInfoGet = Action {
     request =>
       val language = request.acceptLanguages.headOption match {
-        case None       => Play.configuration.getString("language.default").getOrElse("enUS")
+        case None => Play.configuration.getString("language.default").getOrElse("enUS")
         case Some(lang) => lang.code
       }
       resOk(Json.toJson(GetBrowserInfoResponse(language, true)))
+  }
+
+  val iosUrl = Play.configuration.getString("app.download.ios").get
+  val androidUrl = Play.configuration.getString("app.download.android").get
+  val defaultUrl = Play.configuration.getString("app.download.default").get
+
+  val uaParser = UADetectorServiceFactory.getResourceModuleParser
+
+  val iosOpf: String = OperatingSystemFamily.IOS.getName
+  val androidOpf: String = OperatingSystemFamily.ANDROID.getName
+
+  val osUrlMapping = HashMap(
+    OperatingSystemFamily.IOS.getName -> iosUrl,
+    OperatingSystemFamily.ANDROID.getName -> androidUrl
+  )
+
+  //@TODO add WindowsPhone handling
+  def redirectToApp() = Action { request =>
+    request.headers.get("User-Agent") match {
+      case Some(userAgent) =>
+        val parsedUserAgent = uaParser.parse(userAgent)
+        val currentOsf = parsedUserAgent.getOperatingSystem.getFamilyName
+        val targetUrl = osUrlMapping.get(currentOsf).getOrElse(defaultUrl)
+        Logger.debug("%s found".format(currentOsf))
+        Redirect(targetUrl, TEMPORARY_REDIRECT)
+      case None =>
+        Redirect(defaultUrl, TEMPORARY_REDIRECT)
+    }
   }
 }
