@@ -30,6 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 import play.api.Play.current
+import play.filters.gzip.GzipFilter
 
 object AccessControllFilter extends EssentialFilter {
   // wrap action to modify the headers of every request
@@ -73,7 +74,7 @@ object StatsFilter extends EssentialFilter {
   }
 }
 
-object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter) {
+object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter, new GzipFilter()) {
 
   override def onStart(app: play.api.Application) = {
 

@@ -11,6 +11,7 @@ scalaVersion := "2.11.2"
 libraryDependencies ++= Seq(
   cache,
   ws,
+  filters,
   "org.reactivemongo" %% "play2-reactivemongo" % "0.10.5.akka23-SNAPSHOT",
   "org.mindrot" % "jbcrypt" % "0.3m",
   "de.flapdoodle.embed" % "de.flapdoodle.embed.mongo" % "1.46.0",
