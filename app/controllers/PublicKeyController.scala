@@ -93,14 +93,18 @@ object PublicKeyController extends ExtendedController {
       validateFuture[Signature](request.body, Signature.format) {
         signature =>
           // check who the public key belongs to
-          request.identity.publicKeys.exists(_.id.id.equals(id)) match {
-            case true =>
+          request.identity.publicKeys.find(_.id.id.equals(id)) match {
+            case Some(publicKey) =>
               // add to own public key
               request.identity.addSignatureToPublicKey(new MongoId(id), signature).map {
                 case false => resBadRequest("could not add")
-                case true  => resOk(signature.toJson)
+                case true  =>
+                  val newPublicKey = publicKey.copy(signatures = publicKey.signatures :+ signature)
+                  val event = UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Json.toJson(Seq(newPublicKey))))
+                  actors.eventRouter ! event
+                  resOk(signature.toJson)
               }
-            case false =>
+            case None =>
               request.identity.addPublicKeySignature(id, signature).map {
                 case false => resBadRequest("could not add")
                 case true  => resOk(signature.toJson)
