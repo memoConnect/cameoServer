@@ -142,9 +142,12 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
       // initiate stats
       val statsActor = Akka.system.actorOf(Props[StatsActor])
-      Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, MessageCount)
-      Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, AccountCount)
-
+      if(Play.configuration.getBoolean("stats.messages.total.enabled").getOrElse(false)) {
+        Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, MessageCount)
+      }
+      if(Play.configuration.getBoolean("stats.accounts.total.enabled").getOrElse(false)) {
+        Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, AccountCount)
+      }
     }
   }
 
