@@ -100,7 +100,7 @@ object PublicKeyController extends ExtendedController {
                 case false => resBadRequest("could not add")
                 case true  =>
                   val newPublicKey = publicKey.copy(signatures = publicKey.signatures :+ signature)
-                  val event = UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Json.toJson(Seq(newPublicKey))))
+                  val event = UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson)))
                   actors.eventRouter ! event
                   resOk(signature.toJson)
               }
