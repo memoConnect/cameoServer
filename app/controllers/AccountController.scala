@@ -2,6 +2,7 @@ package controllers
 import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models._
+import org.mindrot.jbcrypt.BCrypt
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
@@ -239,9 +240,21 @@ object AccountController extends ExtendedController {
               Account.find(accountId).flatMap {
                 case None => Future(resNotFound("account"))
                 case Some(account) =>
-                  account.update(accountUpdate).map {
-                    case false => resServerError("could not update")
-                    case true  => resOk("updated")
+                  def doAccountUpdate(): Future[Result] = {
+                    account.update(accountUpdate).map {
+                      case false => resServerError("could not update")
+                      case true  => resOk("updated")
+                    }
+                  }
+                  // check password if password is updated
+                  (accountUpdate.password, accountUpdate.oldPassword) match {
+                    case (None, _) =>  doAccountUpdate()
+                    case (Some(pw), None) => Future(resBadRequest("old password required"))
+                    case (Some(pw), Some(oldPw)) =>
+                      BCrypt.checkpw(oldPw, account.password) match {
+                        case false => Future(resBadRequest("invalid old password")                )
+                        case true => doAccountUpdate()
+                      }
                   }
               }
           }
