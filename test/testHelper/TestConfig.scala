@@ -70,7 +70,7 @@ object TestConfig {
   val emailExisting = "test@cameo.io"
 
   val invalidPhoneNumbers = Seq("abcd", "+4912345123451234512345", "", "+!\"§$%&/()=")
-  val invalidEmails = Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43")
+  val invalidEmails = Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43", "ajlk", "@asdf.de", "asasdf.ddsf@", "" , "+!\"§$@%&/().de=")
 
   val purlExtern = "MSaKlj4hJP"
   val purlExtern2 = "V3Ml6hzqX9"

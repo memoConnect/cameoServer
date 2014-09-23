@@ -41,9 +41,6 @@ object PushNotificationController extends ExtendedController {
 
   def addPushDevice() = AuthAction().async(parse.tolerantJson) {
     request =>
-      
-      Logger.debug("Add push device: " + request.body)
-      
       validateFuture(request.body, AddPushDevice.reads) {
         pushDevice =>
           // get id for this token

@@ -308,7 +308,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         }
   }
 
-  private def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean, displayName: Option[String] = None): Identity = {
+  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean = true, displayName: Option[String] = None): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
       accountId,
