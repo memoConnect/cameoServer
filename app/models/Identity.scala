@@ -115,9 +115,9 @@ case class Identity(id: MongoId,
     update match {
       case PublicKeyUpdate(None) => Future(true)
       case PublicKeyUpdate(maybeName) =>
-
         val setValues = {
-          maybeEmptyString("publicKeys.$.name", maybeName)
+          maybeEmptyString("publicKeys.$.name", maybeName) ++
+          Json.obj("publicKeys.$.deleted" -> false)
         }
         val publicKeyQuery = query ++ Json.obj("publicKeys._id" -> id)
         val set = Json.obj("$set" -> setValues)
@@ -284,7 +284,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
         maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson)) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
-        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson)) ++
+        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         addCreated(i.created) ++
@@ -297,7 +297,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         getCameoId(i.cameoId) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         maybeEmptyString("displayName", i.displayName) ++
-        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson)) ++ {
+        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++ {
           // add phoneNumber and email for internal identities
           i.accountId match {
             case None => Json.obj()

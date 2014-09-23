@@ -34,7 +34,13 @@ object PublicKeyController extends ExtendedController {
           val withId = publicKey.copy(id = IdHelper.generatePublicKeyId(publicKey.key))
           // check if this key has already been uploaded by this user
           request.identity.publicKeys.find(_.id.equals(withId.id)) match {
-            case Some(existingKey) => Future(resOk(existingKey.toJson))
+            case Some(existingKey) =>
+              // update key
+              val update = PublicKeyUpdate(withId.name)
+              request.identity.editPublicKey(withId.id, update).map {
+                case false => resBadRequest("unable to update")
+                case true  => resOk(withId.toJson)
+              }
             case None =>
               // check if this id already exists
               PublicKey.find(withId.id).flatMap {

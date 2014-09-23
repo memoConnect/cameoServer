@@ -34,7 +34,7 @@ class PublicKeyControllerSpec extends StartedApp {
     "add public key to identity" in {
       val path = basePath + "/publicKey"
 
-      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey, "keySize" -> pubKeySize)
+      val json = Json.obj("name" -> (pubKeyName + "foo"), "key" -> pubKey, "keySize" -> pubKeySize)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -47,7 +47,7 @@ class PublicKeyControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "id").asOpt[String] must beSome(pubKeyId)
-      (data \ "name").asOpt[String] must beSome(pubKeyName)
+      (data \ "name").asOpt[String] must beSome(pubKeyName + "foo")
       (data \ "key").asOpt[String] must beSome(pubKey)
       (data \ "keySize").asOpt[Int] must beSome(pubKeySize)
       (data \ "signatures").asOpt[Seq[JsObject]] must beSome
@@ -56,7 +56,7 @@ class PublicKeyControllerSpec extends StartedApp {
     "add the same key a second time" in {
       val path = basePath + "/publicKey"
 
-      val json = Json.obj("name" -> (pubKeyName + "foo"), "key" -> pubKey, "keySize" -> pubKeySize)
+      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey, "keySize" -> pubKeySize)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -374,6 +374,60 @@ class PublicKeyControllerSpec extends StartedApp {
     val aePassphrases = Seq("moepsPhrase1", "moepsPhrase2", "moepsPhrase3")
     val newAePassphrases = Seq("moepsPhrase1new", "moepsPhrase2new", "moepsPhrase3new")
     val conversationIds = Seq(cidExisting2, cidExisting3, cidExisting4)
+
+    "add same the key again" in {
+      val path = basePath + "/publicKey"
+
+      val json = Json.obj("name" -> pubKeyName, "key" -> pubKey, "keySize" -> pubKeySize)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(pubKeyId)
+      (data \ "name").asOpt[String] must beSome(pubKeyName)
+      (data \ "key").asOpt[String] must beSome(pubKey)
+      (data \ "keySize").asOpt[Int] must beSome(pubKeySize)
+      (data \ "signatures").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "the key should be restored with the old signatures" in {
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+      val pubKeys = (data \ "publicKeys").as[Seq[JsObject]]
+
+      pubKeys.length must beGreaterThanOrEqualTo(1)
+
+      val key1: JsObject = pubKeys.find(js => (js \ "id").as[String].equals(pubKeyId)).get
+      (key1 \ "id").asOpt[String] must beSome(pubKeyId)
+      (key1 \ "name").asOpt[String] must beSome(pubKeyName)
+      (key1 \ "key").asOpt[String] must beSome(pubKey)
+      (key1 \ "keySize").asOpt[Int] must beSome(pubKeySize)
+      (key1 \ "signatures").asOpt[Seq[JsObject]] must beSome
+
+
+      val signatures = (key1 \ "signatures").as[Seq[JsObject]]
+      signatures.length must beEqualTo(1)
+
+      val sig1: JsObject = signatures.find(js => (js \ "keyId").as[String].equals(signatureKeyId)).get
+      (sig1 \ "content").asOpt[String] must beSome(signature)
+    }
 
     "add AePassphrase to conversation 1" in {
       val path = basePath + "/conversation/" + conversationIds(0)

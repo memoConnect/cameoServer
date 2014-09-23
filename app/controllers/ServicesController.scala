@@ -63,12 +63,8 @@ object ServicesController extends ExtendedController {
 
           val supportedVersion = Play.configuration.getString("client.version.min").getOrElse("0")
           try {
-            Logger.debug("version"+ supportedVersion+ ":" +getBrowserInfo.version)
-
             val supported = Utils.compareVersions(supportedVersion, getBrowserInfo.version)
-            // quickfix
-//            val res = GetBrowserInfoResponse(language, supported)
-            val res = GetBrowserInfoResponse(language, true)
+            val res = GetBrowserInfoResponse(language, supported)
             resOk(Json.toJson(res))
           } catch {
             case InvalidVersionException(msg) => resBadRequest("Invalid version: " + msg)
