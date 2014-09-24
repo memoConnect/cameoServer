@@ -32,6 +32,16 @@ object PublicKeyController extends ExtendedController {
       validateFuture(request.body, PublicKey.createReads) {
         publicKey =>
           val withId = publicKey.copy(id = IdHelper.generatePublicKeyId(publicKey.key))
+
+          def sendEvent() = {
+            request.identity.contacts.foreach {
+              contact =>
+                actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+            }
+            // send event to ourselves
+            actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+          }
+
           // check if this key has already been uploaded by this user
           request.identity.publicKeys.find(_.id.equals(withId.id)) match {
             case Some(existingKey) =>
@@ -56,15 +66,6 @@ object PublicKeyController extends ExtendedController {
                       resOk(withId.toJson)
                   }
               }
-          }
-
-          def sendEvent(): Unit = {
-            request.identity.contacts.foreach {
-              contact =>
-                actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
-            }
-            // send event to ourselves
-            actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
           }
       }
   }
