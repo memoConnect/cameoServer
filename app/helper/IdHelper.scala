@@ -105,7 +105,6 @@ object IdHelper {
     val md: MessageDigest = MessageDigest.getInstance("SHA-256")
     md.update(publicKey.getBytes("UTF-8"))
     val id = new String(Base64.encodeBase64URLSafe(md.digest()))
-    Logger.debug(id)
     new MongoId(id)
   }
 

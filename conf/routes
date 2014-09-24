@@ -93,7 +93,7 @@ POST           /a/v1/event/broadcast/identity/:id           controllers.EventCon
 
 # PUSH NOTIFICATIONS
 POST           /a/v1/pushDevice                             controllers.PushNotificationController.addPushDevice
-DELETE         /a/v1/pushDevice/:id                         controllers.PushNotificationController.deletePushDevice(id)
+DELETE         /a/v1/pushDevice/:platform/:id               controllers.PushNotificationController.deletePushDevice(id, platform)
 
 # SERVICES
 POST           /a/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber

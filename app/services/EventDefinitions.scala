@@ -30,7 +30,9 @@ trait EventDefinition {
 }
 
 trait PushEvent {
-  def localizationKey: String
+
+  def localizationKeyTitle: String
+  def localizationKeyMsg: String
 
   def localizationVariables: Map[String, String]
 }
@@ -44,7 +46,8 @@ case class NewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, 
     "message" -> message.toJson
   )
 
-  def localizationKey = "PUSH_MESSAGE.NEW_MESSAGE"
+  def localizationKeyTitle = "PUSH_MESSAGE.NEW_MESSAGE.TITLE"
+  def localizationKeyMsg = "PUSH_MESSAGE.NEW_MESSAGE.MSG"
 
   def localizationVariables = Map {
     "sender" -> messageSender.getDisplayName
@@ -78,7 +81,8 @@ case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendReques
       "to" -> toIdentityId.toJson
     )
 
-  def localizationKey: String = "PUSH_MESSAGE.FRIEND_REQUEST"
+  def localizationKeyTitle = "PUSH_MESSAGE.FRIEND_REQUEST.TITLE"
+  def localizationKeyMsg: String = "PUSH_MESSAGE.FRIEND_REQUEST.MSG"
 
   def localizationVariables = Map {
     "sender" -> fromIdentity.getDisplayName

@@ -2,17 +2,18 @@ package controllers
 
 import helper.ResultHelper._
 import helper.Utils.InvalidVersionException
-import helper.{CheckHelper, Utils}
+import helper.{ CheckHelper, Utils }
 import net.sf.uadetector.OperatingSystemFamily
 import net.sf.uadetector.service.UADetectorServiceFactory
-import play.Logger
-import play.api.Play
 import play.api.Play.current
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
+import play.api.{ Logger, Play }
+import play.modules.statsd.api.Statsd
 import traits.ExtendedController
 
 import scala.collection.immutable.HashMap
+import scala.collection.mutable
 
 /**
  * User: Michael Merz
@@ -27,7 +28,7 @@ object ServicesController extends ExtendedController {
       val jsBody: JsValue = request.body
       (jsBody \ "phoneNumber").asOpt[String] match {
         case Some(phoneNumber) => CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
-          case None => resBadRequest("invalid phone number")
+          case None    => resBadRequest("invalid phone number")
           case Some(p) => resOk(Json.obj("phoneNumber" -> p))
         }
         case None => resBadRequest("no phoneNumber")
@@ -39,7 +40,7 @@ object ServicesController extends ExtendedController {
       val jsBody: JsValue = request.body
       (jsBody \ "emailAddress").asOpt[String] match {
         case Some(email) => CheckHelper.checkAndCleanEmailAddress(email) match {
-          case None => resBadRequest("invalid emailAddress")
+          case None    => resBadRequest("invalid emailAddress")
           case Some(e) => resOk(Json.obj("email" -> e))
         }
         case None => resBadRequest("missing emailAddress")
@@ -63,8 +64,11 @@ object ServicesController extends ExtendedController {
     request =>
       validate(request.body, GetBrowserInfo.format) {
         getBrowserInfo =>
+
+          Statsd.increment("custom.version." + getBrowserInfo.version)
+
           val language = request.acceptLanguages.headOption match {
-            case None => Play.configuration.getString("language.default").getOrElse("en-US")
+            case None       => Play.configuration.getString("language.default").getOrElse("en-US")
             case Some(lang) => lang.code
           }
 
@@ -82,7 +86,7 @@ object ServicesController extends ExtendedController {
   def getBrowserInfoGet = Action {
     request =>
       val language = request.acceptLanguages.headOption match {
-        case None => Play.configuration.getString("language.default").getOrElse("enUS")
+        case None       => Play.configuration.getString("language.default").getOrElse("enUS")
         case Some(lang) => lang.code
       }
       resOk(Json.toJson(GetBrowserInfoResponse(language, true)))
@@ -101,6 +105,7 @@ object ServicesController extends ExtendedController {
     OperatingSystemFamily.IOS.getName -> iosUrl,
     OperatingSystemFamily.ANDROID.getName -> androidUrl
   )
+  //.withDefaultValue(defaultUrl)
 
   //@TODO add WindowsPhone handling
   def redirectToApp() = Action { request =>
@@ -108,8 +113,9 @@ object ServicesController extends ExtendedController {
       case Some(userAgent) =>
         val parsedUserAgent = uaParser.parse(userAgent)
         val currentOsf = parsedUserAgent.getOperatingSystem.getFamilyName
-        val targetUrl = osUrlMapping.get(currentOsf).getOrElse(defaultUrl)
         Logger.debug("%s found".format(currentOsf))
+        val targetUrl = osUrlMapping.getOrElse(currentOsf, defaultUrl)
+        Logger.debug("current target URL %s".format(targetUrl))
         Redirect(targetUrl, TEMPORARY_REDIRECT)
       case None =>
         Redirect(defaultUrl, TEMPORARY_REDIRECT)

@@ -115,9 +115,9 @@ case class Identity(id: MongoId,
     update match {
       case PublicKeyUpdate(None) => Future(true)
       case PublicKeyUpdate(maybeName) =>
-
         val setValues = {
-          maybeEmptyString("publicKeys.$.name", maybeName)
+          maybeEmptyString("publicKeys.$.name", maybeName) ++
+          Json.obj("publicKeys.$.deleted" -> false)
         }
         val publicKeyQuery = query ++ Json.obj("publicKeys._id" -> id)
         val set = Json.obj("$set" -> setValues)
@@ -179,16 +179,18 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set).map(_.updatedExisting)
   }
 
+  //todo: find generic way for updates
   def update(update: IdentityUpdate): Future[Boolean] = {
     update match {
-      case IdentityUpdate(None, None, None, None, None, None) => Future(true)
-      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAccountId, maybeIsDefault) =>
+      case IdentityUpdate(None, None, None, None, None, None, None) => Future(true)
+      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAvatar, maybeAccountId, maybeIsDefault) =>
 
         val set =
           Json.obj("$set" -> (
             maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
             maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
             maybeEmptyString("displayName", maybeDisplayName) ++
+            maybeEmptyJsValue("avatar", maybeAvatar.map(s => Json.toJson(MongoId(s)))) ++
             maybeEmptyString("cameoId", maybeCameoId) ++
             maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_))) ++
             maybeEmptyJsValue("isDefaultIdentity", maybeIsDefault.map(JsBoolean))
@@ -282,7 +284,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
         maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson)) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
-        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson)) ++
+        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         addCreated(i.created) ++
@@ -295,7 +297,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         getCameoId(i.cameoId) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         maybeEmptyString("displayName", i.displayName) ++
-        Json.obj("publicKeys" -> i.publicKeys.map(_.toJson)) ++ {
+        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++ {
           // add phoneNumber and email for internal identities
           i.accountId match {
             case None => Json.obj()
@@ -306,7 +308,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         }
   }
 
-  private def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean, displayName: Option[String] = None): Identity = {
+  def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean = true, displayName: Option[String] = None): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
       accountId,
@@ -428,6 +430,7 @@ case class IdentityUpdate(phoneNumber: Option[VerifiedString] = None,
                           email: Option[VerifiedString] = None,
                           displayName: Option[String] = None,
                           cameoId: Option[String] = None,
+                          avatar: Option[String] = None,
                           accountId: Option[MongoId] = None,
                           isDefaultIdentity: Option[Boolean] = None)
 
@@ -438,6 +441,7 @@ object IdentityUpdate {
     (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
     (__ \ "displayName").readNullable[String] and
     Reads.pure(None) and
+    (__ \ "avatar").readNullable[String] and
     Reads.pure(None) and
     Reads.pure(None)
   )(IdentityUpdate.apply _)

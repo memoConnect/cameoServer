@@ -28,7 +28,6 @@ case class Account(id: MongoId,
                    password: String,
                    phoneNumber: Option[VerifiedString],
                    email: Option[VerifiedString],
-                   pushDevices: Seq[PushDevice],
                    created: Date,
                    lastUpdated: Date) {
 
@@ -48,8 +47,8 @@ case class Account(id: MongoId,
   def update(update: AccountUpdate): Future[Boolean] = {
     val query = Json.obj("_id" -> this.id)
     update match {
-      case AccountUpdate(None, None, None) => Future(true)
-      case AccountUpdate(maybePhoneNumber, maybeEmail, maybePassword) =>
+      case AccountUpdate(None, None, None, _) => Future(true)
+      case AccountUpdate(maybePhoneNumber, maybeEmail, maybePassword, _) =>
 
         val set =
           Json.obj("$set" -> (
@@ -75,7 +74,6 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-      Reads.pure[Seq[PushDevice]](Seq()) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -86,7 +84,6 @@ object Account extends Model[Account] with CockpitEditable[Account] {
         Json.obj("loginName" -> a.loginName) ++
         maybeEmptyJsValue("phoneNumber", a.phoneNumber.map(_.toJson)) ++
         maybeEmptyJsValue("email", a.email.map(_.toJson)) ++
-        Json.obj("pushDevices" -> a.pushDevices.map(_.toJson)) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
@@ -97,7 +94,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
   }
 
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, Seq(), new Date, new Date)
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, new Date, new Date)
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -120,12 +117,13 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 3
+  def docVersion = 4
 
   def evolutions = Map(
     0 -> AccountEvolutions.migrateToVerifiedString,
     1 -> AccountEvolutions.addDeviceIds,
-    2 -> AccountEvolutions.convertToPushDevice
+    2 -> AccountEvolutions.convertToPushDevice,
+    3 -> AccountEvolutions.removePushDevices
   )
 }
 
@@ -231,16 +229,25 @@ object AccountEvolutions {
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
       js.transform(deleteArray andThen addArray andThen addVersion)
   }
+
+  def removePushDevices: Reads[JsObject] = Reads {
+    js =>
+      val deleteArray = (__ \ 'pushDevices).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
+      js.transform(deleteArray andThen addVersion)
+  }
 }
 
 case class AccountUpdate(phoneNumber: Option[VerifiedString] = None,
                          email: Option[VerifiedString] = None,
-                         password: Option[String] = None)
+                         password: Option[String] = None,
+                         oldPassword: Option[String] = None)
 
 object AccountUpdate {
   implicit val reads: Reads[AccountUpdate] = (
     (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
     (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ "password").readNullable[String](minLength[String](8) andKeep hashPassword)
+    (__ \ "password").readNullable[String](minLength[String](8) andKeep hashPassword) and
+    (__ \ "oldPassword").readNullable[String]
   )(AccountUpdate.apply _)
 }

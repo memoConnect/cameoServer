@@ -13,11 +13,13 @@ import scala.io.Source
  * Date: 03.09.14
  * Time: 12:15
  */
+
+//todo: improve handling of same languages from different countries. eg: en_UK and en_US
 object LocalizationMessages {
 
   // parse language files
   private val messageFolder = "conf/messages/"
-  private val defaultLanguage: Lang = Lang("en-Us")
+  val defaultLanguage: Lang = Lang("en-Us")
 
   private val messages: Map[Lang, JsObject] = new java.io.File(messageFolder).listFiles.toSeq.foldLeft[Map[Lang, JsObject]](Map()) {
     case (map, file) =>
@@ -33,46 +35,58 @@ object LocalizationMessages {
       }
   }
 
-  def get(key: String, language: Lang, variables: Map[String, String] = Map()): String = {
+  @tailrec
+  private def getKeyFromJson(json: JsObject, key: String, originalKey: String): String = {
 
-    @tailrec
-    def getValue(json: JsObject, key: String): String = {
-      key.split('.').toList match {
-        case Nil =>
-          key
-        case value :: Nil =>
-          (json \ value).asOpt[String].getOrElse(key)
-        case value :: rest =>
-          val reduced = (json \ value).asOpt[JsObject].getOrElse(Json.obj())
-          getValue(reduced, rest.mkString("."))
-      }
+    // first try to get the key
+    (json \ key).asOpt[String] match {
+      case Some(value) => value
+      case None =>
+        // try to get subkey
+        key.split('.').toList match {
+          case Nil =>
+            key
+          case value :: Nil =>
+            (json \ value).asOpt[String].getOrElse(originalKey)
+          case value :: rest =>
+            val reduced = (json \ value).asOpt[JsObject].getOrElse(Json.obj())
+            getKeyFromJson(reduced, rest.mkString("."), originalKey)
+        }
     }
+  }
 
+  // replace variables
+  @tailrec
+  def replaceVariables(message: String, variables: Map[String, String]): String = {
+    message.indexOf("{{") match {
+      case -1 => message
+      case startIndex =>
+        message.indexOf("}}") match {
+          case endIndex if endIndex < startIndex =>
+            Logger.error("Invalid position of }}")
+            message
+          case endIndex =>
+            val variableName = message.substring(startIndex + 2, endIndex)
+            val replaceWith = variables.getOrElse(variableName, "")
+            val replaced = message.replaceAll("\\{\\{" + variableName + "\\}\\}", replaceWith)
+            replaceVariables(replaced, variables)
+        }
+    }
+  }
+
+  def get(key: String, language: Lang, variables: Map[String, String] = Map()): String = {
     val withVariables = messages.get(language) match {
-      case Some(json) => getValue(json, key)
+      case Some(json) => getKeyFromJson(json, key, key)
       case None       => get(key, defaultLanguage, variables)
     }
 
-    // replace variables
-    @tailrec
-    def replaceVariables(message: String): String = {
-      message.indexOf("{{") match {
-        case -1 => message
-        case startIndex =>
-          message.indexOf("}}") match {
-            case endIndex if endIndex < startIndex =>
-              Logger.error("Invalid position of }}")
-              message
-            case endIndex =>
-              val variableName = message.substring(startIndex + 2, endIndex)
-              val replaceWith = variables.getOrElse(variableName, "")
-              val replaced = message.replaceAll("\\{\\{" + variableName + "\\}\\}", replaceWith)
-              replaceVariables(replaced)
-          }
-      }
-    }
+    replaceVariables(withVariables, variables)
+  }
 
-    replaceVariables(withVariables)
+  def getAll(key: String, variables: Map[String, String] = Map()): Map[Lang, String] = {
+    messages.mapValues {
+      json => replaceVariables(getKeyFromJson(json, key, key), variables)
+    }
   }
 
 }

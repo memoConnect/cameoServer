@@ -13,7 +13,7 @@ import play.api.libs.json.{ JsObject, Json }
 class PushNotificationTestActor extends Actor {
 
   def receive = {
-    case msg: PushNotification =>
-      TestValueStore.addValue("push", Json.toJson(msg).as[JsObject])
+    case PushNotification(event) =>
+      TestValueStore.addValue("push", Json.obj("sendToIdentity" -> event.sendToIdentity.id))
   }
 }

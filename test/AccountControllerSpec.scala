@@ -60,7 +60,6 @@ class AccountControllerSpec extends StartedApp {
       (data \ "email" \ "value").asOpt[String] must beSome
       (data \ "email" \ "isVerified").asOpt[Boolean] must beSome
       (data \ "identities").asOpt[Seq[JsObject]] must beSome
-      (data \ "pushDevices").asOpt[Seq[JsObject]] must beSome
     }
 
     "Refuse invalid Logins" in {
@@ -725,9 +724,36 @@ class AccountControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "update account password" in {
+    "refuse to update account password without old password" in {
       val path = basePath + "/account"
       val json = Json.obj("password" -> newPassword)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "refuse to update account password with invalid old password" in {
+      val path = basePath + "/account"
+      val json = Json.obj("password" -> newPassword, "oldPassword" -> "oldMeop")
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+
+    "update account password with valid old password" in {
+      val path = basePath + "/account"
+      val json = Json.obj("password" -> newPassword, "oldPassword" -> password)
 
       val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
@@ -746,7 +772,7 @@ class AccountControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
       val res = route(req).get
 
-      if (status(res) != OK) {
+      if (status(res) != UNAUTHORIZED) {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(UNAUTHORIZED)

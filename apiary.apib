@@ -176,6 +176,26 @@ Get Account details of current user
           }
         }
 
+### PUT 
+Update existing account
+
++ Request (application/json)
+
+        {
+          "password": "password",
+          "oldPassword" : "oldPassword", (required when setting new password)
+          "email": "mail",
+          "phoneNumber": "12335"
+        }
+
++ Response 200 (application/json)
+
+        {
+          "res": "OK",
+          "data": "updated"
+        }
+
+
 ## Verification [/verify]
 
 Send a verification mail/sms. Both parameters in the JSON are optional.
