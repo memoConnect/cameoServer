@@ -3,7 +3,7 @@ package controllers
 import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
-import play.api.Play
+import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.Result
@@ -56,9 +56,7 @@ object EventController extends ExtendedController {
 
   case class EventBroadcastRequest(data: JsObject, name: String)
 
-  object EventBroadcastRequest {
-    implicit val format = Json.format[EventBroadcastRequest]
-  }
+  object EventBroadcastRequest { implicit val format = Json.format[EventBroadcastRequest] }
 
   def broadcastEvent() = AuthAction()(parse.tolerantJson) {
     request =>
@@ -80,11 +78,12 @@ object EventController extends ExtendedController {
 
   def remoteBroadcastEvent(id: String) = AuthAction()(parse.tolerantJson) {
     request =>
-
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>
           def sendEvent: Result = {
-            actors.eventRouter ! BroadcastEvent(new MongoId(id), ebr.name, ebr.data, request.identity)
+            val event = BroadcastEvent(new MongoId(id), ebr.name, ebr.data, request.identity)
+            Logger.debug("Remote event to " + id + ": " + event.toEvent.toJson)
+            actors.eventRouter ! event
             resOk("event send")
           }
 

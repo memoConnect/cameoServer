@@ -39,7 +39,9 @@ object PublicKeyController extends ExtendedController {
               val update = PublicKeyUpdate(withId.name)
               request.identity.editPublicKey(withId.id, update).map {
                 case false => resBadRequest("unable to update")
-                case true  => resOk(withId.toJson)
+                case true  =>
+                  sendEvent()
+                  resOk(withId.toJson)
               }
             case None =>
               // check if this id already exists
@@ -50,15 +52,19 @@ object PublicKeyController extends ExtendedController {
                     case false => resServerError("unable to add")
                     case true =>
                       // send event to all people in address book
-                      request.identity.contacts.foreach {
-                        contact =>
-                          actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
-                      }
-                      // send event to ourselves
-                      actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                      sendEvent()
                       resOk(withId.toJson)
                   }
               }
+          }
+
+          def sendEvent(): Unit = {
+            request.identity.contacts.foreach {
+              contact =>
+                actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+            }
+            // send event to ourselves
+            actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
           }
       }
   }
