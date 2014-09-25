@@ -53,7 +53,7 @@ object PushdConnector {
         (response.json \ "id").asOpt[String]
     }.recover {
       case e: Exception =>
-        if(!Play.isTest) Logger.error("Could not connect to pushd", e)
+        if (!Play.isTest) Logger.error("Could not connect to pushd", e)
         None
     }
   }
@@ -66,16 +66,18 @@ object PushdConnector {
         response.status < 400
     }.recover {
       case e: Exception =>
-        if(!Play.isTest) Logger.error("Could not connect to pushd", e)
+        if (!Play.isTest) Logger.error("Could not connect to pushd", e)
         false
     }
   }
 
-  def sendEvent(eventId: String, titles: Map[Lang, String], content: Map[Lang, String]): Future[Boolean] = {
+  def sendEvent(eventId: String, titles: Map[Lang, String], content: Map[Lang, String], context: String): Future[Boolean] = {
 
     val body: Map[String, String] = Map(
       "title" -> titles.get(LocalizationMessages.defaultLanguage).get,
-      "msg" -> content.get(LocalizationMessages.defaultLanguage).get
+      "msg" -> content.get(LocalizationMessages.defaultLanguage).get,
+      "sound" -> context,
+      "data.context" -> context
     ) ++ content.map {
         case (lang, msg) => "msg." + lang.code -> msg
       } ++ titles.map {
@@ -83,10 +85,10 @@ object PushdConnector {
       }
 
     postRequest("/event/" + eventId, body).map {
-      response =>  response.status == 204
+      response => response.status == 204
     }.recover {
       case e: Exception =>
-        if(!Play.isTest) Logger.error("Could not connect to pushd", e)
+        if (!Play.isTest) Logger.error("Could not connect to pushd", e)
         false
     }
 
