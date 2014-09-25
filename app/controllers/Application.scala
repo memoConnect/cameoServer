@@ -49,7 +49,7 @@ object Application extends Controller {
   def checkApp = Action.async {
     for {
       dbConnection <- Account.col.find(Json.obj()).one[Account].map(_.isDefined)
-      pushD <- PushdConnector.sendEvent("test", Map(LocalizationMessages.defaultLanguage -> "test"), Map(LocalizationMessages.defaultLanguage -> "test"))
+      pushD <- PushdConnector.sendEvent("test", Map(LocalizationMessages.defaultLanguage -> "test"), Map(LocalizationMessages.defaultLanguage -> "test"), "")
     } yield {
       (dbConnection, pushD) match {
         case (false, true)  => resServerError("database down")
