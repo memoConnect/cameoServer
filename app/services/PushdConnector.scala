@@ -82,11 +82,8 @@ object PushdConnector {
         case (lang, title) => "title." + lang.code -> title
       }
 
-    Logger.debug("Sending pushd event eventId: " + body)
-
     postRequest("/event/" + eventId, body).map {
-      response =>
-        response.status < 400
+      response =>  response.status == 204
     }.recover {
       case e: Exception =>
         if(!Play.isTest) Logger.error("Could not connect to pushd", e)

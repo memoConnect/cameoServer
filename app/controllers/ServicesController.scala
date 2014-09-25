@@ -78,6 +78,6 @@ object ServicesController extends ExtendedController {
         case None       => Play.configuration.getString("language.default").getOrElse("enUS")
         case Some(lang) => lang.code
       }
-      resOk(Json.toJson(GetBrowserInfoResponse(language, true)))
+      resOk(Json.toJson(GetBrowserInfoResponse(language, versionIsSupported = true)))
   }
 }

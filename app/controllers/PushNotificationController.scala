@@ -2,7 +2,7 @@ package controllers
 
 import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
-import models.{Identity, Account, MongoId}
+import models.{ Identity, Account, MongoId }
 import play.api.Logger
 import play.api.i18n.Lang
 import play.api.libs.Crypto
@@ -41,6 +41,9 @@ object PushNotificationController extends ExtendedController {
 
   def addPushDevice() = AuthAction().async(parse.tolerantJson) {
     request =>
+
+      Logger.debug("Add push device: " + request.body)
+
       validateFuture(request.body, AddPushDevice.reads) {
         pushDevice =>
           // get id for this token
@@ -68,16 +71,16 @@ object PushNotificationController extends ExtendedController {
     request =>
       validateFuture(JsString(platform), PushdConnector.platformReads) {
         platform =>
-        // get id for this token
-        PushdConnector.getSubscriberId(id, platform, Lang("en-US")).flatMap {
-          case None => Future(resKo("Pushd is down"))
-          case Some(subscriberId) =>
-            // set subscription to identityId of this user
-            setSubscriptions(subscriberId, Seq()).map {
-              case false => resKo("Pushd is down")
-              case true => resOk()
-            }
-        }
+          // get id for this token
+          PushdConnector.getSubscriberId(id, platform, Lang("en-US")).flatMap {
+            case None => Future(resKo("Pushd is down"))
+            case Some(subscriberId) =>
+              // set subscription to identityId of this user
+              setSubscriptions(subscriberId, Seq()).map {
+                case false => resKo("Pushd is down")
+                case true  => resOk()
+              }
+          }
       }
   }
 }
