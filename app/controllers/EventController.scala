@@ -82,7 +82,6 @@ object EventController extends ExtendedController {
         ebr =>
           def sendEvent: Result = {
             val event = BroadcastEvent(new MongoId(id), ebr.name, ebr.data, request.identity)
-            Logger.debug("Remote event to " + id + ": " + event.toEvent.toJson)
             actors.eventRouter ! event
             resOk("event send")
           }
