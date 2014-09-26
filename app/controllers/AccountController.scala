@@ -3,7 +3,7 @@ import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models._
 import org.mindrot.jbcrypt.BCrypt
-import play.api.Play
+import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
@@ -209,10 +209,14 @@ object AccountController extends ExtendedController {
       }
 
       validateFuture[CheckLoginRequest](request.body, CheckLoginRequest.format) {
-        case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
-        case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName required"))
-        case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId)
-        case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName)
+        checkLoginRequest =>
+          Logger.info("Login check: " + checkLoginRequest)
+          checkLoginRequest match {
+            case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
+            case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName required"))
+            case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId)
+            case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName)
+          }
       }
   }
 
@@ -248,12 +252,12 @@ object AccountController extends ExtendedController {
                   }
                   // check password if password is updated
                   (accountUpdate.password, accountUpdate.oldPassword) match {
-                    case (None, _) =>  doAccountUpdate()
+                    case (None, _)        => doAccountUpdate()
                     case (Some(pw), None) => Future(resBadRequest("old password required"))
                     case (Some(pw), Some(oldPw)) =>
                       BCrypt.checkpw(oldPw, account.password) match {
-                        case false => Future(resBadRequest("invalid old password")                )
-                        case true => doAccountUpdate()
+                        case false => Future(resBadRequest("invalid old password"))
+                        case true  => doAccountUpdate()
                       }
                   }
               }
