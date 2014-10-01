@@ -54,9 +54,9 @@ object TestConfig {
   val identityExisting4 = "tfy8ZdsGVWlUI98igv2S"
 
   val cameoIdExisting = "KG5mSGTY8l3"
-  val cameoIdExisting2 ="bwyVeVnCvuO"
-  val cameoIdExisting3 ="m534n69eHW92DfDenrQo"
-  val cameoIdExisting4 ="4EKozMkDyz7fvvTU3TI0"
+  val cameoIdExisting2 = "bwyVeVnCvuO"
+  val cameoIdExisting3 = "m534n69eHW92DfDenrQo"
+  val cameoIdExisting4 = "4EKozMkDyz7fvvTU3TI0"
 
   val displayNameExisting = "Moeper"
   val displayNameExisting2 = "Moeper2"
@@ -69,8 +69,8 @@ object TestConfig {
   val telExisting = "+49123456789"
   val emailExisting = "test@cameo.io"
 
-  val invalidPhoneNumbers = Seq("abcd", "+4912345123451234512345", "", "+!\"§$%&/()=")
-  val invalidEmails = Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43", "ajlk", "@asdf.de", "asasdf.ddsf@", "" , "+!\"§$@%&/().de=")
+  val invalidPhoneNumbers = Seq("abcd", "+4912345123451234512345", "", "+!\"§$%&/()=", "asdfasdf1231233")
+  val invalidEmails = Seq("a@a.d", "a@a", "a@a aa.de", "a.de", "123@345.43", "ajlk", "@asdf.de", "asasdf.ddsf@", "", "+!\"§$@%&/().de=")
 
   val purlExtern = "MSaKlj4hJP"
   val purlExtern2 = "V3Ml6hzqX9"
@@ -99,12 +99,12 @@ object TestConfig {
 
   val validPhoneNumbers: Seq[(String, String)] =
     Seq(
-      (" 0173-12  34dd5678"     , "+4917312345678"),
-      ("491234512345"           , "+491234512345"),
-      ("(0049)1234512345"       , "+491234512345"),
-      ("0123/4512345"           , "+491234512345"),
-      ("0123-4512345"           , "+491234512345"),
-      (" +17234512345         " , "+17234512345")
+      (" 0173-12  345678", "+4917312345678"),
+      ("491234512345", "+491234512345"),
+      ("(0049)1234512345", "+491234512345"),
+      ("0123/4512345", "+491234512345"),
+      ("0123-4512345", "+491234512345"),
+      (" +17234512345         ", "+17234512345")
     )
   val validEmails: Seq[String] = Seq("a-b.c_d@a-b.c_d.co", "123@345.fo", "123@3-4-5.fo")
 }

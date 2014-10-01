@@ -59,13 +59,10 @@ object ContactController extends ExtendedController {
             // use mixed field if there is no phonenumber and email
             (create.email, create.phoneNumber, create.mixed) match {
               case (None, None, Some(mixed)) =>
-                val maybeTel = CheckHelper.checkAndCleanPhoneNumber(mixed)
-                val maybeMail = CheckHelper.checkAndCleanEmailAddress(mixed)
-                (maybeTel, maybeMail) match {
-                  case (None, None) => Future(resBadRequest("Neither phonenumber nor email: " + mixed))
-                  case (Some(tel), None) => createIdentityAndAddContact(create.displayName, Some(tel), None)
-                  case (None, Some(email)) => createIdentityAndAddContact(create.displayName, None, Some(email))
-                  case _ => Future(resBadRequest("mixed value seems to be both mail and phonenumber"))
+                CheckHelper.checkAndCleanMixed(mixed) match {
+                  case Some(Left(tel)) => createIdentityAndAddContact(create.displayName, Some(tel), None)
+                  case Some(Right(email)) => createIdentityAndAddContact(create.displayName, None, Some(email))
+                  case None => Future(resBadRequest("Neither phonenumber nor email: " + mixed))
                 }
               case _ => createIdentityAndAddContact(create.displayName, create.phoneNumber, create.email)
             }

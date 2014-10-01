@@ -10,6 +10,8 @@ import play.api.mvc.Action
 import play.modules.statsd.api.Statsd
 import traits.ExtendedController
 
+import scala.concurrent.Future
+
 /**
  * User: Michael Merz
  * Date: 31/01/14
@@ -23,7 +25,7 @@ object ServicesController extends ExtendedController {
       val jsBody: JsValue = request.body
       (jsBody \ "phoneNumber").asOpt[String] match {
         case Some(phoneNumber) => CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
-          case None    => resBadRequest("invalid phone number")
+          case None    => resKo("invalid phone number:" + phoneNumber)
           case Some(p) => resOk(Json.obj("phoneNumber" -> p))
         }
         case None => resBadRequest("no phoneNumber")
@@ -35,10 +37,24 @@ object ServicesController extends ExtendedController {
       val jsBody: JsValue = request.body
       (jsBody \ "emailAddress").asOpt[String] match {
         case Some(email) => CheckHelper.checkAndCleanEmailAddress(email) match {
-          case None    => resBadRequest("invalid emailAddress")
+          case None    => resKo("invalid emailAddress: " + email)
           case Some(e) => resOk(Json.obj("email" -> e))
         }
         case None => resBadRequest("missing emailAddress")
+      }
+  }
+
+  case class CheckMixedField(mixed: String)
+  object CheckMixedField {implicit val format = Json.format[CheckMixedField]}
+  def checkMixedField = Action(parse.tolerantJson) {
+    request =>
+      validate(request.body, CheckMixedField.format){
+        cmf =>
+          CheckHelper.checkAndCleanMixed(cmf.mixed) match {
+            case Some(Left(tel)) => resOk(Json.obj("phoneNumber" -> tel))
+            case Some(Right(email)) => resOk(Json.obj("email" -> email))
+            case None => resKo("Neither phonenumber nor email: " + cmf.mixed)
+          }
       }
   }
 
