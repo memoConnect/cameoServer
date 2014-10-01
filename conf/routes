@@ -98,6 +98,7 @@ DELETE         /a/v1/pushDevice/:platform/:id               controllers.PushNoti
 # SERVICES
 POST           /a/v1/services/checkPhoneNumber              controllers.ServicesController.checkPhoneNumber
 POST           /a/v1/services/checkEmailAddress             controllers.ServicesController.checkEmailAddress
+POST           /a/v1/services/checkMixed                    controllers.ServicesController.checkMixedField
 GET            /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoGet
 POST           /a/v1/services/getBrowserInfo                controllers.ServicesController.getBrowserInfoPost
 

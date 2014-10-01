@@ -84,7 +84,7 @@ class ServicesControllerSpec extends StartedApp {
           val req = FakeRequest(POST, path).withJsonBody(json)
           val res = route(req).get
 
-          status(res) aka "http result code bad request" must equalTo(BAD_REQUEST)
+          status(res) aka "http result code bad request" must equalTo(232)
 
           val resStatus = (contentAsJson(res) \ "res").as[String]
           resStatus must beEqualTo("KO")
@@ -94,33 +94,136 @@ class ServicesControllerSpec extends StartedApp {
       }
     }
 
-    "Check valid email addresses " in {
+    "Check valid emails " in {
       val path = basePath + "/services/checkEmailAddress"
+
       TestConfig.validEmails.map {
-        emailAddress =>
-          val json = Json.obj("emailAddress" -> emailAddress)
+        email =>
+          val json = Json.obj("emailAddress" -> email)
+
           val req = FakeRequest(POST, path).withJsonBody(json)
           val res = route(req).get
 
-          status(res) aka "http result code OK" must equalTo(OK)
+          if (status(res) != OK) {
+            Logger.error("Response: " + contentAsString(res))
+          }
+          status(res) must equalTo(OK)
+
           val resStatus = (contentAsJson(res) \ "res").as[String]
-          resStatus aka "result status OK" must beEqualTo("OK")
+          resStatus must beEqualTo("OK")
+
+          val data = (contentAsJson(res) \ "data").as[JsObject]
+          val cleaned = (data \ "email").as[String]
+          cleaned must beEqualTo(email)
       }
     }
 
-    "Check invalid email addresses " in {
+    "Check invalid emails " in {
       val path = basePath + "/services/checkEmailAddress"
       TestConfig.invalidEmails.map {
-        emailAddress =>
-          val json = Json.obj("emailAddress" -> emailAddress)
+        email =>
+          val json = Json.obj("emailAddress" -> email)
+
           val req = FakeRequest(POST, path).withJsonBody(json)
           val res = route(req).get
 
-          status(res) aka "http result code bad request" must equalTo(BAD_REQUEST)
+          status(res) aka "http result code bad request" must equalTo(232)
+
           val resStatus = (contentAsJson(res) \ "res").as[String]
-          resStatus aka "result status KO" must beEqualTo("KO")
+          resStatus must beEqualTo("KO")
+
+          val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
+          errorMsg must beSome
       }
     }
+
+    "Check valid phoneNumbers in mixed field" in {
+      val path = basePath + "/services/checkMixed"
+
+      TestConfig.validPhoneNumbers.map {
+        case (unclean, clean) =>
+          val json = Json.obj("mixed" -> unclean)
+
+          val req = FakeRequest(POST, path).withJsonBody(json)
+          val res = route(req).get
+
+          if (status(res) != OK) {
+            Logger.error("Response: " + contentAsString(res))
+          }
+          status(res) must equalTo(OK)
+
+          val resStatus = (contentAsJson(res) \ "res").as[String]
+          resStatus must beEqualTo("OK")
+
+          val data = (contentAsJson(res) \ "data").as[JsObject]
+          val cleanedPhoneNumber = (data \ "phoneNumber").as[String]
+          cleanedPhoneNumber must beEqualTo(clean)
+      }
+    }
+
+    "Check invalid phoneNumbers in mixed field" in {
+      val path = basePath + "/services/checkMixed"
+      TestConfig.invalidPhoneNumbers.map {
+        phoneNumber =>
+          val json = Json.obj("mixed" -> phoneNumber)
+
+          val req = FakeRequest(POST, path).withJsonBody(json)
+          val res = route(req).get
+
+          status(res) aka "http result code bad request" must equalTo(232)
+
+          val resStatus = (contentAsJson(res) \ "res").as[String]
+          resStatus must beEqualTo("KO")
+
+          val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
+          errorMsg must beSome
+      }
+    }
+
+    "Check valid emails in mixed field" in {
+      val path = basePath + "/services/checkMixed"
+
+      TestConfig.validEmails.map {
+        email =>
+          val json = Json.obj("mixed" -> email)
+
+          val req = FakeRequest(POST, path).withJsonBody(json)
+          val res = route(req).get
+
+          if (status(res) != OK) {
+            Logger.error("Response: " + contentAsString(res))
+          }
+          status(res) must equalTo(OK)
+
+          val resStatus = (contentAsJson(res) \ "res").as[String]
+          resStatus must beEqualTo("OK")
+
+          val data = (contentAsJson(res) \ "data").as[JsObject]
+          val cleaned = (data \ "email").as[String]
+          cleaned must beEqualTo(email)
+      }
+    }
+
+    "Check invalid phoneNumbers in mixed field" in {
+      val path = basePath + "/services/checkMixed"
+      TestConfig.invalidEmails.map {
+        email =>
+          val json = Json.obj("mixed" -> email)
+
+          val req = FakeRequest(POST, path).withJsonBody(json)
+          val res = route(req).get
+
+          status(res) aka "http result code bad request" must equalTo(232)
+
+          val resStatus = (contentAsJson(res) \ "res").as[String]
+          resStatus must beEqualTo("KO")
+
+          val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
+          errorMsg must beSome
+      }
+    }
+
+
 
     "Return browser info without version" in {
       val path = basePath + "/services/getBrowserInfo"
