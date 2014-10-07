@@ -17,7 +17,7 @@ import helper.{Utils, DbAdminUtilities, MongoCollections}
 import models.{ Conversation, GlobalState }
 import play.api.http.HeaderNames._
 import play.api.libs.concurrent.Akka
-import play.api.libs.json.{ JsValue, Json }
+import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc._
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
@@ -176,7 +176,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     }
 
     try {
-      val conversationResult = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
+      val conversationResult = conversationCollection.find(Json.obj()).one[JsObject].map(_.getOrElse(Json.obj()))
       Await.result(conversationResult, 1.minute)
 
       val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
