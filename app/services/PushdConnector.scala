@@ -16,7 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 object PushdConnector {
 
-  val url = Play.configuration.getString("pushd.url").getOrElse("http://localhost")
+  val maybeUrl = Play.configuration.getString("pushd.url")
 
   // available platforms
   trait PushdPlatform
@@ -48,26 +48,35 @@ object PushdConnector {
       "lang" -> language.code
     )
 
-    postRequest("/subscribers", body).map {
-      response =>
-        (response.json \ "id").asOpt[String]
-    }.recover {
-      case e: Exception =>
-        if (!Play.isTest) Logger.error("Could not connect to pushd", e)
-        None
+    postRequest("/subscribers", body).map{
+      _.map {
+        response => (response.json \ "id").asOpt[String]
+      }.recover {
+        case e: Exception =>
+          if (!Play.isTest) Logger.error("Could not connect to pushd", e)
+          None
+      }
+    }.getOrElse{
+      if (!Play.isTest) Logger.warn("pushd not configured")
+      Future(None)
     }
+
   }
 
   def setSubscriptions(subscriberId: String, eventIds: Seq[String]): Future[Boolean] = {
     val body = eventIds.map(e => e -> Json.obj("ignore_message" -> false)).toMap
 
-    postRequest("/subscriber/" + subscriberId + "/subscriptions", Json.toJson(body)).map {
-      response =>
-        response.status < 400
-    }.recover {
-      case e: Exception =>
-        if (!Play.isTest) Logger.error("Could not connect to pushd", e)
-        false
+    postRequest("/subscriber/" + subscriberId + "/subscriptions", Json.toJson(body)).map{
+      _.map {
+        response => response.status < 400
+      }.recover {
+        case e: Exception =>
+          if (!Play.isTest) Logger.error("Could not connect to pushd", e)
+          false
+      }
+    }.getOrElse{
+      if (!Play.isTest) Logger.warn("pushd not configured")
+      Future(false)
     }
   }
 
@@ -84,27 +93,37 @@ object PushdConnector {
         case (lang, title) => "title." + lang.code -> title
       }
 
-    postRequest("/event/" + eventId, body).map {
-      response => response.status == 204
-    }.recover {
-      case e: Exception =>
-        if (!Play.isTest) Logger.error("Could not connect to pushd", e)
-        false
+    postRequest("/event/" + eventId, body).map{
+      _.map {
+        response => response.status == 204
+      }.recover {
+        case e: Exception =>
+          if (!Play.isTest) Logger.error("Could not connect to pushd", e)
+          false
+      }
+    }.getOrElse{
+      if (!Play.isTest) Logger.warn("pushd not configured")
+      Future(false)
     }
-
   }
 
-  def postRequest(path: String, body: JsValue): Future[WSResponse] = {
-    // intellij does not like this for some reason, but it compiles...
-    WS.url(url + path).post(body)
+  def postRequest(path: String, body: JsValue): Option[Future[WSResponse]] = {
+    maybeUrl.map {
+      url =>
+        // intellij does not like this for some reason, but it compiles...
+        WS.url(url + path).post(body)
+    }
   }
 
-  def postRequest(path: String, body: Map[String, String]): Future[WSResponse] = {
+  def postRequest(path: String, body: Map[String, String]): Option[Future[WSResponse]] = {
     val bodyWithSeq = body.map {
       case (key, value) => key -> Seq(value)
     }
-    // intellij does not like this for some reason, but it compiles...
-    WS.url(url + path).post(bodyWithSeq)
+    maybeUrl.map {
+      url =>
+        // intellij does not like this for some reason, but it compiles...
+        WS.url(url + path).post(bodyWithSeq)
+    }
   }
 
 }
