@@ -3,7 +3,7 @@ package helper
 import java.io.{ File, FileWriter }
 
 import helper.MongoCollections._
-import models.{ GlobalState, Identity, MongoId }
+import models.{ Conversation, GlobalState, Identity, MongoId }
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Reads._
@@ -39,6 +39,7 @@ object DbAdminUtilities {
     cockpitAccessCollection
   ) :+ ReactiveMongoPlugin.db.collection[JSONCollection](fileChunkCollection.name)
 
+  val minMongoVersion = "2.6"
   var mongoVersion = "na"
 
   def findColByName(name: String): Option[JSONCollection] = {
@@ -99,7 +100,7 @@ object DbAdminUtilities {
     }
   }
 
-  val latestDbVersion = 5
+  val latestDbVersion = 6
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -275,11 +276,43 @@ object DbAdminUtilities {
     enumerator.run(iteratee)
   }
 
+  def reverseConversations: Any => Future[Boolean] = foo => {
+    Logger.info("reversing conversations")
+
+    def processConversation: (JsObject => Future[Boolean]) =
+      js => {
+        val id = (js \ "_id").as[MongoId]
+        val messages = (js \ "messages").as[Seq[JsObject]]
+
+        val query = Json.obj("_id" -> id)
+        val set = Json.obj("$set" ->
+          Json.obj(
+            "messages" -> messages.reverse,
+            "numberOfMessages" -> messages.length
+          )
+        )
+        conversationCollection.update(query, set).map {
+          le =>
+            Logger.debug("Reversed conversation: " + id)
+            le.updatedExisting
+        }
+      }
+
+    val enumerator = conversationCollection.find(Json.obj()).cursor[JsObject].enumerate()
+
+    val iteratee: Iteratee[JsObject, Boolean] = Iteratee.foldM(true) {
+      (result, js) => processConversation(js).map(r => r && result)
+    }
+
+    enumerator.run(iteratee)
+  }
+
   def migrations: Map[Int, Any => Future[Boolean]] = Map(
     0 -> migrateTokensWithIteratee,
     1 -> migrateRecipients,
     2 -> loginNamesToLowerCase,
     3 -> addAvatars,
-    4 -> setDefaultIdentity
+    4 -> setDefaultIdentity,
+    5 -> reverseConversations
   )
 }

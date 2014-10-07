@@ -35,7 +35,7 @@ case class Conversation(id: MongoId,
                         aePassphraseList: Seq[EncryptedPassphrase],
                         sePassphrase: Option[String],
                         passCaptcha: Option[MongoId],
-                        numberOfMessages: Option[Int],
+                        numberOfMessages: Int,
                         created: Date,
                         lastUpdated: Date,
                         keyTransmission: Option[String],
@@ -52,17 +52,10 @@ case class Conversation(id: MongoId,
     this.toJson ++ getPassphraseList(keyIds)
   }
 
-  def toSummaryJson: Future[JsObject] =
-    getMessageCount.map { count =>
-      Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
-        Json.obj("numberOfMessages" -> count)
-    }
+  def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
 
-  def toSummaryJsonWithKey(keyIds: Seq[String]): Future[JsObject] = {
-    this.toSummaryJson.map { js =>
-      js ++ getPassphraseList(keyIds)
-    }
-
+  def toSummaryJsonWithKey(keyIds: Seq[String]): JsObject = {
+    this.toSummaryJson ++ getPassphraseList(keyIds)
   }
 
   def query = Json.obj("_id" -> this.id)
@@ -83,7 +76,6 @@ case class Conversation(id: MongoId,
   }
 
   def getMessageCount: Future[Int] = {
-
     val pipeline: Seq[PipelineOperator] = Seq(
       Match(toBson(query).get),
       Unwind("messages"),
@@ -147,7 +139,15 @@ case class Conversation(id: MongoId,
   }
 
   def addMessage(message: Message): Future[Boolean] = {
-    val set = Json.obj("$push" -> Json.obj("messages" -> message))
+    val set =
+      Json.obj(
+        "$push" -> Json.obj("messages" ->
+            Json.obj(
+              "$each" -> Seq(message),
+              "$position" -> 0
+            )),
+        "$inc" -> Json.obj("numberOfMessages" -> 1)
+      )
     Conversation.col.update(query, setLastUpdated(set)).map(_.updatedExisting)
   }
 
@@ -185,6 +185,7 @@ object Conversation extends Model[Conversation] {
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
         Json.obj("aePassphraseList" -> c.aePassphraseList.map(_.toJson)) ++
+        Json.obj("numberOfMessages" -> c.numberOfMessages) ++
         maybeEmptyString("sePassphrase", c.sePassphrase) ++
         maybeEmptyString("subject", c.subject) ++
         maybeEmptyString("keyTransmission", c.keyTransmission) ++
@@ -198,6 +199,7 @@ object Conversation extends Model[Conversation] {
       Json.obj("id" -> c.id.toJson) ++
         addLastUpdated(c.lastUpdated) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
+        Json.obj("numberOfMessages" -> c.numberOfMessages) ++
         maybeEmptyString("subject", c.subject) ++
         maybeEmptyString("keyTransmission", c.keyTransmission) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
@@ -222,7 +224,7 @@ object Conversation extends Model[Conversation] {
 
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
     val query = Json.obj("recipients.identityId" -> id)
-    col.find(query, limitArray("messages", -1, 0)).cursor[Conversation].collect[Seq]()
+    col.find(query, limitArray("messages", 1, 0)).cursor[Conversation].collect[Seq]()
   }
 
   def getAePassphrases(identityId: MongoId, oldKeyId: MongoId, newKeyId: MongoId, limit: Option[Int]): Future[Seq[AePassphrase]] = {
@@ -264,7 +266,7 @@ object Conversation extends Model[Conversation] {
              sePassphrase: Option[String] = None,
              keyTransmission: Option[String] = Some(KeyTransmission.KEY_TRANSMISSION_NONE)): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, subject, recipients, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), None, new Date, new Date, keyTransmission, 0)
+    new Conversation(id, subject, recipients, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, 0)
   }
 
   def evolutions = Map(
@@ -274,7 +276,7 @@ object Conversation extends Model[Conversation] {
   )
 
   def createDefault(): Conversation = {
-    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), None, None, None, new Date, new Date, None, 0)
+    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), None, None, 0, new Date, new Date, None, 0)
   }
 }
 

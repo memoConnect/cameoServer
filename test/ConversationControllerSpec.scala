@@ -50,8 +50,7 @@ class ConversationControllerSpec extends StartedApp {
       val r: JsObject = (data \ "recipients")(0).as[JsObject]
       (r \ "identityId").asOpt[String] must beSome(identityExisting)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
-      val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
-      m.length must beEqualTo(100)
+      (data \ "numberOfMessages").asOpt[Int] must beSome(100)
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
     }

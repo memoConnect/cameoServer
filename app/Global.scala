@@ -13,7 +13,7 @@ import de.flapdoodle.embed.process.config.io.ProcessOutput
 import de.flapdoodle.embed.process.distribution.GenericVersion
 import de.flapdoodle.embed.process.runtime.Network
 import helper.MongoCollections._
-import helper.{ DbAdminUtilities, MongoCollections }
+import helper.{Utils, DbAdminUtilities, MongoCollections}
 import models.{ Conversation, GlobalState }
 import play.api.http.HeaderNames._
 import play.api.libs.concurrent.Akka
@@ -164,8 +164,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
   }
 
   // make sure that we have a connection to mongodb
-  @tailrec
-  private def checkMongoConnection(): Boolean = {
+  private def checkMongoConnection() {
 
     // command to get the database version
     case class BuildInfo() extends Command[Map[String, BSONValue]] {
@@ -182,13 +181,17 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
       val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
       val buildInfo = Await.result(futureBuildInfo, 1.minute)
-      val version = buildInfo.get("version") match {
+      DbAdminUtilities.mongoVersion = buildInfo.get("version") match {
         case Some(BSONString(str)) => str
         case _                     => "na"
       }
-      Logger.info("DB Connection OK. Version: " + version)
-      DbAdminUtilities.mongoVersion = version
-      true
+
+      Logger.info("DB Connection OK. Version: " + DbAdminUtilities.mongoVersion)
+
+      if(!Utils.compareVersions(DbAdminUtilities.minMongoVersion, DbAdminUtilities.mongoVersion)) {
+        Logger.error("Unsupported Mongo Version. Required: " + DbAdminUtilities.minMongoVersion + " or above")
+        Play.stop()
+      }
     } catch {
       case e: Exception =>
         Logger.error("Could not connect to mongodb", e)
