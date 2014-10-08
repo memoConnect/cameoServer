@@ -119,6 +119,7 @@ OPTIONS        /a/cockpit/v1/*foo                           controllers.TokenCon
 # Utitility functions
 GET            /a/v1/util/dumpDb                            controllers.Application.dumpDb()
 GET            /a/v1/util/loadDb                            controllers.Application.loadFixtures()
+GET            /a/v1/util/migrateAll                        controllers.Application.migrateAll()
 
 # TEST USERS
 GET            /a/v1/testUser/:id                           controllers.TestUserController.getNotifications(id)

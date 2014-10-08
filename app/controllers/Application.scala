@@ -46,6 +46,16 @@ object Application extends Controller {
     }
   }
 
+  def migrateAll = Action {
+    Play.isDev match {
+      case false =>
+        resBadRequest("not in dev mode")
+      case true =>
+        DbAdminUtilities.migrateAll()
+        Ok("migrating")
+    }
+  }
+
   def checkApp = Action.async {
     for {
       dbConnection <- Account.col.find(Json.obj()).one[Account].map(_.isDefined)

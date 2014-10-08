@@ -3,7 +3,7 @@ package helper
 import java.io.{ File, FileWriter }
 
 import helper.MongoCollections._
-import models.{ Conversation, GlobalState, Identity, MongoId }
+import models._
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Reads._
@@ -12,6 +12,7 @@ import play.api.{ Logger, Play }
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.modules.reactivemongo.json.collection.JSONCollection
 import services.AvatarGenerator
+import traits.Model
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -98,6 +99,26 @@ object DbAdminUtilities {
     Future.sequence(allResults).map {
       _.forall(p => p)
     }
+  }
+
+  def migrateAll(): Unit = {
+
+    def migrate[A](col: JSONCollection)(implicit reads: Reads[A]) = {
+      val enumerator = col.find(Json.obj()).cursor[A].enumerate()
+      val iteratee: Iteratee[A, Unit] = Iteratee.foreach {
+        model => // do nothing
+      }
+      enumerator.run(iteratee)
+    }
+
+    migrate[Account](Account.col)
+    migrate[Conversation](Conversation.col)
+    migrate[EventSubscription](EventSubscription.col)
+    migrate[FileMeta](FileMeta.col)
+    migrate[Identity](Identity.col)
+    migrate[Token](Token.col)
+
+
   }
 
   val latestDbVersion = 6
