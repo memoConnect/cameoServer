@@ -176,7 +176,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     }
 
     try {
-      val conversationResult = conversationCollection.find(Json.obj()).one[JsObject].map(_.getOrElse(Json.obj()))
+      val conversationResult = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
       Await.result(conversationResult, 1.minute)
 
       val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
