@@ -422,7 +422,7 @@ class FileControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
 
       val image: BufferedImage = ImageIO.read(new ByteArrayInputStream(contentAsBytes(res)))
-      image.getHeight must beLessThan(400)
+      image.getHeight must beEqualTo(400)
       image.getWidth must beEqualTo(400)
     }
 
@@ -439,7 +439,7 @@ class FileControllerSpec extends StartedApp {
 
       val image: BufferedImage = ImageIO.read(new ByteArrayInputStream(contentAsBytes(res)))
       image.getHeight must beEqualTo(imageHeight)
-      image.getWidth must beEqualTo(imageWidth)
+      image.getWidth must beEqualTo(imageHeight)
     }
 
     "return blank image, when scaling invalid image" in {
