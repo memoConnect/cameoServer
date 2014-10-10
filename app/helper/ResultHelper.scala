@@ -34,14 +34,26 @@ object ResultHelper {
 
   // 5 weeks
   val expire = 60 * 60 * 24 * 7 * 5
+  def addCacheHeaders(result: Result, etag: String, fileType: Option[String]) :Result = {
+    
+    fileType match {
+      case None =>
+        result
+          .withHeaders(("ETAG", etag))
+          .withHeaders(("Cache-Control", "max-age=" + expire))
+      case Some(ft) =>
+        result
+          .withHeaders(("ETAG", etag))
+          .withHeaders(("Cache-Control", "max-age=" + expire))
+          .withHeaders(("Content-Type", ft))
+    }
+  }
+    
   def resOkWithCache(data: Array[Byte], etag: String): Result =
-    Ok(data)
-      .withHeaders(("ETAG", etag))
-      .withHeaders(("Cache-Control", "max-age=" + expire))
-
+    addCacheHeaders(Ok(data), etag, None)
+    
   def resOkWithCache(data: Array[Byte], etag: String, fileType: String): Result =
-    resOkWithCache(data, etag)
-      .withHeaders(("Content-Type", fileType))
+    addCacheHeaders(Ok(data), etag, Some(fileType))
 
   def resNotModified(): Result = NotModified
 

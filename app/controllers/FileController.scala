@@ -14,7 +14,7 @@ import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import play.api.libs.json.Json
-import play.api.mvc.{ BodyParser, Headers, Result }
+import play.api.mvc._
 import reactivemongo.api.gridfs.DefaultFileToSave
 import reactivemongo.bson.{ BSONDocument, BSONObjectID }
 import services.{ ImageScaler, NewMessage }
@@ -64,7 +64,7 @@ object FileController extends ExtendedController {
               FileMeta.col.insert(fileMeta).map { lastError =>
                 lastError.ok match {
                   case false => resServerError("could not save chunk")
-                  case true => resOk(fileMeta.toJson)
+                  case true  => resOk(fileMeta.toJson)
                 }
               }
           }
@@ -96,24 +96,25 @@ object FileController extends ExtendedController {
   }
 
   def uploadFileChunks(id: String) = AuthAction().async(binaryToMongoParser) {
-    request => {
-      // check if the give fileId exists
-      FileMeta.find(id).map {
-        case None =>
-          FileChunk.delete(request.body.chunkId.id)
-          resNotFound("file")
-        case Some(fileMeta) =>
-          // check if actual filesize matches the given filesize
-          val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
-          val totalSize = fileMeta.chunks.map(_.chunkSize).sum + request.body.chunkSize
-          totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
-            case false => resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize)
-            case true =>
-              fileMeta.addChunk(request.body)
-              resOk()
-          }
+    request =>
+      {
+        // check if the give fileId exists
+        FileMeta.find(id).map {
+          case None =>
+            FileChunk.delete(request.body.chunkId.id)
+            resNotFound("file")
+          case Some(fileMeta) =>
+            // check if actual filesize matches the given filesize
+            val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
+            val totalSize = fileMeta.chunks.map(_.chunkSize).sum + request.body.chunkSize
+            totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
+              case false => resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize)
+              case true =>
+                fileMeta.addChunk(request.body)
+                resOk()
+            }
+        }
       }
-    }
   }
 
   // checks if request contains If-None-Match header
@@ -201,7 +202,7 @@ object FileController extends ExtendedController {
     request =>
       FileMeta.deleteWithChunks(new MongoId(id)).map {
         case false => resServerError("could not delete")
-        case true => resOk("deleted")
+        case true  => resOk("deleted")
       }
   }
 
@@ -280,7 +281,11 @@ object FileController extends ExtendedController {
                   case Some(scaleFileId) =>
                     // get file from cache
                     val foundFile = MongoCollections.scaleCache.find(BSONDocument("_id" -> BSONObjectID(scaleFileId)))
-                    serve(MongoCollections.scaleCache, foundFile, CONTENT_DISPOSITION_INLINE)
+                    serve(MongoCollections.scaleCache, foundFile, CONTENT_DISPOSITION_INLINE).map {
+                      _.withHeaders(("ETAG", fileMeta.id.id))
+                        .withHeaders(("Cache-Control", "max-age=" + expire))
+                        .withHeaders(("Content-Type", fileMeta.fileType))
+                    }
                   case None =>
                     // we need to get the file chunks and join them in order to scale the image
                     getFileFromChunks(fileMeta.chunks).map {
