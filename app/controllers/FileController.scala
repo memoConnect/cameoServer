@@ -17,7 +17,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{ BodyParser, Headers, Result }
 import reactivemongo.api.gridfs.DefaultFileToSave
 import reactivemongo.bson.{ BSONDocument, BSONObjectID }
-import services.NewMessage
+import services.{ ImageScaler, NewMessage }
 import sun.misc.{ BASE64Decoder, BASE64Encoder }
 import traits.ExtendedController
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
@@ -64,7 +64,7 @@ object FileController extends ExtendedController {
               FileMeta.col.insert(fileMeta).map { lastError =>
                 lastError.ok match {
                   case false => resServerError("could not save chunk")
-                  case true  => resOk(fileMeta.toJson)
+                  case true => resOk(fileMeta.toJson)
                 }
               }
           }
@@ -96,25 +96,24 @@ object FileController extends ExtendedController {
   }
 
   def uploadFileChunks(id: String) = AuthAction().async(binaryToMongoParser) {
-    request =>
-      {
-        // check if the give fileId exists
-        FileMeta.find(id).map {
-          case None =>
-            FileChunk.delete(request.body.chunkId.id)
-            resNotFound("file")
-          case Some(fileMeta) =>
-            // check if actual filesize matches the given filesize
-            val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
-            val totalSize = fileMeta.chunks.map(_.chunkSize).sum + request.body.chunkSize
-            totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
-              case false => resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize)
-              case true =>
-                fileMeta.addChunk(request.body)
-                resOk()
-            }
-        }
+    request => {
+      // check if the give fileId exists
+      FileMeta.find(id).map {
+        case None =>
+          FileChunk.delete(request.body.chunkId.id)
+          resNotFound("file")
+        case Some(fileMeta) =>
+          // check if actual filesize matches the given filesize
+          val fileSizeGrace = Play.configuration.getInt("files.size.grace.percent").get
+          val totalSize = fileMeta.chunks.map(_.chunkSize).sum + request.body.chunkSize
+          totalSize <= fileMeta.fileSize * (1f + fileSizeGrace.toFloat / 100f) match {
+            case false => resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize)
+            case true =>
+              fileMeta.addChunk(request.body)
+              resOk()
+          }
       }
+    }
   }
 
   // checks if request contains If-None-Match header
@@ -164,6 +163,7 @@ object FileController extends ExtendedController {
   }
 
   case class FileComplete(messageId: Option[String])
+
   object FileComplete {
     implicit val format = Json.format[FileComplete]
   }
@@ -201,7 +201,7 @@ object FileController extends ExtendedController {
     request =>
       FileMeta.deleteWithChunks(new MongoId(id)).map {
         case false => resServerError("could not delete")
-        case true  => resOk("deleted")
+        case true => resOk("deleted")
       }
   }
 
@@ -266,7 +266,7 @@ object FileController extends ExtendedController {
     }
   }
 
-  def getScaledFile(id: String, size: String) = AuthAction(allowExternal = true).async {
+  def getScaledImage(id: String, size: String) = AuthAction(allowExternal = true).async {
     request =>
       checkEtag(request.headers) {
         Utils.safeStringToInt(size) match {
@@ -286,22 +286,11 @@ object FileController extends ExtendedController {
                     getFileFromChunks(fileMeta.chunks).map {
                       case Right(result) => result
                       case Left(bytes) =>
-                        val bais: ByteArrayInputStream = new ByteArrayInputStream(bytes)
-                        try {
-                          val image: BufferedImage = ImageIO.read(bais)
-                          val targetSize = Math.min(sizeInt, Math.max(image.getHeight, image.getWidth))
-                          val thumb: BufferedImage = Scalr.resize(image, targetSize)
-                          val baos = new ByteArrayOutputStream()
-                          ImageIO.write(thumb, "png", baos)
-                          val scaledBytes = baos.toByteArray
-                          // save to cache
-                          saveToScaleCache(fileMeta, size, scaledBytes)
-                          // return saved image
-                          resOkWithCache(scaledBytes, fileMeta.id.id, fileMeta.fileType)
-                        } catch {
-                          // return a blank image if something goes wrong
-                          case e: IOException          => returnBlankImage
-                          case e: NullPointerException => returnBlankImage
+                        ImageScaler.scale(bytes, sizeInt, cutSquare = true) match {
+                          case None => returnBlankImage
+                          case Some(scaledBytes) =>
+                            saveToScaleCache(fileMeta, size, scaledBytes)
+                            resOkWithCache(scaledBytes, fileMeta.id.id, fileMeta.fileType)
                         }
                     }
                 }

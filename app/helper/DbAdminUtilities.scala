@@ -118,10 +118,9 @@ object DbAdminUtilities {
     migrate[Identity](Identity.col)
     migrate[Token](Token.col)
 
-
   }
 
-  val latestDbVersion = 6
+  val latestDbVersion = 7
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -328,12 +327,35 @@ object DbAdminUtilities {
     enumerator.run(iteratee)
   }
 
+  def clearScaleCache: Any => Future[Boolean] = foo => {
+    Logger.info("clearing scale cache")
+
+    // drop file cache dbs
+    mongoDB.collection[JSONCollection]("scaleCache.files").drop()
+    mongoDB.collection[JSONCollection]("scaleCache.chunks").drop()
+
+    def processFileMeta: (FileMeta => Future[Boolean]) = {
+      fileMeta =>
+        val cleared = fileMeta.copy(scaleCache = Map())
+        FileMeta.save(Json.toJson(cleared).as[JsObject]).map(_.updatedExisting)
+    }
+
+    val enumerator = fileMetaCollection.find(Json.obj()).cursor[FileMeta].enumerate()
+
+    val iteratee: Iteratee[FileMeta, Boolean] = Iteratee.foldM(true) {
+      (result, js) => processFileMeta(js).map(r => r && result)
+    }
+
+    enumerator.run(iteratee)
+  }
+
   def migrations: Map[Int, Any => Future[Boolean]] = Map(
     0 -> migrateTokensWithIteratee,
     1 -> migrateRecipients,
     2 -> loginNamesToLowerCase,
     3 -> addAvatars,
     4 -> setDefaultIdentity,
-    5 -> reverseConversations
+    5 -> reverseConversations,
+    6 -> clearScaleCache
   )
 }

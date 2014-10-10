@@ -75,7 +75,7 @@ POST           /a/v1/file/:id                               controllers.FileCont
 POST           /a/v1/file/:id/completed                     controllers.FileController.uploadFileComplete(id)
 GET            /a/v1/file/:id                               controllers.FileController.getFile(id)
 GET            /a/v1/file/:id/raw                           controllers.FileController.getRawFile(id)
-GET            /a/v1/file/:id/scale/:size                   controllers.FileController.getScaledFile(id,size)
+GET            /a/v1/file/:id/scale/:size                   controllers.FileController.getScaledImage(id,size)
 GET            /a/v1/file/:id/:chunkIndex                   controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
