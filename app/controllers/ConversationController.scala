@@ -161,7 +161,7 @@ object ConversationController extends ExtendedController {
           val sorted = list.sortBy(_.lastUpdated).reverse
           val limited = OutputLimits.applyLimits(sorted, offset, limit)
           val res = Json.obj(
-            "conversations" -> limited.map(_.toSummaryJson),
+            "conversations" -> limited.map(_.toSummaryJsonWithKey(keyId)),
             "numberOfConversations" -> list.length
           )
           resOk(res)
