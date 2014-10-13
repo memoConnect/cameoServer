@@ -142,10 +142,10 @@ case class Conversation(id: MongoId,
     val set =
       Json.obj(
         "$push" -> Json.obj("messages" ->
-            Json.obj(
-              "$each" -> Seq(message),
-              "$position" -> 0
-            )),
+          Json.obj(
+            "$each" -> Seq(message),
+            "$position" -> 0
+          )),
         "$inc" -> Json.obj("numberOfMessages" -> 1)
       )
     Conversation.col.update(query, setLastUpdated(set)).map(_.updatedExisting)

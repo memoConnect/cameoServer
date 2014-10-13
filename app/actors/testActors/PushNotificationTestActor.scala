@@ -3,7 +3,7 @@ package actors.testActors
 import actors.PushNotification
 import akka.actor.Actor
 import helper.TestValueStore
-import play.api.libs.json.{ JsObject, Json }
+import play.api.libs.json.Json
 
 /**
  * User: Björn Reimer

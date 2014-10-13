@@ -1,16 +1,14 @@
 package controllers
 
-import helper.Utils.InvalidVersionException
-import helper.{ Utils, CheckHelper }
 import helper.ResultHelper._
-import play.api.{Logger, Play}
+import helper.Utils.InvalidVersionException
+import helper.{ CheckHelper, Utils }
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
 import play.modules.statsd.api.Statsd
 import traits.ExtendedController
-
-import scala.concurrent.Future
 
 /**
  * User: Michael Merz
@@ -45,15 +43,15 @@ object ServicesController extends ExtendedController {
   }
 
   case class CheckMixedField(mixed: String)
-  object CheckMixedField {implicit val format = Json.format[CheckMixedField]}
+  object CheckMixedField { implicit val format = Json.format[CheckMixedField] }
   def checkMixedField = Action(parse.tolerantJson) {
     request =>
-      validate(request.body, CheckMixedField.format){
+      validate(request.body, CheckMixedField.format) {
         cmf =>
           CheckHelper.checkAndCleanMixed(cmf.mixed) match {
-            case Some(Left(tel)) => resOk(Json.obj("phoneNumber" -> tel))
+            case Some(Left(tel))    => resOk(Json.obj("phoneNumber" -> tel))
             case Some(Right(email)) => resOk(Json.obj("email" -> email))
-            case None => resKo("Neither phonenumber nor email: " + cmf.mixed)
+            case None               => resKo("Neither phonenumber nor email: " + cmf.mixed)
           }
       }
   }

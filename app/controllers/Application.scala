@@ -1,7 +1,7 @@
 package controllers
 
-import helper.{ Utils, DbAdminUtilities }
 import helper.ResultHelper._
+import helper.{ DbAdminUtilities, Utils }
 import models.Account
 import play.api.Play
 import play.api.Play.current

@@ -34,8 +34,8 @@ object ResultHelper {
 
   // 5 weeks
   val expire = 60 * 60 * 24 * 7 * 5
-  def addCacheHeaders(result: Result, etag: String, fileType: Option[String]) :Result = {
-    
+  def addCacheHeaders(result: Result, etag: String, fileType: Option[String]): Result = {
+
     fileType match {
       case None =>
         result
@@ -48,10 +48,10 @@ object ResultHelper {
           .withHeaders(("Content-Type", ft))
     }
   }
-    
+
   def resOkWithCache(data: Array[Byte], etag: String): Result =
     addCacheHeaders(Ok(data), etag, None)
-    
+
   def resOkWithCache(data: Array[Byte], etag: String, fileType: String): Result =
     addCacheHeaders(Ok(data), etag, Some(fileType))
 

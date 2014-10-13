@@ -1,12 +1,9 @@
 package actors
 
 import akka.actor.Actor
-import com.puship.{ CoreApi, Credentials, PushipUtil }
-import models.{MongoId, Identity}
-import play.api.Play.current
-import play.api.libs.json.Json
-import play.api.{ Logger, Play }
-import services.{PushEvent, EventDefinition, PushdConnector, LocalizationMessages}
+import models.Identity
+import services.{ EventDefinition, LocalizationMessages, PushEvent, PushdConnector }
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
@@ -27,7 +24,7 @@ class PushNotificationActor extends Actor {
         case Some(identity) =>
           val titles = LocalizationMessages.getAll(event.localizationKeyTitle, event.localizationVariables)
           val content = LocalizationMessages.getAll(event.localizationKeyMsg, event.localizationVariables)
-          val contentWithIdentity = content.mapValues{
+          val contentWithIdentity = content.mapValues {
             msg => identity.displayName.getOrElse(identity.cameoId) + ": " + msg
           }
           PushdConnector.sendEvent(identity.id.id, titles, contentWithIdentity, event.context)

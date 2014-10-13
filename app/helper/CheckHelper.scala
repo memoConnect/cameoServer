@@ -2,10 +2,6 @@ package helper
 
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import com.google.i18n.phonenumbers.PhoneNumberUtil.PhoneNumberFormat
-import helper.ResultHelper._
-import play.api.Logger
-
-import scala.concurrent.Future
 
 /**
  * User: Björn Reimer

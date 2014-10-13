@@ -117,7 +117,7 @@ case class Identity(id: MongoId,
       case PublicKeyUpdate(maybeName) =>
         val setValues = {
           maybeEmptyString("publicKeys.$.name", maybeName) ++
-          Json.obj("publicKeys.$.deleted" -> false)
+            Json.obj("publicKeys.$.deleted" -> false)
         }
         val publicKeyQuery = query ++ Json.obj("publicKeys._id" -> id)
         val set = Json.obj("$set" -> setValues)

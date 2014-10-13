@@ -5,15 +5,15 @@ import java.util.Date
 import constants.Contacts._
 import helper.AuthenticationActions.AuthAction
 import helper.JsonHelper._
-import helper.{CheckHelper, IdHelper, OutputLimits}
 import helper.ResultHelper._
+import helper.{ CheckHelper, IdHelper, OutputLimits }
 import models._
 import play.api.Logger
+import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.{ AcceptedFriendRequest, AvatarGenerator, NewFriendRequest }
 import traits.ExtendedController
-import play.api.libs.functional.syntax._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -60,9 +60,9 @@ object ContactController extends ExtendedController {
             (create.email, create.phoneNumber, create.mixed) match {
               case (None, None, Some(mixed)) =>
                 CheckHelper.checkAndCleanMixed(mixed) match {
-                  case Some(Left(tel)) => createIdentityAndAddContact(create.displayName, Some(tel), None)
+                  case Some(Left(tel))    => createIdentityAndAddContact(create.displayName, Some(tel), None)
                   case Some(Right(email)) => createIdentityAndAddContact(create.displayName, None, Some(email))
-                  case None => Future(resBadRequest("Neither phonenumber nor email: " + mixed))
+                  case None               => Future(resBadRequest("Neither phonenumber nor email: " + mixed))
                 }
               case _ => createIdentityAndAddContact(create.displayName, create.phoneNumber, create.email)
             }

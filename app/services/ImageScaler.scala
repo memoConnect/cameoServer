@@ -5,7 +5,6 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream, IOException }
 import javax.imageio.ImageIO
 
 import org.imgscalr.Scalr
-import play.api.Logger
 
 /**
  * User: Björn Reimer
@@ -22,7 +21,7 @@ object ImageScaler {
 
       val targetSize = Math.min(size, Math.min(image.getHeight, image.getWidth))
       val thumb: BufferedImage = Scalr.resize(image, Scalr.Method.QUALITY, scaleMode, targetSize, Scalr.OP_ANTIALIAS)
-      val result = if(cutSquare) doCutSquare(thumb) else thumb
+      val result = if (cutSquare) doCutSquare(thumb) else thumb
 
       val baos = new ByteArrayOutputStream()
       ImageIO.write(result, "png", baos)
@@ -43,13 +42,11 @@ object ImageScaler {
     if (width > height) {
       val offset = (width - height) / 2
       Scalr.crop(image, offset, 0, height, height)
-    }
-    // vertical image
+    } // vertical image
     else if (width < height) {
       val offset = (height - width) / 2
       Scalr.crop(image, 0, offset, width, width)
-    }
-    // image is already a square
+    } // image is already a square
     else {
       image
     }

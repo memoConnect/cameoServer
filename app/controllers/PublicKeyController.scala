@@ -7,7 +7,7 @@ import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.{ UpdatedIdentity }
+import services.UpdatedIdentity
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -49,7 +49,7 @@ object PublicKeyController extends ExtendedController {
               val update = PublicKeyUpdate(withId.name)
               request.identity.editPublicKey(withId.id, update).map {
                 case false => resBadRequest("unable to update")
-                case true  =>
+                case true =>
                   sendEvent()
                   resOk(withId.toJson)
               }
@@ -105,7 +105,7 @@ object PublicKeyController extends ExtendedController {
               // add to own public key
               request.identity.addSignatureToPublicKey(new MongoId(id), signature).map {
                 case false => resBadRequest("could not add")
-                case true  =>
+                case true =>
                   val newPublicKey = publicKey.copy(signatures = publicKey.signatures :+ signature)
                   val event = UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson)))
                   actors.eventRouter ! event

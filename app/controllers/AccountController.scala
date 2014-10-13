@@ -3,11 +3,11 @@ import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models._
 import org.mindrot.jbcrypt.BCrypt
-import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
+import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import traits.ExtendedController
 
