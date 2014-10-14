@@ -4,7 +4,7 @@ import java.util.Date
 
 import constants.Contacts._
 import constants.Messaging._
-import helper.IdHelper
+import helper.{ JsonHelper, IdHelper }
 import helper.JsonHelper._
 import helper.MongoCollections._
 import models.cockpit._
@@ -15,7 +15,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.{ Logger, Play }
 import services.AvatarGenerator
-import traits.{ CockpitAttribute, CockpitEditable, Model }
+import traits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -177,26 +177,6 @@ case class Identity(id: MongoId,
     val query = Json.obj("_id" -> this.id, "publicKeys._id" -> publicKeyId)
     val set = Json.obj("$pull" -> Json.obj("publicKeys.$.signatures" -> Json.obj("keyId" -> signatureKeyId)))
     Identity.col.update(query, set).map(_.updatedExisting)
-  }
-
-  //todo: find generic way for updates
-  def update(update: IdentityUpdate): Future[Boolean] = {
-    update match {
-      case IdentityUpdate(None, None, None, None, None, None, None) => Future(true)
-      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAvatar, maybeAccountId, maybeIsDefault) =>
-
-        val set =
-          Json.obj("$set" -> (
-            maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
-            maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
-            maybeEmptyString("displayName", maybeDisplayName) ++
-            maybeEmptyJsValue("avatar", maybeAvatar.map(s => Json.toJson(MongoId(s)))) ++
-            maybeEmptyString("cameoId", maybeCameoId) ++
-            maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_))) ++
-            maybeEmptyJsValue("isDefaultIdentity", maybeIsDefault.map(JsBoolean))
-          ))
-        Identity.col.update(query, set).map { _.ok }
-    }
   }
 
   def getGroup(groupName: String): Seq[Contact] = {
@@ -426,25 +406,16 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
 }
 
-case class IdentityUpdate(phoneNumber: Option[VerifiedString] = None,
-                          email: Option[VerifiedString] = None,
-                          displayName: Option[String] = None,
-                          cameoId: Option[String] = None,
-                          avatar: Option[String] = None,
-                          accountId: Option[MongoId] = None,
-                          isDefaultIdentity: Option[Boolean] = None)
-
-object IdentityUpdate {
-
-  implicit val reads: Reads[IdentityUpdate] = (
-    (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-    (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ "displayName").readNullable[String] and
-    Reads.pure(None) and
-    (__ \ "avatar").readNullable[String] and
-    Reads.pure(None) and
-    Reads.pure(None)
-  )(IdentityUpdate.apply _)
+object IdentityUpdate extends ModelUpdate {
+  def values = Seq(
+    StringUpdateValue("displayName", externalEdit = true),
+    MongoIdUpdateValue("avatar", externalEdit = true),
+    VerifiedStringUpdateValue("email", JsonHelper.verifyMail, externalEdit = true),
+    VerifiedStringUpdateValue("phoneNumber", JsonHelper.verifyPhoneNumber, externalEdit = true),
+    MongoIdUpdateValue("accountId"),
+    BooleanUpdateValue("isDefaultIdentity"),
+    StringUpdateValue("cameoId")
+  )
 }
 
 object IdentityEvolutions {

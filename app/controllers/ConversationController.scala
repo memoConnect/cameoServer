@@ -65,10 +65,8 @@ object ConversationController extends ExtendedController {
           }
         }
 
-        validateFuture[ConversationUpdate](request.body, ConversationUpdate.createReads) {
-          cu =>
-            val conversation = Conversation.create(cu.subject, Seq(Recipient.create(request.identity.id)), cu.passCaptcha, cu.aePassphraseList, cu.sePassphrase, cu.keyTransmission)
-
+        validateFuture[Conversation](request.body, Conversation.createReads(Recipient.create(request.identity.id))) {
+          conversation =>
             addRecipients(conversation) match {
               case Right(result) => Future(result)
               case Left(withRecipients) =>
@@ -165,22 +163,6 @@ object ConversationController extends ExtendedController {
             "numberOfConversations" -> list.length
           )
           resOk(res)
-      }
-  }
-
-  def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
-    request =>
-      validateFuture(request.body, ConversationUpdate.createReads) {
-        cu =>
-          Conversation.find(id, -1, 0).flatMap {
-            case None => Future(resNotFound("conversation"))
-            case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-              c.update(cu).map {
-                case false => resServerError("could not update")
-                case true  => resOk("updated")
-              }
-            }
-          }
       }
   }
 

@@ -484,7 +484,6 @@ class EventControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       pubKeyId = (data \ "id").as[String]
-      Logger.debug("keyid: " + pubKeyId)
 
       1 === 1
     }

@@ -2,6 +2,7 @@ package models
 
 import constants.Contacts._
 import helper.IdHelper
+import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import traits.SubModel
@@ -41,6 +42,7 @@ case class Contact(id: MongoId,
     }
   }
 
+  // todo: update to new ModelUpdate
   def update(contactUpdate: ContactUpdate): Future[Boolean] = {
 
     // edit groups
@@ -59,12 +61,15 @@ case class Contact(id: MongoId,
         identity.accountId match {
           case Some(a) => updatedGroups
           case None =>
-            val identityUpdate = new IdentityUpdate(VerifiedString.createOpt(contactUpdate.phoneNumber), VerifiedString.createOpt(contactUpdate.email), contactUpdate.displayName)
-            identity.update(identityUpdate)
+            val set = Map() ++
+              contactUpdate.phoneNumber.map(s => Map("phoneNumber" -> VerifiedString.create(s))).getOrElse(Map()) ++
+              contactUpdate.email.map(s => Map("email" -> VerifiedString.create(s))).getOrElse(Map()) ++
+              contactUpdate.displayName.map(s => Map("displayName" -> s)).getOrElse(Map())
+            val update = IdentityUpdate.setValues(set)
+            Identity.update(identity.id, update)
         }
     }
   }
-
 }
 
 object Contact extends SubModel[Contact, Identity] {

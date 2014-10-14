@@ -71,6 +71,16 @@ trait Model[A] {
     col.save(js)
   }
 
+  // todo: maybe find a more typesave way to do this
+  def update(id: MongoId, update: JsObject): Future[Boolean] = {
+    if (update.keys.isEmpty || (update \ "$set").asOpt[JsObject].exists(_.keys.isEmpty)) {
+      Future(true)
+    }else {
+      val query = Json.obj("_id" -> id)
+      col.update(query, update).map(_.updatedExisting)
+    }
+  }
+
   def createDefault(): A
 
   /*

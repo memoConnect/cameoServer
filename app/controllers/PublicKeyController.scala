@@ -165,7 +165,7 @@ object PublicKeyController extends ExtendedController {
                 Seq(EncryptedPassphrase.create(id, aePassphrase.aePassphrase)),
                 new MongoId(aePassphrase.conversationId)).map {
                   case false => Logger.error("error while adding aePassphrase to conversation " + aePassphrase.conversationId)
-                  case true  => Logger.debug("updated")
+                  case true  => // do nothing
                 }
           }
           resOk("updated")

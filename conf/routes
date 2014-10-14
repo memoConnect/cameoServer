@@ -33,7 +33,6 @@ POST           /a/v1/publicKey/:id/aePassphrases            controllers.PublicKe
 # CONVERSATIONS
 POST           /a/v1/conversation                           controllers.ConversationController.createConversation()
 GET            /a/v1/conversation/:id                       controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
-PUT            /a/v1/conversation/:id                       controllers.ConversationController.updateConversation(id)
 POST           /a/v1/conversation/:id/recipient             controllers.ConversationController.addRecipients(id)
 POST           /a/v1/conversation/:id/aePassphrases         controllers.ConversationController.addAePassphrases(id)
 DELETE         /a/v1/conversation/:id/recipient/:rid        controllers.ConversationController.deleteRecipient(id, rid)

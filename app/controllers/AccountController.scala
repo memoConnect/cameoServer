@@ -1,5 +1,6 @@
 package controllers
 import helper.AuthenticationActions.AuthAction
+import helper.JsonHelper
 import helper.ResultHelper._
 import models._
 import org.mindrot.jbcrypt.BCrypt
@@ -93,16 +94,11 @@ object AccountController extends ExtendedController {
                                   addContact <- identity.addContact(Contact.create(otherIdentity.id))
                                   updateIdentity <- {
                                     // add update identity with details from registration
-                                    val update = IdentityUpdate(
-                                      None,
-                                      None,
-                                      additionalValues.displayName,
-                                      Some(account.loginName),
-                                      None,
-                                      Some(account.id),
-                                      Some(true)
-                                    )
-                                    identity.update(update)
+                                    val set = Map("cameoId" -> account.loginName,
+                                      "accountId" -> account.id,
+                                      "isDefaultIdentity" -> true,
+                                      "displayName" -> additionalValues.displayName.getOrElse(""))
+                                    Identity.update(identity.id, IdentityUpdate.setValues(set))
                                   }
                                   deleteDetails <- {
                                     val deleteValues =
@@ -236,32 +232,41 @@ object AccountController extends ExtendedController {
 
   def updateAccount() = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, AccountUpdate.reads) {
-        accountUpdate =>
-          request.identity.accountId match {
-            case None => Future(resBadRequest("no account"))
-            case Some(accountId) =>
-              Account.find(accountId).flatMap {
-                case None => Future(resNotFound("account"))
-                case Some(account) =>
-                  def doAccountUpdate(): Future[Result] = {
-                    account.update(accountUpdate).map {
-                      case false => resServerError("could not update")
-                      case true  => resOk("updated")
-                    }
-                  }
-                  // check password if password is updated
-                  (accountUpdate.password, accountUpdate.oldPassword) match {
-                    case (None, _)        => doAccountUpdate()
-                    case (Some(pw), None) => Future(resBadRequest("old password required"))
-                    case (Some(pw), Some(oldPw)) =>
+      request.identity.accountId match {
+        case None => Future(resBadRequest("no account"))
+        case Some(accountId) =>
+
+          def doAccountUpdate(update: JsObject): Future[Result] = {
+            Account.update(accountId, update).map {
+              case false => resServerError("could not update")
+              case true  => resOk("updated")
+            }
+          }
+
+          AccountUpdate.validateUpdate(request.body) {
+            js =>
+              // check if there is a password change
+              val newPassword = (request.body \ "password").asOpt[String](JsonHelper.hashPassword)
+              val oldPassword = (request.body \ "oldPassword").asOpt[String]
+
+              (newPassword, oldPassword) match {
+                case (None, _)           => doAccountUpdate(js)
+                case (Some(newPw), None) => Future(resBadRequest("old password required"))
+                case (Some(newPw), Some(oldPw)) =>
+                  Account.find(accountId).flatMap {
+                    case None => Future(resServerError("could not retreive account"))
+                    case Some(account) =>
                       BCrypt.checkpw(oldPw, account.password) match {
                         case false => Future(resBadRequest("invalid old password"))
-                        case true  => doAccountUpdate()
+                        case true =>
+                          val set = Map("password" -> newPw)
+                          val update = js.deepMerge(AccountUpdate.setValues(set))
+                          doAccountUpdate(update)
                       }
                   }
               }
           }
       }
   }
+
 }

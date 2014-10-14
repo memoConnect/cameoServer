@@ -51,13 +51,11 @@ object IdentityController extends ExtendedController {
 
   def updateIdentity() = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture[IdentityUpdate](request.body, IdentityUpdate.reads) {
-        identityUpdate =>
-          {
-            request.identity.update(identityUpdate).map {
-              case false => resServerError("nothing updated")
-              case true  => resOk("updated")
-            }
+      IdentityUpdate.validateUpdate(request.body) {
+        js =>
+          Identity.update(request.identity.id, js).map {
+            case false => resNotFound("identity")
+            case true => resOk("updated")
           }
       }
   }

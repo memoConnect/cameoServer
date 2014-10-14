@@ -677,7 +677,6 @@ class AccountControllerSpec extends StartedApp {
     val newPassword = "asdfasdfasdf"
 
     "update phoneNumber and email of account" in {
-
       val path = basePath + "/account"
       val json = Json.obj("phoneNumber" -> newPhoneNumber, "email" -> newEmail)
 

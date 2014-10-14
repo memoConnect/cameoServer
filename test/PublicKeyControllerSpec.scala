@@ -430,11 +430,11 @@ class PublicKeyControllerSpec extends StartedApp {
     }
 
     "add AePassphrase to conversation 1" in {
-      val path = basePath + "/conversation/" + conversationIds(0)
+      val path = basePath + "/conversation/" + conversationIds(0) + "/aePassphrases"
 
       val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> keyId, "encryptedPassphrase" -> aePassphrases(0))))
 
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -444,11 +444,11 @@ class PublicKeyControllerSpec extends StartedApp {
     }
 
     "add AePassphrase to conversation 2" in {
-      val path = basePath + "/conversation/" + conversationIds(1)
+      val path = basePath + "/conversation/" + conversationIds(1)  + "/aePassphrases"
 
       val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> keyId, "encryptedPassphrase" -> aePassphrases(1))))
 
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -458,11 +458,11 @@ class PublicKeyControllerSpec extends StartedApp {
     }
 
     "add AePassphrase to conversation 3" in {
-      val path = basePath + "/conversation/" + conversationIds(2)
+      val path = basePath + "/conversation/" + conversationIds(2) + "/aePassphrases"
 
       val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> keyId, "encryptedPassphrase" -> aePassphrases(2))))
 
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -516,11 +516,11 @@ class PublicKeyControllerSpec extends StartedApp {
     }
 
     "add aePassphrase for new key to conversation 1" in {
-      val path = basePath + "/conversation/" + conversationIds(0)
+      val path = basePath + "/conversation/" + conversationIds(0)   + "/aePassphrases"
 
       val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> newKeyId, "encryptedPassphrase" -> newAePassphrases(0))))
 
-      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
 
       if (status(res) != OK) {
