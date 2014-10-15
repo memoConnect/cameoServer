@@ -86,13 +86,23 @@ object ConversationController extends ExtendedController {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
           resOk(c.toJsonWithKey(keyId))
-
-          // missing passphrase are not used anymore
-          //          c.getMissingPassphrases.map {
-          //            missingPasshrases =>
-          //              resOk(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
-          //          }
         }
+      }
+  }
+
+  def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      ConversationUpdate.validateUpdate(request.body) {
+        update =>
+          Conversation.find(id, -1, 0).flatMap {
+            case None => Future(resNotFound("conversation"))
+            case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+              Conversation.update(c.id, update).map {
+                case false => resServerError("could not update")
+                case true  => resOk("updated")
+              }
+            }
+          }
       }
   }
 

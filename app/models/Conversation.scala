@@ -272,6 +272,15 @@ object Conversation extends Model[Conversation] {
   }
 }
 
+object ConversationUpdate extends ModelUpdate {
+  def values = Seq(
+    StringUpdateValue("subject", externalEdit = true),
+    MongoIdUpdateValue("passCaptcha", externalEdit = true),
+    StringUpdateValue("sePassphrase", externalEdit = true),
+    StringUpdateValue("keyTransmission", externalEdit = true)
+  )
+}
+
 object ConversationEvolutions {
 
   val addEncPassList: Reads[JsObject] = Reads {
