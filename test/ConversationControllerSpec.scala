@@ -55,6 +55,32 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "lastUpdated").asOpt[Long] must beSome
     }
 
+    "Get only messages an existing conversation with messages" in {
+      val path = basePath + "/conversation/" + cidExisting + "/messages"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beNone
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "numberOfMessages").asOpt[Int] must beSome(100)
+      (data \ "created").asOpt[Long] must beNone
+      (data \ "lastUpdated").asOpt[Long] must beNone
+      (data \ "sePassphrase").asOpt[String] must beNone
+      (data \ "passCaptcha").asOpt[String] must beNone
+      (data \ "aePassphraseList").asOpt[List[JsObject]] must beNone
+      (data \ "keyTransmission").asOpt[String] must beNone
+
+    }
+
     val keyTransmission = "moepSecure"
     "Create a new conversation with subject" in {
       val path = basePath + "/conversation"

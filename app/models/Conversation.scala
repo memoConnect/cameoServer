@@ -52,6 +52,8 @@ case class Conversation(id: MongoId,
     this.toJson ++ getPassphraseList(keyIds)
   }
 
+  def toMessageJson: JsObject = Json.toJson(this)(Conversation.messageWrites).as[JsObject]
+
   def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
 
   def toSummaryJsonWithKey(keyIds: Seq[String]): JsObject = {
@@ -197,6 +199,13 @@ object Conversation extends Model[Conversation] {
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
         maybeEmptyString("sePassphrase", c.sePassphrase) ++
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
+  }
+
+  val messageWrites = Writes[Conversation] {
+    c =>
+      Json.obj("id" -> c.id.toJson) ++
+        Json.obj("numberOfMessages" -> c.numberOfMessages) ++
+        Json.obj("messages" -> c.messages.map(_.toJson))
   }
 
   def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {

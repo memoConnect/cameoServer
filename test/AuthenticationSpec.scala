@@ -63,6 +63,7 @@ class AuthenticationSpec extends StartedApp {
     // routes allowed for tokens of external users
     val allowExternalRoutes: Seq[(String, String)] = Seq(
       (GET, "/a/v1/conversation/$id<[^/]+>"),
+      (GET, "/a/v1/conversation/$id<[^/]+>/messages"),
       (GET, "/a/v1/conversation/$id<[^/]+>/summary"),
       (POST, "/a/v1/conversation/$id<[^/]+>/message"),
       (GET, "/a/v1/message/$id<[^/]+>"),

@@ -90,6 +90,16 @@ object ConversationController extends ExtendedController {
       }
   }
 
+  def getConversationMessages(id: String, offset: Int, limit: Int) = AuthAction(allowExternal = true).async {
+    request =>
+      Conversation.find(id, limit, offset).map {
+        case None => resNotFound("conversation")
+        case Some(c) => c.hasMemberResult(request.identity.id) {
+          resOk(c.toMessageJson)
+        }
+      }
+  }
+
   def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
       ConversationUpdate.validateUpdate(request.body) {
