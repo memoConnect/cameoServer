@@ -22,9 +22,9 @@ import scala.concurrent.Future
 object AccountController extends ExtendedController {
 
   def checkLogin(login: String): Boolean = {
-    login.length >= 6 &&
+    login.length >= 3 &&
       login.length < 41 &&
-      login.matches("^\\w+$")
+      login.matches("^[.\\w+]$")
   }
 
   case class AdditionalValues(reservationSecret: String, displayName: Option[String])

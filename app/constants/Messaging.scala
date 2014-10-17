@@ -23,7 +23,9 @@ object Messaging {
   val MESSAGE_MAIL_REPLACE_ENCRYPTED_DE = "Ich habe Ihnen eine verschlüsselte Nachricht über cameoNet.de gesendet.\nBitte klicken Sie auf folgenden Link um den gesamten Talk zu lesen und zu antworten: "
   val MESSAGE_MAIL_REPLACE_ENCRYPTED_EN = "I have send you an encrypted message via cameoNet.de.\nPlease click the following link to read it and answer: "
 
-}
+  val MESSAGE_SMS_FILE_ONLY = "I have send you a file via cameoNet.de. Click here to download it: "
+  val MESSAGE_MAIL_FILE_ONLY_DE = "Ich habe Ihnen eine Datei über cameoNet.de gesendet.\nBitte klicken Sie auf folgenden Link um die Datei zu lesen und zu antworten: "
+  val MESSAGE_MAIL_FILE_ONLY_EN = "I have send you a file via cameoNet.de. Click here to download it and awnser: "
 
 object Verification {
 

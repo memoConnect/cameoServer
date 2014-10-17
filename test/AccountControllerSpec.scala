@@ -65,7 +65,7 @@ class AccountControllerSpec extends StartedApp {
     "Refuse invalid Logins" in {
       val path = basePath + "/account/check"
 
-      val logins = Seq("asdf", "asdfasdfasdfasdfasdfaasdfasdfasdfasdfasdf", "..", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\", "asdf.asdf.asdf", "asd@df")
+      val logins = Seq("asdf", "asdfasdfasdfasdfasdfaasdfasdfasdfasdfasdf", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\", "asd@df")
 
       logins.map {
         l =>
