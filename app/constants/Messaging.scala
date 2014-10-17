@@ -26,6 +26,7 @@ object Messaging {
   val MESSAGE_SMS_FILE_ONLY = "I have send you a file via cameoNet.de. Click here to download it: "
   val MESSAGE_MAIL_FILE_ONLY_DE = "Ich habe Ihnen eine Datei über cameoNet.de gesendet.\nBitte klicken Sie auf folgenden Link um die Datei zu lesen und zu antworten: "
   val MESSAGE_MAIL_FILE_ONLY_EN = "I have send you a file via cameoNet.de. Click here to download it and awnser: "
+}
 
 object Verification {
 
