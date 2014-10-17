@@ -134,27 +134,34 @@ GET            /a/v1/util/checkApp                          controllers.Applicat
 GET            /p/:id                                       controllers.ShortUrlController.redirect(urlType = "p", id: String)
 GET            /v/:id                                       controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
-# app downloads
-GET            /dl                                          controllers.Assets.at(path="/public/dl", file="index.html")
-GET            /dl/                                         controllers.Assets.at(path="/public/dl", file="index.html")
-GET            /dl/*file                                    controllers.Assets.at(path="/public/dl", file)
-
-# Cockpit WebClient
-GET            /c/                                          controllers.Assets.at(path="/public/cockpit", file="index.html")
-GET            /c                                           controllers.Application.redirect(url = "/c/")
-GET            /c/*file                                     controllers.Assets.at(path="/public/cockpit", file)
-
 ##
-##   mobile WebClient
+##   Frontend: Static files
 ##
-GET            /m/                                          controllers.Assets.at(path="/public/app", file="index.html")
+
+# MOBILE
 GET            /m                                           controllers.Application.redirect(url = "/m/")
-GET            /m/*file                                     controllers.Assets.at(path="/public/app", file)
+GET            /m/                                          controllers.Assets.at(path="/public/dist/app", file="index.html")
+GET            /m/*file                                     controllers.Assets.at(path="/public/dist/app", file)
 
-## Docs
-GET            /d/                                          controllers.Assets.at(path="/public/docs", file="index.html")
+# DESKTOP
 GET            /d                                           controllers.Application.redirect(url = "/d/")
-GET            /d/*file                                     controllers.Assets.at(path="/public/docs", file)
+GET            /d/                                          controllers.Assets.at(path="/public/dist/desktop", file="index.html")
+GET            /d/*file                                     controllers.Assets.at(path="/public/dist/desktop", file)
 
-# Redirect / to /app
+# APP DOWNLOADS
+GET            /dl                                          controllers.Assets.at(path="/public/dist/dl", file="index.html")
+GET            /dl/                                         controllers.Assets.at(path="/public/dist/dl", file="index.html")
+GET            /dl/*file                                    controllers.Assets.at(path="/public/dist/dl", file)
+
+# COCKPIT
+GET            /c                                           controllers.Application.redirect(url = "/c/")
+GET            /c/                                          controllers.Assets.at(path="/public/dist/cockpit", file="index.html")
+GET            /c/*file                                     controllers.Assets.at(path="/public/dist/cockpit", file)
+
+## DOCS
+GET            /dc                                           controllers.Application.redirect(url = "/dc/")
+GET            /dc/                                          controllers.Assets.at(path="/public/dist/docs", file="index.html")
+GET            /dc/*file                                     controllers.Assets.at(path="/public/dist/docs", file)
+
+# Redirect / to /m
 GET            /                                            controllers.Application.redirect(url = "/m/")
