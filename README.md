@@ -44,7 +44,7 @@ Licence
 cameoNet source files are made available under the terms of the GNU Affero General Public License (AGPL).
 
 
-Third Party Library and Framework
+Third Party Libraries and Frameworks
 ----------------
 
 * [play framework](https://www.playframework.com/) - Licence: Apache 2 
