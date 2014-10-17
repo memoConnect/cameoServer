@@ -31,7 +31,7 @@ Run locally for testing and development
 Deploy on server
 ----------------
 
-* A mongoDB v2.6.3 instance is required
+* A mongoDB v2.6 instance is required
 * Adjust configuration in "conf/application_prod.conf"
 * run './sbt "start -Dconfig.file=conf/application_prod.conf"' in the project folder
 * all dependencies will be downloaded and the instance will listen on port 9000

@@ -20,9 +20,6 @@ object Application extends Controller {
 
   def index = Action.async {
     request =>
-
-      Utils.compareVersions("0.2.6", "0.3.0")
-
       Future(Ok(views.html.index(DbAdminUtilities.mongoVersion)))
   }
 
