@@ -24,15 +24,16 @@ case class FileMeta(id: MongoId,
                     fileSize: Int,
                     fileType: String,
                     isCompleted: Boolean,
+                    scaleCache: Map[String, String], // Map: Scale size -> id of cached file
                     created: Date,
                     docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(FileMeta.outputWrites).as[JsObject]
 
-  def addChunk(chunkMeta: ChunkMeta): Future[LastError] = {
+  val query = Json.obj("_id" -> this.id)
 
+  def addChunk(chunkMeta: ChunkMeta): Future[LastError] = {
     //upsert does not work on nested arrays in mongo. we need to get rid of all existing values before inserting
-    val query = Json.obj("_id" -> this.id)
     val remove = Json.obj("$pull" -> Json.obj("chunks" -> Json.obj("index" -> chunkMeta.index)))
     FileMeta.col.update(query, remove).flatMap {
       lastError =>
@@ -42,9 +43,13 @@ case class FileMeta(id: MongoId,
   }
 
   def setCompleted(value: Boolean): Future[Boolean] = {
-    val query = Json.obj("_id" -> this.id)
     val set = Json.obj("$set" -> Json.obj("isCompleted" -> value))
     FileMeta.col.update(query, set).map(_.updatedExisting)
+  }
+
+  def addToScaleCache(size: String, id: String): Future[Boolean] = {
+    val set = Json.obj("$set" -> Json.obj(("scaleCache." + size ) -> id))
+    FileMeta.col.update(query,set).map(_.updatedExisting)
   }
 }
 
@@ -54,9 +59,12 @@ object FileMeta extends Model[FileMeta] {
 
   implicit val mongoFormat: Format[FileMeta] = createMongoFormat(Json.reads[FileMeta], Json.writes[FileMeta])
 
-  def docVersion = 1
+  def docVersion = 2
 
-  def evolutions = Map(0 -> FileMetaEvolutions.addCompletedFlag)
+  def evolutions = Map(
+    0 -> FileMetaEvolutions.addCompletedFlag,
+    1 -> FileMetaEvolutions.addScaleCache()
+  )
 
   val outputWrites: Writes[FileMeta] = Writes {
     fm =>
@@ -79,6 +87,7 @@ object FileMeta extends Model[FileMeta] {
       fileSize,
       fileType,
       isCompleted,
+      Map(),
       new Date,
       docVersion
     )
@@ -97,7 +106,7 @@ object FileMeta extends Model[FileMeta] {
   }
 
   def createDefault(): FileMeta = {
-    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, new Date, docVersion)
+    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, Map(), new Date, docVersion)
   }
 }
 
@@ -109,6 +118,15 @@ object FileMetaEvolutions {
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
         js.transform(addFlag andThen addVersion)
       }
+  }
+
+  def addScaleCache(): Reads[JsObject] = Reads {
+    js =>
+    {
+      val addObject: Reads[JsObject] = __.json.update((__ \ 'scaleCache).json.put(Json.obj()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+      js.transform(addObject andThen addVersion)
+    }
   }
 }
 

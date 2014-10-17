@@ -4,7 +4,7 @@
  * Time: 4:27 PM
  */
 
-import actors.{AccountCount, MessageCount, StatsActor}
+import actors.{ AccountCount, MessageCount, StatsActor }
 import akka.actor.Props
 import de.flapdoodle.embed.mongo.{ MongodProcess, MongodExecutable, MongodStarter }
 import de.flapdoodle.embed.mongo.config.{ RuntimeConfigBuilder, MongodConfigBuilder, Net, IMongodConfig }
@@ -13,12 +13,12 @@ import de.flapdoodle.embed.process.config.io.ProcessOutput
 import de.flapdoodle.embed.process.distribution.GenericVersion
 import de.flapdoodle.embed.process.runtime.Network
 import helper.MongoCollections._
-import helper.{ DbAdminUtilities, MongoCollections }
+import helper.{Utils, DbAdminUtilities, MongoCollections}
 import models.{ Conversation, GlobalState }
 import play.api.http.HeaderNames._
 import play.api.libs.concurrent.Akka
-import play.api.libs.json.{ JsValue, Json }
-import play.api.mvc.{ EssentialAction, EssentialFilter, WithFilters }
+import play.api.libs.json.{JsResultException, JsObject, JsValue, Json}
+import play.api.mvc._
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import reactivemongo.bson.{ BSONDocument, BSONString, BSONValue }
@@ -30,6 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
 import play.api.Play.current
+import play.filters.gzip.GzipFilter
 
 object AccessControllFilter extends EssentialFilter {
   // wrap action to modify the headers of every request
@@ -72,8 +73,13 @@ object StatsFilter extends EssentialFilter {
       action.apply(request)
   }
 }
+object Gzip {
+  val filter = new GzipFilter(shouldGzip = {
+    (request, response) => !request.path.matches(".*\\/file\\/.*\\/.*")
+  })
+}
 
-object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter) {
+object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter, Gzip.filter) {
 
   override def onStart(app: play.api.Application) = {
 
@@ -142,9 +148,12 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
       // initiate stats
       val statsActor = Akka.system.actorOf(Props[StatsActor])
-      Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, MessageCount)
-      Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, AccountCount)
-
+      if (Play.configuration.getBoolean("stats.messages.total.enabled").getOrElse(false)) {
+        Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, MessageCount)
+      }
+      if (Play.configuration.getBoolean("stats.accounts.total.enabled").getOrElse(false)) {
+        Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, AccountCount)
+      }
     }
   }
 
@@ -155,8 +164,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
   }
 
   // make sure that we have a connection to mongodb
-  @tailrec
-  private def checkMongoConnection(): Boolean = {
+  private def checkMongoConnection() {
 
     // command to get the database version
     case class BuildInfo() extends Command[Map[String, BSONValue]] {
@@ -168,19 +176,30 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     }
 
     try {
-      val conversationResult = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
+      //////////
+      // weird shit: this needs to be done otherwise we get nullpointers later when serializing conversaton, todo: find out why and fix
+      val foo = Conversation.mongoFormat
+      /////////
+
+      val conversationResult = conversationCollection.find(Json.obj()).one[JsObject].map(_.map(_.as[Conversation]))
       Await.result(conversationResult, 1.minute)
 
       val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
       val buildInfo = Await.result(futureBuildInfo, 1.minute)
-      val version = buildInfo.get("version") match {
+      DbAdminUtilities.mongoVersion = buildInfo.get("version") match {
         case Some(BSONString(str)) => str
         case _                     => "na"
       }
-      Logger.info("DB Connection OK. Version: " + version)
-      DbAdminUtilities.mongoVersion = version
-      true
+
+      Logger.info("DB Connection OK. Version: " + DbAdminUtilities.mongoVersion)
+
+      if(!Utils.compareVersions(DbAdminUtilities.minMongoVersion, DbAdminUtilities.mongoVersion)) {
+        Logger.error("Unsupported Mongo Version. Required: " + DbAdminUtilities.minMongoVersion + " or above")
+        Play.stop()
+      }
     } catch {
+      case e: JsResultException =>
+        Logger.warn("Found conversation in DB, but could not serialize")
       case e: Exception =>
         Logger.error("Could not connect to mongodb", e)
         Thread.sleep(1000)
@@ -190,6 +209,20 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
   var mongodExecutable: MongodExecutable = _
   var mongodProcess: MongodProcess = _
+
+  private def stopLocalMongo() = {
+    try {
+      if (mongodExecutable != null) {
+        Logger.info("stopping embedded mongo")
+        mongodExecutable.stop()
+      }
+    } finally {
+      if (mongodProcess != null) {
+        Logger.info("killing embedded mongo")
+        mongodProcess.stop()
+      }
+    }
+  }
 
   private def startLocalMongo() = {
     val mongoPort = Play.configuration.getInt("embed.mongo.port").get
@@ -211,20 +244,6 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
     mongodExecutable = starter.prepare(mongodConfig)
     mongodProcess = mongodExecutable.start()
-  }
-
-  private def stopLocalMongo() = {
-    try {
-      if (mongodExecutable != null) {
-        Logger.info("stopping embedded mongo")
-        mongodExecutable.stop()
-      }
-    } finally {
-      if (mongodProcess != null) {
-        Logger.info("killing embedded mongo")
-        mongodProcess.stop()
-      }
-    }
   }
 
 }

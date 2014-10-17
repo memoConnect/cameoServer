@@ -30,7 +30,7 @@ class PushNotificationActor extends Actor {
           val contentWithIdentity = content.mapValues{
             msg => identity.displayName.getOrElse(identity.cameoId) + ": " + msg
           }
-          PushdConnector.sendEvent(identity.id.id, titles, contentWithIdentity)
+          PushdConnector.sendEvent(identity.id.id, titles, contentWithIdentity, event.context)
       }
   }
 }

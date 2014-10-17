@@ -3,7 +3,7 @@ package helper
 import java.io.{ File, FileWriter }
 
 import helper.MongoCollections._
-import models.{ GlobalState, Identity, MongoId }
+import models._
 import play.api.Play.current
 import play.api.libs.iteratee.Iteratee
 import play.api.libs.json.Reads._
@@ -12,6 +12,7 @@ import play.api.{ Logger, Play }
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.modules.reactivemongo.json.collection.JSONCollection
 import services.AvatarGenerator
+import traits.Model
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -39,6 +40,7 @@ object DbAdminUtilities {
     cockpitAccessCollection
   ) :+ ReactiveMongoPlugin.db.collection[JSONCollection](fileChunkCollection.name)
 
+  val minMongoVersion = "2.6"
   var mongoVersion = "na"
 
   def findColByName(name: String): Option[JSONCollection] = {
@@ -99,7 +101,26 @@ object DbAdminUtilities {
     }
   }
 
-  val latestDbVersion = 5
+  def migrateAll(): Unit = {
+
+    def migrate[A](col: JSONCollection)(implicit reads: Reads[A]) = {
+      val enumerator = col.find(Json.obj()).cursor[A].enumerate()
+      val iteratee: Iteratee[A, Unit] = Iteratee.foreach {
+        model => // do nothing
+      }
+      enumerator.run(iteratee)
+    }
+
+    migrate[Account](Account.col)
+    migrate[Conversation](Conversation.col)
+    migrate[EventSubscription](EventSubscription.col)
+    migrate[FileMeta](FileMeta.col)
+    migrate[Identity](Identity.col)
+    migrate[Token](Token.col)
+
+  }
+
+  val latestDbVersion = 7
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -275,11 +296,66 @@ object DbAdminUtilities {
     enumerator.run(iteratee)
   }
 
+  def reverseConversations: Any => Future[Boolean] = foo => {
+    Logger.info("reversing conversations")
+
+    def processConversation: (JsObject => Future[Boolean]) =
+      js => {
+        val id = (js \ "_id").as[MongoId]
+        val messages = (js \ "messages").as[Seq[JsObject]]
+
+        val query = Json.obj("_id" -> id)
+        val set = Json.obj("$set" ->
+          Json.obj(
+            "messages" -> messages.reverse,
+            "numberOfMessages" -> messages.length
+          )
+        )
+        conversationCollection.update(query, set).map {
+          le =>
+            Logger.debug("Reversed conversation: " + id)
+            le.updatedExisting
+        }
+      }
+
+    val enumerator = conversationCollection.find(Json.obj()).cursor[JsObject].enumerate()
+
+    val iteratee: Iteratee[JsObject, Boolean] = Iteratee.foldM(true) {
+      (result, js) => processConversation(js).map(r => r && result)
+    }
+
+    enumerator.run(iteratee)
+  }
+
+  def clearScaleCache: Any => Future[Boolean] = foo => {
+    Logger.info("clearing scale cache")
+
+    // drop file cache dbs
+    mongoDB.collection[JSONCollection]("scaleCache.files").drop()
+    mongoDB.collection[JSONCollection]("scaleCache.chunks").drop()
+
+    def processFileMeta: (FileMeta => Future[Boolean]) = {
+      fileMeta =>
+        val cleared = fileMeta.copy(scaleCache = Map())
+        FileMeta.save(Json.toJson(cleared).as[JsObject]).map(_.updatedExisting)
+    }
+
+    val enumerator = fileMetaCollection.find(Json.obj()).cursor[FileMeta].enumerate()
+
+    val iteratee: Iteratee[FileMeta, Boolean] = Iteratee.foldM(true) {
+      (result, js) => processFileMeta(js).map(r => r && result)
+    }
+
+    enumerator.run(iteratee)
+  }
+
   def migrations: Map[Int, Any => Future[Boolean]] = Map(
     0 -> migrateTokensWithIteratee,
     1 -> migrateRecipients,
     2 -> loginNamesToLowerCase,
     3 -> addAvatars,
-    4 -> setDefaultIdentity
+    4 -> setDefaultIdentity,
+    5 -> reverseConversations,
+    6 -> clearScaleCache
   )
 }

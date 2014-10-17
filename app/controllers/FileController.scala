@@ -7,23 +7,26 @@ import javax.imageio.ImageIO
 
 import helper.AuthenticationActions.AuthAction
 import helper.ResultHelper._
-import helper.{ IdHelper, Utils }
+import helper.{ MongoCollections, IdHelper, Utils }
 import models._
 import org.imgscalr.Scalr
 import play.api.{ Logger, Play }
 import play.api.Play.current
-import play.api.libs.iteratee.Iteratee
+import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import play.api.libs.json.Json
-import play.api.mvc.{ BodyParser, Headers, Result }
-import services.NewMessage
+import play.api.mvc._
+import reactivemongo.api.gridfs.DefaultFileToSave
+import reactivemongo.bson.{ BSONDocument, BSONObjectID }
+import services.{ ImageScaler, NewMessage }
 import sun.misc.{ BASE64Decoder, BASE64Encoder }
 import traits.ExtendedController
-
+import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
 import scala.util.control.Exception._
 import scala.util.control.NonFatal
+import reactivemongo.bson._
 
 /**
  * User: Björn Reimer
@@ -161,6 +164,7 @@ object FileController extends ExtendedController {
   }
 
   case class FileComplete(messageId: Option[String])
+
   object FileComplete {
     implicit val format = Json.format[FileComplete]
   }
@@ -214,7 +218,6 @@ object FileController extends ExtendedController {
           case true =>
             // join chunks
             val baos = new ByteArrayOutputStream()
-
             chunks.map(_.get).seq.foreach {
               chunk =>
                 val chunkString = new String(chunk)
@@ -255,7 +258,16 @@ object FileController extends ExtendedController {
     resOkWithCache(baos.toByteArray, etag, "image/png")
   }
 
-  def getScaledFile(id: String, size: String) = AuthAction(allowExternal = true).async {
+  def saveToScaleCache(fileMeta: FileMeta, size: String, bytes: Array[Byte]): Future[Boolean] = {
+    val fileToSave = DefaultFileToSave(fileMeta.fileName, contentType = Some(fileMeta.fileType))
+    MongoCollections.scaleCache.save(Enumerator(bytes), fileToSave).flatMap {
+      readFile =>
+        val id = readFile.id.asInstanceOf[BSONObjectID].stringify
+        fileMeta.addToScaleCache(size, id)
+    }
+  }
+
+  def getScaledImage(id: String, size: String) = AuthAction(allowExternal = true).async {
     request =>
       checkEtag(request.headers) {
         Utils.safeStringToInt(size) match {
@@ -264,20 +276,27 @@ object FileController extends ExtendedController {
             FileMeta.find(id).flatMap {
               case None => Future(returnBlankImage)
               case Some(fileMeta) =>
-                getFileFromChunks(fileMeta.chunks).map {
-                  case Right(result) => result
-                  case Left(bytes) =>
-                    val bais: ByteArrayInputStream = new ByteArrayInputStream(bytes)
-                    try {
-                      val image: BufferedImage = ImageIO.read(bais)
-                      val targetSize = Math.min(sizeInt, Math.max(image.getHeight, image.getWidth))
-                      val thumb: BufferedImage = Scalr.resize(image, targetSize)
-                      val baos = new ByteArrayOutputStream()
-                      ImageIO.write(thumb, "png", baos)
-                      resOkWithCache(baos.toByteArray, fileMeta.id.id, fileMeta.fileType)
-                    } catch {
-                      case e: IOException          => returnBlankImage
-                      case e: NullPointerException => returnBlankImage
+                // check if the scaled image is in the cache
+                fileMeta.scaleCache.get(size) match {
+                  case Some(scaleFileId) =>
+                    // get file from cache
+                    val foundFile = MongoCollections.scaleCache.find(BSONDocument("_id" -> BSONObjectID(scaleFileId)))
+                    serve(MongoCollections.scaleCache, foundFile, CONTENT_DISPOSITION_INLINE).map {
+                      _.withHeaders(("ETAG", fileMeta.id.id))
+                        .withHeaders(("Cache-Control", "max-age=" + expire))
+                        .withHeaders(("Content-Type", fileMeta.fileType))
+                    }
+                  case None =>
+                    // we need to get the file chunks and join them in order to scale the image
+                    getFileFromChunks(fileMeta.chunks).map {
+                      case Right(result) => result
+                      case Left(bytes) =>
+                        ImageScaler.scale(bytes, sizeInt, cutSquare = true) match {
+                          case None => returnBlankImage
+                          case Some(scaledBytes) =>
+                            saveToScaleCache(fileMeta, size, scaledBytes)
+                            resOkWithCache(scaledBytes, fileMeta.id.id, fileMeta.fileType)
+                        }
                     }
                 }
             }

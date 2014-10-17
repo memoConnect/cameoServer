@@ -27,6 +27,8 @@ class ContactControllerSpec extends StartedApp {
   val newContactMail = "test@bjrm.de"
   val newContactTel = "+4561233"
   val newContactName = "foobar"
+  val newContactNameMixed = "moep"
+  val newContactNameMixed2 = "moep2"
   val friendRequestMessage = "whooop! moep!"
 
   "ContactController" should {
@@ -208,7 +210,6 @@ class ContactControllerSpec extends StartedApp {
     }
 
     "get the new external contact" in {
-
       val path = basePath + "/contact/" + externalContactId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -258,6 +259,110 @@ class ContactControllerSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(OK)
+    }
+
+    var externalMixedContactId = ""
+    "add new external with email in mixed field" in {
+      val path = basePath + "/contact"
+
+      val json = Json.obj("identity" -> Json.obj("mixed" -> validEmails(0), "displayName" -> newContactNameMixed))
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      externalMixedContactId = (data \ "id").as[String]
+      (data \ "contactType").asOpt[String] must beSome("external")
+      (data \ "identity" \ "email" \ "value").asOpt[String] must beSome(validEmails(0))
+      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beNone
+      (data \ "identity" \ "displayName").asOpt[String] must beSome(newContactNameMixed)
+    }
+
+    "the external contact should be created using the email" in {
+      val path = basePath + "/contact/" + externalMixedContactId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(externalMixedContactId)
+      (data \ "contactType").asOpt[String] must beSome("external")
+      (data \ "identity" \ "email" \ "value").asOpt[String] must beSome(validEmails(0))
+      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beNone
+      (data \ "identity" \ "displayName").asOpt[String] must beSome(newContactNameMixed)
+    }
+
+    "add new external with tel in mixed field" in {
+      val path = basePath + "/contact"
+
+      val json = Json.obj("identity" -> Json.obj("mixed" -> validPhoneNumbers(0)._1, "displayName" -> newContactNameMixed))
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      externalMixedContactId = (data \ "id").as[String]
+      (data \ "contactType").asOpt[String] must beSome("external")
+      (data \ "identity" \ "email" \ "value").asOpt[String] must beNone
+      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(validPhoneNumbers(0)._2)
+      (data \ "identity" \ "displayName").asOpt[String] must beSome(newContactNameMixed)
+    }
+
+    "the external contact should be created using the tel" in {
+      val path = basePath + "/contact/" + externalMixedContactId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(externalMixedContactId)
+      (data \ "contactType").asOpt[String] must beSome("external")
+      (data \ "identity" \ "email" \ "value").asOpt[String] must beNone
+      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(validPhoneNumbers(0)._2)
+      (data \ "identity" \ "displayName").asOpt[String] must beSome(newContactNameMixed)
+    }
+
+    (invalidEmails ++ invalidPhoneNumbers).map {
+      invalid =>
+        "refuse to add contact with mixed value: " + invalid in {
+          val path = basePath + "/contact"
+
+          val json = Json.obj("identity" -> Json.obj("mixed" -> invalid, "displayName" -> "foooooooooo"))
+
+          val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+          val res = route(req).get
+
+          if (status(res) != BAD_REQUEST) {
+            Logger.error("Response: " + contentAsString(res))
+          }
+          status(res) must equalTo(BAD_REQUEST)
+        }
     }
 
     "get all contact groups" in {

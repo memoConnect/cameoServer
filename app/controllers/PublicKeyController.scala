@@ -32,9 +32,27 @@ object PublicKeyController extends ExtendedController {
       validateFuture(request.body, PublicKey.createReads) {
         publicKey =>
           val withId = publicKey.copy(id = IdHelper.generatePublicKeyId(publicKey.key))
+
+          def sendEvent() = {
+            request.identity.contacts.foreach {
+              contact =>
+                actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+            }
+            // send event to ourselves
+            actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+          }
+
           // check if this key has already been uploaded by this user
           request.identity.publicKeys.find(_.id.equals(withId.id)) match {
-            case Some(existingKey) => Future(resOk(existingKey.toJson))
+            case Some(existingKey) =>
+              // update key
+              val update = PublicKeyUpdate(withId.name)
+              request.identity.editPublicKey(withId.id, update).map {
+                case false => resBadRequest("unable to update")
+                case true  =>
+                  sendEvent()
+                  resOk(withId.toJson)
+              }
             case None =>
               // check if this id already exists
               PublicKey.find(withId.id).flatMap {
@@ -44,12 +62,7 @@ object PublicKeyController extends ExtendedController {
                     case false => resServerError("unable to add")
                     case true =>
                       // send event to all people in address book
-                      request.identity.contacts.foreach {
-                        contact =>
-                          actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
-                      }
-                      // send event to ourselves
-                      actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                      sendEvent()
                       resOk(withId.toJson)
                   }
               }
@@ -87,14 +100,18 @@ object PublicKeyController extends ExtendedController {
       validateFuture[Signature](request.body, Signature.format) {
         signature =>
           // check who the public key belongs to
-          request.identity.publicKeys.exists(_.id.id.equals(id)) match {
-            case true =>
+          request.identity.publicKeys.find(_.id.id.equals(id)) match {
+            case Some(publicKey) =>
               // add to own public key
               request.identity.addSignatureToPublicKey(new MongoId(id), signature).map {
                 case false => resBadRequest("could not add")
-                case true  => resOk(signature.toJson)
+                case true  =>
+                  val newPublicKey = publicKey.copy(signatures = publicKey.signatures :+ signature)
+                  val event = UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson)))
+                  actors.eventRouter ! event
+                  resOk(signature.toJson)
               }
-            case false =>
+            case None =>
               request.identity.addPublicKeySignature(id, signature).map {
                 case false => resBadRequest("could not add")
                 case true  => resOk(signature.toJson)

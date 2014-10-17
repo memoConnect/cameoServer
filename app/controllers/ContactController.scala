@@ -4,7 +4,8 @@ import java.util.Date
 
 import constants.Contacts._
 import helper.AuthenticationActions.AuthAction
-import helper.OutputLimits
+import helper.JsonHelper._
+import helper.{CheckHelper, IdHelper, OutputLimits}
 import helper.ResultHelper._
 import models._
 import play.api.Logger
@@ -12,6 +13,7 @@ import play.api.libs.json._
 import play.api.mvc.Result
 import services.{ AcceptedFriendRequest, AvatarGenerator, NewFriendRequest }
 import traits.ExtendedController
+import play.api.libs.functional.syntax._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,37 +25,65 @@ import scala.concurrent.Future
  */
 object ContactController extends ExtendedController {
 
+  case class CreateExternalContact(displayName: Option[String],
+                                   phoneNumber: Option[String],
+                                   email: Option[String],
+                                   mixed: Option[String])
+  object CreateExternalContact {
+    implicit def reads(implicit stringReads: Reads[String]): Reads[CreateExternalContact] = (
+      (__ \ 'displayName).readNullable[String] and
+      (__ \ 'phoneNumber).readNullable[String](verifyPhoneNumber andThen stringReads) and
+      (__ \ 'email).readNullable[String](verifyMail andThen stringReads) and
+      (__ \ 'mixed).readNullable[String]
+    )(CreateExternalContact.apply _)
+  }
+
   def addContact() = AuthAction().async(parse.tolerantJson) {
     request =>
 
       def addExternalContact(js: JsObject): Future[Result] = {
-        validateFuture(js, Identity.createReads) { identity =>
-          Identity.col.insert(identity).flatMap { error =>
-            error.ok match {
-              case false => Future(resServerError("could not save new identity"))
-              case true =>
-                AvatarGenerator.generate(identity)
-                createContact(identity.id, CONTACT_TYPE_EXTERNAL)
+        validateFuture(js, CreateExternalContact.reads) {
+          create =>
+            def createIdentityAndAddContact(displayName: Option[String], phoneNumber: Option[String], email: Option[String]): Future[Result] = {
+              val identity = Identity.create(None, IdHelper.generateCameoId, email, phoneNumber, true, displayName)
+              Identity.col.insert(identity).flatMap { error =>
+                error.ok match {
+                  case false => Future(resServerError("could not save new identity"))
+                  case true =>
+                    AvatarGenerator.generate(identity)
+                    createContact(identity.id)
+                }
+              }
             }
-          }
+
+            // use mixed field if there is no phonenumber and email
+            (create.email, create.phoneNumber, create.mixed) match {
+              case (None, None, Some(mixed)) =>
+                CheckHelper.checkAndCleanMixed(mixed) match {
+                  case Some(Left(tel)) => createIdentityAndAddContact(create.displayName, Some(tel), None)
+                  case Some(Right(email)) => createIdentityAndAddContact(create.displayName, None, Some(email))
+                  case None => Future(resBadRequest("Neither phonenumber nor email: " + mixed))
+                }
+              case _ => createIdentityAndAddContact(create.displayName, create.phoneNumber, create.email)
+            }
         }
       }
 
       def addInternalContact(identityId: String): Future[Result] = {
         // check if the user already has this contact
-        request.identity.contacts.exists(_.identityId.toString.equals(identityId)) match {
+        request.identity.contacts.exists(_.identityId.id.equals(identityId)) match {
           case true => Future(resKo("identity is already in address book"))
           case false =>
             // check if identity exists
             Identity.find(new MongoId(identityId)).flatMap {
               case None => Future(resNotFound("identity"))
               case Some(i) =>
-                createContact(i.id, CONTACT_TYPE_INTERNAL)
+                createContact(i.id)
             }
         }
       }
 
-      def createContact(identityId: MongoId, contactType: String): Future[Result] = {
+      def createContact(identityId: MongoId): Future[Result] = {
         validateFuture(request.body, Contact.createReads(identityId)) {
           contact =>
             {

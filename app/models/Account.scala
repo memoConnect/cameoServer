@@ -47,8 +47,8 @@ case class Account(id: MongoId,
   def update(update: AccountUpdate): Future[Boolean] = {
     val query = Json.obj("_id" -> this.id)
     update match {
-      case AccountUpdate(None, None, None) => Future(true)
-      case AccountUpdate(maybePhoneNumber, maybeEmail, maybePassword) =>
+      case AccountUpdate(None, None, None, _) => Future(true)
+      case AccountUpdate(maybePhoneNumber, maybeEmail, maybePassword, _) =>
 
         val set =
           Json.obj("$set" -> (
@@ -240,12 +240,14 @@ object AccountEvolutions {
 
 case class AccountUpdate(phoneNumber: Option[VerifiedString] = None,
                          email: Option[VerifiedString] = None,
-                         password: Option[String] = None)
+                         password: Option[String] = None,
+                         oldPassword: Option[String] = None)
 
 object AccountUpdate {
   implicit val reads: Reads[AccountUpdate] = (
     (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
     (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ "password").readNullable[String](minLength[String](8) andKeep hashPassword)
+    (__ \ "password").readNullable[String](minLength[String](8) andKeep hashPassword) and
+    (__ \ "oldPassword").readNullable[String]
   )(AccountUpdate.apply _)
 }
