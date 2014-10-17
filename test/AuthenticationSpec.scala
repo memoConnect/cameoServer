@@ -83,6 +83,7 @@ class AuthenticationSpec extends StartedApp {
     val filteredAuthRoutes = authRoutes.filterNot(r =>
       r._2.startsWith("/m") ||
         r._2.startsWith("/d") ||
+        r._2.startsWith("/dc") ||
         r._2.startsWith("/dl") ||
         r._2.startsWith("/c") ||
         r._2.equals("/") ||
