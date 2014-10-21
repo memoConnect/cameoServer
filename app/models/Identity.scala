@@ -288,8 +288,12 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         }
   }
 
-  val noTokensProjection: JsObject = limitArray("tokens", 1, 0)
-  val noContactsProjection: JsObject = limitArray("contacts", 1, 0)
+  def getProjection(includeContacts: Boolean = false, includeTokens: Boolean = false): JsObject = {
+    val contactProjection = if(includeContacts) Json.obj() else limitArray("contacts", 1, 0)
+    val tokenProjection = if(includeTokens) Json.obj() else limitArray("tokens", 1, 0)
+
+    contactProjection ++ tokenProjection
+  }
 
   def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean = true, displayName: Option[String] = None): Identity = {
     new Identity(
@@ -327,20 +331,30 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     }
   }
 
-  // todo: add projection to exclude contacts when not needed
-  def findByToken(tokenId: MongoId): Future[Option[Identity]] = {
+  override def find(id: MongoId): Future[Option[Identity]] = {
+    val query = Json.obj("_id" -> id)
+    val projection = getProjection()
+    find(query, projection)
+  }
+
+  def findWith(id: MongoId, includeContacts: Boolean =false, includeTokens: Boolean = false ): Future[Option[Identity]] = {
+    val query = Json.obj("_id" -> id)
+    val projection = getProjection(includeContacts, includeTokens)
+    find(query, projection)
+  }
+
+  def findByToken(tokenId: MongoId, includeContacts: Boolean = false): Future[Option[Identity]] = {
     val query = Json.obj("tokens._id" -> tokenId)
-    col.find(query, noTokensProjection).one[Identity]
+    val projection = getProjection(includeContacts)
+    find(query, projection)
   }
 
   def findByCameoId(cameoId: String): Future[Option[Identity]] = {
     // cameoIds are not case sensitive
     val query = Json.obj("cameoId" -> Json.obj("$regex" -> ("^" + cameoId + "$"), "$options" -> "i"))
-    col.find(query).one[Identity]
-  }
+    val projection = getProjection()
 
-  def addTokenToIdentity(identityId: MongoId, token: Token): Future[Boolean] = {
-    Token.appendUnique(identityId, token).map(_.updatedExisting)
+    find(query,projection)
   }
 
   def search(cameoId: Option[String], displayName: Option[String]): Future[Seq[Identity]] = {
@@ -356,7 +370,13 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       "accountId" -> Json.obj("$exists" -> true)
     )
 
-    col.find(query).cursor[Identity].collect[Seq](upTo = 250)
+    val projection = Json.obj()
+
+    col.find(query, projection).cursor[Identity].collect[Seq](upTo = 250)
+  }
+
+  def addTokenToIdentity(identityId: MongoId, token: Token): Future[Boolean] = {
+    Token.appendUnique(identityId, token).map(_.updatedExisting)
   }
 
   def createDefault(): Identity = {

@@ -45,7 +45,7 @@ object PurlController extends ExtendedController {
 
       def getPurlWithToken(purl: Purl, token: String): Future[Result] = {
         // get identity behind purl
-        Identity.find(purl.identityId).flatMap {
+        Identity.findWith(purl.identityId, includeTokens = true).flatMap {
           case None => Future(resNotFound("purl"))
           case Some(identity) =>
             // check if the identity has an account
@@ -75,7 +75,7 @@ object PurlController extends ExtendedController {
 
       def getPurlWithoutToken(purl: Purl): Future[Result] = {
         // check if identity is an external user
-        Identity.find(purl.identityId).flatMap {
+        Identity.findWith(purl.identityId, includeTokens = true).flatMap {
           case None => Future(resNotFound("identity"))
           case Some(identity) =>
             identity.accountId match {

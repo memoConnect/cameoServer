@@ -28,13 +28,13 @@ object PublicKeyController extends ExtendedController {
     }
   }
 
-  def addPublicKey() = AuthAction().async(parse.tolerantJson) {
+  def addPublicKey() = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, PublicKey.createReads) {
         publicKey =>
           val withId = publicKey.copy(id = IdHelper.generatePublicKeyId(publicKey.key))
 
-          def sendEvent() = {
+          def sendEvent() {
             request.identity.contacts.foreach {
               contact =>
                 actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
@@ -84,7 +84,7 @@ object PublicKeyController extends ExtendedController {
       }
   }
 
-  def deletePublicKey(id: String) = AuthAction().async {
+  def deletePublicKey(id: String) = AuthAction(includeContacts = true).async {
     request =>
       isOwnKey(request.identity, id) {
         request.identity.deletePublicKey(new MongoId(id)).map {

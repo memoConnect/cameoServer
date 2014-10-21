@@ -39,7 +39,7 @@ object ContactController extends ExtendedController {
     )(CreateExternalContact.apply _)
   }
 
-  def addContact() = AuthAction().async(parse.tolerantJson) {
+  def addContact() = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
 
       def addExternalContact(js: JsObject): Future[Result] = {
@@ -107,7 +107,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def editContact(contactId: String) = AuthAction().async(parse.tolerantJson) {
+  def editContact(contactId: String) = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       val maybeContact = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
       maybeContact match {
@@ -123,7 +123,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getContact(contactId: String) = AuthAction().async {
+  def getContact(contactId: String) = AuthAction(includeContacts = true).async {
     request =>
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
@@ -133,7 +133,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getContacts(offset: Int, limit: Int) = AuthAction().async {
+  def getContacts(offset: Int, limit: Int) = AuthAction(includeContacts = true).async {
     request =>
 
       // get all pending friendRequests, todo: this can be done more efficiently
@@ -168,7 +168,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def deleteContact(contactId: String) = AuthAction().async {
+  def deleteContact(contactId: String) = AuthAction(includeContacts = true).async {
     request =>
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
 
@@ -182,7 +182,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroup(group: String, offset: Int, limit: Int) = AuthAction().async {
+  def getGroup(group: String, offset: Int, limit: Int) = AuthAction(includeContacts = true).async {
     request =>
       val contacts = request.identity.getGroup(group)
       val limited = OutputLimits.applyLimits(contacts, offset, limit)
@@ -192,7 +192,7 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroups = AuthAction().async {
+  def getGroups = AuthAction(includeContacts = true).async {
     request =>
       val groups = request.identity.getGroups
       Future(resOk(Json.toJson(groups)))
@@ -216,7 +216,7 @@ object ContactController extends ExtendedController {
   }
 
   // todo: set maximum size of friend request message
-  def sendFriendRequest = AuthAction().async(parse.tolerantJson) {
+  def sendFriendRequest = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       def executeFriendRequest(receiver: MongoId, message: Option[String]): Future[Result] = {
         // check if the other identity is already in contacts

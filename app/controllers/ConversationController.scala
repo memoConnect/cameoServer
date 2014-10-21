@@ -21,7 +21,7 @@ import scala.concurrent.Future
  */
 object ConversationController extends ExtendedController {
 
-  def createConversation = AuthAction().async(parse.tolerantJson) {
+  def createConversation = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       {
         def addRecipients(conversation: Conversation): Either[Conversation, Result] = {
@@ -128,7 +128,7 @@ object ConversationController extends ExtendedController {
     }
   }
 
-  def addRecipients(id: String) = AuthAction().async(parse.tolerantJson) {
+  def addRecipients(id: String) = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       Conversation.find(new MongoId(id), -1, 0).flatMap {
         case None => Future.successful(resNotFound("conversation"))

@@ -61,7 +61,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def search(offset: Int, limit: Int) = AuthAction().async(parse.tolerantJson) {
+  def search(offset: Int, limit: Int) = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
 
       case class IdentitySearch(search: String, fields: Seq[String], excludeContacts: Option[Boolean])

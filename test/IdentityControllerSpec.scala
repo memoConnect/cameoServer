@@ -13,6 +13,7 @@ import testHelper.StartedApp
  * Date: 3/3/14
  * Time: 4:48 PM
  */
+
 class IdentityControllerSpec extends StartedApp {
 
   sequential

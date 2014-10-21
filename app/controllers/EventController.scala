@@ -77,7 +77,7 @@ object EventController extends ExtendedController {
       "authenticationRequest:cancel"
     )
 
-  def remoteBroadcastEvent(id: String) = AuthAction()(parse.tolerantJson) {
+  def remoteBroadcastEvent(id: String) = AuthAction(includeContacts = true)(parse.tolerantJson) {
     request =>
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>
