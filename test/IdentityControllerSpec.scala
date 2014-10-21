@@ -97,9 +97,7 @@ class IdentityControllerSpec extends StartedApp {
       }
       status(res) must equalTo(OK)
 
-
       val data = (contentAsJson(res) \ "data").as[JsObject]
-      Logger.debug("DATA: " + data)
 
       (data \ "id").asOpt[String] must beSome
       (data \ "userKey").asOpt[String] must beNone

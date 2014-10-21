@@ -23,20 +23,20 @@ case class Contact(id: MongoId,
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
   def toJsonWithIdentity(publicKeySignatures: Option[Map[String, Signature]], identities: Seq[Identity]): JsObject = {
-    val identityJson = identities.find(_.id.equals(this.identityId)).map {
+    identities.find(_.id.equals(this.identityId)).map {
       identity =>
         val contactType = identity.accountId match {
           case None    => CONTACT_TYPE_EXTERNAL
           case Some(a) => CONTACT_TYPE_INTERNAL
         }
 
-        val identityJson = identity.toPublicJson(publicKeySignatures)
+        val identityJson = identity.accountId match {
+          case None    => identity.toExternalOwnerJson
+          case Some(a) => identity.toPublicJson(publicKeySignatures)
+        }
 
-        Json.obj("identity" -> identityJson) ++
-          Json.obj("contactType" -> contactType)
+        Json.toJson(this)(Contact.outputWrites).as[JsObject] ++ Json.obj("identity" -> identityJson) ++ Json.obj("contactType" -> contactType)
     }.getOrElse(Json.obj())
-
-    Json.toJson(this)(Contact.outputWrites).as[JsObject] ++ identityJson
   }
 
   // todo: update to new ModelUpdate
