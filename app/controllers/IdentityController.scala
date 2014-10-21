@@ -1,6 +1,7 @@
 package controllers
 
-import services.{AuthenticationActions, AvatarGenerator, NewIdentity}
+import play.api.Logger
+import services.{ AuthenticationActions, AvatarGenerator, NewIdentity }
 import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -24,7 +25,6 @@ object IdentityController extends ExtendedController {
 
   def nonAuthGetIdentity[A](id: String): Request[A] => Future[Result] = {
     request =>
-      // todo: return external identities only to their owner and conversation members
       val mongoId = new MongoId(id)
       Identity.find(mongoId).map {
         case None => resNotFound("identity")
@@ -36,14 +36,15 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def getIdentity(id: String) = AuthAction(nonAuthBlock = Some(nonAuthGetIdentity(id))).async {
+  def getIdentity(id: String) = AuthAction(nonAuthBlock = Some(nonAuthGetIdentity(id)), includeContacts = true).async {
     request =>
       val mongoId = new MongoId(id)
-
-      // todo: only return extrenal identities that are in adress book
+      // todo: return external identities only to their owner and conversation members
       Identity.find(mongoId).map {
-        case None           => resNotFound("identity")
-        case Some(identity) => resOk(identity.toPublicJson(Some(request.identity.publicKeySignatures)))
+        case None                                                                                 => resNotFound("identity")
+        case Some(identity) if identity.accountId.isDefined                                       => resOk(identity.toPublicJson(Some(request.identity.publicKeySignatures)))
+        case Some(identity) if request.identity.contacts.exists(_.identityId.equals(identity.id)) => resOk(identity.toExternalOwnerJson)
+        case Some(identity)                                                                       => resOk(identity.toExternalJson)
       }
   }
 
@@ -57,7 +58,7 @@ object IdentityController extends ExtendedController {
         js =>
           Identity.update(request.identity.id, js).map {
             case false => resNotFound("identity")
-            case true => resOk("updated")
+            case true  => resOk("updated")
           }
       }
   }

@@ -75,7 +75,7 @@ class IdentityControllerSpec extends StartedApp {
     }
 
     "Refuse to return external identity without token" in {
-      val path = basePath + "/identity/" + externalContact2IdentityId
+      val path = basePath + "/identity/" + externalContactIdentityId
 
       val req = FakeRequest(GET, path)
       val res = route(req).get
@@ -87,9 +87,34 @@ class IdentityControllerSpec extends StartedApp {
     }
 
     "Get external identity with token" in {
-      val path = basePath + "/identity/" + externalContact2IdentityId
+      val path = basePath + "/identity/" + externalContactIdentityId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      Logger.debug("DATA: " + data)
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "userKey").asOpt[String] must beNone
+      (data \ "cameoId").asOpt[String] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome
+      (data \ "displayName").asOpt[String] must beSome
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "Return limited information about external contact to identities that do not own it" in {
+      val path = basePath + "/identity/" + externalContactIdentityId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -108,6 +133,7 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "avatar").asOpt[String] must beSome
       (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
+
 
     "Edit an identity" in {
       val path = basePath + "/identity"

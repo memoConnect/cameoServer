@@ -57,7 +57,7 @@ object ContactController extends ExtendedController {
               }
             }
 
-            // use mixed field if there is no phonenumber and email
+            // use mixed field if there is no phone number and email
             (create.email, create.phoneNumber, create.mixed) match {
               case (None, None, Some(mixed)) =>
                 CheckHelper.checkAndCleanMixed(mixed) match {

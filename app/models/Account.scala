@@ -34,9 +34,7 @@ case class Account(id: MongoId,
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
 
   def toJsonWithIdentities(activeIdentityId: MongoId): Future[JsObject] = {
-    val identityProjection = Identity.getProjection()
-    // todo override Identity.findAll and create custom method with projections
-    Identity.findAll(Json.obj("accountId" -> this.id), identityProjection).map {
+    Identity.findAll(Json.obj("accountId" -> this.id)).map {
       list =>
         this.toJson ++ Json.obj("identities" -> list.map {
           identity =>
