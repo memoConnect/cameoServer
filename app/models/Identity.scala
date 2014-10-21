@@ -218,7 +218,7 @@ case class Identity(id: MongoId,
 
         case _ =>
           // config is not sufficient, do nothing
-          Logger.error("Inital Support Contact not configured")
+          Logger.error("Initial Support Contact not configured")
           Future(false)
       }
   }
@@ -277,8 +277,8 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         getCameoId(i.cameoId) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         maybeEmptyString("displayName", i.displayName) ++
-        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++ {
-          // add phoneNumber and email for internal identities
+        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++
+        { // add phoneNumber and email for internal identities
           i.accountId match {
             case None => Json.obj()
             case Some(a) =>
@@ -289,8 +289,8 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   def getProjection(includeContacts: Boolean = false, includeTokens: Boolean = false): JsObject = {
-    val contactProjection = if(includeContacts) Json.obj() else limitArray("contacts", 1, 0)
-    val tokenProjection = if(includeTokens) Json.obj() else limitArray("tokens", 1, 0)
+    val contactProjection = if (includeContacts) Json.obj() else limitArray("contacts", 1, 0)
+    val tokenProjection = if (includeTokens) Json.obj() else limitArray("tokens", 1, 0)
 
     contactProjection ++ tokenProjection
   }
@@ -337,7 +337,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     find(query, projection)
   }
 
-  def findWith(id: MongoId, includeContacts: Boolean =false, includeTokens: Boolean = false ): Future[Option[Identity]] = {
+  def findWith(id: MongoId, includeContacts: Boolean = false, includeTokens: Boolean = false): Future[Option[Identity]] = {
     val query = Json.obj("_id" -> id)
     val projection = getProjection(includeContacts, includeTokens)
     find(query, projection)
@@ -354,7 +354,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     val query = Json.obj("cameoId" -> Json.obj("$regex" -> ("^" + cameoId + "$"), "$options" -> "i"))
     val projection = getProjection()
 
-    find(query,projection)
+    find(query, projection)
   }
 
   def search(cameoId: Option[String], displayName: Option[String]): Future[Seq[Identity]] = {

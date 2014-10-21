@@ -62,8 +62,8 @@ GET            /a/v1/contacts                               controllers.ContactC
 GET            /a/v1/contact/:id                            controllers.ContactController.getContact(id: String)
 PUT            /a/v1/contact/:id                            controllers.ContactController.editContact(id: String)
 DELETE         /a/v1/contact/:id                            controllers.ContactController.deleteContact(id: String)
-GET            /a/v1/contact-groups                         controllers.ContactController.getGroups()
-GET            /a/v1/contact-group/:id                      controllers.ContactController.getGroup(id: String,  offset: Int ?= 0, limit: Int ?= 0)
+#GET            /a/v1/contact-groups                         controllers.ContactController.getGroups()
+#GET            /a/v1/contact-group/:id                      controllers.ContactController.getGroup(id: String,  offset: Int ?= 0, limit: Int ?= 0)
 
 # FRIEND_REQUESTS
 GET            /a/v1/friendRequests                         controllers.ContactController.getFriendRequests

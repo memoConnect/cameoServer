@@ -655,6 +655,42 @@ class AccountControllerSpec extends StartedApp {
       data.find(js => (js \ "identityId").asOpt[String].equals(Some(identityExisting2))) must beSome
     }
 
+    "identity should have support contact" in {
+
+      val path = basePath + "/contacts"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(purlExternIdentityToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+
+      data.length must beEqualTo(2)
+
+      data.find(js => (js \ "identityId").asOpt[String].equals(Play.configuration.getString("support.contact.identityId"))) must beSome
+    }
+
+    "identity should have support conversation" in {
+
+      val path = basePath + "/conversations"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(purlExternIdentityToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data" \ "conversations").as[Seq[JsObject]]
+
+      data.length must beEqualTo(2)
+    }
+
     "Reserve another login" in {
       val path = basePath + "/account/check"
       val json = Json.obj("loginName" -> (loginExternal + "moep"))

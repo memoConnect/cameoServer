@@ -3,7 +3,7 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
-import services.{AuthenticationActions, AcceptedFriendRequest, AvatarGenerator, NewFriendRequest}
+import services.{ AuthenticationActions, AcceptedFriendRequest, AvatarGenerator, NewFriendRequest }
 import AuthenticationActions.AuthAction
 import helper.JsonHelper._
 import helper.ResultHelper._
@@ -52,7 +52,7 @@ object ContactController extends ExtendedController {
                   case false => Future(resServerError("could not save new identity"))
                   case true =>
                     AvatarGenerator.generate(identity)
-                    createContact(identity.id)
+                    createContact(identity)
                 }
               }
             }
@@ -79,18 +79,18 @@ object ContactController extends ExtendedController {
             Identity.find(new MongoId(identityId)).flatMap {
               case None => Future(resNotFound("identity"))
               case Some(i) =>
-                createContact(i.id)
+                createContact(i)
             }
         }
       }
 
-      def createContact(identityId: MongoId): Future[Result] = {
-        validateFuture(request.body, Contact.createReads(identityId)) {
+      def createContact(identity: Identity): Future[Result] = {
+        validateFuture(request.body, Contact.createReads(identity.id)) {
           contact =>
             {
-              request.identity.addContact(contact).flatMap {
-                case false => Future(resBadRequest("could not create contact"))
-                case true  => contact.toJsonWithIdentity(None).map(js => resOk(js))
+              request.identity.addContact(contact).map {
+                case false => resBadRequest("could not create contact")
+                case true  => resOk(contact.toJsonWithIdentity(None, Seq(identity)))
               }
             }
         }
@@ -126,10 +126,16 @@ object ContactController extends ExtendedController {
   def getContact(contactId: String) = AuthAction(includeContacts = true).async {
     request =>
       val res = request.identity.contacts.find(contact => contact.id.toString.equals(contactId))
-
       res match {
-        case None          => Future(resNotFound("contact"))
-        case Some(contact) => contact.toJsonWithIdentity(Some(request.identity.publicKeySignatures)).map(resOk)
+        case None => Future(resNotFound("contact"))
+        case Some(contact) =>
+          // get identity behind contact
+          Identity.find(contact.identityId).map {
+            case None => resServerError("could not find matching identity")
+            case Some(identity) =>
+              val res = contact.toJsonWithIdentity(Some(request.identity.publicKeySignatures), Seq(identity))
+              resOk(res)
+          }
       }
   }
 
@@ -149,11 +155,17 @@ object ContactController extends ExtendedController {
                 Json.obj("contactType" -> CONTACT_TYPE_PENDING)
           }
         }
-        futureContacts <- Future.sequence(request.identity.contacts.map {
-          _.toJsonWithIdentity(Some(request.identity.publicKeySignatures))
-        })
+        identities <- {
+          val query = Json.obj("_id" -> Json.obj("$in" -> request.identity.contacts.map(_.identityId)))
+          Identity.findAll(query)
+        }
       } yield {
-        val all = futureContacts ++ futurePendingContacts
+        // use identities to get contact jsons
+        val contactJsons = request.identity.contacts.map {
+          _.toJsonWithIdentity(Some(request.identity.publicKeySignatures), identities)
+        }
+
+        val all = contactJsons ++ futurePendingContacts
         // remove all empty element (they result from deleted identities)
         val nonEmpty = all.filterNot(_.equals(Json.obj()))
         val sorted = nonEmpty.sortBy(
@@ -182,21 +194,21 @@ object ContactController extends ExtendedController {
       }
   }
 
-  def getGroup(group: String, offset: Int, limit: Int) = AuthAction(includeContacts = true).async {
-    request =>
-      val contacts = request.identity.getGroup(group)
-      val limited = OutputLimits.applyLimits(contacts, offset, limit)
-
-      Future.sequence(limited.map(_.toJsonWithIdentity(Some(request.identity.publicKeySignatures)))).map {
-        c => resOk(c)
-      }
-  }
-
-  def getGroups = AuthAction(includeContacts = true).async {
-    request =>
-      val groups = request.identity.getGroups
-      Future(resOk(Json.toJson(groups)))
-  }
+  //  def getGroup(group: String, offset: Int, limit: Int) = AuthAction(includeContacts = true).async {
+  //    request =>
+  //      val group = request.identity.getGroup(group)
+  //      val limited = OutputLimits.applyLimits(group, offset, limit)
+  //
+  //      Future.sequence(limited.map(_.toJsonWithIdentity(Some(request.identity.publicKeySignatures)))).map {
+  //        c => resOk(c)
+  //      }
+  //  }
+  //
+  //  def getGroups = AuthAction(includeContacts = true).async {
+  //    request =>
+  //      val groups = request.identity.getGroups
+  //      Future(resOk(Json.toJson(groups)))
+  //  }
 
   def getFriendRequests = AuthAction().async {
     request =>
@@ -297,15 +309,11 @@ object ContactController extends ExtendedController {
                     } yield {
                       le1 && le2 match {
                         case true =>
-
-                          for {
-                            contactJs <- contact.toJsonWithIdentity(None)
-                            otherContactJs <- otherContact.toJsonWithIdentity(None)
-                          } yield {
-                            // send event to both parties
-                            actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id, otherIdentity.id, request.identity.id, otherContactJs)
-                            actors.eventRouter ! AcceptedFriendRequest(request.identity.id, otherIdentity.id, request.identity.id, contactJs)
-                          }
+                          val contactJs = contact.toJsonWithIdentity(None, Seq(otherIdentity, request.identity))
+                          val otherContactJs = otherContact.toJsonWithIdentity(None, Seq(otherIdentity, request.identity))
+                          // send event to both parties
+                          actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id, otherIdentity.id, request.identity.id, otherContactJs)
+                          actors.eventRouter ! AcceptedFriendRequest(request.identity.id, otherIdentity.id, request.identity.id, contactJs)
                           resOk("added contacts")
                         case false => resKo("duplicate entries")
                       }

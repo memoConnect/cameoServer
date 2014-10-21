@@ -40,6 +40,7 @@ object IdentityController extends ExtendedController {
     request =>
       val mongoId = new MongoId(id)
 
+      // todo: only return extrenal identities that are in adress book
       Identity.find(mongoId).map {
         case None           => resNotFound("identity")
         case Some(identity) => resOk(identity.toPublicJson(Some(request.identity.publicKeySignatures)))

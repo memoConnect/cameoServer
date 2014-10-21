@@ -47,7 +47,6 @@ object AccountController extends ExtendedController {
             account =>
               {
                 def createAccountWithIdentity(identity: Identity): Future[Result] = {
-
                   val accountLowerCase = account.copy(loginName = account.loginName.toLowerCase)
 
                   // add support user
