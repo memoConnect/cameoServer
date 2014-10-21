@@ -24,7 +24,8 @@ object AccountController extends ExtendedController {
   def checkLogin(login: String): Boolean = {
     login.length >= 3 &&
       login.length < 41 &&
-      login.matches("^[.\\w+]$")
+      login.matches("^[\\w.]+$") &&
+      login.count(_.isLetterOrDigit) > 0
   }
 
   case class AdditionalValues(reservationSecret: String, displayName: Option[String])
