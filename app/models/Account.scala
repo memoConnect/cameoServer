@@ -7,7 +7,7 @@ import helper.JsonHelper._
 import helper.MongoCollections._
 import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -34,7 +34,8 @@ case class Account(id: MongoId,
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
 
   def toJsonWithIdentities(activeIdentityId: MongoId): Future[JsObject] = {
-    Identity.findAll(Json.obj("accountId" -> this.id)).map {
+    val identityProjection = Identity.noTokensProjection ++ Identity.noContactsProjection
+    Identity.findAll(Json.obj("accountId" -> this.id), identityProjection).map {
       list =>
         this.toJson ++ Json.obj("identities" -> list.map {
           identity =>

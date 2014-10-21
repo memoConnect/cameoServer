@@ -1,5 +1,7 @@
 package controllers
-import helper.AuthenticationActions.AuthAction
+
+import services.AuthenticationActions
+import AuthenticationActions.AuthAction
 import helper.JsonHelper
 import helper.ResultHelper._
 import models._

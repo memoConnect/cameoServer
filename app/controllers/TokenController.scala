@@ -1,6 +1,7 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import services.AuthenticationActions
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ Account, Identity, Token }
 import org.mindrot.jbcrypt.BCrypt

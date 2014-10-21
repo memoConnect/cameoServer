@@ -5,7 +5,8 @@ import java.awt.{ Color, Graphics2D }
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import javax.imageio.ImageIO
 
-import helper.AuthenticationActions.AuthAction
+import services.{AuthenticationActions, ImageScaler, NewMessage}
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, MongoCollections, Utils }
 import models._

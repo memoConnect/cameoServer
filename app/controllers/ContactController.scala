@@ -3,7 +3,8 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
-import helper.AuthenticationActions.AuthAction
+import services.{AuthenticationActions, AcceptedFriendRequest, AvatarGenerator, NewFriendRequest}
+import AuthenticationActions.AuthAction
 import helper.JsonHelper._
 import helper.ResultHelper._
 import helper.{ CheckHelper, IdHelper, OutputLimits }

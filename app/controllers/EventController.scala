@@ -1,6 +1,7 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import services.{AuthenticationActions, BroadcastEvent}
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
 import play.api.Play

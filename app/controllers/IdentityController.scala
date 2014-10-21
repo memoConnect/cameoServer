@@ -1,6 +1,7 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import services.{AuthenticationActions, AvatarGenerator, NewIdentity}
+import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._

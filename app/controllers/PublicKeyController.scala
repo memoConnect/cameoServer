@@ -1,6 +1,7 @@
 package controllers
 
-import helper.AuthenticationActions._
+import services.{AuthenticationActions, UpdatedIdentity}
+import AuthenticationActions._
 import helper.IdHelper
 import helper.ResultHelper._
 import models._

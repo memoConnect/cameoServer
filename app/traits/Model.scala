@@ -38,8 +38,8 @@ trait Model[A] {
     col.find(query).one[JsObject]
   }
 
-  def findAll(query: JsObject): Future[Seq[A]] = {
-    col.find(query).cursor[A].collect[Seq]()
+  def findAll(query: JsObject, projection: JsObject = Json.obj()): Future[Seq[A]] = {
+    col.find(query, projection).cursor[A].collect[Seq]()
   }
 
   def delete(id: MongoId): Future[LastError] = {

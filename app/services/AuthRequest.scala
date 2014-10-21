@@ -1,8 +1,8 @@
-package helper
+package services
 
 import constants.Authentication._
 import helper.ResultHelper._
-import models.{ Identity, MongoId, TwoFactorToken }
+import models.{Identity, MongoId, TwoFactorToken}
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global

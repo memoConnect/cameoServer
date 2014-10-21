@@ -1,6 +1,7 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import services.{AuthenticationActions, PushdConnector}
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.Identity
 import play.api.i18n.Lang

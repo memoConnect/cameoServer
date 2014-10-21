@@ -288,6 +288,9 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         }
   }
 
+  val noTokensProjection: JsObject = limitArray("tokens", 1, 0)
+  val noContactsProjection: JsObject = limitArray("contacts", 1, 0)
+
   def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean = true, displayName: Option[String] = None): Identity = {
     new Identity(
       IdHelper.generateIdentityId(),
@@ -327,7 +330,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   // todo: add projection to exclude contacts when not needed
   def findByToken(tokenId: MongoId): Future[Option[Identity]] = {
     val query = Json.obj("tokens._id" -> tokenId)
-    col.find(query).one[Identity]
+    col.find(query, noTokensProjection).one[Identity]
   }
 
   def findByCameoId(cameoId: String): Future[Option[Identity]] = {
