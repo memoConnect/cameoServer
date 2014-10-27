@@ -6,7 +6,7 @@
 
 import java.util.logging.{ Logger => JavaLogger }
 
-import actors.{ AccountCount, MessageCount, StatsActor }
+import actors._
 import akka.actor.Props
 import de.flapdoodle.embed.mongo.config.{ IMongodConfig, MongodConfigBuilder, Net, RuntimeConfigBuilder }
 import de.flapdoodle.embed.mongo.distribution.Versions
@@ -153,6 +153,13 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
       }
       if (Play.configuration.getBoolean("stats.accounts.total.enabled").getOrElse(false)) {
         Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, AccountCount)
+      }
+
+      // delete files
+      val fileDeletionActor = Akka.system.actorOf(Props[FileDeletionActor])
+      if (Play.configuration.getInt("files.temporary.lifetime").isDefined) {
+        val deleteFiles = DeleteFiles(Play.configuration.getInt("files.temporary.lifetime").get)
+        Akka.system.scheduler.schedule(5.seconds, 30.seconds, fileDeletionActor, deleteFiles)
       }
     }
   }
