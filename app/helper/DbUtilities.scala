@@ -23,7 +23,7 @@ import scala.io.Source
  * Date: 2/6/14
  * Time: 2:47 PM
  */
-object DbAdminUtilities {
+object DbUtilities {
 
   val collections: Seq[JSONCollection] = Seq(
     conversationCollection,
@@ -119,7 +119,7 @@ object DbAdminUtilities {
 
   }
 
-  val latestDbVersion = 7
+  val latestDbVersion = 8
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -342,7 +342,30 @@ object DbAdminUtilities {
     val enumerator = fileMetaCollection.find(Json.obj()).cursor[FileMeta].enumerate()
 
     val iteratee: Iteratee[FileMeta, Boolean] = Iteratee.foldM(true) {
-      (result, js) => processFileMeta(js).map(r => r && result)
+      (result, fm) => processFileMeta(fm).map(r => r && result)
+    }
+
+    enumerator.run(iteratee)
+  }
+
+  def setAvatarOwnership: Any => Future[Boolean] = foo => {
+    Logger.info("setting avatar ownership")
+
+    // go through all identities and set the ownership of their avatar
+    def processIdentity: (Identity => Future[Boolean]) = {
+      identity =>
+        identity.avatar match {
+          case None => Future(true)
+          case Some(fileId) =>
+            Logger.debug("Setting ownership of: " + fileId)
+            FileMeta.setOwner(fileId, identity.id)
+        }
+    }
+
+    val enumerator = identityCollection.find(Json.obj()).cursor[Identity].enumerate()
+
+    val iteratee: Iteratee[Identity, Boolean] = Iteratee.foldM(true) {
+      (result, i) => processIdentity(i).map(r => r && result)
     }
 
     enumerator.run(iteratee)
@@ -355,6 +378,7 @@ object DbAdminUtilities {
     3 -> addAvatars,
     4 -> setDefaultIdentity,
     5 -> reverseConversations,
-    6 -> clearScaleCache
+    6 -> clearScaleCache,
+    7 -> setAvatarOwnership
   )
 }

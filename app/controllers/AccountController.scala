@@ -245,7 +245,7 @@ object AccountController extends ExtendedController {
             }
           }
 
-          AccountUpdate.validateUpdate(request.body) {
+          AccountUpdate.validateRequest(request.body) {
             js =>
               // check if there is a password change
               val newPassword = (request.body \ "password").asOpt[String](JsonHelper.hashPassword)

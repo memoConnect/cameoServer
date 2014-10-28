@@ -25,7 +25,10 @@ class FileDeletionActor extends Actor {
 
       val deleteBefore = new DateTime().minusDays(lifetime)
 
-      val query = Json.obj("created" -> Json.obj("$lt" -> Json.obj("$date" -> deleteBefore)))
+      val query = Json.obj(
+        "created" -> Json.obj("$lt" -> Json.obj("$date" -> deleteBefore)),
+        "owner" -> Json.obj("$exists" -> false)
+      )
 
       FileMeta.findAll(query).map {
         fileMetaList =>
@@ -36,7 +39,8 @@ class FileDeletionActor extends Actor {
           FileChunk.deleteAll(chunks)
 
           // delete file meta documents
-          Logger.debug("Deleting " + fileMetaList.length + " files\n")
+//          Logger.debug("Deleting " + fileMetaList.length + " files\n"+fileMetaList.map(_.fileName).mkString("\n"))
+          Logger.debug("Deleting " + fileMetaList.length + " files")
           val fileMetaDelete = Json.obj("$or" -> fileMetaIds)
           FileMeta.deleteAll(fileMetaDelete)
       }
