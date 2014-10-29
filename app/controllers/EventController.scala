@@ -1,6 +1,6 @@
 package controllers
 
-import services.{AuthenticationActions, BroadcastEvent}
+import services.{ AuthenticationActions, BroadcastEvent }
 import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
@@ -12,6 +12,7 @@ import services.BroadcastEvent
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -22,36 +23,24 @@ object EventController extends ExtendedController {
 
   def newSubscription() = AuthAction(allowExternal = true).async(parse.tolerantJson) {
     request =>
-      // check if a secret is used to disable max subscription
-      val limitEnabled: Boolean = Play.configuration.getString("events.subscription.debug.secret") match {
-        case None             => true
-        case Some("disabled") => true
-        case Some(str) =>
-          // check if there is a secret in the body
-          (request.body \ "secret").asOpt[String] match {
-            case Some(secret) if secret.equals(str) => false
-            case _                                  => true
-          }
-      }
 
-      // check if maximum number for this user is exceeded
-      val max = Play.configuration.getInt("events.subscription.user.limit").get
-      EventSubscription.countUserSubscriptions(request.identity.id).map {
-        case i if limitEnabled && i >= max =>
+      EventSubscription.checkAndCreate(request.identity.id, (request.body \ "secret").asOpt[String]).map {
+        case None =>
           resBadRequest("max number of subscription reached")
-        case _ =>
-          val subscription = EventSubscription.create(request.identity.id)
-          EventSubscription.col.insert(subscription)
-          resOk(subscription.toJson)
+        case Some(eventSubscription) => resOk(eventSubscription.toJson)
       }
   }
 
   def getSubscription(id: String) = AuthAction(allowExternal = true).async {
     request =>
-      EventSubscription.findAndClear(MongoId(id), request.identity.id).map {
-        case None => resNotFound("subscription id")
-        case Some(subscription) =>
-          resOk(subscription.toJson)
+      EventSubscription.findAndClear(MongoId(id), request.identity.id).flatMap {
+        case None =>
+          // create new event subscription
+          EventSubscription.checkAndCreate(request.identity.id).map {
+            case None                    => resKO()
+            case Some(eventSubscription) => resKO(Json.obj("subscriptionId" -> eventSubscription.id.toJson))
+          }
+        case Some(subscription) => Future(resOk(subscription.toJson))
       }
   }
 
