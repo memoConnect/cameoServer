@@ -1,13 +1,11 @@
 package actors
 
-import java.util.Date
-
 import akka.actor.Actor
-import models.{FileChunk, FileMeta}
+import models.{ FileChunk, FileMeta }
 import org.joda.time.DateTime
 import play.api.{ Logger, Play }
 import play.api.libs.json.Json
- import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * User: Björn Reimer
  * Date: 27.10.14
@@ -39,8 +37,8 @@ class FileDeletionActor extends Actor {
           FileChunk.deleteAll(chunks)
 
           // delete file meta documents
-//          Logger.debug("Deleting " + fileMetaList.length + " files\n"+fileMetaList.map(_.fileName).mkString("\n"))
-          Logger.debug("Deleting " + fileMetaList.length + " files")
+          Logger.debug("Deleting " + fileMetaList.length + " files\n" + fileMetaList.map(_.fileName).mkString("\n"))
+          //          Logger.debug("Deleting " + fileMetaList.length + " files")
           val fileMetaDelete = Json.obj("$or" -> fileMetaIds)
           FileMeta.deleteAll(fileMetaDelete)
       }
