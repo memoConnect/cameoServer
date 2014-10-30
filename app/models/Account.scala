@@ -109,7 +109,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     1 -> AccountEvolutions.addDeviceIds,
     2 -> AccountEvolutions.convertToPushDevice,
     3 -> AccountEvolutions.removePushDevices,
-  4 -> AccountEvolutions.addAccountProperties
+    4 -> AccountEvolutions.addAccountProperties
   )
 }
 
@@ -245,7 +245,7 @@ object AccountProperties {
   implicit def format: Format[AccountProperties] = Json.format[AccountProperties]
 
   def defaultProperties: AccountProperties = {
-    def defaultQuota = Play.configuration.getInt("accounts.properties.default.file.quota").getOrElse(10000)*1024*1024
+    def defaultQuota = Play.configuration.getInt("accounts.properties.default.file.quota").getOrElse(10000) * 1024 * 1024
     AccountProperties(defaultQuota)
   }
 }

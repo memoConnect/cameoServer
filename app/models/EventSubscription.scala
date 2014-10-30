@@ -53,14 +53,14 @@ object EventSubscription extends Model[EventSubscription] {
         // check if there is a secret in the body
         secret match {
           case Some(sec) if sec.equals(str) => false
-          case _                                  => true
+          case _                            => true
         }
     }
 
     // check if maximum number for this user is exceeded
     val max = Play.configuration.getInt("events.subscription.user.limit").get
     EventSubscription.countUserSubscriptions(identityId).map {
-      case i if limitEnabled && i >= max =>  None
+      case i if limitEnabled && i >= max => None
       case _ =>
         val subscription = EventSubscription.create(identityId)
         EventSubscription.col.insert(subscription)

@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ExternalMessage
-import services.{AuthenticationActions, NewConversation}
+import services.{ AuthenticationActions, NewConversation }
 import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._

@@ -11,7 +11,7 @@ import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, MongoCollections, Utils }
 import models._
-import play.api.{Logger, Play}
+import play.api.{ Logger, Play }
 import play.api.Play.current
 import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import play.api.libs.json.Json
@@ -78,7 +78,7 @@ object FileController extends ExtendedController {
                   if (size + fileSize.get.toInt < quota) {
                     createFile()
                   } else {
-                    val errorJson = Json.obj("totalQuota" -> quota, "quotaLeft" -> (quota-size), "fileSize" -> fileSize.get.toInt)
+                    val errorJson = Json.obj("totalQuota" -> quota, "quotaLeft" -> (quota - size), "fileSize" -> fileSize.get.toInt)
                     Future(resBadRequest(errorJson, ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED))
                   }
                 }

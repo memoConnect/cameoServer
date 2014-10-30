@@ -1,6 +1,6 @@
 package controllers
 
-import services.{AuthenticationActions, PushdConnector}
+import services.{ AuthenticationActions, PushdConnector }
 import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.Identity

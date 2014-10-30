@@ -1,6 +1,6 @@
 package controllers
 
-import services.{AuthenticationActions, TwoFactorAuth}
+import services.{ AuthenticationActions, TwoFactorAuth }
 import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.TwoFactorToken

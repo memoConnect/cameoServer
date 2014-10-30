@@ -2,12 +2,12 @@ package models
 
 import java.util.Date
 
-import helper.{MongoCollections, IdHelper}
+import helper.{ MongoCollections, IdHelper }
 import helper.JsonHelper._
 import helper.MongoCollections._
 import play.api.Logger
 import play.api.libs.json._
-import reactivemongo.bson.{BSONNull, BSONDocument}
+import reactivemongo.bson.{ BSONNull, BSONDocument }
 import reactivemongo.core.commands._
 import traits.Model
 import play.modules.reactivemongo.json.BSONFormats._
@@ -54,7 +54,6 @@ case class FileMeta(id: MongoId,
     val set = Json.obj("$set" -> Json.obj(("scaleCache." + size) -> id))
     FileMeta.update(this.id, set)
   }
-
 
 }
 

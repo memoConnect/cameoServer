@@ -1,7 +1,7 @@
 package models
 
 import helper.MongoCollections._
-import reactivemongo.bson.{BSONArray, BSONBinary, BSONDocument, Subtype}
+import reactivemongo.bson.{ BSONArray, BSONBinary, BSONDocument, Subtype }
 import reactivemongo.core.commands.LastError
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,7 +39,7 @@ object FileChunk {
     col.remove(BSONDocument("_id" -> id))
   }
 
-  def deleteAll(ids: Seq[String]):Future[LastError] = {
+  def deleteAll(ids: Seq[String]): Future[LastError] = {
     val idDocuments = ids.map(id => BSONDocument("_id" -> id))
     col.remove(BSONDocument("$or" -> BSONArray(idDocuments)))
   }
