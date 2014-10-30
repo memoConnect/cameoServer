@@ -3,13 +3,14 @@ package models
 import java.util.Date
 
 import helper.{ IdHelper, JsonHelper, MongoCollections }
+import play.api.Play
 import play.api.libs.json._
 import play.modules.reactivemongo.json.BSONFormats._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.bson.BSONDocument
 import reactivemongo.core.commands.{ Count, FindAndModify, Update }
 import traits.Model
-
+import play.api.Play.current
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -43,6 +44,30 @@ object EventSubscription extends Model[EventSubscription] {
     )
   }
 
+  def checkAndCreate(identityId: MongoId, secret: Option[String] = None): Future[Option[EventSubscription]] = {
+    // check if a secret is used to disable max subscription
+    val limitEnabled: Boolean = Play.configuration.getString("events.subscription.debug.secret") match {
+      case None             => true
+      case Some("disabled") => true
+      case Some(str) =>
+        // check if there is a secret in the body
+        secret match {
+          case Some(sec) if sec.equals(str) => false
+          case _                                  => true
+        }
+    }
+
+    // check if maximum number for this user is exceeded
+    val max = Play.configuration.getInt("events.subscription.user.limit").get
+    EventSubscription.countUserSubscriptions(identityId).map {
+      case i if limitEnabled && i >= max =>  None
+      case _ =>
+        val subscription = EventSubscription.create(identityId)
+        EventSubscription.col.insert(subscription)
+        Some(subscription)
+    }
+  }
+
   def countUserSubscriptions(identityId: MongoId): Future[Int] = {
     val query: BSONDocument = BSONDocument("identityId" -> toBSON(Json.toJson(identityId)).get)
     MongoCollections.mongoDB.command[Int](Count(col.name, Some(query)))
@@ -60,7 +85,6 @@ object EventSubscription extends Model[EventSubscription] {
 
   // get all events for subscriptions and clear them
   def findAndClear(id: MongoId, identityId: MongoId): Future[Option[EventSubscription]] = {
-    val query = Json.obj("_id" -> id, "identityId" -> identityId)
     val bsonQuery = BSONDocument("_id" -> toBSON(Json.toJson(id)).get, "identityId" -> toBSON(Json.toJson(identityId)).get)
     val set = Json.obj("$set" -> Json.obj("events" -> JsArray(), "lastAccessed" -> Json.obj("$date" -> new Date)))
     val setBson = JsonHelper.toBson(set).get

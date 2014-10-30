@@ -21,14 +21,10 @@ object ResultHelper {
   def resOk(data: JsValue): Result =
     Ok(Json.obj("res" -> "OK") ++
       Json.obj("data" -> data))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
   def resOk(data: Seq[JsValue]): Result =
     Ok(Json.obj("res" -> "OK") ++
       Json.obj("data" -> data))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
   def resOk(data: String): Result = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
@@ -61,19 +57,13 @@ object ResultHelper {
   def resKO(data: JsValue): Result =
     Status(232)(Json.obj("res" -> "KO")
       ++ Json.obj("data" -> data))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
   def resKO(): Result =
     Status(232)(Json.obj("res" -> "KO"))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
   def resKo(error: String): Result =
     Status(232)(Json.obj("res" -> "KO")
       ++ Json.obj("error" -> error))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
   def resKO(notifications: Seq[UserNotification] = Seq()): Result =
     Status(232)(
