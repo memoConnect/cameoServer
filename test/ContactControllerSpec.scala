@@ -179,12 +179,12 @@ class ContactControllerSpec extends StartedApp {
       status(res) must equalTo(BAD_REQUEST)
     }
 
+    val mail = "some@mail.com"
+    val tel = "+123456789123"
+    val name = "foo"
+
     "add external contact" in {
       val path = basePath + "/contact"
-
-      val mail = "some@mail.com"
-      val tel = "+123456789123"
-      val name = "foo"
       val json = Json.obj("groups" -> Seq("group1", "group2"),
         "identity" -> Json.obj("email" -> mail, "phoneNumber" -> tel, "displayName" -> name))
 
@@ -226,13 +226,12 @@ class ContactControllerSpec extends StartedApp {
       (data \ "groups")(0).asOpt[String] must beSome("group1")
       (data \ "groups")(1).asOpt[String] must beSome("group2")
       (data \ "contactType").asOpt[String] must beSome("external")
-      (data \ "identity" \ "email" \ "value").asOpt[String] must beSome
-      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome
-      (data \ "identity" \ "displayName").asOpt[String] must beSome
+      (data \ "identity" \ "email" \ "value").asOpt[String] must beSome(mail)
+      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(tel)
+      (data \ "identity" \ "displayName").asOpt[String] must beSome(name)
     }
 
     "edit groups of external contact" in {
-
       val path = basePath + "/contact/" + externalContactId
 
       val newGroups = Seq("group1", "group3")
@@ -259,6 +258,28 @@ class ContactControllerSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(OK)
+    }
+
+    "the external contact should contain new values" in {
+      val path = basePath + "/contact/" + externalContactId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome(externalContactId)
+      (data \ "groups")(0).asOpt[String] must beSome("group1")
+      (data \ "groups")(1).asOpt[String] must beSome("group3")
+      (data \ "contactType").asOpt[String] must beSome("external")
+      (data \ "identity" \ "email" \ "value").asOpt[String] must beSome(newContactMail)
+      (data \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(newContactTel)
+      (data \ "identity" \ "displayName").asOpt[String] must beSome(newContactName)
     }
 
     var externalMixedContactId = ""
@@ -365,83 +386,83 @@ class ContactControllerSpec extends StartedApp {
         }
     }
 
-    "get all contact groups" in {
-      val path = basePath + "/contact-groups"
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[Seq[String]]
-
-      data.find(_.equals("group1")) aka "contain group 1" must beSome
-      data.find(_.equals("group2")) aka "contain group 2" must beSome
-      data.find(_.equals("group3")) aka "contain group 3" must beSome
-      data.find(_.equals("group4")) aka "contain group 4" must beSome
-    }
-
-    "get single group" in {
-      val path = basePath + "/contact-group/group1"
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
-
-      data.length must beGreaterThan(20)
-
-    }
-
-    "get group with internal contact" in {
-      val path = basePath + "/contact-group/group4"
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
-
-      data.length must beEqualTo(1)
-
-      (data(0) \ "identityId").asOpt[String] must beSome(internalContactIdentityId)
-    }
-
-    "get group with created external contact" in {
-      val path = basePath + "/contact-group/group3"
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
-
-      data.length must beEqualTo(1)
-
-      (data(0) \ "id").asOpt[String] must beSome(externalContactId)
-      (data(0) \ "groups")(0).asOpt[String] must beSome("group1")
-      (data(0) \ "groups")(1).asOpt[String] must beSome("group3")
-      (data(0) \ "contactType").asOpt[String] must beSome("external")
-      (data(0) \ "identity" \ "email" \ "value").asOpt[String] must beSome(newContactMail)
-      (data(0) \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(newContactTel)
-      (data(0) \ "identity" \ "displayName").asOpt[String] must beSome(newContactName)
-    }
+//    "get all contact groups" in {
+//      val path = basePath + "/contact-groups"
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[Seq[String]]
+//
+//      data.find(_.equals("group1")) aka "contain group 1" must beSome
+//      data.find(_.equals("group2")) aka "contain group 2" must beSome
+//      data.find(_.equals("group3")) aka "contain group 3" must beSome
+//      data.find(_.equals("group4")) aka "contain group 4" must beSome
+//    }
+//
+//    "get single group" in {
+//      val path = basePath + "/contact-group/group1"
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+//
+//      data.length must beGreaterThan(20)
+//
+//    }
+//
+//    "get group with internal contact" in {
+//      val path = basePath + "/contact-group/group4"
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+//
+//      data.length must beEqualTo(1)
+//
+//      (data(0) \ "identityId").asOpt[String] must beSome(internalContactIdentityId)
+//    }
+//
+//    "get group with created external contact" in {
+//      val path = basePath + "/contact-group/group3"
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+//
+//      data.length must beEqualTo(1)
+//
+//      (data(0) \ "id").asOpt[String] must beSome(externalContactId)
+//      (data(0) \ "groups")(0).asOpt[String] must beSome("group1")
+//      (data(0) \ "groups")(1).asOpt[String] must beSome("group3")
+//      (data(0) \ "contactType").asOpt[String] must beSome("external")
+//      (data(0) \ "identity" \ "email" \ "value").asOpt[String] must beSome(newContactMail)
+//      (data(0) \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(newContactTel)
+//      (data(0) \ "identity" \ "displayName").asOpt[String] must beSome(newContactName)
+//    }
 
     "delete Contact" in {
       val path = basePath + "/contact/" + internalContactId

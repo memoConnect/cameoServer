@@ -4,7 +4,6 @@ import java.security.MessageDigest
 
 import models.MongoId
 import org.apache.commons.codec.binary.Base64
-import play.api.Logger
 
 /**
  * User: Björn Reimer

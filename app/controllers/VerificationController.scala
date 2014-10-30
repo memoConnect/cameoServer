@@ -3,7 +3,8 @@ package controllers
 import actors.VerifyActor
 import akka.actor.Props
 import constants.Verification._
-import helper.AuthenticationActions.AuthAction
+import services.AuthenticationActions
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ Identity, IdentityUpdate, MongoId, VerificationSecret }
 import play.api.Play.current
@@ -54,8 +55,8 @@ object VerificationController extends Controller with ExtendedController {
               if (i.email.map {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
-                val identityUpdate = IdentityUpdate(email = Some(i.email.get.copy(isVerified = true)))
-                i.update(identityUpdate)
+                val set = Map("email" -> i.email.get.copy(isVerified = true))
+                Identity.update(i.id, IdentityUpdate.setValues(set))
                 resOk("verified")
               } else {
                 resUnauthorized("mail has changed")
@@ -65,8 +66,8 @@ object VerificationController extends Controller with ExtendedController {
               if (i.phoneNumber.map {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
-                val identityUpdate = IdentityUpdate(phoneNumber = Some(i.phoneNumber.get.copy(isVerified = true)))
-                i.update(identityUpdate)
+                val set = Map("phoneNumber" -> i.email.get.copy(isVerified = true))
+                Identity.update(i.id, IdentityUpdate.setValues(set))
                 resOk("verified")
               } else {
                 resUnauthorized("phonenumber has changed")

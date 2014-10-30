@@ -48,8 +48,8 @@ case class FileMeta(id: MongoId,
   }
 
   def addToScaleCache(size: String, id: String): Future[Boolean] = {
-    val set = Json.obj("$set" -> Json.obj(("scaleCache." + size ) -> id))
-    FileMeta.col.update(query,set).map(_.updatedExisting)
+    val set = Json.obj("$set" -> Json.obj(("scaleCache." + size) -> id))
+    FileMeta.col.update(query, set).map(_.updatedExisting)
   }
 }
 
@@ -122,11 +122,11 @@ object FileMetaEvolutions {
 
   def addScaleCache(): Reads[JsObject] = Reads {
     js =>
-    {
-      val addObject: Reads[JsObject] = __.json.update((__ \ 'scaleCache).json.put(Json.obj()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
-      js.transform(addObject andThen addVersion)
-    }
+      {
+        val addObject: Reads[JsObject] = __.json.update((__ \ 'scaleCache).json.put(Json.obj()))
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+        js.transform(addObject andThen addVersion)
+      }
   }
 }
 

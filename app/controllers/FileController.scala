@@ -1,32 +1,30 @@
 package controllers
 
-import java.awt.{ Color, Graphics2D }
 import java.awt.image.BufferedImage
-import java.io.{ IOException, ByteArrayInputStream, ByteArrayOutputStream, OutputStream }
+import java.awt.{ Color, Graphics2D }
+import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import javax.imageio.ImageIO
 
-import helper.AuthenticationActions.AuthAction
+import services.{AuthenticationActions, ImageScaler, NewMessage}
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
-import helper.{ MongoCollections, IdHelper, Utils }
+import helper.{ IdHelper, MongoCollections, Utils }
 import models._
-import org.imgscalr.Scalr
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import play.api.libs.json.Json
 import play.api.mvc._
 import reactivemongo.api.gridfs.DefaultFileToSave
-import reactivemongo.bson.{ BSONDocument, BSONObjectID }
+import reactivemongo.bson.{ BSONDocument, BSONObjectID, _ }
 import services.{ ImageScaler, NewMessage }
-import sun.misc.{ BASE64Decoder, BASE64Encoder }
+import sun.misc.BASE64Decoder
 import traits.ExtendedController
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Random
 import scala.util.control.Exception._
 import scala.util.control.NonFatal
-import reactivemongo.bson._
 
 /**
  * User: Björn Reimer

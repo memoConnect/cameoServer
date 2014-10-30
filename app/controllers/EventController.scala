@@ -1,9 +1,10 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import services.{AuthenticationActions, BroadcastEvent}
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.Result
@@ -76,7 +77,7 @@ object EventController extends ExtendedController {
       "authenticationRequest:cancel"
     )
 
-  def remoteBroadcastEvent(id: String) = AuthAction()(parse.tolerantJson) {
+  def remoteBroadcastEvent(id: String) = AuthAction(includeContacts = true)(parse.tolerantJson) {
     request =>
       validate(request.body, EventBroadcastRequest.format) {
         ebr =>

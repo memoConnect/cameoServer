@@ -12,7 +12,6 @@ import play.api.{ Logger, Play }
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.modules.reactivemongo.json.collection.JSONCollection
 import services.AvatarGenerator
-import traits.Model
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._

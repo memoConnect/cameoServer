@@ -26,7 +26,7 @@ object TestUserController extends ExtendedController {
 
     Logger.debug("deleting TestUserId: " + account.loginName)
 
-    Identity.findAll(Json.obj("accountId" -> account.id)).flatMap { list =>
+    Identity.findAllWith(Json.obj("accountId" -> account.id), includeTokens = true, includeContacts = true).flatMap { list =>
       val deletedIdentities = list.map {
         identity =>
           // delete Avatar

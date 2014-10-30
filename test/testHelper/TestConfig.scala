@@ -107,4 +107,8 @@ object TestConfig {
       (" +17234512345         ", "+17234512345")
     )
   val validEmails: Seq[String] = Seq("a-b.c_d@a-b.c_d.co", "123@345.fo", "123@3-4-5.fo")
+
+  val invalidLogins = Seq("as", "_._", "._." ,"asdfasdfasdfasdfasdfaasdfasdfasdfasdfasdf", ",asdf", "/asdf", "asdf#asdf", "asd£asdf", "<>", "\\", "asd@df")
+
+  val validLogins = Seq("jalskdnals", "_asdf.", "ssd", "asdf_asdf", "asd.asdf", "_1_")
 }

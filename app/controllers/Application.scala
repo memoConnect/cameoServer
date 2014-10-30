@@ -1,7 +1,7 @@
 package controllers
 
-import helper.{ Utils, DbAdminUtilities }
 import helper.ResultHelper._
+import helper.{ DbAdminUtilities, Utils }
 import models.Account
 import play.api.Play
 import play.api.Play.current
@@ -20,9 +20,6 @@ object Application extends Controller {
 
   def index = Action.async {
     request =>
-
-      Utils.compareVersions("0.2.6", "0.3.0")
-
       Future(Ok(views.html.index(DbAdminUtilities.mongoVersion)))
   }
 

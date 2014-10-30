@@ -2,18 +2,18 @@ package models
 
 import java.util.Date
 
-import helper.IdHelper
+import helper.{JsonHelper, IdHelper}
 import helper.JsonHelper._
 import helper.MongoCollections._
 import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
-import traits.{ CockpitAttribute, CockpitEditable, Model }
+import traits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -41,22 +41,6 @@ case class Account(id: MongoId,
             val isActive: Boolean = identity.id.equals(activeIdentityId)
             identity.toPrivateJson ++ Json.obj("active" -> isActive)
         })
-    }
-  }
-
-  def update(update: AccountUpdate): Future[Boolean] = {
-    val query = Json.obj("_id" -> this.id)
-    update match {
-      case AccountUpdate(None, None, None, _) => Future(true)
-      case AccountUpdate(maybePhoneNumber, maybeEmail, maybePassword, _) =>
-
-        val set =
-          Json.obj("$set" -> (
-            maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
-            maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
-            maybeEmptyString("password", maybePassword)
-          ))
-        Account.col.update(query, set).map(_.ok)
     }
   }
 }
@@ -238,16 +222,10 @@ object AccountEvolutions {
   }
 }
 
-case class AccountUpdate(phoneNumber: Option[VerifiedString] = None,
-                         email: Option[VerifiedString] = None,
-                         password: Option[String] = None,
-                         oldPassword: Option[String] = None)
-
-object AccountUpdate {
-  implicit val reads: Reads[AccountUpdate] = (
-    (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-    (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ "password").readNullable[String](minLength[String](8) andKeep hashPassword) and
-    (__ \ "oldPassword").readNullable[String]
-  )(AccountUpdate.apply _)
+object AccountUpdate extends ModelUpdate {
+   def values = Seq(
+    VerifiedStringUpdateValue("email", JsonHelper.verifyMail, externalEdit = true),
+    VerifiedStringUpdateValue("phoneNumber", JsonHelper.verifyPhoneNumber, externalEdit = true),
+    StringUpdateValue("password")
+  )
 }

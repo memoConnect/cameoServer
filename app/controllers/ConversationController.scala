@@ -1,7 +1,8 @@
 package controllers
 
 import actors.ExternalMessage
-import helper.AuthenticationActions.AuthAction
+import services.{AuthenticationActions, NewConversation}
+import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -20,7 +21,7 @@ import scala.concurrent.Future
  */
 object ConversationController extends ExtendedController {
 
-  def createConversation = AuthAction().async(parse.tolerantJson) {
+  def createConversation = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       {
         def addRecipients(conversation: Conversation): Either[Conversation, Result] = {
@@ -65,10 +66,8 @@ object ConversationController extends ExtendedController {
           }
         }
 
-        validateFuture[ConversationUpdate](request.body, ConversationUpdate.createReads) {
-          cu =>
-            val conversation = Conversation.create(cu.subject, Seq(Recipient.create(request.identity.id)), cu.passCaptcha, cu.aePassphraseList, cu.sePassphrase, cu.keyTransmission)
-
+        validateFuture[Conversation](request.body, Conversation.createReads(Recipient.create(request.identity.id))) {
+          conversation =>
             addRecipients(conversation) match {
               case Right(result) => Future(result)
               case Left(withRecipients) =>
@@ -88,13 +87,33 @@ object ConversationController extends ExtendedController {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
           resOk(c.toJsonWithKey(keyId))
-
-          // missing passphrase are not used anymore
-          //          c.getMissingPassphrases.map {
-          //            missingPasshrases =>
-          //              resOk(c.toJsonWithKey(keyId) ++ Json.obj("missingAePassphrase" -> missingPasshrases))
-          //          }
         }
+      }
+  }
+
+  def getConversationMessages(id: String, offset: Int, limit: Int) = AuthAction(allowExternal = true).async {
+    request =>
+      Conversation.find(id, limit, offset).map {
+        case None => resNotFound("conversation")
+        case Some(c) => c.hasMemberResult(request.identity.id) {
+          resOk(c.toMessageJson)
+        }
+      }
+  }
+
+  def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
+    request =>
+      ConversationUpdate.validateUpdate(request.body) {
+        update =>
+          Conversation.find(id, -1, 0).flatMap {
+            case None => Future(resNotFound("conversation"))
+            case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+              Conversation.update(c.id, update).map {
+                case false => resServerError("could not update")
+                case true  => resOk("updated")
+              }
+            }
+          }
       }
   }
 
@@ -109,7 +128,7 @@ object ConversationController extends ExtendedController {
     }
   }
 
-  def addRecipients(id: String) = AuthAction().async(parse.tolerantJson) {
+  def addRecipients(id: String) = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       Conversation.find(new MongoId(id), -1, 0).flatMap {
         case None => Future.successful(resNotFound("conversation"))
@@ -165,22 +184,6 @@ object ConversationController extends ExtendedController {
             "numberOfConversations" -> list.length
           )
           resOk(res)
-      }
-  }
-
-  def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
-    request =>
-      validateFuture(request.body, ConversationUpdate.createReads) {
-        cu =>
-          Conversation.find(id, -1, 0).flatMap {
-            case None => Future(resNotFound("conversation"))
-            case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-              c.update(cu).map {
-                case false => resServerError("could not update")
-                case true  => resOk("updated")
-              }
-            }
-          }
       }
   }
 

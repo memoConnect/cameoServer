@@ -1,6 +1,7 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import services.AuthenticationActions
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ Account, Identity, Token }
 import org.mindrot.jbcrypt.BCrypt
@@ -47,19 +48,20 @@ object TokenController extends ExtendedController {
             Account.findByLoginName(loginNameLower).flatMap {
               case None => Future(resUnauthorized("Invalid password/loginName"))
               case Some(account) =>
-                Identity.findAll(Json.obj("accountId" -> account.id, "isDefaultIdentity" -> true)).map {
-                  case Seq() => resNotFound("default identity")
+                Identity.findAll(Json.obj("accountId" -> account.id, "isDefaultIdentity" -> true)).flatMap {
+                  case Seq() => Future(resNotFound("default identity"))
                   case Seq(identity) =>
                     // check loginNames and passwords match
                     if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
                       // everything is ok
                       val token = Token.createDefault()
-                      identity.addToken(token)
-                      resOk(token.toJson)
+                      identity.addToken(token).map {
+                        le => resOk(token.toJson)
+                      }
                     } else {
-                      resUnauthorized("Invalid password/loginName")
+                      Future(resUnauthorized("Invalid password/loginName"))
                     }
-                  case _ => resServerError("more than one default identity")
+                  case _ => Future(resServerError("more than one default identity"))
                 }
             }
         }

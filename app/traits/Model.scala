@@ -29,8 +29,8 @@ trait Model[A] {
 
   def find(id: String): Future[Option[A]] = find(new MongoId(id))
 
-  def find(query: JsObject): Future[Option[A]] = {
-    col.find(query).one[A]
+  def find(query: JsObject, projection: JsObject = Json.obj()): Future[Option[A]] = {
+    col.find(query, projection).one[A]
   }
 
   def findJs(id: MongoId): Future[Option[JsObject]] = {
@@ -69,6 +69,16 @@ trait Model[A] {
 
   def save(js: JsObject): Future[LastError] = {
     col.save(js)
+  }
+
+  // todo: maybe find a more typesave way to do this
+  def update(id: MongoId, update: JsObject): Future[Boolean] = {
+    if (update.keys.isEmpty || (update \ "$set").asOpt[JsObject].exists(_.keys.isEmpty)) {
+      Future(true)
+    } else {
+      val query = Json.obj("_id" -> id)
+      col.update(query, update).map(_.updatedExisting)
+    }
   }
 
   def createDefault(): A

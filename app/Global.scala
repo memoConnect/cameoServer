@@ -4,33 +4,33 @@
  * Time: 4:27 PM
  */
 
+import java.util.logging.{ Logger => JavaLogger }
+
 import actors.{ AccountCount, MessageCount, StatsActor }
 import akka.actor.Props
-import de.flapdoodle.embed.mongo.{ MongodProcess, MongodExecutable, MongodStarter }
-import de.flapdoodle.embed.mongo.config.{ RuntimeConfigBuilder, MongodConfigBuilder, Net, IMongodConfig }
-import de.flapdoodle.embed.mongo.distribution.{ Versions, Version }
+import de.flapdoodle.embed.mongo.config.{ IMongodConfig, MongodConfigBuilder, Net, RuntimeConfigBuilder }
+import de.flapdoodle.embed.mongo.distribution.Versions
+import de.flapdoodle.embed.mongo.{ MongodExecutable, MongodProcess, MongodStarter, Command => MongoCommand }
 import de.flapdoodle.embed.process.config.io.ProcessOutput
 import de.flapdoodle.embed.process.distribution.GenericVersion
 import de.flapdoodle.embed.process.runtime.Network
 import helper.MongoCollections._
-import helper.{Utils, DbAdminUtilities, MongoCollections}
+import helper.{ DbAdminUtilities, MongoCollections, Utils }
 import models.{ Conversation, GlobalState }
+import play.api.Play.current
 import play.api.http.HeaderNames._
 import play.api.libs.concurrent.Akka
-import play.api.libs.json.{JsResultException, JsObject, JsValue, Json}
+import play.api.libs.json.{ JsObject, JsResultException, JsValue, Json }
 import play.api.mvc._
 import play.api.{ Logger, Play }
+import play.filters.gzip.GzipFilter
 import play.modules.statsd.api.Statsd
 import reactivemongo.bson.{ BSONDocument, BSONString, BSONValue }
 import reactivemongo.core.commands._
-import java.util.logging.{ Logger => JavaLogger }
-import de.flapdoodle.embed.mongo.{ Command => MongoCommand }
-import scala.annotation.tailrec
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
-import play.api.Play.current
-import play.filters.gzip.GzipFilter
 
 object AccessControllFilter extends EssentialFilter {
   // wrap action to modify the headers of every request
@@ -193,7 +193,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
       Logger.info("DB Connection OK. Version: " + DbAdminUtilities.mongoVersion)
 
-      if(!Utils.compareVersions(DbAdminUtilities.minMongoVersion, DbAdminUtilities.mongoVersion)) {
+      if (!Utils.compareVersions(DbAdminUtilities.minMongoVersion, DbAdminUtilities.mongoVersion)) {
         Logger.error("Unsupported Mongo Version. Required: " + DbAdminUtilities.minMongoVersion + " or above")
         Play.stop()
       }

@@ -7,7 +7,7 @@ import controllers.PublicKeyController.AePassphrase
 import helper.JsonHelper._
 import helper.MongoCollections._
 import helper.ResultHelper._
-import helper.{ IdHelper, MongoCollections }
+import helper.{ JsonHelper, IdHelper, MongoCollections }
 import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -17,7 +17,7 @@ import play.modules.reactivemongo.json.BSONFormats._
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.bson.{ BSONInteger, BSONNull, BSONString }
 import reactivemongo.core.commands._
-import traits.Model
+import traits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -51,6 +51,8 @@ case class Conversation(id: MongoId,
   def toJsonWithKey(keyIds: Seq[String]): JsObject = {
     this.toJson ++ getPassphraseList(keyIds)
   }
+
+  def toMessageJson: JsObject = Json.toJson(this)(Conversation.messageWrites).as[JsObject]
 
   def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
 
@@ -94,23 +96,6 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def update(conversationUpdate: ConversationUpdate): Future[Boolean] = {
-    conversationUpdate match {
-      case ConversationUpdate(None, None, None, None, None) => Future(true)
-      case ConversationUpdate(maybeSubject, maybePassCaptcha, maybeAePassphraseList, maybeSePassphraseList, maybeKeyTransmisstion) =>
-
-        val set =
-          Json.obj("$set" -> (
-            maybeEmptyString("subject", maybeSubject) ++
-            maybeEmptyJsValue("passCaptcha", maybePassCaptcha.map(str => Json.toJson(MongoId(str)))) ++
-            maybeEmptyString("sePassphrase", maybeSePassphraseList) ++
-            maybeEmptyString("keyTransmission", maybeKeyTransmisstion) ++
-            maybeEmptyJsValue("aePassphraseList", maybeAePassphraseList.map(Json.toJson(_)))
-          ))
-        Conversation.col.update(query, set).map { _.ok }
-    }
-  }
-
   def addRecipients(recipients: Seq[Recipient]): Future[Boolean] = {
     Recipient.appendUnique(this.id, recipients).map(_.updatedExisting)
   }
@@ -142,10 +127,10 @@ case class Conversation(id: MongoId,
     val set =
       Json.obj(
         "$push" -> Json.obj("messages" ->
-            Json.obj(
-              "$each" -> Seq(message),
-              "$position" -> 0
-            )),
+          Json.obj(
+            "$each" -> Seq(message),
+            "$position" -> 0
+          )),
         "$inc" -> Json.obj("numberOfMessages" -> 1)
       )
     Conversation.col.update(query, setLastUpdated(set)).map(_.updatedExisting)
@@ -179,6 +164,15 @@ object Conversation extends Model[Conversation] {
 
   def docVersion = 3
 
+  def createReads(sender: Recipient): Reads[Conversation] = (
+    (__ \ "subject").readNullable[String] and
+    Reads.pure(Seq(sender)) and
+    (__ \ "passCaptcha").readNullable[String] and
+    (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
+    (__ \ "sePassphrase").readNullable[String] and
+    (__ \ "keyTransmission").readNullable[String]
+  )(Conversation.create _)
+
   def outputWrites = Writes[Conversation] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
@@ -205,6 +199,13 @@ object Conversation extends Model[Conversation] {
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
         maybeEmptyString("sePassphrase", c.sePassphrase) ++
         maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
+  }
+
+  val messageWrites = Writes[Conversation] {
+    c =>
+      Json.obj("id" -> c.id.toJson) ++
+        Json.obj("numberOfMessages" -> c.numberOfMessages) ++
+        Json.obj("messages" -> c.messages.map(_.toJson))
   }
 
   def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {
@@ -280,22 +281,13 @@ object Conversation extends Model[Conversation] {
   }
 }
 
-case class ConversationUpdate(subject: Option[String],
-                              passCaptcha: Option[String],
-                              aePassphraseList: Option[Seq[EncryptedPassphrase]],
-                              sePassphrase: Option[String],
-                              keyTransmission: Option[String])
-
-object ConversationUpdate {
-  implicit val format: Format[ConversationUpdate] = Json.format[ConversationUpdate]
-
-  val createReads: Reads[ConversationUpdate] = (
-    (__ \ "subject").readNullable[String] and
-    (__ \ "passCaptcha").readNullable[String] and
-    (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
-    (__ \ "sePassphrase").readNullable[String] and
-    (__ \ "keyTransmission").readNullable[String]
-  )(ConversationUpdate.apply _)
+object ConversationUpdate extends ModelUpdate {
+  def values = Seq(
+    StringUpdateValue("subject", externalEdit = true),
+    MongoIdUpdateValue("passCaptcha", externalEdit = true),
+    StringUpdateValue("sePassphrase", externalEdit = true),
+    StringUpdateValue("keyTransmission", externalEdit = true)
+  )
 }
 
 object ConversationEvolutions {

@@ -2,11 +2,7 @@ package actors
 
 import akka.actor.Actor
 import models._
-import play.api.Logger
-import play.api.i18n.Lang
-import services.{PushdConnector, EventDefinition, LocalizationMessages, PushEvent}
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import services.{ EventDefinition, PushEvent }
 /**
  * User: Björn Reimer
  * Date: 12.05.14

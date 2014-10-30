@@ -1,13 +1,13 @@
 package services
 
+import play.api.Play.current
 import play.api.i18n.Lang
 import play.api.libs.json._
+import play.api.libs.ws.{ WS, WSResponse }
 import play.api.{ Logger, Play }
-import play.api.Play.current
-import play.api.http.{ ContentTypeOf, Writeable }
-import play.api.libs.ws.{ WSResponse, WSRequestHolder, WS }
-import scala.concurrent.Future
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -48,7 +48,7 @@ object PushdConnector {
       "lang" -> language.code
     )
 
-    postRequest("/subscribers", body).map{
+    postRequest("/subscribers", body).map {
       _.map {
         response => (response.json \ "id").asOpt[String]
       }.recover {
@@ -56,7 +56,7 @@ object PushdConnector {
           if (!Play.isTest) Logger.error("Could not connect to pushd", e)
           None
       }
-    }.getOrElse{
+    }.getOrElse {
       if (!Play.isTest) Logger.warn("pushd not configured")
       Future(None)
     }
@@ -66,7 +66,7 @@ object PushdConnector {
   def setSubscriptions(subscriberId: String, eventIds: Seq[String]): Future[Boolean] = {
     val body = eventIds.map(e => e -> Json.obj("ignore_message" -> false)).toMap
 
-    postRequest("/subscriber/" + subscriberId + "/subscriptions", Json.toJson(body)).map{
+    postRequest("/subscriber/" + subscriberId + "/subscriptions", Json.toJson(body)).map {
       _.map {
         response => response.status < 400
       }.recover {
@@ -74,7 +74,7 @@ object PushdConnector {
           if (!Play.isTest) Logger.error("Could not connect to pushd", e)
           false
       }
-    }.getOrElse{
+    }.getOrElse {
       if (!Play.isTest) Logger.warn("pushd not configured")
       Future(false)
     }
@@ -93,7 +93,7 @@ object PushdConnector {
         case (lang, title) => "title." + lang.code -> title
       }
 
-    postRequest("/event/" + eventId, body).map{
+    postRequest("/event/" + eventId, body).map {
       _.map {
         response => response.status == 204
       }.recover {
@@ -101,7 +101,7 @@ object PushdConnector {
           if (!Play.isTest) Logger.error("Could not connect to pushd", e)
           false
       }
-    }.getOrElse{
+    }.getOrElse {
       if (!Play.isTest) Logger.warn("pushd not configured")
       Future(false)
     }

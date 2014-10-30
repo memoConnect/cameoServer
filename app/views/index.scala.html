@@ -9,9 +9,7 @@
         CameoServer: @{Utils.getAppVersion}<br>
         Play Framework: @{play.core.PlayVersion.current}<br>
         MongoDB: @dbVersion<br>
-        Scala: @{play.core.PlayVersion.scalaVersion}<br>
-        Sbt: @{play.core.PlayVersion.sbtVersion}<br>
-
+        Scala: @{util.Properties.versionString.replaceAll("version ", "") }<br>
     </p>
 
 

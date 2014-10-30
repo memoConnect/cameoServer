@@ -1,7 +1,7 @@
 import play.api.Play.current
-import play.api.{Play, Logger}
+import play.api.{ Play, Logger }
 import play.api.test._
-import play.api.libs.json.{ JsString, Json, JsObject }
+import play.api.libs.json.{ JsValue, JsString, Json, JsObject }
 import play.api.test.Helpers._
 import testHelper.Stuff._
 import org.specs2.mutable._
@@ -13,6 +13,7 @@ import testHelper.StartedApp
  * Date: 3/3/14
  * Time: 4:48 PM
  */
+
 class IdentityControllerSpec extends StartedApp {
 
   sequential
@@ -23,11 +24,7 @@ class IdentityControllerSpec extends StartedApp {
   val newName = "newNameasdfasdf"
   val newAvatar = "moepId"
 
-
-  var cameoId = ""
-
   val externalContactDisplayName = "generic Display Name 15y"
-
 
   "IdentityController" should {
 
@@ -46,8 +43,7 @@ class IdentityControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       (data \ "userKey").asOpt[String] must beSome
-      (data \ "cameoId").asOpt[String] must beSome
-      cameoId = (data \ "cameoId").as[String]
+      (data \ "cameoId").asOpt[String] must beSome(cameoIdExisting + "@cameonet.de")
       (data \ "email" \ "value").asOpt[String] must beSome(emailExisting)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(telExisting)
       (data \ "displayName").asOpt[String] must beSome
@@ -70,7 +66,7 @@ class IdentityControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       (data \ "userKey").asOpt[String] must beNone
-      (data \ "cameoId").asOpt[String] must beSome
+      (data \ "cameoId").asOpt[String] must beSome(cameoIdExisting + "@cameonet.de")
       (data \ "email" \ "value").asOpt[String] must beSome(emailExisting)
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome(telExisting)
       (data \ "displayName").asOpt[String] must beSome
@@ -79,21 +75,44 @@ class IdentityControllerSpec extends StartedApp {
     }
 
     "Refuse to return external identity without token" in {
-      val path = basePath + "/identity/" + externalContact2IdentityId
+      val path = basePath + "/identity/" + externalContactIdentityId
 
       val req = FakeRequest(GET, path)
       val res = route(req).get
 
-      if (status(res) != OK) {
+      if (status(res) != NOT_FOUND) {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(NOT_FOUND)
     }
 
     "Get external identity with token" in {
-      val path = basePath + "/identity/" + externalContact2IdentityId
+      val path = basePath + "/identity/" + externalContactIdentityId
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "userKey").asOpt[String] must beNone
+      (data \ "cameoId").asOpt[String] must beSome
+      (data \ "email" \ "value").asOpt[String] must beSome
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome
+      (data \ "displayName").asOpt[String] must beSome
+      (data \ "avatar").asOpt[String] must beSome
+      (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "Return limited information about external contact to identities that do not own it" in {
+      val path = basePath + "/identity/" + externalContactIdentityId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -113,6 +132,7 @@ class IdentityControllerSpec extends StartedApp {
       (data \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
+
     "Edit an identity" in {
       val path = basePath + "/identity"
 
@@ -122,7 +142,7 @@ class IdentityControllerSpec extends StartedApp {
       val res = route(req).get
 
       if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
+        Logger.error("Response " + status(res) + ": " + contentAsString(res))
       }
       status(res) must equalTo(OK)
     }
@@ -150,9 +170,8 @@ class IdentityControllerSpec extends StartedApp {
 
     }
 
-    "refuse to add invalid email" in {
-      invalidEmails.map { invalid =>
-
+    invalidEmails.filterNot(_.equals("")).map { invalid =>
+      "refuse to add invalid email: " + invalid in {
         val path = basePath + "/identity"
 
         val json = Json.obj("email" -> invalid)
@@ -164,9 +183,8 @@ class IdentityControllerSpec extends StartedApp {
       }
     }
 
-    "refuse to add invalid phoneNumber" in {
-      invalidPhoneNumbers.map { invalid =>
-
+    invalidPhoneNumbers.filterNot(_.equals("")).map { invalid =>
+      "refuse to add invalid phoneNumber: " + invalid in {
         val path = basePath + "/identity"
 
         val json = Json.obj("phoneNumber" -> invalid)
@@ -176,6 +194,71 @@ class IdentityControllerSpec extends StartedApp {
 
         status(res) must equalTo(BAD_REQUEST)
       }
+    }
+
+    "Try to edit identity fields that should not be edited" in {
+      val path = basePath + "/identity"
+
+      val json = Json.obj("cameoId" -> "mooooeeeep", "accountId" -> "foooo")
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting4))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response " + status(res) + ": " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "check if identity is still the same" in {
+
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting4))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "cameoId").asOpt[String] must beSome(cameoIdExisting4 + "@cameonet.de")
+    }
+
+    "delete identity fields with emtpy string" in {
+      val path = basePath + "/identity"
+
+      val json = Json.obj("phoneNumber" -> "", "email" -> "", "displayName" -> "", "avatar" -> "")
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting4))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response " + status(res) + ": " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "check if fields were deleted" in {
+
+      val path = basePath + "/identity"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting4))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "phoneNumber").asOpt[JsValue] must beNone
+      (data \ "email").asOpt[JsValue] must beNone
+      (data \ "displayName").asOpt[String] must beNone
+      (data \ "avatar").asOpt[String] must beNone
     }
 
     "Search for an CameoId" in {
@@ -783,7 +866,7 @@ class IdentityControllerSpec extends StartedApp {
       status(res) must equalTo(NOT_FOUND)
     }
 
-    "refuse to return token for external identity"in {
+    "refuse to return token for external identity" in {
       val path = basePath + "/identity/" + externalContactIdentityId + "/token"
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))

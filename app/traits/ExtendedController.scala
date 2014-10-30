@@ -4,7 +4,7 @@ import helper.ResultHelper._
 import play.api.libs.json._
 import play.api.mvc._
 import play.modules.reactivemongo.MongoController
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
@@ -27,7 +27,7 @@ trait ExtendedController extends Controller with MongoController {
     js.validate(reads).map {
       action
     }.recoverTotal {
-      error => Future.successful(resBadRequest(JsError.toFlatJson(error)))
+      error => Future(resBadRequest(JsError.toFlatJson(error)))
     }
   }
 

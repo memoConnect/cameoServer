@@ -2,7 +2,7 @@ package helper
 
 import java.math.BigInteger
 
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.Play.current
 
 import scala.annotation.tailrec
@@ -64,12 +64,12 @@ object Utils {
     @tailrec
     def check(listA: List[Int], listB: List[Int]): Boolean = {
       (listA, listB) match {
-        case (Nil, Nil) => true
-        case (Nil, _)   => true
-        case (_, Nil)   => false
-        case (headA :: restA, headB :: restB) if headA < headB => true
+        case (Nil, Nil)                                         => true
+        case (Nil, _)                                           => true
+        case (_, Nil)                                           => false
+        case (headA :: restA, headB :: restB) if headA < headB  => true
         case (headA :: restA, headB :: restB) if headA == headB => check(restA, restB)
-        case _ => false
+        case _                                                  => false
       }
     }
     check(aInt, bInt)

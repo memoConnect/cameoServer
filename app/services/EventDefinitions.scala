@@ -49,7 +49,7 @@ case class NewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, 
     "message" -> message.toJson
   )
 
-  def context= "message:" + conversationId.id
+  def context = "message:" + conversationId.id
 
   def localizationKeyTitle = "PUSH_MESSAGE.NEW_MESSAGE.TITLE"
   def localizationKeyMsg = "PUSH_MESSAGE.NEW_MESSAGE.MSG"
@@ -126,6 +126,6 @@ case class NewIdentity(sendToIdentity: MongoId, identity: Identity) extends Even
 case class BroadcastEvent(sendToIdentity: MongoId, eventType: String, content: JsObject, fromIdentity: Identity) extends EventDefinition {
 
   override def fromIdentityId = Some(fromIdentity.id)
-  
+
   def toEventContent: JsObject = content
 }

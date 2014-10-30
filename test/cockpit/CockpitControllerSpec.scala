@@ -1,5 +1,6 @@
 package cockpit
 
+import play.api.Logger
 import play.api.libs.json.{Json, JsObject}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
@@ -32,6 +33,9 @@ class CockpitControllerSpec extends StartedApp {
       val req1 = FakeRequest(GET, path1).withHeaders(tokenHeader(tokenExisting))
       val res1 = route(req1).get
 
+      if (status(res1) != OK) {
+        Logger.error("Response: " + contentAsString(res1))
+      }
       status(res1) must equalTo(OK)
 
       Await.result(res1, Duration.create(1, MINUTES) )
@@ -49,6 +53,9 @@ class CockpitControllerSpec extends StartedApp {
       val req2 = FakeRequest(POST, path2).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res2 = route(req2).get
 
+      if (status(res2) != OK) {
+        Logger.error("Response: " + contentAsString(res2))
+      }
       status(res2) must equalTo(OK)
 
       val data = (contentAsJson(res2) \ "data").as[JsObject]
@@ -86,7 +93,11 @@ class CockpitControllerSpec extends StartedApp {
       val req1 = FakeRequest(GET, path1).withHeaders(tokenHeader(tokenExisting2))
       val res1 = route(req1).get
 
+      if (status(res1) != OK) {
+        Logger.error("Response: " + contentAsString(res1))
+      }
       status(res1) must equalTo(OK)
+
 
       Await.result(res1, Duration.create(1, MINUTES) )
 
@@ -103,6 +114,9 @@ class CockpitControllerSpec extends StartedApp {
       val req2 = FakeRequest(POST, path2).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
       val res2 = route(req2).get
 
+      if (status(res2) != OK) {
+        Logger.error("Response: " + contentAsString(res2))
+      }
       status(res2) must equalTo(OK)
 
       val data = (contentAsJson(res2) \ "data").as[JsObject]

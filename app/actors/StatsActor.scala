@@ -1,18 +1,16 @@
 package actors
 
 import akka.actor.Actor
-import com.amazonaws.services.elastictranscoder.model.Pipeline
-import helper.JsonHelper._
 import helper.MongoCollections
-import models.{Account, Conversation}
+import models.{ Account, Conversation }
 import play.api.Logger
 import play.api.libs.json.Json
-import play.modules.statsd.Statsd
-import reactivemongo.bson.{BSONNull, BSONDocument}
-import reactivemongo.core.commands._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import play.modules.reactivemongo.json.BSONFormats._
+import play.modules.statsd.Statsd
+import reactivemongo.bson.{ BSONDocument, BSONNull }
+import reactivemongo.core.commands._
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -29,22 +27,22 @@ class StatsActor extends Actor {
 
     case MessageCount =>
 
-        val pipeline: Seq[PipelineOperator] = Seq(
-          Match(BSONDocument()),
-          Unwind("messages"),
-          Group(BSONNull)(("count", SumValue(1))))
+      val pipeline: Seq[PipelineOperator] = Seq(
+        Match(BSONDocument()),
+        Unwind("messages"),
+        Group(BSONNull)(("count", SumValue(1))))
 
-        val command = Aggregate(Conversation.col.name, pipeline)
+      val command = Aggregate(Conversation.col.name, pipeline)
 
-        MongoCollections.mongoDB.command(command).map {
-          _.headOption match {
-              case None => Logger.error("Could not get message count")
-              case Some(bson) =>
-                val count = (Json.toJson(bson) \ "count").as[Int]
-//                Logger.debug("MessageCount: " + count)
-                Statsd.gauge("messages.total", count)
-            }
+      MongoCollections.mongoDB.command(command).map {
+        _.headOption match {
+          case None => Logger.error("Could not get message count")
+          case Some(bson) =>
+            val count = (Json.toJson(bson) \ "count").as[Int]
+            //                Logger.debug("MessageCount: " + count)
+            Statsd.gauge("messages.total", count)
         }
+      }
 
     case AccountCount =>
 
@@ -53,10 +51,9 @@ class StatsActor extends Actor {
 
       MongoCollections.mongoDB.command(command).map {
         count =>
-//          Logger.debug("AccountCount: " + count)
+          //          Logger.debug("AccountCount: " + count)
           Statsd.gauge("accounts.total", count)
       }
-
 
   }
 
