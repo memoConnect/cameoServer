@@ -185,7 +185,7 @@ object AccountController extends ExtendedController {
               case true =>
                 // it exists, find alternative
                 findAlternative(login).map {
-                  newLoginName => resKO(Json.obj("alternative" -> newLoginName))
+                  newLoginName => resKo(Json.obj("alternative" -> newLoginName))
                 }
               case false =>
                 // it does not exist, check if it is reserved
@@ -193,7 +193,7 @@ object AccountController extends ExtendedController {
                   // it is reserved, get alternative
                   case Some(ra) =>
                     findAlternative(login).map {
-                      newLoginName => resKO(Json.obj("alternative" -> newLoginName))
+                      newLoginName => resKo(Json.obj("alternative" -> newLoginName))
                     }
                   // not reserved, reserve it and return reservation Secret
                   case None =>
@@ -245,7 +245,7 @@ object AccountController extends ExtendedController {
             }
           }
 
-          AccountUpdate.validateUpdate(request.body) {
+          AccountUpdate.validateRequest(request.body) {
             js =>
               // check if there is a password change
               val newPassword = (request.body \ "password").asOpt[String](JsonHelper.hashPassword)

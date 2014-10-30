@@ -107,7 +107,7 @@ trait ModelUpdate {
 
   def values: Seq[UpdateValue]
 
-  def validateUpdate(json: JsValue)(action: ((JsObject => Future[Result]))): Future[Result] = {
+  def validateRequest(json: JsValue)(action: ((JsObject => Future[Result]))): Future[Result] = {
     values
       .filter(_.externalEdit)
       .foldLeft[JsResult[JsObject]](JsSuccess(Json.obj())) {

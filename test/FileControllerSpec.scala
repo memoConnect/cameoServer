@@ -2,6 +2,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import javax.imageio.ImageIO
 
+import constants.ErrorCodes
 import play.api.test._
 import play.api.libs.json.{ JsValue, Json, JsObject }
 import play.api.test.Helpers._
@@ -218,7 +219,6 @@ class FileControllerSpec extends StartedApp {
       }
     }
 
-
     "overwrite existing chunk" in {
       val path = basePath + "/file/" + fileId
 
@@ -325,6 +325,7 @@ class FileControllerSpec extends StartedApp {
       status(res) must equalTo(BAD_REQUEST)
 
       (contentAsJson(res) \ "error" \ "maxFileSize").asOpt[Int] must beSome(maxSize)
+      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.FILE_UPLOAD_FILESIZE_EXCEEDED)
     }
 
     "return error if actual size exceeds submitted size" in {
@@ -376,6 +377,27 @@ class FileControllerSpec extends StartedApp {
       }
 
       (error \ "error").asOpt[String] must beSome(contain("actual fileSize is bigger than submitted value"))
+    }
+
+    "refuse upload of another file that exceeds file quota" in {
+      val path = basePath + "/file"
+
+      val header: Seq[(String, String)] = Seq(
+        ("X-File-Name", fileName),
+        ("X-Max-Chunks", "13"),
+        ("X-File-Size", (10*1024*1024).toString),
+        ("X-File-Type", fileType)) :+
+        tokenHeader(tokenExisting2)
+
+      val req = FakeRequest(POST, path).withHeaders(header: _*).withJsonBody(Json.obj())
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+
+      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED)
     }
 
     "return raw image file" in {

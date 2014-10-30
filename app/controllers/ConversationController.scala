@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ExternalMessage
-import services.{AuthenticationActions, NewConversation}
+import services.{ AuthenticationActions, NewConversation }
 import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
@@ -103,7 +103,7 @@ object ConversationController extends ExtendedController {
 
   def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      ConversationUpdate.validateUpdate(request.body) {
+      ConversationUpdate.validateRequest(request.body) {
         update =>
           Conversation.find(id, -1, 0).flatMap {
             case None => Future(resNotFound("conversation"))

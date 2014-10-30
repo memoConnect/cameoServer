@@ -1,6 +1,6 @@
 package controllers
 
-import services.{AuthenticationActions, UpdatedIdentity}
+import services.{ AuthenticationActions, UpdatedIdentity }
 import AuthenticationActions._
 import helper.IdHelper
 import helper.ResultHelper._
