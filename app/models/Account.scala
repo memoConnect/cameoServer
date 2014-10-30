@@ -102,13 +102,14 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 4
+  def docVersion = 5
 
   def evolutions = Map(
     0 -> AccountEvolutions.migrateToVerifiedString,
     1 -> AccountEvolutions.addDeviceIds,
     2 -> AccountEvolutions.convertToPushDevice,
-    3 -> AccountEvolutions.removePushDevices
+    3 -> AccountEvolutions.removePushDevices,
+  4 -> AccountEvolutions.addAccountProperties
   )
 }
 
@@ -221,6 +222,13 @@ object AccountEvolutions {
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
       js.transform(deleteArray andThen addVersion)
   }
+
+  def addAccountProperties: Reads[JsObject] = Reads {
+    js =>
+      val addProperties = __.json.update((__ \ 'properties).json.put(Json.toJson(AccountProperties.defaultProperties)))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
+      js.transform(addProperties andThen addVersion)
+  }
 }
 
 object AccountUpdate extends ModelUpdate {
@@ -234,11 +242,10 @@ object AccountUpdate extends ModelUpdate {
 case class AccountProperties(fileQuota: Int)
 
 object AccountProperties {
+  implicit def format: Format[AccountProperties] = Json.format[AccountProperties]
 
   def defaultProperties: AccountProperties = {
-    def defaultQuota = Play.configuration.getInt("accounts.properties.default.file.quota").get
+    def defaultQuota = Play.configuration.getInt("accounts.properties.default.file.quota").getOrElse(10000)*1024*1024
     AccountProperties(defaultQuota)
   }
-
-  implicit def format = Json.format[AccountProperties]
 }

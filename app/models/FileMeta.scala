@@ -2,13 +2,15 @@ package models
 
 import java.util.Date
 
-import helper.IdHelper
+import helper.{MongoCollections, IdHelper}
 import helper.JsonHelper._
 import helper.MongoCollections._
+import play.api.Logger
 import play.api.libs.json._
-import reactivemongo.core.commands.LastError
+import reactivemongo.bson.{BSONNull, BSONDocument}
+import reactivemongo.core.commands._
 import traits.Model
-
+import play.modules.reactivemongo.json.BSONFormats._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -81,7 +83,7 @@ object FileMeta extends Model[FileMeta] {
         addCreated(fm.created)
   }
 
-  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String, isCompleted: Boolean = false, conversationId: Option[MongoId] = None): FileMeta = {
+  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String, owner: Option[MongoId], isCompleted: Boolean = false, conversationId: Option[MongoId] = None): FileMeta = {
     new FileMeta(
       IdHelper.generateFileId(),
       chunks,
@@ -91,7 +93,7 @@ object FileMeta extends Model[FileMeta] {
       fileType,
       isCompleted,
       Map(),
-      None,
+      owner,
       new Date,
       docVersion
     )
@@ -116,6 +118,25 @@ object FileMeta extends Model[FileMeta] {
 
   def createDefault(): FileMeta = {
     new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, Map(), None, new Date, docVersion)
+  }
+
+  def getTotalFileSize(identityId: MongoId): Future[Int] = {
+    val pipeline: Seq[PipelineOperator] = Seq(
+      Match(toBson(Json.obj("owner" -> identityId)).get),
+      Group(BSONNull)(("totalFileSize", SumField("fileSize"))))
+
+    val command = Aggregate(FileMeta.col.name, pipeline)
+
+    MongoCollections.mongoDB.command(command).map {
+      _.headOption match {
+        case None =>
+          Logger.error("Could not get total file size")
+          0
+        case Some(bson) =>
+          val fileSize = (Json.toJson(bson) \ "totalFileSize").as[Int]
+          fileSize
+      }
+    }
   }
 }
 

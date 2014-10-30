@@ -5,12 +5,13 @@ import java.awt.{ Color, Graphics2D }
 import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import javax.imageio.ImageIO
 
-import services.{AuthenticationActions, ImageScaler, NewMessage}
+import constants.ErrorCodes
+import services.{ AuthenticationActions, ImageScaler, NewMessage }
 import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, MongoCollections, Utils }
 import models._
-import play.api.Play
+import play.api.{Logger, Play}
 import play.api.Play.current
 import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import play.api.libs.json.Json
@@ -50,21 +51,38 @@ object FileController extends ExtendedController {
           Utils.safeStringToInt(fileSize.get).isEmpty
       }
 
+      def createFile(): Future[Result] = {
+        val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get, Some(request.identity.id))
+        FileMeta.col.insert(fileMeta).map { lastError =>
+          lastError.ok match {
+            case false => resServerError("could not save chunk")
+            case true  => resOk(fileMeta.toJson)
+          }
+        }
+      }
+
       headerInvalid match {
         case true => Future(resBadRequest("header content missing or invalid"))
         case false =>
           // check filesize
           fileSize.get.toInt <= Play.configuration.getInt("files.size.max").get match {
-            case false => Future(resBadRequest(Json.obj("maxFileSize" -> Play.configuration.getInt("files.size.max").get)))
+            case false =>
+              val errorJson = Json.obj("maxFileSize" -> Play.configuration.getInt("files.size.max").get)
+              Future(resBadRequest(errorJson, ErrorCodes.FILE_UPLOAD_FILESIZE_EXCEEDED))
             case true =>
-
-              val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get)
-              FileMeta.col.insert(fileMeta).map { lastError =>
-                lastError.ok match {
-                  case false => resServerError("could not save chunk")
-                  case true  => resOk(fileMeta.toJson)
+              // check quota
+              for {
+                size <- FileMeta.getTotalFileSize(request.identity.id)
+                quota <- Account.find(request.identity.accountId.get).map(_.get.properties.fileQuota)
+                result <- {
+                  if (size + fileSize.get.toInt < quota) {
+                    createFile()
+                  } else {
+                    val errorJson = Json.obj("totalQuota" -> quota, "quotaLeft" -> (quota-size), "fileSize" -> fileSize.get.toInt)
+                    Future(resBadRequest(errorJson, ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED))
+                  }
                 }
-              }
+              } yield result
           }
       }
   }
