@@ -1,13 +1,16 @@
 package controllers
-import helper.AuthenticationActions.AuthAction
+
+import services.AuthenticationActions
+import AuthenticationActions.AuthAction
+import helper.JsonHelper
 import helper.ResultHelper._
 import models._
 import org.mindrot.jbcrypt.BCrypt
-import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
+import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import traits.ExtendedController
 
@@ -21,9 +24,10 @@ import scala.concurrent.Future
 object AccountController extends ExtendedController {
 
   def checkLogin(login: String): Boolean = {
-    login.length >= 6 &&
+    login.length >= 3 &&
       login.length < 41 &&
-      login.matches("^\\w+$")
+      login.matches("^[\\w.]+$") &&
+      login.count(_.isLetterOrDigit) > 0
   }
 
   case class AdditionalValues(reservationSecret: String, displayName: Option[String])
@@ -43,7 +47,6 @@ object AccountController extends ExtendedController {
             account =>
               {
                 def createAccountWithIdentity(identity: Identity): Future[Result] = {
-
                   val accountLowerCase = account.copy(loginName = account.loginName.toLowerCase)
 
                   // add support user
@@ -93,16 +96,11 @@ object AccountController extends ExtendedController {
                                   addContact <- identity.addContact(Contact.create(otherIdentity.id))
                                   updateIdentity <- {
                                     // add update identity with details from registration
-                                    val update = IdentityUpdate(
-                                      None,
-                                      None,
-                                      additionalValues.displayName,
-                                      Some(account.loginName),
-                                      None,
-                                      Some(account.id),
-                                      Some(true)
-                                    )
-                                    identity.update(update)
+                                    val set = Map("cameoId" -> account.loginName,
+                                      "accountId" -> account.id,
+                                      "isDefaultIdentity" -> true,
+                                      "displayName" -> additionalValues.displayName.getOrElse(""))
+                                    Identity.update(identity.id, IdentityUpdate.setValues(set))
                                   }
                                   deleteDetails <- {
                                     val deleteValues =
@@ -187,7 +185,7 @@ object AccountController extends ExtendedController {
               case true =>
                 // it exists, find alternative
                 findAlternative(login).map {
-                  newLoginName => resKO(Json.obj("alternative" -> newLoginName))
+                  newLoginName => resKo(Json.obj("alternative" -> newLoginName))
                 }
               case false =>
                 // it does not exist, check if it is reserved
@@ -195,7 +193,7 @@ object AccountController extends ExtendedController {
                   // it is reserved, get alternative
                   case Some(ra) =>
                     findAlternative(login).map {
-                      newLoginName => resKO(Json.obj("alternative" -> newLoginName))
+                      newLoginName => resKo(Json.obj("alternative" -> newLoginName))
                     }
                   // not reserved, reserve it and return reservation Secret
                   case None =>
@@ -209,10 +207,14 @@ object AccountController extends ExtendedController {
       }
 
       validateFuture[CheckLoginRequest](request.body, CheckLoginRequest.format) {
-        case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
-        case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName required"))
-        case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId)
-        case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName)
+        checkLoginRequest =>
+          Logger.info("Login check: " + checkLoginRequest)
+          checkLoginRequest match {
+            case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
+            case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName required"))
+            case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId)
+            case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName)
+          }
       }
   }
 
@@ -232,32 +234,41 @@ object AccountController extends ExtendedController {
 
   def updateAccount() = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, AccountUpdate.reads) {
-        accountUpdate =>
-          request.identity.accountId match {
-            case None => Future(resBadRequest("no account"))
-            case Some(accountId) =>
-              Account.find(accountId).flatMap {
-                case None => Future(resNotFound("account"))
-                case Some(account) =>
-                  def doAccountUpdate(): Future[Result] = {
-                    account.update(accountUpdate).map {
-                      case false => resServerError("could not update")
-                      case true  => resOk("updated")
-                    }
-                  }
-                  // check password if password is updated
-                  (accountUpdate.password, accountUpdate.oldPassword) match {
-                    case (None, _) =>  doAccountUpdate()
-                    case (Some(pw), None) => Future(resBadRequest("old password required"))
-                    case (Some(pw), Some(oldPw)) =>
+      request.identity.accountId match {
+        case None => Future(resBadRequest("no account"))
+        case Some(accountId) =>
+
+          def doAccountUpdate(update: JsObject): Future[Result] = {
+            Account.update(accountId, update).map {
+              case false => resServerError("could not update")
+              case true  => resOk("updated")
+            }
+          }
+
+          AccountUpdate.validateRequest(request.body) {
+            js =>
+              // check if there is a password change
+              val newPassword = (request.body \ "password").asOpt[String](JsonHelper.hashPassword)
+              val oldPassword = (request.body \ "oldPassword").asOpt[String]
+
+              (newPassword, oldPassword) match {
+                case (None, _)           => doAccountUpdate(js)
+                case (Some(newPw), None) => Future(resBadRequest("old password required"))
+                case (Some(newPw), Some(oldPw)) =>
+                  Account.find(accountId).flatMap {
+                    case None => Future(resServerError("could not retreive account"))
+                    case Some(account) =>
                       BCrypt.checkpw(oldPw, account.password) match {
-                        case false => Future(resBadRequest("invalid old password")                )
-                        case true => doAccountUpdate()
+                        case false => Future(resBadRequest("invalid old password"))
+                        case true =>
+                          val set = Map("password" -> newPw)
+                          val update = js.deepMerge(AccountUpdate.setValues(set))
+                          doAccountUpdate(update)
                       }
                   }
               }
           }
       }
   }
+
 }

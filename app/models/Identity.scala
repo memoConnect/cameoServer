@@ -4,7 +4,7 @@ import java.util.Date
 
 import constants.Contacts._
 import constants.Messaging._
-import helper.IdHelper
+import helper.{ JsonHelper, IdHelper }
 import helper.JsonHelper._
 import helper.MongoCollections._
 import models.cockpit._
@@ -15,7 +15,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.{ Logger, Play }
 import services.AvatarGenerator
-import traits.{ CockpitAttribute, CockpitEditable, Model }
+import traits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -47,6 +47,8 @@ case class Identity(id: MongoId,
                     docVersion: Int) {
 
   def toPrivateJson: JsObject = Json.toJson(this)(Identity.privateWrites).as[JsObject]
+  def toExternalJson: JsObject = Json.toJson(this)(Identity.externalWrites).as[JsObject]
+  def toExternalOwnerJson: JsObject = Json.toJson(this)(Identity.externalOwnerWrites).as[JsObject]
 
   def toPublicJson(additionalPublicKeySignatures: Option[Map[String, Signature]]): JsObject = {
 
@@ -117,7 +119,7 @@ case class Identity(id: MongoId,
       case PublicKeyUpdate(maybeName) =>
         val setValues = {
           maybeEmptyString("publicKeys.$.name", maybeName) ++
-          Json.obj("publicKeys.$.deleted" -> false)
+            Json.obj("publicKeys.$.deleted" -> false)
         }
         val publicKeyQuery = query ++ Json.obj("publicKeys._id" -> id)
         val set = Json.obj("$set" -> setValues)
@@ -179,26 +181,6 @@ case class Identity(id: MongoId,
     Identity.col.update(query, set).map(_.updatedExisting)
   }
 
-  //todo: find generic way for updates
-  def update(update: IdentityUpdate): Future[Boolean] = {
-    update match {
-      case IdentityUpdate(None, None, None, None, None, None, None) => Future(true)
-      case IdentityUpdate(maybePhoneNumber, maybeEmail, maybeDisplayName, maybeCameoId, maybeAvatar, maybeAccountId, maybeIsDefault) =>
-
-        val set =
-          Json.obj("$set" -> (
-            maybeEmptyJsValue("email", maybeEmail.map(Json.toJson(_))) ++
-            maybeEmptyJsValue("phoneNumber", maybePhoneNumber.map(Json.toJson(_))) ++
-            maybeEmptyString("displayName", maybeDisplayName) ++
-            maybeEmptyJsValue("avatar", maybeAvatar.map(s => Json.toJson(MongoId(s)))) ++
-            maybeEmptyString("cameoId", maybeCameoId) ++
-            maybeEmptyJsValue("accountId", maybeAccountId.map(Json.toJson(_))) ++
-            maybeEmptyJsValue("isDefaultIdentity", maybeIsDefault.map(JsBoolean))
-          ))
-        Identity.col.update(query, set).map { _.ok }
-    }
-  }
-
   def getGroup(groupName: String): Seq[Contact] = {
     this.contacts.filter(_.groups.contains(groupName))
   }
@@ -238,7 +220,7 @@ case class Identity(id: MongoId,
 
         case _ =>
           // config is not sufficient, do nothing
-          Logger.error("Inital Support Contact not configured")
+          Logger.error("Initial Support Contact not configured")
           Future(false)
       }
   }
@@ -297,15 +279,35 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         getCameoId(i.cameoId) ++
         maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
         maybeEmptyString("displayName", i.displayName) ++
-        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++ {
-          // add phoneNumber and email for internal identities
-          i.accountId match {
-            case None => Json.obj()
-            case Some(a) =>
-              maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
-                maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson))
-          }
-        }
+        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++
+        maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
+        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson))
+  }
+
+  def externalWrites: Writes[Identity] = Writes {
+    i =>
+      Json.obj("id" -> i.id.toJson) ++
+        getCameoId(i.cameoId) ++
+        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
+        maybeEmptyString("displayName", i.displayName) ++
+        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson))
+  }
+
+  def externalOwnerWrites: Writes[Identity] = Writes {
+    i =>
+      Json.obj("id" -> i.id.toJson) ++
+        getCameoId(i.cameoId) ++
+        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
+        maybeEmptyString("displayName", i.displayName) ++
+        maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
+        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson)) ++
+        Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson))
+  }
+  def getProjection(includeContacts: Boolean = false, includeTokens: Boolean = false): JsObject = {
+    val contactProjection = if (includeContacts) Json.obj() else limitArray("contacts", 1, 0)
+    val tokenProjection = if (includeTokens) Json.obj() else limitArray("tokens", 1, 0)
+
+    contactProjection ++ tokenProjection
   }
 
   def create(accountId: Option[MongoId], cameoId: String, email: Option[String], phoneNumber: Option[String], isDefaultIdentity: Boolean = true, displayName: Option[String] = None): Identity = {
@@ -344,20 +346,40 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     }
   }
 
-  // todo: add projection to exclude contacts when not needed
-  def findByToken(tokenId: MongoId): Future[Option[Identity]] = {
+  override def find(id: MongoId): Future[Option[Identity]] = {
+    val query = Json.obj("_id" -> id)
+    val projection = getProjection()
+    find(query, projection)
+  }
+
+  def findWith(id: MongoId, includeContacts: Boolean = false, includeTokens: Boolean = false): Future[Option[Identity]] = {
+    val query = Json.obj("_id" -> id)
+    val projection = getProjection(includeContacts, includeTokens)
+    find(query, projection)
+  }
+
+  override def findAll(query: JsObject): Future[Seq[Identity]] = {
+    val projection = getProjection()
+    col.find(query, projection).cursor[Identity].collect[Seq]()
+  }
+
+  def findAllWith(query: JsObject, includeContacts: Boolean = false, includeTokens: Boolean = false): Future[Seq[Identity]] = {
+    val projection = getProjection(includeContacts, includeTokens)
+    col.find(query, projection).cursor[Identity].collect[Seq]()
+  }
+
+  def findByToken(tokenId: MongoId, includeContacts: Boolean = false): Future[Option[Identity]] = {
     val query = Json.obj("tokens._id" -> tokenId)
-    col.find(query).one[Identity]
+    val projection = getProjection(includeContacts)
+    find(query, projection)
   }
 
   def findByCameoId(cameoId: String): Future[Option[Identity]] = {
     // cameoIds are not case sensitive
     val query = Json.obj("cameoId" -> Json.obj("$regex" -> ("^" + cameoId + "$"), "$options" -> "i"))
-    col.find(query).one[Identity]
-  }
+    val projection = getProjection()
 
-  def addTokenToIdentity(identityId: MongoId, token: Token): Future[Boolean] = {
-    Token.appendUnique(identityId, token).map(_.updatedExisting)
+    find(query, projection)
   }
 
   def search(cameoId: Option[String], displayName: Option[String]): Future[Seq[Identity]] = {
@@ -373,7 +395,13 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       "accountId" -> Json.obj("$exists" -> true)
     )
 
-    col.find(query).cursor[Identity].collect[Seq](upTo = 250)
+    val projection = Json.obj()
+
+    col.find(query, projection).cursor[Identity].collect[Seq](upTo = 250)
+  }
+
+  def addTokenToIdentity(identityId: MongoId, token: Token): Future[Boolean] = {
+    Token.append(identityId, token).map(_.updatedExisting)
   }
 
   def createDefault(): Identity = {
@@ -426,25 +454,16 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
 }
 
-case class IdentityUpdate(phoneNumber: Option[VerifiedString] = None,
-                          email: Option[VerifiedString] = None,
-                          displayName: Option[String] = None,
-                          cameoId: Option[String] = None,
-                          avatar: Option[String] = None,
-                          accountId: Option[MongoId] = None,
-                          isDefaultIdentity: Option[Boolean] = None)
-
-object IdentityUpdate {
-
-  implicit val reads: Reads[IdentityUpdate] = (
-    (__ \ "phoneNumber").readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-    (__ \ "email").readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-    (__ \ "displayName").readNullable[String] and
-    Reads.pure(None) and
-    (__ \ "avatar").readNullable[String] and
-    Reads.pure(None) and
-    Reads.pure(None)
-  )(IdentityUpdate.apply _)
+object IdentityUpdate extends ModelUpdate {
+  def values = Seq(
+    StringUpdateValue("displayName", externalEdit = true),
+    MongoIdUpdateValue("avatar", externalEdit = true),
+    VerifiedStringUpdateValue("email", JsonHelper.verifyMail, externalEdit = true),
+    VerifiedStringUpdateValue("phoneNumber", JsonHelper.verifyPhoneNumber, externalEdit = true),
+    MongoIdUpdateValue("accountId"),
+    BooleanUpdateValue("isDefaultIdentity"),
+    StringUpdateValue("cameoId")
+  )
 }
 
 object IdentityEvolutions {

@@ -1,11 +1,10 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, PushdConnector }
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
-import models.{Identity, Account, MongoId}
-import play.api.Logger
+import models.Identity
 import play.api.i18n.Lang
-import play.api.libs.Crypto
 import play.api.libs.json._
 import services.PushdConnector
 import services.PushdConnector._
@@ -68,16 +67,16 @@ object PushNotificationController extends ExtendedController {
     request =>
       validateFuture(JsString(platform), PushdConnector.platformReads) {
         platform =>
-        // get id for this token
-        PushdConnector.getSubscriberId(id, platform, Lang("en-US")).flatMap {
-          case None => Future(resKo("Pushd is down"))
-          case Some(subscriberId) =>
-            // set subscription to identityId of this user
-            setSubscriptions(subscriberId, Seq()).map {
-              case false => resKo("Pushd is down")
-              case true => resOk()
-            }
-        }
+          // get id for this token
+          PushdConnector.getSubscriberId(id, platform, Lang("en-US")).flatMap {
+            case None => Future(resKo("Pushd is down"))
+            case Some(subscriberId) =>
+              // set subscription to identityId of this user
+              setSubscriptions(subscriberId, Seq()).map {
+                case false => resKo("Pushd is down")
+                case true  => resOk()
+              }
+          }
       }
   }
 }

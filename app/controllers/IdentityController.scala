@@ -1,6 +1,8 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import play.api.Logger
+import services.{ AuthenticationActions, AvatarGenerator, NewIdentity }
+import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -23,7 +25,6 @@ object IdentityController extends ExtendedController {
 
   def nonAuthGetIdentity[A](id: String): Request[A] => Future[Result] = {
     request =>
-      // todo: return external identities only to their owner and conversation members
       val mongoId = new MongoId(id)
       Identity.find(mongoId).map {
         case None => resNotFound("identity")
@@ -35,13 +36,15 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def getIdentity(id: String) = AuthAction(nonAuthBlock = Some(nonAuthGetIdentity(id))).async {
+  def getIdentity(id: String) = AuthAction(nonAuthBlock = Some(nonAuthGetIdentity(id)), includeContacts = true).async {
     request =>
       val mongoId = new MongoId(id)
-
+      // todo: return external identities only to their owner and conversation members
       Identity.find(mongoId).map {
-        case None           => resNotFound("identity")
-        case Some(identity) => resOk(identity.toPublicJson(Some(request.identity.publicKeySignatures)))
+        case None                                                                                 => resNotFound("identity")
+        case Some(identity) if identity.accountId.isDefined                                       => resOk(identity.toPublicJson(Some(request.identity.publicKeySignatures)))
+        case Some(identity) if request.identity.contacts.exists(_.identityId.equals(identity.id)) => resOk(identity.toExternalOwnerJson)
+        case Some(identity)                                                                       => resOk(identity.toExternalJson)
       }
   }
 
@@ -51,18 +54,16 @@ object IdentityController extends ExtendedController {
 
   def updateIdentity() = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture[IdentityUpdate](request.body, IdentityUpdate.reads) {
-        identityUpdate =>
-          {
-            request.identity.update(identityUpdate).map {
-              case false => resServerError("nothing updated")
-              case true  => resOk("updated")
-            }
+      IdentityUpdate.validateRequest(request.body) {
+        update =>
+          Identity.update(request.identity.id, update).map {
+            case false => resNotFound("identity")
+            case true  => resOk("updated")
           }
       }
   }
 
-  def search(offset: Int, limit: Int) = AuthAction().async(parse.tolerantJson) {
+  def search(offset: Int, limit: Int) = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
 
       case class IdentitySearch(search: String, fields: Seq[String], excludeContacts: Option[Boolean])

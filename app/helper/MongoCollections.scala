@@ -6,6 +6,7 @@ import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.modules.reactivemongo.json.collection.JSONCollection
 import reactivemongo.api.collections.default.BSONCollection
+import reactivemongo.api.gridfs.GridFS
 import reactivemongo.api.indexes.{ Index, IndexType }
 import reactivemongo.bson.BSONDocument
 
@@ -19,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object MongoCollections {
 
   val mongoDB = ReactiveMongoPlugin.db
+  val scaleCache = new GridFS(mongoDB, "scaleCache")
 
   lazy val conversationCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("conversations")

@@ -31,7 +31,8 @@ trait SubModel[A, Parent] extends Model[A] {
     }
   }
 
-  override def find(subQuery: JsObject): Future[Option[A]] = {
+  // todo: apply projection, right now it does nothing...
+  override def find(subQuery: JsObject, projection: JsObject = Json.obj()): Future[Option[A]] = {
     val query = Json.obj(elementName -> subQuery)
     val projection = Json.obj(elementName -> Json.obj("$elemMatch" -> subQuery))
     parentModel.col.find(query, projection).one[JsValue].map {

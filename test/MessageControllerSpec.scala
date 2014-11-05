@@ -161,6 +161,28 @@ class MessageControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
     }
 
+    "message should be added to top of conversation" in {
+      val path = basePath + "/conversation/" + cidExisting2
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val message = (data \ "messages")(0)
+      (message \ "id").asOpt[String] must beSome(messageId)
+      (message \ "plain" \ "text").asOpt[String] must beSome(body)
+      (message \ "encrypted").asOpt[String] must beSome(encrypted)
+      (message \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (message \ "fromIdentity").asOpt[String] must beSome(identityExisting)
+      (message \ "created").asOpt[Long] must beSome
+    }
+
     "check if conversation summary is updated" in {
       val path = basePath + "/conversation/" + cidExisting2 + "/summary"
 

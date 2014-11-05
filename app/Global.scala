@@ -4,33 +4,33 @@
  * Time: 4:27 PM
  */
 
-import actors.{AccountCount, MessageCount, StatsActor}
+import java.util.logging.{ Logger => JavaLogger }
+
+import actors._
 import akka.actor.Props
-import de.flapdoodle.embed.mongo.{ MongodProcess, MongodExecutable, MongodStarter }
-import de.flapdoodle.embed.mongo.config.{ RuntimeConfigBuilder, MongodConfigBuilder, Net, IMongodConfig }
-import de.flapdoodle.embed.mongo.distribution.{ Versions, Version }
+import de.flapdoodle.embed.mongo.config.{ IMongodConfig, MongodConfigBuilder, Net, RuntimeConfigBuilder }
+import de.flapdoodle.embed.mongo.distribution.Versions
+import de.flapdoodle.embed.mongo.{ MongodExecutable, MongodProcess, MongodStarter, Command => MongoCommand }
 import de.flapdoodle.embed.process.config.io.ProcessOutput
 import de.flapdoodle.embed.process.distribution.GenericVersion
 import de.flapdoodle.embed.process.runtime.Network
 import helper.MongoCollections._
-import helper.{ DbAdminUtilities, MongoCollections }
+import helper.{ DbUtilities, MongoCollections, Utils }
 import models.{ Conversation, GlobalState }
+import play.api.Play.current
 import play.api.http.HeaderNames._
 import play.api.libs.concurrent.Akka
-import play.api.libs.json.{ JsValue, Json }
-import play.api.mvc.{ EssentialAction, EssentialFilter, WithFilters }
+import play.api.libs.json.{ JsObject, JsResultException, JsValue, Json }
+import play.api.mvc._
 import play.api.{ Logger, Play }
+import play.filters.gzip.GzipFilter
 import play.modules.statsd.api.Statsd
 import reactivemongo.bson.{ BSONDocument, BSONString, BSONValue }
 import reactivemongo.core.commands._
-import java.util.logging.{ Logger => JavaLogger }
-import de.flapdoodle.embed.mongo.{ Command => MongoCommand }
-import scala.annotation.tailrec
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{ Await, Future }
-import play.api.Play.current
-import play.filters.gzip.GzipFilter
 
 object AccessControllFilter extends EssentialFilter {
   // wrap action to modify the headers of every request
@@ -73,8 +73,13 @@ object StatsFilter extends EssentialFilter {
       action.apply(request)
   }
 }
+object Gzip {
+  val filter = new GzipFilter(shouldGzip = {
+    (request, response) => !request.path.matches(".*\\/file\\/.*\\/.*")
+  })
+}
 
-object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter, new GzipFilter()) {
+object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), AccessControllFilter, StatsFilter, Gzip.filter) {
 
   override def onStart(app: play.api.Application) = {
 
@@ -92,7 +97,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
       val futureRes: Future[Boolean] = conversationCollection.find(Json.obj()).one[JsValue].flatMap {
         case None =>
           Logger.info("Loading initial data")
-          DbAdminUtilities.loadFixtures()
+          DbUtilities.loadFixtures()
         case Some(i) => Future(true)
       }
 
@@ -104,7 +109,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     if (Play.configuration.getString("mongo.migrate.global").getOrElse("fail").equalsIgnoreCase("true")) {
 
       def migrate: Future[Boolean] = {
-        val latestVersion: Int = DbAdminUtilities.latestDbVersion
+        val latestVersion: Int = DbUtilities.latestDbVersion
 
         // get global state from db
         val futureState: Future[GlobalState] = globalStateCollection.find(Json.obj()).one[GlobalState].flatMap {
@@ -121,7 +126,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
           case GlobalState(version, false) if version < latestVersion =>
             Logger.info("Migrating. Current Version: " + version + " latestVersion: " + latestVersion)
             // apply migrations
-            DbAdminUtilities.migrate(version)
+            DbUtilities.migrate(version)
           case GlobalState(version, false) if version == latestVersion =>
             Logger.debug("Global db version: " + version + ". no migrations required")
             Future(true)
@@ -143,11 +148,18 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
       // initiate stats
       val statsActor = Akka.system.actorOf(Props[StatsActor])
-      if(Play.configuration.getBoolean("stats.messages.total.enabled").getOrElse(false)) {
+      if (Play.configuration.getBoolean("stats.messages.total.enabled").getOrElse(false)) {
         Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, MessageCount)
       }
-      if(Play.configuration.getBoolean("stats.accounts.total.enabled").getOrElse(false)) {
+      if (Play.configuration.getBoolean("stats.accounts.total.enabled").getOrElse(false)) {
         Akka.system.scheduler.schedule(5.minutes, 5.minutes, statsActor, AccountCount)
+      }
+
+      // delete files
+      val fileDeletionActor = Akka.system.actorOf(Props[FileDeletionActor])
+      if (Play.configuration.getInt("files.temporary.lifetime").isDefined) {
+        val deleteFiles = DeleteFiles(Play.configuration.getInt("files.temporary.lifetime").get)
+        Akka.system.scheduler.schedule(5.minutes, 1.day, fileDeletionActor, deleteFiles)
       }
     }
   }
@@ -159,8 +171,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
   }
 
   // make sure that we have a connection to mongodb
-  @tailrec
-  private def checkMongoConnection(): Boolean = {
+  private def checkMongoConnection() {
 
     // command to get the database version
     case class BuildInfo() extends Command[Map[String, BSONValue]] {
@@ -172,19 +183,30 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
     }
 
     try {
-      val conversationResult = conversationCollection.find(Json.obj()).one[Conversation].map(_.getOrElse(Json.obj()))
+      //////////
+      // weird shit: this needs to be done otherwise we get nullpointers later when serializing conversaton, todo: find out why and fix
+      val foo = Conversation.mongoFormat
+      /////////
+
+      val conversationResult = conversationCollection.find(Json.obj()).one[JsObject].map(_.map(_.as[Conversation]))
       Await.result(conversationResult, 1.minute)
 
       val futureBuildInfo = MongoCollections.mongoDB.command(BuildInfo())
       val buildInfo = Await.result(futureBuildInfo, 1.minute)
-      val version = buildInfo.get("version") match {
+      DbUtilities.mongoVersion = buildInfo.get("version") match {
         case Some(BSONString(str)) => str
         case _                     => "na"
       }
-      Logger.info("DB Connection OK. Version: " + version)
-      DbAdminUtilities.mongoVersion = version
-      true
+
+      Logger.info("DB Connection OK. Version: " + DbUtilities.mongoVersion)
+
+      if (!Utils.compareVersions(DbUtilities.minMongoVersion, DbUtilities.mongoVersion)) {
+        Logger.error("Unsupported Mongo Version. Required: " + DbUtilities.minMongoVersion + " or above")
+        Play.stop()
+      }
     } catch {
+      case e: JsResultException =>
+        Logger.warn("Found conversation in DB, but could not serialize")
       case e: Exception =>
         Logger.error("Could not connect to mongodb", e)
         Thread.sleep(1000)
@@ -194,6 +216,20 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
   var mongodExecutable: MongodExecutable = _
   var mongodProcess: MongodProcess = _
+
+  private def stopLocalMongo() = {
+    try {
+      if (mongodExecutable != null) {
+        Logger.info("stopping embedded mongo")
+        mongodExecutable.stop()
+      }
+    } finally {
+      if (mongodProcess != null) {
+        Logger.info("killing embedded mongo")
+        mongodProcess.stop()
+      }
+    }
+  }
 
   private def startLocalMongo() = {
     val mongoPort = Play.configuration.getInt("embed.mongo.port").get
@@ -215,20 +251,6 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
     mongodExecutable = starter.prepare(mongodConfig)
     mongodProcess = mongodExecutable.start()
-  }
-
-  private def stopLocalMongo() = {
-    try {
-      if (mongodExecutable != null) {
-        Logger.info("stopping embedded mongo")
-        mongodExecutable.stop()
-      }
-    } finally {
-      if (mongodProcess != null) {
-        Logger.info("killing embedded mongo")
-        mongodProcess.stop()
-      }
-    }
   }
 
 }

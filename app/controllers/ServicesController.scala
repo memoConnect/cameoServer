@@ -3,17 +3,12 @@ package controllers
 import helper.ResultHelper._
 import helper.Utils.InvalidVersionException
 import helper.{ CheckHelper, Utils }
-import net.sf.uadetector.OperatingSystemFamily
-import net.sf.uadetector.service.UADetectorServiceFactory
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
-import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import traits.ExtendedController
-
-import scala.collection.immutable.HashMap
-import scala.collection.mutable
 
 /**
  * User: Michael Merz
@@ -28,7 +23,7 @@ object ServicesController extends ExtendedController {
       val jsBody: JsValue = request.body
       (jsBody \ "phoneNumber").asOpt[String] match {
         case Some(phoneNumber) => CheckHelper.checkAndCleanPhoneNumber(phoneNumber) match {
-          case None    => resBadRequest("invalid phone number")
+          case None    => resKo("invalid phone number:" + phoneNumber)
           case Some(p) => resOk(Json.obj("phoneNumber" -> p))
         }
         case None => resBadRequest("no phoneNumber")
@@ -40,25 +35,33 @@ object ServicesController extends ExtendedController {
       val jsBody: JsValue = request.body
       (jsBody \ "emailAddress").asOpt[String] match {
         case Some(email) => CheckHelper.checkAndCleanEmailAddress(email) match {
-          case None    => resBadRequest("invalid emailAddress")
+          case None    => resKo("invalid emailAddress: " + email)
           case Some(e) => resOk(Json.obj("email" -> e))
         }
         case None => resBadRequest("missing emailAddress")
       }
   }
 
-  case class GetBrowserInfo(version: String)
-
-  object GetBrowserInfo {
-    implicit val format = Json.format[GetBrowserInfo]
+  case class CheckMixedField(mixed: String)
+  object CheckMixedField { implicit val format = Json.format[CheckMixedField] }
+  def checkMixedField = Action(parse.tolerantJson) {
+    request =>
+      validate(request.body, CheckMixedField.format) {
+        cmf =>
+          CheckHelper.checkAndCleanMixed(cmf.mixed) match {
+            case Some(Left(tel))    => resOk(Json.obj("phoneNumber" -> tel))
+            case Some(Right(email)) => resOk(Json.obj("email" -> email))
+            case None               => resKo("Neither phonenumber nor email: " + cmf.mixed)
+          }
+      }
   }
+
+  case class GetBrowserInfo(version: String)
+  object GetBrowserInfo { implicit val format = Json.format[GetBrowserInfo] }
 
   case class GetBrowserInfoResponse(languageCode: String,
                                     versionIsSupported: Boolean)
-
-  object GetBrowserInfoResponse {
-    implicit val format = Json.format[GetBrowserInfoResponse]
-  }
+  object GetBrowserInfoResponse { implicit val format = Json.format[GetBrowserInfoResponse] }
 
   def getBrowserInfoPost = Action(parse.tolerantJson) {
     request =>
@@ -89,7 +92,7 @@ object ServicesController extends ExtendedController {
         case None       => Play.configuration.getString("language.default").getOrElse("enUS")
         case Some(lang) => lang.code
       }
-      resOk(Json.toJson(GetBrowserInfoResponse(language, true)))
+      resOk(Json.toJson(GetBrowserInfoResponse(language, versionIsSupported = true)))
   }
 
   val iosUrl = Play.configuration.getString("app.download.ios").get

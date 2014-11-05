@@ -1,6 +1,7 @@
 package controllers.cockpit
 
-import helper.AuthenticationActions._
+import services.AuthenticationActions
+import AuthenticationActions._
 import helper.ResultHelper._
 import models.cockpit.CockpitEdit
 import play.api.libs.json.JsObject

@@ -56,8 +56,7 @@ class ExternalMessageActor extends Actor {
                     EventSubscription.find(Json.obj("identityId" -> toIdentity.id)).map {
                       case None                                                   => sendNotification()
                       case Some(es) if es.identityId.id.equals(supportIdentityId) => sendNotification()
-                      case Some(es) =>
-                        Logger.info("Not sending external Message " + message.id.id + " to identity " + toIdentity.id.id + ". There is an event subscription")
+                      case Some(es)                                               => Logger.info("Not sending external Message " + message.id.id + " to identity " + toIdentity.id.id + ". There is an event subscription")
                     }
 
                     def sendNotification() {
@@ -109,9 +108,12 @@ class ExternalMessageActor extends Actor {
     val body: String = message.plain match {
       case Some(PlainMessagePart(Some(text), _)) =>
         text + "\n\n---\nRead the entire conversation and answer on cameoNet.de: " + url
+      case Some(PlainMessagePart(None, files)) if files.length > 0 =>
+        MESSAGE_MAIL_FILE_ONLY_EN + url + "\n\n" + MESSAGE_MAIL_FILE_ONLY_DE + url
       case _ =>
         MESSAGE_MAIL_REPLACE_ENCRYPTED_EN + url + "\n\n" + MESSAGE_MAIL_REPLACE_ENCRYPTED_DE + url
     }
+
     new Mail(fromName, fromMail, to, body, mailSubject)
   }
 
@@ -135,8 +137,9 @@ class ExternalMessageActor extends Actor {
     }
 
     val body: String = message.plain match {
-      case Some(PlainMessagePart(Some(text), _)) => shortenBody(text + " ")
-      case _                                     => MESSAGE_SMS_REPLACE_ENCRYPTED + url
+      case Some(PlainMessagePart(Some(text), _))                   => shortenBody(text + " ")
+      case Some(PlainMessagePart(None, files)) if files.length > 0 => MESSAGE_SMS_FILE_ONLY + url
+      case _                                                       => MESSAGE_SMS_REPLACE_ENCRYPTED + url
     }
 
     // check if we have a test user and save message

@@ -1,13 +1,14 @@
 package controllers
 
-import helper.{Utils, DbAdminUtilities}
 import helper.ResultHelper._
+import helper.{ DbUtilities, Utils }
 import models.Account
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
+import services.{ LocalizationMessages, PushdConnector }
 
 import scala.concurrent.Future
 
@@ -19,16 +20,13 @@ object Application extends Controller {
 
   def index = Action.async {
     request =>
-
-      Utils.compareVersions("0.2.6","0.3.0")
-
-      Future(Ok(views.html.index(DbAdminUtilities.mongoVersion)))
+      Future(Ok(views.html.index(DbUtilities.mongoVersion)))
   }
 
   def dumpDb() = Action {
     Play.isDev match {
       case true =>
-        DbAdminUtilities.dumpDb()
+        DbUtilities.dumpDb()
         Ok("dumped")
       case false =>
         resBadRequest("not in dev mode")
@@ -38,17 +36,34 @@ object Application extends Controller {
   def loadFixtures = Action {
     Play.isDev match {
       case true =>
-        DbAdminUtilities.loadFixtures()
+        DbUtilities.loadFixtures()
         Ok("loaded")
       case false =>
         resBadRequest("not in dev mode")
     }
   }
 
+  def migrateAll = Action {
+    Play.isDev match {
+      case false =>
+        resBadRequest("not in dev mode")
+      case true =>
+        DbUtilities.migrateAll()
+        Ok("migrating")
+    }
+  }
+
   def checkApp = Action.async {
-    Account.col.find(Json.obj()).one[Account].map {
-      case Some(wummel) => resOk()
-      case None         => resServerError("database connection down!")
+    for {
+      dbConnection <- Account.col.find(Json.obj()).one[Account].map(_.isDefined)
+      pushD <- PushdConnector.sendEvent("test", Map(LocalizationMessages.defaultLanguage -> "test"), Map(LocalizationMessages.defaultLanguage -> "test"), "")
+    } yield {
+      (dbConnection, pushD) match {
+        case (false, true)  => resServerError("database down")
+        case (true, false)  => resServerError("pushd down")
+        case (false, false) => resServerError("database and pushd down")
+        case (true, true)   => resOk("all ok")
+      }
     }
   }
 }

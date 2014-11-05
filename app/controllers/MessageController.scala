@@ -3,7 +3,8 @@ package controllers
 import java.util.Date
 
 import actors.ExternalMessage
-import helper.AuthenticationActions.AuthAction
+import services.AuthenticationActions
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models._
 import play.api.libs.functional.syntax._

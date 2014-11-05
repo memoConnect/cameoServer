@@ -140,13 +140,13 @@ object JsonHelper {
   def limitArray(name: String, limit: Int, offset: Int): JsObject = {
 
     // this is not very elegant, but there seems to be no way to get offset without limit in mongodb...
-    def infiniteLimit = 100000
+    def maxLimit = Int.MaxValue
 
     (limit, offset) match {
       // no restrictions
       case (0, 0) => Json.obj()
       // offset only
-      case (0, _) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, infiniteLimit)))
+      case (0, _) => Json.obj(name -> Json.obj("$slice" -> Seq(offset, maxLimit)))
       // limit only
       case (_, 0) => Json.obj(name -> Json.obj("$slice" -> limit))
       // offset and limit

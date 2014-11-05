@@ -111,10 +111,25 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser2.token))
       val res = route(req).get
 
-      if (status(res) != OK) {
+      if (status(res) != 232) {
         Logger.error("Response: " + contentAsString(res))
       }
-      status(res) must equalTo(NOT_FOUND)
+      status(res) must equalTo(232)
+    }
+
+    "return alternative when subsciption id does not exist"in {
+      val path = basePath + "/eventSubscription/asdfasdf"
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser2.token))
+      val res = route(req).get
+
+      if (status(res) != 232) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(232)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "subscriptionId").asOpt[String] must beSome
     }
 
     "Get another event subscription" in {
@@ -484,7 +499,6 @@ class EventControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       pubKeyId = (data \ "id").as[String]
-      Logger.debug("keyid: " + pubKeyId)
 
       1 === 1
     }
@@ -543,6 +557,20 @@ class EventControllerSpec extends StartedApp {
 
       checkEvent(events1, eventNameFinder("identity:update"), eventCheck)
       checkEvent(events2, eventNameFinder("identity:update"), eventCheck)
+    }
+
+    "identity:update event should appear in subscription of second user" in {
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome(testUser1.identityId)
+        (js \ "data" \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+        val keys = (js \ "data" \ "publicKeys").as[Seq[JsObject]]
+        (keys(0) \ "id").asOpt[String] must beSome(pubKeyId)
+        (keys(0) \ "deleted").asOpt[Boolean] must beSome(true)
+      }
+
+      checkEvent(events1, eventNameFinder("identity:update"), eventCheck)
     }
 
     val eventName = "moepsEvent"

@@ -1,13 +1,14 @@
 package controllers
 
-import helper.AuthenticationActions._
+import services.{ AuthenticationActions, UpdatedIdentity }
+import AuthenticationActions._
 import helper.IdHelper
 import helper.ResultHelper._
 import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.{ UpdatedIdentity }
+import services.UpdatedIdentity
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -27,11 +28,21 @@ object PublicKeyController extends ExtendedController {
     }
   }
 
-  def addPublicKey() = AuthAction().async(parse.tolerantJson) {
+  def addPublicKey() = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, PublicKey.createReads) {
         publicKey =>
           val withId = publicKey.copy(id = IdHelper.generatePublicKeyId(publicKey.key))
+
+          def sendEvent() {
+            request.identity.contacts.foreach {
+              contact =>
+                actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+            }
+            // send event to ourselves
+            actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+          }
+
           // check if this key has already been uploaded by this user
           request.identity.publicKeys.find(_.id.equals(withId.id)) match {
             case Some(existingKey) =>
@@ -39,7 +50,9 @@ object PublicKeyController extends ExtendedController {
               val update = PublicKeyUpdate(withId.name)
               request.identity.editPublicKey(withId.id, update).map {
                 case false => resBadRequest("unable to update")
-                case true  => resOk(withId.toJson)
+                case true =>
+                  sendEvent()
+                  resOk(withId.toJson)
               }
             case None =>
               // check if this id already exists
@@ -50,12 +63,7 @@ object PublicKeyController extends ExtendedController {
                     case false => resServerError("unable to add")
                     case true =>
                       // send event to all people in address book
-                      request.identity.contacts.foreach {
-                        contact =>
-                          actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
-                      }
-                      // send event to ourselves
-                      actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                      sendEvent()
                       resOk(withId.toJson)
                   }
               }
@@ -76,12 +84,16 @@ object PublicKeyController extends ExtendedController {
       }
   }
 
-  def deletePublicKey(id: String) = AuthAction().async {
+  def deletePublicKey(id: String) = AuthAction(includeContacts = true).async {
     request =>
       isOwnKey(request.identity, id) {
         request.identity.deletePublicKey(new MongoId(id)).map {
           case false => resServerError("unable to delete")
           case true =>
+            request.identity.contacts.foreach {
+              contact =>
+                actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
+            }
             actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
             resOk("deleted")
         }
@@ -98,7 +110,7 @@ object PublicKeyController extends ExtendedController {
               // add to own public key
               request.identity.addSignatureToPublicKey(new MongoId(id), signature).map {
                 case false => resBadRequest("could not add")
-                case true  =>
+                case true =>
                   val newPublicKey = publicKey.copy(signatures = publicKey.signatures :+ signature)
                   val event = UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson)))
                   actors.eventRouter ! event
@@ -158,7 +170,7 @@ object PublicKeyController extends ExtendedController {
                 Seq(EncryptedPassphrase.create(id, aePassphrase.aePassphrase)),
                 new MongoId(aePassphrase.conversationId)).map {
                   case false => Logger.error("error while adding aePassphrase to conversation " + aePassphrase.conversationId)
-                  case true  => Logger.debug("updated")
+                  case true  => // do nothing
                 }
           }
           resOk("updated")

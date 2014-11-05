@@ -31,7 +31,7 @@ Run locally for testing and development
 Deploy on server
 ----------------
 
-* A mongoDB v2.6.3 instance is required
+* A mongoDB v2.6 instance is required
 * Adjust configuration in "conf/application_prod.conf"
 * run './sbt "start -Dconfig.file=conf/application_prod.conf"' in the project folder
 * all dependencies will be downloaded and the instance will listen on port 9000
@@ -42,3 +42,15 @@ Licence
 ----------------
 
 cameoNet source files are made available under the terms of the GNU Affero General Public License (AGPL).
+
+
+Third Party Libraries and Frameworks
+----------------
+
+* [play framework](https://www.playframework.com/) - Licence: Apache 2 
+* [mongodb]( http://www.mongodb.org/) - Licence: AGPL v3.0 
+* [reactivemongo](http://reactivemongo.org/) - Licence: Apache 2
+* [jBCrypt](http://www.mindrot.org/projects/jBCrypt/) - Licence: BSD  
+* [libphonenumber](https://code.google.com/p/libphonenumber/) - Licence: Apache 2
+* [batik](https://xmlgraphics.apache.org/batik/) - Licence: Apache 2
+* [imgscalr](http://www.thebuzzmedia.com/software/imgscalr-java-image-scaling-library/) - Licence: Apache 2

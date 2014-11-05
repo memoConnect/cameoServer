@@ -2,6 +2,7 @@ package models
 
 import constants.Contacts._
 import helper.IdHelper
+import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import traits.SubModel
@@ -21,33 +22,31 @@ case class Contact(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
-  def toJsonWithIdentity(publicKeySignatures: Option[Map[String, Signature]]): Future[JsObject] = {
-    Identity.find(this.identityId).map {
-      case None => Json.obj()
-      case Some(identity) =>
+  def toJsonWithIdentity(publicKeySignatures: Option[Map[String, Signature]], identities: Seq[Identity]): JsObject = {
+    identities.find(_.id.equals(this.identityId)).map {
+      identity =>
         val contactType = identity.accountId match {
           case None    => CONTACT_TYPE_EXTERNAL
           case Some(a) => CONTACT_TYPE_INTERNAL
         }
 
         val identityJson = identity.accountId match {
-          case None    => identity.toPrivateJson
+          case None    => identity.toExternalOwnerJson
           case Some(a) => identity.toPublicJson(publicKeySignatures)
         }
 
-        Json.toJson(this)(Contact.outputWrites).as[JsObject] ++
-          Json.obj("identity" -> identityJson) ++
-          Json.obj("contactType" -> contactType)
-    }
+        Json.toJson(this)(Contact.outputWrites).as[JsObject] ++ Json.obj("identity" -> identityJson) ++ Json.obj("contactType" -> contactType)
+    }.getOrElse(Json.obj())
   }
 
+  // todo: update to new ModelUpdate
   def update(contactUpdate: ContactUpdate): Future[Boolean] = {
 
     // edit groups
     val updatedGroups = contactUpdate.groups match {
-      case Some(groups) =>
+      case Some(newGroups) =>
         val query = Json.obj("contacts._id" -> this.id)
-        val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> groups))
+        val set = Json.obj("$set" -> Json.obj("contacts.$.groups" -> newGroups))
         Contact.col.update(query, set).map(_.updatedExisting)
       case None => Future(false)
     }
@@ -59,12 +58,15 @@ case class Contact(id: MongoId,
         identity.accountId match {
           case Some(a) => updatedGroups
           case None =>
-            val identityUpdate = new IdentityUpdate(VerifiedString.createOpt(contactUpdate.phoneNumber), VerifiedString.createOpt(contactUpdate.email), contactUpdate.displayName)
-            identity.update(identityUpdate)
+            val set = Map() ++
+              contactUpdate.phoneNumber.map(s => Map("phoneNumber" -> VerifiedString.create(s))).getOrElse(Map()) ++
+              contactUpdate.email.map(s => Map("email" -> VerifiedString.create(s))).getOrElse(Map()) ++
+              contactUpdate.displayName.map(s => Map("displayName" -> s)).getOrElse(Map())
+            val update = IdentityUpdate.setValues(set)
+            Identity.update(identity.id, update)
         }
     }
   }
-
 }
 
 object Contact extends SubModel[Contact, Identity] {

@@ -1,6 +1,7 @@
 package controllers
 
-import helper.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, TwoFactorAuth }
+import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.TwoFactorToken
 import play.api.libs.json.{ Json, Reads }

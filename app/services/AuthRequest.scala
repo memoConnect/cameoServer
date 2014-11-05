@@ -1,4 +1,4 @@
-package helper
+package services
 
 import constants.Authentication._
 import helper.ResultHelper._
@@ -18,23 +18,23 @@ class TwoFactorAuthRequest[A](val identity: Identity, request: Request[A]) exten
 
 object AuthenticationActions {
 
-  def AuthAction(allowExternal: Boolean = false, nonAuthBlock: Option[Request[Any] => Future[Result]] = None) =
+  def AuthAction(allowExternal: Boolean = false, includeContacts: Boolean = false, nonAuthBlock: Option[Request[Any] => Future[Result]] = None) =
     new ActionBuilder[AuthRequest] {
       def invokeBlock[A](request: Request[A], block: AuthRequest[A] => Future[Result]) =
-        doAuthAction(allowExternal, request, block, nonAuthBlock)
+        doAuthAction(allowExternal, includeContacts, request, block, nonAuthBlock)
     }
 
-  def TwoFactorAuthAction() = new ActionBuilder[TwoFactorAuthRequest] {
+  def TwoFactorAuthAction(includeContacts: Boolean = false) = new ActionBuilder[TwoFactorAuthRequest] {
     def invokeBlock[A](request: Request[A], block: TwoFactorAuthRequest[A] => Future[Result]) = {
       // do normal Auth and then try to elevate it to two factor auth
-      doAuthAction(allowExternal = false, request, elevate(block), None)
+      doAuthAction(allowExternal = false, includeContacts, request, elevate(block), None)
     }
   }
 
-  def doAuthAction[A](allowExternal: Boolean, request: Request[A], block: AuthRequest[A] => Future[Result], nonAuthBlock: Option[Request[A] => Future[Result]]) = {
+  def doAuthAction[A](allowExternal: Boolean, includeContacts: Boolean, request: Request[A], block: AuthRequest[A] => Future[Result], nonAuthBlock: Option[Request[A] => Future[Result]]) = {
 
     def processToken(token: String): Future[Result] = {
-      Identity.findByToken(new MongoId(token)).flatMap {
+      Identity.findByToken(new MongoId(token), includeContacts).flatMap {
         case None =>
           nonAuthBlock match {
             case None          => Future.successful(resUnauthorized(REQUEST_ACCESS_DENIED))

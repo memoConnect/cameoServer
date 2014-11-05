@@ -2,7 +2,7 @@ package helper
 
 import java.math.BigInteger
 
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.Play.current
 
 import scala.annotation.tailrec
@@ -29,7 +29,7 @@ object Utils {
       val tag: String = Seq("bash", "-c", "git describe --abbrev=0 --tags").!!.trim
       val branch: String = Seq("bash", "-c", "git rev-parse --abbrev-ref HEAD").!!.trim
       branch match {
-        case "dev" => "dev_build." + tag.split('_')(1)
+        case "dev" => "dev_build." + tag.split('_').lastOption.getOrElse("moep")
         case b     => b
       }
     })
@@ -64,12 +64,12 @@ object Utils {
     @tailrec
     def check(listA: List[Int], listB: List[Int]): Boolean = {
       (listA, listB) match {
-        case (Nil, Nil) => true
-        case (Nil, _)   => true
-        case (_, Nil)   => false
-        case (headA :: restA, headB :: restB) if headA < headB => true
+        case (Nil, Nil)                                         => true
+        case (Nil, _)                                           => true
+        case (_, Nil)                                           => false
+        case (headA :: restA, headB :: restB) if headA < headB  => true
         case (headA :: restA, headB :: restB) if headA == headB => check(restA, restB)
-        case _ => false
+        case _                                                  => false
       }
     }
     check(aInt, bInt)

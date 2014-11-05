@@ -9,6 +9,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
 import traits.SubModel
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
