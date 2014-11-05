@@ -2,13 +2,18 @@ package controllers
 
 import helper.ResultHelper._
 import helper.Utils.InvalidVersionException
-import helper.{ CheckHelper, Utils }
+import helper.{HTTPHelper, CheckHelper, Utils}
+import net.sf.uadetector.OperatingSystemFamily
+import net.sf.uadetector.service.UADetectorServiceFactory
+import play.Logger
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
 import play.modules.statsd.api.Statsd
 import traits.ExtendedController
+
+import scala.collection.immutable.HashMap
 
 /**
  * User: Michael Merz
@@ -93,5 +98,34 @@ object ServicesController extends ExtendedController {
         case Some(lang) => lang.code
       }
       resOk(Json.toJson(GetBrowserInfoResponse(language, versionIsSupported = true)))
+  }
+
+  val iosUrl = Play.configuration.getString("app.download.ios").get
+  val androidUrl = Play.configuration.getString("app.download.android").get
+  val defaultUrl = Play.configuration.getString("app.download.default").get
+
+
+
+  val iosOpf: String = OperatingSystemFamily.IOS.getName
+  val androidOpf: String = OperatingSystemFamily.ANDROID.getName
+
+  val osUrlMapping = HashMap(
+    OperatingSystemFamily.IOS.getName -> iosUrl,
+    OperatingSystemFamily.ANDROID.getName -> androidUrl
+  )
+
+  //@TODO add WindowsPhone handling
+  def redirectToApp() = Action { request =>
+    request.headers.get("User-Agent") match {
+      case Some(userAgent) =>
+        val parsedUserAgent = HTTPHelper.parseUserAgent(userAgent)
+        val currentOsf = parsedUserAgent.getOperatingSystem.getFamilyName
+        Logger.debug("%s found".format(currentOsf))
+        val targetUrl = osUrlMapping.getOrElse(currentOsf, defaultUrl)
+        Logger.debug("current target URL %s".format(targetUrl))
+        Redirect(targetUrl, TEMPORARY_REDIRECT)
+      case None =>
+        Redirect(defaultUrl, TEMPORARY_REDIRECT)
+    }
   }
 }

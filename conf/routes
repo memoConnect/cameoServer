@@ -163,5 +163,8 @@ GET            /dc                                           controllers.Applica
 GET            /dc/                                          controllers.Assets.at(path="/public/dist/docs", file="index.html")
 GET            /dc/*file                                     controllers.Assets.at(path="/public/dist/docs", file)
 
+# App Redirector
+GET            /as                                          controllers.ServicesController.redirectToApp()
+
 # Redirect / to /m
 GET            /                                            controllers.Application.redirect(url = "/m/")
