@@ -7,10 +7,10 @@
 import helper.Utils
 import org.specs2.mutable._
 import play.api.{Play, Logger}
-import play.api.libs.json.{ JsObject, Json }
-import play.api.test.{ FakeApplication, WithApplication, FakeRequest }
+import play.api.libs.json.{JsObject, Json}
+import play.api.test.{FakeApplication, WithApplication, FakeRequest}
 import play.api.test.Helpers._
-import testHelper.{ TestConfig, StartedApp }
+import testHelper.{TestConfig, StartedApp}
 import testHelper.TestConfig._
 import play.api.Play.current
 
@@ -21,7 +21,7 @@ class ServicesControllerSpec extends StartedApp {
     val acceptedVersions = Seq(
       ("1", "1"),
       ("0.2.6", "0.3.0"),
-      ("1" , "2"),
+      ("1", "2"),
       ("3.1", "3.1"),
       ("3.1", "3.2"),
       ("3.1", "4.1"),
@@ -259,67 +259,102 @@ class ServicesControllerSpec extends StartedApp {
       (data \ "versionIsSupported").asOpt[Boolean] must beSome(true)
     }
 
-//    "Reject unsupported client version" in {
-//      val path = basePath + "/services/getBrowserInfo"
-//
-//      val json = Json.obj("version" -> "0.1")
-//
-//      val req = FakeRequest(POST, path).withJsonBody(json)
-//      val res = route(req).get
-//
-//      if (status(res) != OK) {
-//        Logger.error("Response: " + contentAsString(res))
-//      }
-//      status(res) must equalTo(OK)
-//
-//      val data = (contentAsJson(res) \ "data").as[JsObject]
-//      (data \ "languageCode").asOpt[String] must beSome
-//      (data \ "versionIsSupported").asOpt[Boolean] must beSome(false)
-//    }
-//
-//    invalidVersions.map {
-//      version =>
-//        "detect invalid version string: " + version  in {
-//          val path = basePath + "/services/getBrowserInfo"
-//
-//          val json = Json.obj("version" -> version)
-//
-//          val req = FakeRequest(POST, path).withJsonBody(json)
-//          val res = route(req).get
-//
-//          if (status(res) != BAD_REQUEST) {
-//            Logger.error("Response: " + contentAsString(res))
-//          }
-//          status(res) must equalTo(BAD_REQUEST)
-//        }
-//    }
+    //    "Reject unsupported client version" in {
+    //      val path = basePath + "/services/getBrowserInfo"
+    //
+    //      val json = Json.obj("version" -> "0.1")
+    //
+    //      val req = FakeRequest(POST, path).withJsonBody(json)
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //
+    //      val data = (contentAsJson(res) \ "data").as[JsObject]
+    //      (data \ "languageCode").asOpt[String] must beSome
+    //      (data \ "versionIsSupported").asOpt[Boolean] must beSome(false)
+    //    }
+    //
+    //    invalidVersions.map {
+    //      version =>
+    //        "detect invalid version string: " + version  in {
+    //          val path = basePath + "/services/getBrowserInfo"
+    //
+    //          val json = Json.obj("version" -> version)
+    //
+    //          val req = FakeRequest(POST, path).withJsonBody(json)
+    //          val res = route(req).get
+    //
+    //          if (status(res) != BAD_REQUEST) {
+    //            Logger.error("Response: " + contentAsString(res))
+    //          }
+    //          status(res) must equalTo(BAD_REQUEST)
+    //        }
+    //    }
 
-//    acceptedVersions.map{
-//      case(supported, client) =>
-//        "accept version combination: " + supported + " => " + client in {
-//          Utils.compareVersions(supported, client) must beTrue
-//        }
-//    }
+    //    acceptedVersions.map{
+    //      case(supported, client) =>
+    //        "accept version combination: " + supported + " => " + client in {
+    //          Utils.compareVersions(supported, client) must beTrue
+    //        }
+    //    }
 
-//
-//    rejectedVersions.map{
-//      case(supported, client) =>
-//        "reject version combination: " + supported + " => " + client in {
-//          Utils.compareVersions(supported, client) must beFalse
-//        }
-//    }
+    //
+    //    rejectedVersions.map{
+    //      case(supported, client) =>
+    //        "reject version combination: " + supported + " => " + client in {
+    //          Utils.compareVersions(supported, client) must beFalse
+    //        }
+    //    }
 
     "redirect to Apple App Store" in {
       val path = "/as"
 
-      val req = FakeRequest(GET, path).withHeaders(("User-Agent", "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16"))
+      val req = FakeRequest(GET, path)
+        .withHeaders(("User-Agent", "Mozilla/5.0 (iPhone; U; CPU iPhone OS 3_0 like Mac OS X; en-us) AppleWebKit/528.18 (KHTML, like Gecko) Version/4.0 Mobile/7A341 Safari/528.16"))
       val res = route(req).get
+
+      val iosUrl = Play.configuration.getString("app.download.ios").get
+
+      res.onFailure {
+        case e =>
+          Logger.error("redirect to Apple App Store", e)
+          1 must greaterThan(2)
+      }
+
+      header("Location", res).get must equalTo(iosUrl)
 
       if (status(res) != TEMPORARY_REDIRECT) {
         Logger.error("Response: " + contentAsString(res))
       }
+
+      status(res) must equalTo(TEMPORARY_REDIRECT)
+    }
+
+    "redirect to Google Play Store" in {
+      val path = "/as"
+
+      val androidUrl = Play.configuration.getString("app.download.android").get
+
+      val req = FakeRequest(GET, path)
+        .withHeaders(("User-Agent", "Mozilla/5.0 (Linux; Android 4.4.2; Nexus 4 Build/KOT49H) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.59 Mobile Safari/537.36"))
+      val res = route(req).get
+
+      res.onFailure {
+        case e =>
+          Logger.error("redirect to Google Play Store", e)
+          1 must greaterThan(2)
+      }
+
+      header("Location", res).get must equalTo(androidUrl)
+
+      if (status(res) != TEMPORARY_REDIRECT) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+
       status(res) must equalTo(TEMPORARY_REDIRECT)
     }
   }
-
 }
