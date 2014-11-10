@@ -3,6 +3,7 @@ package helper
 import net.sf.uadetector.ReadableDeviceCategory.Category
 import net.sf.uadetector.{ReadableDeviceCategory, OperatingSystemFamily}
 import net.sf.uadetector.service.UADetectorServiceFactory
+import play.api.mvc.{AnyContent, Request}
 
 /**
  * Created by dermicha on 05/11/14.
@@ -11,12 +12,10 @@ trait OsFamily
 case object Ios extends OsFamily
 case object Android extends OsFamily
 
-/**
-  * have to be extended based on needs
-  * @param userAgent
-  */
-class UserAgentHelper(userAgent: String) {
 
+class UserAgentHelper[A](request: Request[A]) {
+
+  private val userAgent = request.headers.get("User-Agent").getOrElse("")
   private val uaParser = UADetectorServiceFactory.getResourceModuleParser
   private val parsedUserAgent = uaParser.parse(userAgent)
 

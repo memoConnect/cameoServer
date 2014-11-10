@@ -6,11 +6,11 @@
 
 import helper.Utils
 import org.specs2.mutable._
-import play.api.{Play, Logger}
-import play.api.libs.json.{JsObject, Json}
-import play.api.test.{FakeApplication, WithApplication, FakeRequest}
+import play.api.{ Play, Logger }
+import play.api.libs.json.{ JsObject, Json }
+import play.api.test.{ FakeApplication, WithApplication, FakeRequest }
 import play.api.test.Helpers._
-import testHelper.{TestConfig, StartedApp}
+import testHelper.{ TestConfig, StartedApp }
 import testHelper.TestConfig._
 import play.api.Play.current
 
@@ -223,8 +223,6 @@ class ServicesControllerSpec extends StartedApp {
       }
     }
 
-
-
     "Return browser info without version" in {
       val path = basePath + "/services/getBrowserInfo"
 
@@ -257,57 +255,57 @@ class ServicesControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
       (data \ "languageCode").asOpt[String] must beSome
       (data \ "versionIsSupported").asOpt[Boolean] must beSome(true)
+      (data \ "isDesktop").asOpt[Boolean] must beSome
     }
 
-    //    "Reject unsupported client version" in {
-    //      val path = basePath + "/services/getBrowserInfo"
-    //
-    //      val json = Json.obj("version" -> "0.1")
-    //
-    //      val req = FakeRequest(POST, path).withJsonBody(json)
-    //      val res = route(req).get
-    //
-    //      if (status(res) != OK) {
-    //        Logger.error("Response: " + contentAsString(res))
-    //      }
-    //      status(res) must equalTo(OK)
-    //
-    //      val data = (contentAsJson(res) \ "data").as[JsObject]
-    //      (data \ "languageCode").asOpt[String] must beSome
-    //      (data \ "versionIsSupported").asOpt[Boolean] must beSome(false)
-    //    }
-    //
-    //    invalidVersions.map {
-    //      version =>
-    //        "detect invalid version string: " + version  in {
-    //          val path = basePath + "/services/getBrowserInfo"
-    //
-    //          val json = Json.obj("version" -> version)
-    //
-    //          val req = FakeRequest(POST, path).withJsonBody(json)
-    //          val res = route(req).get
-    //
-    //          if (status(res) != BAD_REQUEST) {
-    //            Logger.error("Response: " + contentAsString(res))
-    //          }
-    //          status(res) must equalTo(BAD_REQUEST)
-    //        }
-    //    }
+    "Reject unsupported client version" in {
+      val path = basePath + "/services/getBrowserInfo"
 
-    //    acceptedVersions.map{
-    //      case(supported, client) =>
-    //        "accept version combination: " + supported + " => " + client in {
-    //          Utils.compareVersions(supported, client) must beTrue
-    //        }
-    //    }
+      val json = Json.obj("version" -> "0.1")
 
-    //
-    //    rejectedVersions.map{
-    //      case(supported, client) =>
-    //        "reject version combination: " + supported + " => " + client in {
-    //          Utils.compareVersions(supported, client) must beFalse
-    //        }
-    //    }
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "languageCode").asOpt[String] must beSome
+      (data \ "versionIsSupported").asOpt[Boolean] must beSome(false)
+    }
+
+    invalidVersions.map {
+      version =>
+        "detect invalid version string: " + version in {
+          val path = basePath + "/services/getBrowserInfo"
+
+          val json = Json.obj("version" -> version)
+
+          val req = FakeRequest(POST, path).withJsonBody(json)
+          val res = route(req).get
+
+          if (status(res) != BAD_REQUEST) {
+            Logger.error("Response: " + contentAsString(res))
+          }
+          status(res) must equalTo(BAD_REQUEST)
+        }
+    }
+
+    acceptedVersions.map {
+      case (supported, client) =>
+        "accept version combination: " + supported + " => " + client in {
+          Utils.compareVersions(supported, client) must beTrue
+        }
+    }
+
+    rejectedVersions.map {
+      case (supported, client) =>
+        "reject version combination: " + supported + " => " + client in {
+          Utils.compareVersions(supported, client) must beFalse
+        }
+    }
 
     "redirect to Apple App Store" in {
       val path = "/as"
