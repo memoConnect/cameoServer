@@ -2,7 +2,7 @@ package controllers
 
 import helper.ResultHelper._
 import helper.Utils.InvalidVersionException
-import helper.{UserAgentHelper, HTTPHelper, CheckHelper, Utils}
+import helper._
 import play.Logger
 import play.api.Play
 import play.api.Play.current
@@ -102,23 +102,17 @@ object ServicesController extends ExtendedController {
   val androidUrl = Play.configuration.getString("app.download.android").get
   val defaultUrl = Play.configuration.getString("app.download.default").get
 
-  val iosOpf: String = UserAgentHelper.osFamilyIos
-  val androidOpf: String = UserAgentHelper.osFamilyAndroid
-
-  val osUrlMapping = HashMap(
-    UserAgentHelper.osFamilyIos -> iosUrl,
-    UserAgentHelper.osFamilyAndroid -> androidUrl
-  )
-
   //@TODO add WindowsPhone handling
   def redirectToApp() = Action { request =>
     request.headers.get("User-Agent") match {
       case Some(userAgent) =>
-        val parsedUserAgent = HTTPHelper.parseUserAgent(userAgent)
-        val currentOsf = parsedUserAgent.getFamilyName
-//        Logger.debug("%s found".format(currentOsf))
-        val targetUrl = osUrlMapping.getOrElse(currentOsf, defaultUrl)
-//        Logger.debug("current target URL %s".format(targetUrl))
+        val parsedUserAgent = new UserAgentHelper(userAgent)
+        val targetUrl = parsedUserAgent.getFamilyName match {
+          case Some(Ios)     => iosUrl
+          case Some(Android) => androidUrl
+          case _             => defaultUrl
+        }
+
         Redirect(targetUrl, TEMPORARY_REDIRECT)
       case None =>
         Redirect(defaultUrl, TEMPORARY_REDIRECT)
