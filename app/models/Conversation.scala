@@ -209,7 +209,17 @@ object Conversation extends Model[Conversation] {
   }
 
   def find(id: String, limit: Int, offset: Int): Future[Option[Conversation]] = {
-    find(new MongoId(id), limit, offset)
+    find(MongoId(id), limit, offset)
+  }
+
+  def findWithTimeLimit(id: String, timeLimit: Long): Future[Option[Conversation]]  = {
+    // we need to get the whole conversation and apply the limit, since we cant do this easily in mongodb.
+    // todo: implement with aggregation framework
+    find(MongoId(id)).map{
+      _.map{
+        conversation => conversation.copy(messages = conversation.messages.filter(_.created.after(new Date(timeLimit))))
+      }
+    }
   }
 
   def find(id: MongoId, limit: Int, offset: Int): Future[Option[Conversation]] = {

@@ -15,11 +15,11 @@ class UserAgentHelper(userAgent: String) {
   private val uaParser = UADetectorServiceFactory.getResourceModuleParser
   private val parsedUserAgent = uaParser.parse(userAgent)
 
-  def getFamilyName = {
+  def getFamilyName:String = {
     parsedUserAgent.getOperatingSystem.getFamilyName
   }
 
-  def getOsVersion = {
+  def getOsVersion:String = {
     parsedUserAgent.getOperatingSystem.getVersionNumber.toString
   }
 }

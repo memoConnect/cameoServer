@@ -116,9 +116,9 @@ object ServicesController extends ExtendedController {
       case Some(userAgent) =>
         val parsedUserAgent = HTTPHelper.parseUserAgent(userAgent)
         val currentOsf = parsedUserAgent.getFamilyName
-        Logger.debug("%s found".format(currentOsf))
+//        Logger.debug("%s found".format(currentOsf))
         val targetUrl = osUrlMapping.getOrElse(currentOsf, defaultUrl)
-        Logger.debug("current target URL %s".format(targetUrl))
+//        Logger.debug("current target URL %s".format(targetUrl))
         Redirect(targetUrl, TEMPORARY_REDIRECT)
       case None =>
         Redirect(defaultUrl, TEMPORARY_REDIRECT)

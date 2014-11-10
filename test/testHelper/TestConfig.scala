@@ -33,6 +33,7 @@ object TestConfig {
   val domain = "cameonet.de"
 
   val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
+  val cidExistingNumberOfMessages = 100
   val cidExisting2 = "dLBDYFdfj9ymiTblElmN"
   val cidExisting3 = "OM9QeJ4RfJcdscyo52g4"
   val cidExisting4 = "IXhJ0BwoLjRtrRn41zIw"

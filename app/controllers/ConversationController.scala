@@ -81,9 +81,16 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversation(id: String, offset: Int, limit: Int, keyId: List[String]) = AuthAction(allowExternal = true).async {
+  def getConversation(id: String, offset: Int, limit: Int, keyId: List[String], timeLimit: Long) = AuthAction(allowExternal = true).async {
     request =>
-      Conversation.find(id, limit, offset).map {
+      // check if a timeLimit is specified
+      val futureConversation = if (timeLimit > 0) {
+        Conversation.findWithTimeLimit(id, timeLimit)
+      } else {
+        Conversation.find(id, limit, offset)
+      }
+
+      futureConversation.map {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
           resOk(c.toJsonWithKey(keyId))
