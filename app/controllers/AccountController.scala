@@ -1,6 +1,6 @@
 package controllers
 
-import services.AuthenticationActions
+import services.{ UpdatedIdentity, AuthenticationActions }
 import AuthenticationActions.AuthAction
 import helper.JsonHelper
 import helper.ResultHelper._
@@ -110,14 +110,20 @@ object AccountController extends ExtendedController {
                                           case Some(d) => Seq()
                                         }
                                       }
-                                    Identity.deleteOptionalValues(identity.id, deleteValues).map(_.updatedExisting)
+                                    Identity.deleteValues(identity.id, deleteValues).map(_.updatedExisting)
                                   }
                                 } yield {
                                   addContact && updateIdentity && deleteDetails
                                 }
                                 futureRes.flatMap {
                                   case false => Future(resServerError("unable to update identity"))
-                                  case true  => createAccountWithIdentity(identity)
+                                  case true =>
+                                    // send identity update event to other identity
+                                    Identity.find(identity.id).map {
+                                      case None    => // do nothing
+                                      case Some(i) => actors.eventRouter ! UpdatedIdentity(otherIdentity.id, identity.id, i.toPublicJson())
+                                    }
+                                    createAccountWithIdentity(identity)
                                 }
                             }
                         }

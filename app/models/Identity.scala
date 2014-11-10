@@ -50,7 +50,7 @@ case class Identity(id: MongoId,
   def toExternalJson: JsObject = Json.toJson(this)(Identity.externalWrites).as[JsObject]
   def toExternalOwnerJson: JsObject = Json.toJson(this)(Identity.externalOwnerWrites).as[JsObject]
 
-  def toPublicJson(additionalPublicKeySignatures: Option[Map[String, Signature]]): JsObject = {
+  def toPublicJson(additionalPublicKeySignatures: Option[Map[String, Signature]] = None): JsObject = {
 
     val updatedPublicKeys: Seq[PublicKey] = additionalPublicKeySignatures match {
       case None => this.publicKeys
