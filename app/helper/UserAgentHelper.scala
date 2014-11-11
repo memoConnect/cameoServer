@@ -1,9 +1,9 @@
 package helper
 
+import net.sf.uadetector.OperatingSystemFamily
 import net.sf.uadetector.ReadableDeviceCategory.Category
-import net.sf.uadetector.{ReadableDeviceCategory, OperatingSystemFamily}
 import net.sf.uadetector.service.UADetectorServiceFactory
-import play.api.mvc.{AnyContent, Request}
+import play.api.mvc.Request
 
 /**
  * Created by dermicha on 05/11/14.
@@ -11,7 +11,6 @@ import play.api.mvc.{AnyContent, Request}
 trait OsFamily
 case object Ios extends OsFamily
 case object Android extends OsFamily
-
 
 class UserAgentHelper[A](request: Request[A]) {
 
@@ -21,13 +20,13 @@ class UserAgentHelper[A](request: Request[A]) {
 
   def getFamilyName: Option[OsFamily] = {
     parsedUserAgent.getOperatingSystem.getFamilyName match {
-      case str if str.equals(OperatingSystemFamily.IOS.getName) => Some(Ios)
+      case str if str.equals(OperatingSystemFamily.IOS.getName)     => Some(Ios)
       case str if str.equals(OperatingSystemFamily.ANDROID.getName) => Some(Android)
-      case _ => None
+      case _                                                        => None
     }
   }
 
-  def getOsVersion:String = {
+  def getOsVersion: String = {
     parsedUserAgent.getOperatingSystem.getVersionNumber.toString
   }
 
@@ -35,5 +34,4 @@ class UserAgentHelper[A](request: Request[A]) {
     parsedUserAgent.getDeviceCategory.getCategory.equals(Category.PERSONAL_COMPUTER)
   }
 }
-
 

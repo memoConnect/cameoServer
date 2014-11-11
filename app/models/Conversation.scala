@@ -7,7 +7,7 @@ import controllers.PublicKeyController.AePassphrase
 import helper.JsonHelper._
 import helper.MongoCollections._
 import helper.ResultHelper._
-import helper.{ JsonHelper, IdHelper, MongoCollections }
+import helper.{ IdHelper, MongoCollections }
 import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -212,11 +212,11 @@ object Conversation extends Model[Conversation] {
     find(MongoId(id), limit, offset)
   }
 
-  def findWithTimeLimit(id: String, timeLimit: Long): Future[Option[Conversation]]  = {
+  def findWithTimeLimit(id: String, timeLimit: Long): Future[Option[Conversation]] = {
     // we need to get the whole conversation and apply the limit, since we cant do this easily in mongodb.
     // todo: implement with aggregation framework
-    find(MongoId(id)).map{
-      _.map{
+    find(MongoId(id)).map {
+      _.map {
         conversation => conversation.copy(messages = conversation.messages.filter(_.created.after(new Date(timeLimit))))
       }
     }

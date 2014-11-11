@@ -2,12 +2,12 @@ package models
 
 import java.util.Date
 
-import helper.{ JsonHelper, IdHelper }
 import helper.JsonHelper._
 import helper.MongoCollections._
+import helper.{ IdHelper, JsonHelper }
 import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._

@@ -6,19 +6,18 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import javax.imageio.ImageIO
 
 import constants.ErrorCodes
-import services.{ AuthenticationActions, ImageScaler, NewMessage }
-import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import helper.{ IdHelper, MongoCollections, Utils }
 import models._
-import play.api.{ Logger, Play }
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.iteratee.{ Enumerator, Iteratee }
 import play.api.libs.json.Json
 import play.api.mvc._
 import reactivemongo.api.gridfs.DefaultFileToSave
 import reactivemongo.bson.{ BSONDocument, BSONObjectID, _ }
-import services.{ ImageScaler, NewMessage }
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, ImageScaler, NewMessage }
 import sun.misc.BASE64Decoder
 import traits.ExtendedController
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader

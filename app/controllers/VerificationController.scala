@@ -3,8 +3,6 @@ package controllers
 import actors.VerifyActor
 import akka.actor.Props
 import constants.Verification._
-import services.AuthenticationActions
-import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ Identity, IdentityUpdate, MongoId, VerificationSecret }
 import play.api.Play.current
@@ -12,6 +10,8 @@ import play.api.libs.concurrent.Akka
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Controller }
+import services.AuthenticationActions
+import services.AuthenticationActions.AuthAction
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

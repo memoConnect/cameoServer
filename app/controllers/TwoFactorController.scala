@@ -1,11 +1,10 @@
 package controllers
 
-import services.{ AuthenticationActions, TwoFactorAuth }
-import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.TwoFactorToken
 import play.api.libs.json.{ Json, Reads }
-import services.TwoFactorAuth
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, TwoFactorAuth }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -2,15 +2,16 @@ package models
 
 import java.util.Date
 
-import helper.{ MongoCollections, IdHelper }
 import helper.JsonHelper._
 import helper.MongoCollections._
+import helper.{ IdHelper, MongoCollections }
 import play.api.Logger
 import play.api.libs.json._
-import reactivemongo.bson.{ BSONNull, BSONDocument }
+import play.modules.reactivemongo.json.BSONFormats._
+import reactivemongo.bson.BSONNull
 import reactivemongo.core.commands._
 import traits.Model
-import play.modules.reactivemongo.json.BSONFormats._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

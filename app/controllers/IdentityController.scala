@@ -1,8 +1,5 @@
 package controllers
 
-import play.api.Logger
-import services.{ AuthenticationActions, AvatarGenerator, NewIdentity }
-import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -10,7 +7,8 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Request, Result }
-import services.{ AvatarGenerator, NewIdentity }
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, AvatarGenerator, NewIdentity }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

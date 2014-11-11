@@ -3,15 +3,12 @@ package controllers
 import helper.ResultHelper._
 import helper.Utils.InvalidVersionException
 import helper._
-import play.Logger
 import play.api.Play
 import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
 import play.modules.statsd.api.Statsd
 import traits.ExtendedController
-
-import scala.collection.immutable.HashMap
 
 /**
  * User: Michael Merz

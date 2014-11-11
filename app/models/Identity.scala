@@ -4,9 +4,9 @@ import java.util.Date
 
 import constants.Contacts._
 import constants.Messaging._
-import helper.{ JsonHelper, IdHelper }
 import helper.JsonHelper._
 import helper.MongoCollections._
+import helper.{ IdHelper, JsonHelper }
 import models.cockpit._
 import models.cockpit.attributes._
 import play.api.Play.current

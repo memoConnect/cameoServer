@@ -3,8 +3,9 @@ package actors
 import akka.actor.Actor
 import models.{ FileChunk, FileMeta }
 import org.joda.time.DateTime
-import play.api.{ Logger, Play }
+import play.api.Logger
 import play.api.libs.json.Json
+
 import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * User: Björn Reimer

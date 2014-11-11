@@ -1,15 +1,14 @@
 package controllers
 
 import actors.ExternalMessage
-import services.{ AuthenticationActions, NewConversation }
-import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.NewConversation
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, NewConversation }
 import traits.ExtendedController
 
 import scala.concurrent.Future

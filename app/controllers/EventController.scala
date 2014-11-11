@@ -1,14 +1,11 @@
 package controllers
 
-import services.{ AuthenticationActions, BroadcastEvent }
-import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.{ EventSubscription, MongoId }
-import play.api.Play
-import play.api.Play.current
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.Result
-import services.BroadcastEvent
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, BroadcastEvent }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
