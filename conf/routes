@@ -149,7 +149,7 @@ GET            /d/                                          controllers.Assets.a
 GET            /d/*file                                     controllers.Assets.at(path="/public/dist/desktop", file)
 
 # APP DOWNLOADS
-GET            /dl                                          controllers.Assets.at(path="/public/dist/dl", file="index.html")
+GET            /dl                                          controllers.Application.redirect(url = "/dl/")
 GET            /dl/                                         controllers.Assets.at(path="/public/dist/dl", file="index.html")
 GET            /dl/*file                                    controllers.Assets.at(path="/public/dist/dl", file)
 
