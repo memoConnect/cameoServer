@@ -10,7 +10,8 @@ import traits.SubModel
  * Time: 2:02 PM
  */
 
-case class Recipient(identityId: MongoId) {
+case class Recipient(identityId: MongoId,
+                     lastMessageRead: Option[MongoId]) {
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 }
 
@@ -32,14 +33,14 @@ object Recipient extends SubModel[Recipient, Conversation] {
   }
 
   def create(identityId: MongoId): Recipient = {
-    new Recipient(identityId)
+    new Recipient(identityId, None)
   }
 
   def create(identityId: String): Recipient = {
-    new Recipient(new MongoId(identityId))
+    new Recipient(new MongoId(identityId), None)
   }
 
   override def createDefault(): Recipient = {
-    new Recipient(IdHelper.generateRecipientId())
+    new Recipient(IdHelper.generateRecipientId(), None)
   }
 }

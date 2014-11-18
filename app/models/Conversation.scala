@@ -48,6 +48,20 @@ case class Conversation(id: MongoId,
     Json.obj("aePassphraseList" -> list.map(_.toJson))
   }
 
+  def getNumberOfUnreadMessages(identityId: MongoId): Int = {
+    this.recipients.find(_.identityId.equals(identityId)) match {
+      case None                                                 => 0
+      case Some(recipient) if recipient.lastMessageRead.isEmpty =>
+        messages
+          .filterNot(_.fromIdentityId.equals(identityId))
+          .length
+      case Some(recipient) =>
+        this.messages
+          .filterNot(_.fromIdentityId.equals(identityId))
+          .indexWhere(_.id.equals(recipient.lastMessageRead.get))
+    }
+  }
+
   def toJsonWithKey(keyIds: Seq[String]): JsObject = {
     this.toJson ++ getPassphraseList(keyIds)
   }
@@ -153,6 +167,12 @@ case class Conversation(id: MongoId,
         }
     }
     Future.sequence(futureKeys).map(_.flatten)
+  }
+
+  def markMessageRead(identityId: MongoId, messageId: MongoId): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id, "recipients.identityId" -> identityId)
+    val set = Json.obj("recipients.$.lastMessageRead" -> messageId)
+    Conversation.col.update(query, set).map(_.updatedExisting)
   }
 }
 

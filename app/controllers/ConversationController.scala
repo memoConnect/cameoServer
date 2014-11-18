@@ -92,7 +92,8 @@ object ConversationController extends ExtendedController {
       futureConversation.map {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
-          resOk(c.toJsonWithKey(keyId))
+          val res = c.toJsonWithKey(keyId) ++ Json.obj("unreadMessages" -> c.getNumberOfUnreadMessages(request.identity.id))
+          resOk(res)
         }
       }
   }
@@ -195,8 +196,8 @@ object ConversationController extends ExtendedController {
 
   def addAePassphrases(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      Conversation.find(new MongoId(id), -1, 0).flatMap {
-        case None => Future.successful(resNotFound("conversation"))
+      Conversation.find(MongoId(id), -1, 0).flatMap {
+        case None => Future(resNotFound("conversation"))
         case Some(conversation) =>
           conversation.hasMemberFutureResult(request.identity.id) {
             validateFuture(request.body \ "aePassphraseList", Reads.seq(EncryptedPassphrase.createReads)) {
@@ -205,6 +206,18 @@ object ConversationController extends ExtendedController {
                 case false => resServerError("unable to update")
               }
             }
+          }
+      }
+  }
+
+  def markMessageRead(id: String, messageId: String) = AuthAction().async {
+    request =>
+      Conversation.find(MongoId(id),-1, 0).flatMap{
+        case None =>  Future(resNotFound("conversation"))
+        case Some(conversation) =>
+          conversation.markMessageRead(request.identity.id, MongoId(messageId)).map{
+            case false => resBadRequest("unable to update")
+            case true => resOk("updated")
           }
       }
   }
