@@ -125,8 +125,8 @@ object PlainMessagePart {
   }
 }
 
-case class MessageSignature(isEncrypted: Boolean,
-                             content: Seq[String])
+case class MessageSignature(encrypted: String,
+                             plain: Seq[String])
 
 object MessageSignature {
   implicit val format: Format[MessageSignature] = Json.format[MessageSignature]

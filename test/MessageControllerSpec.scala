@@ -73,7 +73,7 @@ class MessageControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
     }
 
-    val signature = Json.obj("isEncrypted" -> true, "content" -> Seq("sig"))
+    val signature = Json.obj("encrypted" -> "moep", "plain" -> Seq("moeper","another moep"))
 
     "add message with signature to conversation" in {
       val path = basePath + "/conversation/" + cidExisting2 + "/message"
