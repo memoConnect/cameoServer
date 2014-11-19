@@ -73,6 +73,55 @@ class MessageControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
     }
 
+
+    "add message with signature to conversation" in {
+      val path = basePath + "/conversation/" + cidExisting2 + "/message"
+
+      val signature = Json.obj("isEncrypted" -> true, "content" -> Seq("sig"))
+
+      val json = Json.obj("encrypted" -> encrypted, "signature" -> signature)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId = (data \ "id").as[String]
+      (data \ "plain").asOpt[String] must beNone
+      (data \ "encrypted").asOpt[String] must beSome(encrypted)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "signature").asOpt[JsObject] must beSome(signature)
+    }
+
+    "get message with signature" in {
+      val path = basePath + "/message/" + messageId
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "plain").asOpt[String] must beNone
+      (data \ "encrypted").asOpt[String] must beSome(encrypted)
+      (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
+      (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
+      (data \ "created").asOpt[Long] must beSome
+    }
+
     "add message with plain part only to conversation" in {
       val path = basePath + "/conversation/" + cidExisting2 + "/message"
 

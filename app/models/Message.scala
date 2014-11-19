@@ -17,6 +17,7 @@ case class Message(id: MongoId,
                    fromIdentityId: MongoId,
                    plain: Option[PlainMessagePart],
                    encrypted: Option[String],
+                   signature: Option[MessageSignature],
                    created: Date,
                    docVersion: Int) {
 
@@ -40,6 +41,7 @@ object Message extends SubModel[Message, Conversation] {
     //    Reads.pure[Seq[MessageStatus]](Seq()) and
     (__ \ 'plain).readNullable[PlainMessagePart](PlainMessagePart.createReads) and
     (__ \ 'encrypted).readNullable[String] and
+    (__ \ 'signature).readNullable[MessageSignature] and
     Reads.pure[Date](new Date) and
     Reads.pure[Int](docVersion)
   )(Message.apply _)
@@ -50,15 +52,16 @@ object Message extends SubModel[Message, Conversation] {
         Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
         Json.obj("plain" -> m.plain.map(_.toJson)) ++
         Json.obj("encrypted" -> m.encrypted) ++
+        maybeEmptyJson("signature", m.signature) ++
         addCreated(m.created)
   }
 
   def create(fromId: MongoId, text: String): Message = {
-    new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, new Date, docVersion)
+    new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, None,  new Date, docVersion)
   }
 
   override def createDefault(): Message = {
-    new Message(IdHelper.generateMessageId(), MongoId(""), None, None, new Date, docVersion)
+    create(MongoId(""), "")
   }
 }
 
@@ -120,5 +123,12 @@ object PlainMessagePart {
   def create(text: String): PlainMessagePart = {
     new PlainMessagePart(Some(text), None)
   }
+}
+
+case class MessageSignature(isEncrypted: Boolean,
+                             content: Seq[String])
+
+object MessageSignature {
+  implicit val format: Format[MessageSignature] = Json.format[MessageSignature]
 }
 
