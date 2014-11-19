@@ -17,7 +17,7 @@ case class Message(id: MongoId,
                    fromIdentityId: MongoId,
                    plain: Option[PlainMessagePart],
                    encrypted: Option[String],
-                   signature: Option[MessageSignature],
+                   signatures: Option[MessageSignature],
                    created: Date,
                    docVersion: Int) {
 
@@ -41,7 +41,7 @@ object Message extends SubModel[Message, Conversation] {
     //    Reads.pure[Seq[MessageStatus]](Seq()) and
     (__ \ 'plain).readNullable[PlainMessagePart](PlainMessagePart.createReads) and
     (__ \ 'encrypted).readNullable[String] and
-    (__ \ 'signature).readNullable[MessageSignature] and
+    (__ \ 'signatures).readNullable[MessageSignature] and
     Reads.pure[Date](new Date) and
     Reads.pure[Int](docVersion)
   )(Message.apply _)
@@ -52,7 +52,7 @@ object Message extends SubModel[Message, Conversation] {
         Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
         Json.obj("plain" -> m.plain.map(_.toJson)) ++
         Json.obj("encrypted" -> m.encrypted) ++
-        maybeEmptyJson("signature", m.signature) ++
+        maybeEmptyJson("signatures", m.signatures) ++
         addCreated(m.created)
   }
 

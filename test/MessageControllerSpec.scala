@@ -73,13 +73,13 @@ class MessageControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
     }
 
+    val signature = Json.obj("isEncrypted" -> true, "content" -> Seq("sig"))
 
     "add message with signature to conversation" in {
       val path = basePath + "/conversation/" + cidExisting2 + "/message"
 
-      val signature = Json.obj("isEncrypted" -> true, "content" -> Seq("sig"))
 
-      val json = Json.obj("encrypted" -> encrypted, "signature" -> signature)
+      val json = Json.obj("encrypted" -> encrypted, "signatures" -> signature)
 
       val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
       val res = route(req).get
@@ -99,7 +99,7 @@ class MessageControllerSpec extends StartedApp {
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
       (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
       (data \ "created").asOpt[Long] must beSome
-      (data \ "signature").asOpt[JsObject] must beSome(signature)
+      (data \ "signatures").asOpt[JsObject] must beSome(signature)
     }
 
     "get message with signature" in {
@@ -120,6 +120,7 @@ class MessageControllerSpec extends StartedApp {
       (data \ "messageStatus").asOpt[Seq[JsObject]] must beNone
       (data \ "fromIdentity").asOpt[String] must beSome(identityExisting)
       (data \ "created").asOpt[Long] must beSome
+      (data \ "signatures").asOpt[JsObject] must beSome(signature)
     }
 
     "add message with plain part only to conversation" in {
