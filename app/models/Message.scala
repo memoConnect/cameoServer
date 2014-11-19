@@ -57,7 +57,7 @@ object Message extends SubModel[Message, Conversation] {
   }
 
   def create(fromId: MongoId, text: String): Message = {
-    new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, None,  new Date, docVersion)
+    new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, None, new Date, docVersion)
   }
 
   override def createDefault(): Message = {
@@ -108,7 +108,7 @@ case class PlainMessagePart(text: Option[String],
                             fileIds: Option[Seq[MongoId]]) {
   def toJson: JsObject = {
     maybeEmptyJson("text", this.text) ++
-    maybeEmptyJson("fileIds", this.fileIds.map(_.map(_.toJson)))
+      maybeEmptyJson("fileIds", this.fileIds.map(_.map(_.toJson)))
   }
 }
 
@@ -125,8 +125,8 @@ object PlainMessagePart {
   }
 }
 
-case class MessageSignature(encrypted: String,
-                             plain: Seq[String])
+case class MessageSignature(encrypted: Option[String],
+                            plain: Option[Seq[String]])
 
 object MessageSignature {
   implicit val format: Format[MessageSignature] = Json.format[MessageSignature]
