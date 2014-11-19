@@ -714,6 +714,7 @@ Sending and reading messages
             "recipients": [],
             "messages": [],
             "numberOfMessages": 0,
+            "unreadMessages" : 0,
             "created": "22.01.2014 16:34:55",
             "lastUpdated": "22.01.2014 16:34:55"
           }
@@ -782,6 +783,7 @@ Sending and reading messages
                 }
               }
             ],
+            "unreadMessages" : 1,
             "numberOfMessages": 3,
             "created": "22.01.2014 16:34:55",
             "lastUpdated": "22.01.2014 16:34:55",
@@ -795,6 +797,73 @@ Sending and reading messages
                            "identityId": "Tya0cZiaYFhFOBS2RNP1"
                        }
                    ]
+          }
+        }
+
+
+## Get Conversation (messages only) [/conversation/{id}/messages{?offset,limit}]
+
+### GET
+
++ Parameters
+    + id ... Conversation id
+    + offset (optional) ... First message to be returned
+    + limit  (optional)... Max number of messages returned
+    + timeLimit (optional) ... Return messages submitted after this time (limit and offset are ignored)
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": {
+            "id": "WvbpPu2X8btdAOpA4IRF",
+            "messages": [
+              {
+                "id": "vwUmVfjkn5lXXwXGvxzS",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [],
+                "created": "22.01.2014 16:34:55",
+                "encrypted": "blob",
+                "plain": {
+                  "text": "text",
+                  "files": [
+                    "fileId"
+                  ]
+                }
+              },
+              {
+                "id": "vwUmVfjkn5lXXwXGvxzS",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [],
+                "created": "22.01.2014 16:34:55",
+                "encrypted": "blob",
+                "plain": {
+                  "text": "text",
+                  "files": [
+                    "fileId"
+                  ]
+                }
+              },
+              {
+                "id": "vwUmVfjkn5lXXwXGvxzS",
+                "fromIdentity": "ZVtXkxMmPj4WtLYea8ci",
+                "messageStatus": [],
+                "created": "22.01.2014 16:34:55",
+                "encrypted": "blob",
+                "plain": {
+                  "text": "text",
+                  "files": [
+                    "fileId"
+                  ]
+                }
+              }
+            ]
           }
         }
 
@@ -853,6 +922,7 @@ Sending and reading messages
             "id": "rQHQZHv4ARDXRmnEzJ92",
             "lastUpdated": "13.02.2014 15:19:23",
             "numberOfMessages": 100,
+            "unreadMessages" : 1,
             "lastMessage": "PjSYoF7Kc5 NpoOVkhlm0hO5VcqD9Pk1wayVoH7Hk9rx63UW"
           }
         }
@@ -877,6 +947,7 @@ Sending and reading messages
                     "id": "OM9QeJ4RfJcdscyo52g4",
                     "lastUpdated": "21.02.2014 12:51:31",
                     "numberOfMessages": 3,
+                    "unreadMessages" : 1,
                     "messages": [
                       {
                         "id": "vwUmVfjkn5lXXwXGvxzS",
@@ -908,6 +979,7 @@ Sending and reading messages
                     "id": "9YNtlNZ2LHcAvzqd42EE",
                     "lastUpdated": "13.02.2014 15:19:13",
                     "numberOfMessages": 100,
+                    "unreadMessages" : 1,
                     "subject": "some 1337 subject hlPVY",
                     "messages": [
                       {
@@ -946,6 +1018,7 @@ Sending and reading messages
                     "id": "Me6e7EG0wnshvnrvYTrb",
                     "lastUpdated": "13.02.2014 15:19:13",
                     "numberOfMessages": 100,
+                    "unreadMessages" : 1,
                     "subject": "some 1337 subject OTngs",
                     "messages": [
                       {
@@ -975,6 +1048,7 @@ Sending and reading messages
                     "id": "fUd6U62SWV2maTOEHEbQ",
                     "lastUpdated": "13.02.2014 15:19:13",
                     "numberOfMessages": 99,
+                    "unreadMessages" : 1,
                     "subject": "some 1337 subject SnY6l",
                     "messages": [
                       {
