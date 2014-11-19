@@ -386,6 +386,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages")(0).asOpt[JsObject] must beSome
       (data \ "messages")(1).asOpt[JsObject] must beNone
       (data \ "subject").asOpt[String] must beSome
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
 
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       val recipients = (data \ "recipients").as[Seq[JsObject]]
@@ -1203,7 +1204,5 @@ class ConversationControllerSpec extends StartedApp {
 
       (data \ "unreadMessages").asOpt[Int] must beSome(0)
     }
-
-
   }
 }

@@ -60,8 +60,7 @@ object ConversationController extends ExtendedController {
                 recipient =>
                   actors.eventRouter ! NewConversation(recipient.identityId, conversation)
               }
-
-              resOk(conversation.toJson)
+              resOk(conversation.toJson(identityId = request.identity.id))
           }
         }
 
@@ -92,7 +91,7 @@ object ConversationController extends ExtendedController {
       futureConversation.map {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
-          val res = c.toJsonWithKey(keyId) ++ Json.obj("unreadMessages" -> c.getNumberOfUnreadMessages(request.identity.id))
+          val res = c.toJson(request.identity.id, Some(keyId))
           resOk(res)
         }
       }
@@ -174,7 +173,7 @@ object ConversationController extends ExtendedController {
       Conversation.find(id, 1, 0).map {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
-          resOk(c.toSummaryJsonWithKey(keyId))
+          resOk(c.toSummaryJson(request.identity.id, keyId))
         }
       }
   }
@@ -187,7 +186,7 @@ object ConversationController extends ExtendedController {
           val sorted = list.sortBy(_.lastUpdated).reverse
           val limited = OutputLimits.applyLimits(sorted, offset, limit)
           val res = Json.obj(
-            "conversations" -> limited.map(_.toSummaryJsonWithKey(keyId)),
+            "conversations" -> limited.map(_.toSummaryJson(request.identity.id, keyId)),
             "numberOfConversations" -> list.length
           )
           resOk(res)
@@ -212,13 +211,13 @@ object ConversationController extends ExtendedController {
 
   def markMessageRead(id: String, messageId: String) = AuthAction().async {
     request =>
-      Conversation.find(MongoId(id),-1, 0).flatMap{
-        case None =>  Future(resNotFound("conversation"))
+      Conversation.find(MongoId(id), -1, 0).flatMap {
+        case None => Future(resNotFound("conversation"))
         case Some(conversation) =>
           conversation.hasMemberFutureResult(request.identity.id) {
             conversation.markMessageRead(request.identity.id, MongoId(messageId)).map {
               case false => resBadRequest("unable to update")
-              case true => resOk("updated")
+              case true  => resOk("updated")
             }
           }
       }

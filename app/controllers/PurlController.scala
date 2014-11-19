@@ -35,7 +35,7 @@ object PurlController extends ExtendedController {
           case Some(conversation) =>
             conversation.hasMemberResult(identity.id) {
               val res: JsObject =
-                Json.obj("conversation" -> conversation.toJson) ++
+                Json.obj("conversation" -> conversation.toJson(identity.id)) ++
                   Json.obj("identity" -> identity.toPrivateJson) ++
                   Json.obj("token" -> token.id.toJson)
               resOk(res)
@@ -63,7 +63,7 @@ object PurlController extends ExtendedController {
                         conversation.hasMemberResult(identity.id) {
                           // return result
                           val res: JsObject =
-                            Json.obj("conversation" -> conversation.toJson) ++
+                            Json.obj("conversation" -> conversation.toJson(identity.id)) ++
                               Json.obj("identity" -> identity.toPrivateJson)
                           resOk(res)
                         }

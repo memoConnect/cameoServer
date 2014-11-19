@@ -41,11 +41,13 @@ case class Conversation(id: MongoId,
                         keyTransmission: Option[String],
                         docVersion: Int) {
 
-  def toJson: JsObject = Json.toJson(this)(Conversation.outputWrites).as[JsObject]
+  def toJson(identityId: MongoId, keyIds: Option[Seq[String]] = None): JsObject =
+    Json.toJson(this)(Conversation.outputWrites).as[JsObject] ++
+      Json.obj("unreadMessages" -> this.getNumberOfUnreadMessages(identityId)) ++
+      maybeEmptySeq("aePassphraseList", keyIds.map(this.getPassphraseList))
 
-  def getPassphraseList(keyIds: Seq[String]): JsObject = {
-    val list = aePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId))
-    Json.obj("aePassphraseList" -> list.map(_.toJson))
+  def getPassphraseList(keyIds: Seq[String]): Seq[JsObject] = {
+    aePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId)).map(_.toJson)
   }
 
   def getNumberOfUnreadMessages(identityId: MongoId): Int = {
@@ -64,16 +66,12 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def toJsonWithKey(keyIds: Seq[String]): JsObject = {
-    this.toJson ++ getPassphraseList(keyIds)
-  }
-
   def toMessageJson: JsObject = Json.toJson(this)(Conversation.messageWrites).as[JsObject]
 
-  def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
-
-  def toSummaryJsonWithKey(keyIds: Seq[String]): JsObject = {
-    this.toSummaryJson ++ getPassphraseList(keyIds)
+  def toSummaryJson(identityId: MongoId, keyIds: Seq[String]): JsObject = {
+    Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
+      Json.obj("aePassphraseList" -> getPassphraseList(keyIds)) ++
+      Json.obj("unreadMessages" -> getNumberOfUnreadMessages(identityId))
   }
 
   def query = Json.obj("_id" -> this.id)
