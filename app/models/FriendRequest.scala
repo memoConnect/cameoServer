@@ -21,7 +21,7 @@ case class FriendRequest(identityId: MongoId,
 
   def toJson: JsObject =
     Json.obj("identityId" -> this.identityId.toString) ++
-      JsonHelper.maybeEmptyString("message", this.message) ++
+      JsonHelper.maybeEmptyJson("message", this.message) ++
       JsonHelper.addCreated(this.created)
 
   def toJsonWithIdentity: Future[JsObject] = {

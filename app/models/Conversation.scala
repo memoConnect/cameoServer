@@ -180,10 +180,10 @@ object Conversation extends Model[Conversation] {
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
         Json.obj("aePassphraseList" -> c.aePassphraseList.map(_.toJson)) ++
         Json.obj("numberOfMessages" -> c.numberOfMessages) ++
-        maybeEmptyString("sePassphrase", c.sePassphrase) ++
-        maybeEmptyString("subject", c.subject) ++
-        maybeEmptyString("keyTransmission", c.keyTransmission) ++
-        maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString)) ++
+        maybeEmptyJson("sePassphrase", c.sePassphrase) ++
+        maybeEmptyJson("subject", c.subject) ++
+        maybeEmptyJson("keyTransmission", c.keyTransmission) ++
+        maybeEmptyJson("passCaptcha", c.passCaptcha.map(_.toString)) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
@@ -194,11 +194,11 @@ object Conversation extends Model[Conversation] {
         addLastUpdated(c.lastUpdated) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
         Json.obj("numberOfMessages" -> c.numberOfMessages) ++
-        maybeEmptyString("subject", c.subject) ++
-        maybeEmptyString("keyTransmission", c.keyTransmission) ++
+        maybeEmptyJson("subject", c.subject) ++
+        maybeEmptyJson("keyTransmission", c.keyTransmission) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
-        maybeEmptyString("sePassphrase", c.sePassphrase) ++
-        maybeEmptyString("passCaptcha", c.passCaptcha.map(_.toString))
+        maybeEmptyJson("sePassphrase", c.sePassphrase) ++
+        maybeEmptyJson("passCaptcha", c.passCaptcha.map(_.toString))
   }
 
   val messageWrites = Writes[Conversation] {

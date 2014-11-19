@@ -53,7 +53,7 @@ class CallStackControllerSpec extends StartedApp {
     def toRequestJson: JsObject = Json.obj(
       "path" -> (path),
       "method" -> method) ++
-      maybeEmptyJsValue("data", body)
+      maybeEmptyJson("data", body)
   }
 
   val getIdentity = new Call("/identity", "get", None, OK, { js =>

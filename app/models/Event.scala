@@ -18,7 +18,7 @@ case class Event(id: MongoId,
     Json.obj(
       "name" -> this.eventName,
       "data" -> this.data) ++
-      JsonHelper.maybeEmptyString("fromIdentityId", this.fromIdentityId.map(_.toString))
+      JsonHelper.maybeEmptyJson("fromIdentityId", this.fromIdentityId.map(_.toString))
 }
 
 object Event extends SubModel[Event, EventSubscription] {

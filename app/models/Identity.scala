@@ -118,7 +118,7 @@ case class Identity(id: MongoId,
       case PublicKeyUpdate(None) => Future(true)
       case PublicKeyUpdate(maybeName) =>
         val setValues = {
-          maybeEmptyString("publicKeys.$.name", maybeName) ++
+          maybeEmptyJson("publicKeys.$.name", maybeName) ++
             Json.obj("publicKeys.$.deleted" -> false)
         }
         val publicKeyQuery = query ++ Json.obj("publicKeys._id" -> id)
@@ -260,15 +260,15 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   def privateWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
-        maybeEmptyString("displayName", i.displayName) ++
+        maybeEmptyJson("displayName", i.displayName) ++
         Json.obj("userKey" -> i.userKey) ++
         getCameoId(i.cameoId) ++
-        maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
-        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson)) ++
+        maybeEmptyJson("email", i.email.map(_.toJson)) ++
+        maybeEmptyJson("phoneNumber", i.phoneNumber.map(_.toJson)) ++
         Json.obj("preferredMessageType" -> i.preferredMessageType) ++
         Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
-        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
+        maybeEmptyJson("avatar", i.avatar.map(_.toJson)) ++
         addCreated(i.created) ++
         addLastUpdated(i.lastUpdated)
   }
@@ -277,19 +277,19 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         getCameoId(i.cameoId) ++
-        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
-        maybeEmptyString("displayName", i.displayName) ++
+        maybeEmptyJson("avatar", i.avatar.map(_.toJson)) ++
+        maybeEmptyJson("displayName", i.displayName) ++
         Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson)) ++
-        maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
-        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson))
+        maybeEmptyJson("email", i.email.map(_.toJson)) ++
+        maybeEmptyJson("phoneNumber", i.phoneNumber.map(_.toJson))
   }
 
   def externalWrites: Writes[Identity] = Writes {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         getCameoId(i.cameoId) ++
-        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
-        maybeEmptyString("displayName", i.displayName) ++
+        maybeEmptyJson("avatar", i.avatar.map(_.toJson)) ++
+        maybeEmptyJson("displayName", i.displayName) ++
         Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson))
   }
 
@@ -297,10 +297,10 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     i =>
       Json.obj("id" -> i.id.toJson) ++
         getCameoId(i.cameoId) ++
-        maybeEmptyJsValue("avatar", i.avatar.map(_.toJson)) ++
-        maybeEmptyString("displayName", i.displayName) ++
-        maybeEmptyJsValue("email", i.email.map(_.toJson)) ++
-        maybeEmptyJsValue("phoneNumber", i.phoneNumber.map(_.toJson)) ++
+        maybeEmptyJson("avatar", i.avatar.map(_.toJson)) ++
+        maybeEmptyJson("displayName", i.displayName) ++
+        maybeEmptyJson("email", i.email.map(_.toJson)) ++
+        maybeEmptyJson("phoneNumber", i.phoneNumber.map(_.toJson)) ++
         Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson))
   }
   def getProjection(includeContacts: Boolean = false, includeTokens: Boolean = false): JsObject = {

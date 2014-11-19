@@ -68,8 +68,8 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     a =>
       Json.obj("id" -> a.id.toJson) ++
         Json.obj("loginName" -> a.loginName) ++
-        maybeEmptyJsValue("phoneNumber", a.phoneNumber.map(_.toJson)) ++
-        maybeEmptyJsValue("email", a.email.map(_.toJson)) ++
+        maybeEmptyJson("phoneNumber", a.phoneNumber.map(_.toJson)) ++
+        maybeEmptyJson("email", a.email.map(_.toJson)) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }

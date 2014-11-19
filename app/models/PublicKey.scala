@@ -54,7 +54,7 @@ object PublicKey extends SubModel[PublicKey, Identity] {
   def outputWrites: Writes[PublicKey] = Writes {
     pk =>
       Json.obj("id" -> pk.id.toJson) ++
-        maybeEmptyString("name", pk.name) ++
+        maybeEmptyJson("name", pk.name) ++
         Json.obj("key" -> pk.key) ++
         Json.obj("keySize" -> pk.keySize) ++
         Json.obj("signatures" -> pk.signatures) ++

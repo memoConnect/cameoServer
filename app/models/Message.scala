@@ -104,8 +104,8 @@ object MessageEvolutions {
 case class PlainMessagePart(text: Option[String],
                             fileIds: Option[Seq[MongoId]]) {
   def toJson: JsObject = {
-    maybeEmptyString("text", this.text) ++
-    maybeEmptySeq("fileIds", this.fileIds.map(_.map(_.toJson.toString().replace("\"",""))))
+    maybeEmptyJson("text", this.text) ++
+    maybeEmptyJson("fileIds", this.fileIds.map(_.map(_.toJson)))
   }
 }
 
