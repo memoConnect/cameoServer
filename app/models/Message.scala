@@ -102,10 +102,10 @@ object MessageEvolutions {
 }
 
 case class PlainMessagePart(text: Option[String],
-                            fileIds: Seq[MongoId]) {
-  def toJson(): JsObject = {
+                            fileIds: Option[Seq[MongoId]]) {
+  def toJson: JsObject = {
     maybeEmptyString("text", this.text) ++
-      Json.obj("fileIds" -> this.fileIds.map(_.toJson))
+    maybeEmptySeq("fileIds", this.fileIds.map(_.map(_.toJson.toString().replace("\"",""))))
   }
 }
 
@@ -114,11 +114,11 @@ object PlainMessagePart {
 
   val createReads = (
     (__ \ 'text).readNullable[String] and
-    ((__ \ 'fileIds).read[Seq[MongoId]](Reads.seq(MongoId.createReads)) or Reads.pure[Seq[MongoId]](Seq()))
+    (__ \ 'fileIds).readNullable[Seq[MongoId]](Reads.seq(MongoId.createReads))
   )(PlainMessagePart.apply _)
 
   def create(text: String): PlainMessagePart = {
-    new PlainMessagePart(Some(text), Seq())
+    new PlainMessagePart(Some(text), None)
   }
 }
 
