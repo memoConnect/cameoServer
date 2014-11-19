@@ -40,7 +40,7 @@ POST           /a/v1/conversation/:id/aePassphrases                  controllers
 DELETE         /a/v1/conversation/:id/recipient/:rid                 controllers.ConversationController.deleteRecipient(id, rid)
 GET            /a/v1/conversation/:id/summary                        controllers.ConversationController.getConversationSummary(id: String, keyId: List[String])
 GET            /a/v1/conversations                                   controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
-POST           /a/v1/conversation/:id/message/:messageId/read        controllers.ConversationController.markMessageRead(id,messageId)
+POST           /a/v1/conversation/:id/message/:messageId/read        controllers.ConversationController.markMessageRead(id, messageId)
 
 
 # MESSAGES

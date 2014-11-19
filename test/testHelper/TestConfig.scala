@@ -88,6 +88,7 @@ object TestConfig {
   val internalContactCameoId = "9kxZWFFbOCh0K9DZoHrv"
   val internalContact2CameoId = "RliVyZSsiG4e7pSVRuz2"
   val internalContact2IdentityId = "Q9nauLdsCOMhcmXmlL4p"
+  val internalContact2Token = "RV6RmULN2APbVeCvOLNYxKe3AtP1HJRgNbNPhxyR"
 
   val externalContactIdentityId = "XjizpBmduHdbh1XnKdgM"
   val externalContact2 = "EVFrPIr2oPpyVaUZGQjV"

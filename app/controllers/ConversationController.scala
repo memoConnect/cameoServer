@@ -215,9 +215,11 @@ object ConversationController extends ExtendedController {
       Conversation.find(MongoId(id),-1, 0).flatMap{
         case None =>  Future(resNotFound("conversation"))
         case Some(conversation) =>
-          conversation.markMessageRead(request.identity.id, MongoId(messageId)).map{
-            case false => resBadRequest("unable to update")
-            case true => resOk("updated")
+          conversation.hasMemberFutureResult(request.identity.id) {
+            conversation.markMessageRead(request.identity.id, MongoId(messageId)).map {
+              case false => resBadRequest("unable to update")
+              case true => resOk("updated")
+            }
           }
       }
   }

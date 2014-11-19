@@ -53,6 +53,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "numberOfMessages").asOpt[Int] must beSome(100)
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
     }
 
     "Get only messages an existing conversation with messages" in {
@@ -978,8 +979,6 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      Logger.debug("DATA: " + data)
-
       (data \ "unreadMessages").asOpt[Int] must beSome(0)
     }
 
@@ -1028,14 +1027,11 @@ class ConversationControllerSpec extends StartedApp {
       val data2 = (contentAsJson(res2) \ "data").as[JsObject]
 
       (data2 \ "id").asOpt[String] must beSome
-      messageId2a = (data2 \ "id").as[String]
+      messageId2b = (data2 \ "id").as[String]
       1 ==1
-
     }
 
-
-
-    "first recipient should have one unread messages" in {
+    "first recipient should have two unread messages" in {
       val path = basePath + "/conversation/" + cidNew3
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
@@ -1048,9 +1044,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      Logger.debug("DATA: " + data)
-
-      (data \ "unreadMessages").asOpt[Int] must beSome(1)
+      (data \ "unreadMessages").asOpt[Int] must beSome(2)
     }
 
     "second recipient should have one unread message" in {
@@ -1068,5 +1062,148 @@ class ConversationControllerSpec extends StartedApp {
 
       (data \ "unreadMessages").asOpt[Int] must beSome(1)
     }
+
+    "third recipient should have three unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(3)
+    }
+
+    "third recipient mark first message read" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message/" + messageId + "/read"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "third recipient should have two unread messages now" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(2)
+    }
+
+    var messageId3 = ""
+    "first recipient send another message" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message"
+      val json = Json.obj("plain" -> Json.obj("text" -> "moep"))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId3 = (data \ "id").as[String]
+      1 ==1
+    }
+
+    "third recipient should have three unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(3)
+    }
+
+    "third recipient send a message" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message"
+      val json = Json.obj("plain" -> Json.obj("text" -> "moep"))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContact2Token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId3 = (data \ "id").as[String]
+      1 ==1
+    }
+
+    "third recipient should still have three unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(3)
+    }
+
+    "third recipient mark last message read" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message/" + messageId3 + "/read"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "third recipient should have no unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
+    }
+
+
   }
 }
