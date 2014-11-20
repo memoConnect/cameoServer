@@ -5,6 +5,7 @@ import java.util.Date
 import actors.ExternalMessage
 import helper.ResultHelper._
 import models._
+import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import services.AuthenticationActions
@@ -26,12 +27,12 @@ object MessageController extends ExtendedController {
       validateFuture[Message](request.body, Message.createReads(request.identity.id)) {
         message =>
           {
-            Conversation.find(id, -1, 0).flatMap {
+            Conversation.find(id, 1, 0).flatMap {
               case None => Future(resNotFound("conversation"))
               case Some(conversation) =>
                 // only members can add message to conversation
                 conversation.hasMemberFutureResult(request.identity.id) {
-                  conversation.addMessage(message)
+                  conversation.addMessage(message, request.identity.id)
                   // send notification to user
                   actors.externalMessageRouter ! ExternalMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
                   Future(resOk(message.toJson))

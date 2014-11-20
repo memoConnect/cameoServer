@@ -11,7 +11,7 @@ import traits.SubModel
  */
 
 case class Recipient(identityId: MongoId,
-                     lastMessageRead: Option[MongoId]) {
+                     messagesRead: Option[Int]) {
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 }
 

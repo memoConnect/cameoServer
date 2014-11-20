@@ -1,8 +1,8 @@
 package events
 
 import helper.JsonHelper
-import models.{Conversation, Identity, Message, MongoId}
-import play.api.libs.json.{JsObject, Json}
+import models.{ Conversation, Identity, Message, MongoId }
+import play.api.libs.json.{JsNumber, JsObject, Json}
 
 /**
  * User: Björn Reimer
@@ -17,12 +17,14 @@ trait NewMessageEvent extends EventDefinition {
   def message: Message
 
   def unreadMessages: Option[Int]
+  def unreadMessagesDisplay : Int = unreadMessages.getOrElse(-1)
 
   def eventType = "conversation:new-message"
 
   def toEventContent = Json.obj(
     "conversationId" -> conversationId.toJson,
-    "message" -> message.toJson
+    "message" -> message.toJson,
+    "unreadMessages" -> unreadMessagesDisplay
   )
 
 }

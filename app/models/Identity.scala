@@ -211,7 +211,7 @@ case class Identity(id: MongoId,
                 for {
                   // add contact and message
                   contactOk <- this.addContact(contact)
-                  messageOk <- conversation.addMessage(message)
+                  messageOk <- conversation.addMessage(message, supportIdentity.id)
                 } yield {
                   contactOk && messageOk
                 }

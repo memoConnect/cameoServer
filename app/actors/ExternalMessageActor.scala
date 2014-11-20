@@ -2,13 +2,15 @@ package actors
 
 import akka.actor.Actor
 import constants.Messaging._
-import events.{ConversationNewMessageWithPush, ConversationNewMessage}
+import events.{ ConversationNewMessageWithPush, ConversationNewMessage }
 import models._
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.{ Logger, Play }
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -36,57 +38,63 @@ class ExternalMessageActor extends Actor {
 
           recipients.map {
             recipient =>
+              Identity.find(recipient.identityId).map {
+                case None => Logger.error("DBError: Could not find identityID " + recipient.identityId)
+                case Some(recipientIdentity) =>
+                  // get account, if identity has one
+                  recipientIdentity.accountId.fold[Future[Option[Account]]](Future(None))(Account.find).map {
+                    maybeAccount =>
+                      // don't send external message to sender
+                      if (recipient.identityId.equals(fromIdentity.id)) {
+//                        val unreadMessages = maybeAccount.map{
+//                          account =>
+//                            if(account.userSettings.enableUnreadMessages)
+//                              conversation
+//                        }
+                        // send event
+                        eventRouter ! ConversationNewMessage(recipient.identityId, conversationId, message, None)
+                      } else {
+                        // send event
+                        eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversationId, message, None)
 
-              // don't send external message to sender
-              if (recipient.identityId.equals(fromIdentity.id)) {
-                // send event
-                eventRouter ! ConversationNewMessage(recipient.identityId, conversationId, message, None)
-              } else {
-                // send event
-                eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversationId, message, None)
-                Identity.find(recipient.identityId).map {
-                  case None =>
-                    val error = "Could not find identityID " + recipient.identityId
-                    Logger.error(error)
-                  case Some(toIdentity) =>
+                        val supportIdentityId = Play.configuration.getString("support.contact.identityId").getOrElse("")
 
-                    val supportIdentityId = Play.configuration.getString("support.contact.identityId").getOrElse("")
+                        // check if identity has an event subscription
+                        EventSubscription.find(Json.obj("identityId" -> recipientIdentity.id)).map {
+                          case None                                                   => sendExternalEvents()
+                          case Some(es) if es.identityId.id.equals(supportIdentityId) => sendExternalEvents()
+                          case Some(es)                                               => Logger.info("Not sending external Message " + message.id.id + " to identity " + recipientIdentity.id.id + ". There is an event subscription")
+                        }
 
-                    // check if identity has an event subscription
-                    EventSubscription.find(Json.obj("identityId" -> toIdentity.id)).map {
-                      case None                                                   => sendNotification()
-                      case Some(es) if es.identityId.id.equals(supportIdentityId) => sendNotification()
-                      case Some(es)                                               => Logger.info("Not sending external Message " + message.id.id + " to identity " + toIdentity.id.id + ". There is an event subscription")
-                    }
-
-                    def sendNotification() {
-                      toIdentity.accountId match {
-                        case None =>
-                          // external user, use contacts from identity
-                          if (toIdentity.phoneNumber.isDefined) {
-                            sendSmsActor ! generateSms(message, fromIdentity, toIdentity, toIdentity.phoneNumber.get.value)
-                          } else if (toIdentity.email.isDefined) {
-                            sendMailActor ! generateMail(message, fromIdentity, toIdentity, subject, toIdentity.email.get.value)
-                          } else {
-                            Logger.info("SendMessageActor: Identity " + toIdentity.id + " has no valid mail or sms")
-                          }
-                        case Some(accountId) =>
-                          // internal user, use contacts from account
-                          Account.find(accountId).map {
-                            case Some(account) =>
-                              if (account.phoneNumber.isDefined) {
-                                sendSmsActor ! generateSms(message, fromIdentity, toIdentity, account.phoneNumber.get.value)
-                              } else if (account.email.isDefined) {
-                                sendMailActor ! generateMail(message, fromIdentity, toIdentity, subject, account.email.get.value)
+                        def sendExternalEvents() {
+                          recipientIdentity.accountId match {
+                            case None =>
+                              // external user, use contacts from identity
+                              if (recipientIdentity.phoneNumber.isDefined) {
+                                sendSmsActor ! generateSms(message, fromIdentity, recipientIdentity, recipientIdentity.phoneNumber.get.value)
+                              } else if (recipientIdentity.email.isDefined) {
+                                sendMailActor ! generateMail(message, fromIdentity, recipientIdentity, subject, recipientIdentity.email.get.value)
                               } else {
-                                Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
+                                Logger.info("SendMessageActor: Identity " + recipientIdentity.id + " has no valid mail or sms")
                               }
-                            case None => Logger.error("Could not find accountId: " + accountId)
+                            case Some(accountId) =>
+                              // internal user, use contacts from account
+                              Account.find(accountId).map {
+                                case Some(account) =>
+                                  if (account.phoneNumber.isDefined) {
+                                    sendSmsActor ! generateSms(message, fromIdentity, recipientIdentity, account.phoneNumber.get.value)
+                                  } else if (account.email.isDefined) {
+                                    sendMailActor ! generateMail(message, fromIdentity, recipientIdentity, subject, account.email.get.value)
+                                  } else {
+                                    Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
+                                  }
+                                case None => Logger.error("Could not find accountId: " + accountId)
+                              }
                           }
-                      }
-                    }
+                        }
 
-                }
+                      }
+                  }
               }
           }
       }

@@ -377,29 +377,20 @@ object DbUtilities {
 
     val start = System.currentTimeMillis()
 
-    def processConversation: (JsObject => Future[Boolean]) = js => {
-
-      var conversationId = (js \ "_id").as[MongoId]
-
-      // get messageId of last message
-      val messages = (js \ "messages").as[Seq[JsObject]]
-      messages.lastOption match {
-        case None => Future(true) // nothing more to do
-        case Some(message) =>
-          val lastMessageId = (message \ "_id").as[MongoId]
-          val recipients = (js \ "recipients").as[Seq[JsObject]]
-          val updatedRecipients = recipients.map{
-            recipient => recipient ++ Json.obj("lastMessageRead" -> lastMessageId)
-          }
-          val update = Json.obj("$set" -> Json.obj("recipients" -> updatedRecipients))
-          Conversation.update(conversationId, update)
-      }
+    def processConversation: (Conversation => Future[Boolean]) = {
+      conversation =>
+        // get messageId of last message
+        val updatedRecipients = conversation.recipients.map {
+          _.copy(messagesRead = Some(conversation.numberOfMessages))
+        }
+        val update = Json.obj("$set" -> Json.obj("recipients" -> updatedRecipients))
+        Conversation.update(conversation.id, update)
     }
 
-    val enumerator = conversationCollection.find(Json.obj()).cursor[JsObject].enumerate()
+    val enumerator = conversationCollection.find(Json.obj()).cursor[Conversation].enumerate()
 
-    val iteratee: Iteratee[JsObject, Boolean] = Iteratee.foldM(true) {
-      (result, i) => processConversation(i).map(r => r && result)
+    val iteratee: Iteratee[Conversation, Boolean] = Iteratee.foldM(true) {
+      (result, c) => processConversation(c).map(r => r && result)
     }
 
     val res = enumerator.run(iteratee)

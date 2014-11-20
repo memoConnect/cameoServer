@@ -44,7 +44,7 @@ case class Conversation(id: MongoId,
   def toJson(identityId: MongoId, keyIds: Option[Seq[String]] = None): JsObject =
     Json.toJson(this)(Conversation.outputWrites).as[JsObject] ++
       Json.obj("unreadMessages" -> this.getNumberOfUnreadMessages(identityId)) ++
-      maybeEmptySeq("aePassphraseList", keyIds.map(this.getPassphraseList))
+      maybeEmptyJson("aePassphraseList", keyIds.map(this.getPassphraseList))
 
   def getPassphraseList(keyIds: Seq[String]): Seq[JsObject] = {
     aePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId)).map(_.toJson)
@@ -52,17 +52,8 @@ case class Conversation(id: MongoId,
 
   def getNumberOfUnreadMessages(identityId: MongoId): Int = {
     this.recipients.find(_.identityId.equals(identityId)) match {
-      case None => 0
-      case Some(recipient) if recipient.lastMessageRead.isEmpty =>
-        messages
-          .filterNot(_.fromIdentityId.equals(identityId))
-          .length
-      case Some(recipient) =>
-        val index = this.messages
-          .filterNot(_.fromIdentityId.equals(identityId))
-          .indexWhere(_.id.equals(recipient.lastMessageRead.get))
-
-        if (index > 0) index else 0
+      case None            => 0
+      case Some(recipient) => this.numberOfMessages - recipient.messagesRead.getOrElse(0)
     }
   }
 
@@ -137,7 +128,13 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def addMessage(message: Message): Future[Boolean] = {
+  def addMessage(message: Message, fromIdentityId: MongoId): Future[Boolean] = {
+    val query =
+      Json.obj(
+        "_id" -> this.id,
+        "recipients.identityId" -> fromIdentityId
+      )
+
     val set =
       Json.obj(
         "$push" -> Json.obj("messages" ->
@@ -145,7 +142,8 @@ case class Conversation(id: MongoId,
             "$each" -> Seq(message),
             "$position" -> 0
           )),
-        "$inc" -> Json.obj("numberOfMessages" -> 1)
+        "$inc" -> Json.obj("numberOfMessages" -> 1),
+        "$inc" -> Json.obj("recipients.$.messagesRead" -> 1)
       )
     Conversation.col.update(query, setLastUpdated(set)).map(_.updatedExisting)
   }
@@ -169,9 +167,9 @@ case class Conversation(id: MongoId,
     Future.sequence(futureKeys).map(_.flatten)
   }
 
-  def markMessageRead(identityId: MongoId, messageId: MongoId): Future[Boolean] = {
+  def markMessageRead(identityId: MongoId, stillUnread: Int): Future[Boolean] = {
     val query = Json.obj("_id" -> this.id, "recipients.identityId" -> identityId)
-    val set = Json.obj("$set" -> Json.obj("recipients.$.lastMessageRead" -> messageId))
+    val set = Json.obj("$set" -> Json.obj("recipients.$.messagesRead" -> (this.numberOfMessages - stillUnread)))
     Conversation.col.update(query, set).map(_.updatedExisting)
   }
 }
