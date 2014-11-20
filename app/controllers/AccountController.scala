@@ -11,7 +11,7 @@ import play.api.mvc.{ Action, Result }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, UpdatedIdentity }
+import services.{ AuthenticationActions, IdentityUpdate }
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -121,7 +121,7 @@ object AccountController extends ExtendedController {
                                     // send identity update event to other identity
                                     Identity.find(identity.id).map {
                                       case None    => // do nothing
-                                      case Some(i) => actors.eventRouter ! UpdatedIdentity(otherIdentity.id, identity.id, i.toPublicJson())
+                                      case Some(i) => actors.eventRouter ! IdentityUpdate(otherIdentity.id, identity.id, i.toPublicJson())
                                     }
                                     createAccountWithIdentity(identity)
                                 }

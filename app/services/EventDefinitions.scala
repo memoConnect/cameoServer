@@ -40,7 +40,7 @@ trait PushEvent {
   def context: String
 }
 
-case class NewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, message: Message) extends EventDefinition with PushEvent {
+case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, message: Message) extends EventDefinition with PushEvent {
 
   def eventType = "conversation:new-message"
 
@@ -59,7 +59,7 @@ case class NewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, 
   }
 }
 
-case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition {
+case class ConversationNewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message) extends EventDefinition {
 
   def eventType = "conversation:new-message"
 
@@ -69,14 +69,22 @@ case class NewMessage(sendToIdentity: MongoId, conversationId: MongoId, message:
   )
 }
 
-case class NewConversation(sendToIdentity: MongoId, conversation: Conversation) extends EventDefinition {
+case class ConversationNew(sendToIdentity: MongoId, conversation: Conversation) extends EventDefinition {
 
   def eventType: String = "conversation:new"
 
   def toEventContent: JsObject = conversation.toJson(sendToIdentity)
 }
 
-case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendRequest, fromIdentity: Identity, toIdentityId: MongoId) extends EventDefinition with PushEvent {
+case class ConversationUpdate(sendToIdentity: MongoId, conversationId: MongoId, updatedValues: JsObject) extends EventDefinition {
+
+  def eventType: String = "conversation:update"
+
+  def toEventContent: JsObject = updatedValues ++ Json.obj("id" -> conversationId.toJson)
+
+}
+
+case class FriendRequestNew(sendToIdentity: MongoId, friendRequest: FriendRequest, fromIdentity: Identity, toIdentityId: MongoId) extends EventDefinition with PushEvent {
 
   def eventType = "friendRequest:new"
 
@@ -96,7 +104,7 @@ case class NewFriendRequest(sendToIdentity: MongoId, friendRequest: FriendReques
   }
 }
 
-case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId, contact: JsObject) extends EventDefinition {
+case class FriendRequestAccepted(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId, contact: JsObject) extends EventDefinition {
 
   def eventType = "friendRequest:accepted"
 
@@ -108,7 +116,7 @@ case class AcceptedFriendRequest(sendToIdentity: MongoId, fromIdentity: MongoId,
     )
 }
 
-case class UpdatedIdentity(sendToIdentity: MongoId, identityId: MongoId, updatedValues: JsObject) extends EventDefinition {
+case class IdentityUpdate(sendToIdentity: MongoId, identityId: MongoId, updatedValues: JsObject) extends EventDefinition {
 
   def eventType = "identity:update"
 
@@ -116,7 +124,7 @@ case class UpdatedIdentity(sendToIdentity: MongoId, identityId: MongoId, updated
 
 }
 
-case class NewIdentity(sendToIdentity: MongoId, identity: Identity) extends EventDefinition {
+case class IdentityNew(sendToIdentity: MongoId, identity: Identity) extends EventDefinition {
 
   def eventType = "identity:new"
 

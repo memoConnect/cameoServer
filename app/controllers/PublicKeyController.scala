@@ -7,7 +7,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions._
-import services.{ AuthenticationActions, UpdatedIdentity }
+import services.{ AuthenticationActions, IdentityUpdate }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,10 +36,10 @@ object PublicKeyController extends ExtendedController {
           def sendEvent() {
             request.identity.contacts.foreach {
               contact =>
-                actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                actors.eventRouter ! IdentityUpdate(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
             }
             // send event to ourselves
-            actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+            actors.eventRouter ! IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
           }
 
           // check if this key has already been uploaded by this user
@@ -91,9 +91,9 @@ object PublicKeyController extends ExtendedController {
           case true =>
             request.identity.contacts.foreach {
               contact =>
-                actors.eventRouter ! UpdatedIdentity(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
+                actors.eventRouter ! IdentityUpdate(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
             }
-            actors.eventRouter ! UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
+            actors.eventRouter ! IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(Json.obj("id" -> id, "deleted" -> true))))
             resOk("deleted")
         }
       }
@@ -111,7 +111,7 @@ object PublicKeyController extends ExtendedController {
                 case false => resBadRequest("could not add")
                 case true =>
                   val newPublicKey = publicKey.copy(signatures = publicKey.signatures :+ signature)
-                  val event = UpdatedIdentity(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson)))
+                  val event = IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson)))
                   actors.eventRouter ! event
                   resOk(signature.toJson)
               }

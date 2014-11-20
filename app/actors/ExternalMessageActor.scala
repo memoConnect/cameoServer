@@ -8,7 +8,7 @@ import play.api.libs.concurrent.Akka
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.{ Logger, Play }
-import services.{ NewMessage, NewMessageWithPush }
+import services.{ ConversationNewMessage, ConversationNewMessageWithPush }
 
 /**
  * User: Björn Reimer
@@ -40,10 +40,10 @@ class ExternalMessageActor extends Actor {
               // don't send external message to sender
               if (recipient.identityId.equals(fromIdentity.id)) {
                 // send event
-                eventRouter ! NewMessage(recipient.identityId, conversationId, message)
+                eventRouter ! ConversationNewMessage(recipient.identityId, conversationId, message)
               } else {
                 // send event
-                eventRouter ! NewMessageWithPush(recipient.identityId, fromIdentity, conversationId, message)
+                eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversationId, message)
                 Identity.find(recipient.identityId).map {
                   case None =>
                     val error = "Could not find identityID " + recipient.identityId

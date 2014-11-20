@@ -8,7 +8,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, NewConversation }
+import services.{ AuthenticationActions, ConversationNew }
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -58,7 +58,7 @@ object ConversationController extends ExtendedController {
               // send conversation:new event to all recipients
               conversation.recipients.foreach {
                 recipient =>
-                  actors.eventRouter ! NewConversation(recipient.identityId, conversation)
+                  actors.eventRouter ! ConversationNew(recipient.identityId, conversation)
               }
               resOk(conversation.toJson(identityId = request.identity.id))
           }
