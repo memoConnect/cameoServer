@@ -311,7 +311,7 @@ object Conversation extends Model[Conversation] {
   }
 }
 
-object ConversationUpdate extends ModelUpdate {
+object ConversationModelUpdate extends ModelUpdate {
   def values = Seq(
     StringUpdateValue("subject", externalEdit = true),
     MongoIdUpdateValue("passCaptcha", externalEdit = true),

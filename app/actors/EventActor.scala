@@ -1,8 +1,8 @@
 package actors
 
 import akka.actor.Actor
+import events.{PushEvent, EventDefinition}
 import models._
-import services.{ EventDefinition, PushEvent }
 /**
  * User: Björn Reimer
  * Date: 12.05.14

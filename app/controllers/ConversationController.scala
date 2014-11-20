@@ -1,14 +1,16 @@
 package controllers
 
 import actors.ExternalMessage
+import events.{ConversationUpdate, ConversationNew}
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, ConversationNew }
+import services.AuthenticationActions
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -109,7 +111,7 @@ object ConversationController extends ExtendedController {
 
   def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      ConversationUpdate.validateRequest(request.body) {
+      ConversationModelUpdate.validateRequest(request.body) {
         update =>
           Conversation.find(id, -1, 0).flatMap {
             case None => Future(resNotFound("conversation"))
@@ -209,17 +211,28 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def markMessageRead(id: String, messageId: String) = AuthAction().async {
+  def markMessageRead(id: String, messageId: String) = AuthAction(getAccount = true).async {
     request =>
-      Conversation.find(MongoId(id), -1, 0).flatMap {
-        case None => Future(resNotFound("conversation"))
-        case Some(conversation) =>
-          conversation.hasMemberFutureResult(request.identity.id) {
-            conversation.markMessageRead(request.identity.id, MongoId(messageId)).map {
-              case false => resBadRequest("unable to update")
-              case true  => resOk("updated")
+
+      if(request.account.isDefined && request.account.get.userSettings.enableUnreadMessages) {
+        Conversation.find(MongoId(id), -1, 0).flatMap {
+          case None => Future(resNotFound("conversation"))
+          case Some(conversation) =>
+            conversation.hasMemberFutureResult(request.identity.id) {
+              // mark message read in database
+              conversation.markMessageRead(request.identity.id, MongoId(messageId)).map {
+                case false => resBadRequest("unable to update")
+                case true =>
+                  // send event
+                  val unreadMessages = conversation.messages.filterNot(_.fromIdentityId.equals(request.identity.id)).indexWhere(_.id.equals(MongoId(messageId)))
+                  actors.eventRouter ! ConversationUpdate(request.identity.id, conversation.id, Json.obj("unreadMessages" -> unreadMessages))
+                  resOk("updated")
+              }
             }
-          }
+        }
+      } else {
+        Logger.error("User with disabled unread message submitted message read. IdentityId: "+ request.identity.id.id)
+        Future(resBadRequest("unread messages are disabled"))
       }
   }
 }

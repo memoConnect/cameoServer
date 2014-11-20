@@ -3,6 +3,7 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
+import events.{FriendRequestAccepted, FriendRequestNew}
 import helper.JsonHelper._
 import helper.ResultHelper._
 import helper.{ CheckHelper, IdHelper, OutputLimits }
@@ -12,7 +13,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
-import services.{ FriendRequestAccepted, AuthenticationActions, AvatarGenerator, FriendRequestNew }
+import services.{ AuthenticationActions, AvatarGenerator }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

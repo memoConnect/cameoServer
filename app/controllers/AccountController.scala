@@ -1,5 +1,6 @@
 package controllers
 
+import events.IdentityUpdate
 import helper.JsonHelper
 import helper.ResultHelper._
 import models._
@@ -11,7 +12,7 @@ import play.api.mvc.{ Action, Result }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, IdentityUpdate }
+import services.AuthenticationActions
 import traits.ExtendedController
 
 import scala.concurrent.Future

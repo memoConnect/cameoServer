@@ -268,7 +268,7 @@ case class AccountUserSettings(enableUnreadMessages: Boolean,
                                timeFormat: String)
 
 object AccountUserSettings {
-  implicit val format = Json.format[AccountUserSettings]
+  implicit val format: Format[AccountUserSettings] = Json.format[AccountUserSettings]
 
   def defaultSettings: AccountUserSettings =
     AccountUserSettings(enableUnreadMessages = true, convertSmileysToEmojis = true, sendOnReturn = false, "", "dd.MM.yyyy", "HH:mm")
