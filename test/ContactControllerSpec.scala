@@ -465,7 +465,7 @@ class ContactControllerSpec extends StartedApp {
 //    }
 
     "delete Contact" in {
-      val path = basePath + "/contact/" + internalContactId
+      val path = basePath + "/contact/" + internalContact3Id
 
       val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -477,7 +477,7 @@ class ContactControllerSpec extends StartedApp {
     }
 
     "check deletion" in {
-      val path = basePath + "/contact/" + internalContactId
+      val path = basePath + "/contact/" + internalContact3Id
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
