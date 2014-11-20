@@ -35,7 +35,7 @@ object PurlController extends ExtendedController {
           case Some(conversation) =>
             conversation.hasMemberResult(identity.id) {
               val res: JsObject =
-                Json.obj("conversation" -> conversation.toJson(identity.id)) ++
+                Json.obj("conversation" -> conversation.toJson(identity.id, None)) ++
                   Json.obj("identity" -> identity.toPrivateJson) ++
                   Json.obj("token" -> token.id.toJson)
               resOk(res)
@@ -49,9 +49,9 @@ object PurlController extends ExtendedController {
           case None => Future(resNotFound("purl"))
           case Some(identity) =>
             // check if the identity has an account
-            identity.accountId match {
+            identity.accountId.fold[Future[Option[Account]]](Future(None))(Account.find).flatMap {
               case None => externalUserResponse(identity, purl)
-              case Some(a) =>
+              case Some(account) =>
                 // purl belongs to a registered user, check we have the right token
                 identity.tokens.exists(_.id.id.equals(token)) match {
                   case false => Future(resUnauthorized("This purl belongs to a different identity"))
@@ -63,7 +63,7 @@ object PurlController extends ExtendedController {
                         conversation.hasMemberResult(identity.id) {
                           // return result
                           val res: JsObject =
-                            Json.obj("conversation" -> conversation.toJson(identity.id)) ++
+                            Json.obj("conversation" -> conversation.toJson(identity.id, Some(account.userSettings))) ++
                               Json.obj("identity" -> identity.toPrivateJson)
                           resOk(res)
                         }

@@ -41,28 +41,31 @@ case class Conversation(id: MongoId,
                         keyTransmission: Option[String],
                         docVersion: Int) {
 
-  def toJson(identityId: MongoId, keyIds: Option[Seq[String]] = None): JsObject =
+  def toJson(identityId: MongoId, settings: Option[AccountUserSettings], keyIds: Option[Seq[String]] = None): JsObject =
     Json.toJson(this)(Conversation.outputWrites).as[JsObject] ++
-      Json.obj("unreadMessages" -> this.getNumberOfUnreadMessages(identityId)) ++
+      Json.obj("unreadMessages" -> this.getNumberOfUnreadMessages(identityId, settings)) ++
       maybeEmptyJson("aePassphraseList", keyIds.map(this.getPassphraseList))
 
   def getPassphraseList(keyIds: Seq[String]): Seq[JsObject] = {
     aePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId)).map(_.toJson)
   }
 
-  def getNumberOfUnreadMessages(identityId: MongoId): Int = {
-    this.recipients.find(_.identityId.equals(identityId)) match {
-      case None            => 0
-      case Some(recipient) => this.numberOfMessages - recipient.messagesRead.getOrElse(0)
+  def getNumberOfUnreadMessages(identityId: MongoId, settings: Option[AccountUserSettings]): Int = {
+    (settings.map(_.enableUnreadMessages), this.recipients.find(_.identityId.equals(identityId))) match {
+      case (_, None) =>
+        Logger.error("Trying to get number of messages of recipient who is not member of the conversation"); -1
+      case (None, _)                     => -1
+      case (Some(false), _)              => -1
+      case (Some(true), Some(recipient)) => this.numberOfMessages - recipient.messagesRead.getOrElse(0)
     }
   }
 
   def toMessageJson: JsObject = Json.toJson(this)(Conversation.messageWrites).as[JsObject]
 
-  def toSummaryJson(identityId: MongoId, keyIds: Seq[String]): JsObject = {
+  def toSummaryJson(identityId: MongoId, settings: Option[AccountUserSettings], keyIds: Seq[String]): JsObject = {
     Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
       Json.obj("aePassphraseList" -> getPassphraseList(keyIds)) ++
-      Json.obj("unreadMessages" -> getNumberOfUnreadMessages(identityId))
+      Json.obj("unreadMessages" -> getNumberOfUnreadMessages(identityId, settings))
   }
 
   def query = Json.obj("_id" -> this.id)

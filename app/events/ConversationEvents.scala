@@ -1,7 +1,7 @@
 package events
 
 import helper.JsonHelper
-import models.{ Conversation, Identity, Message, MongoId }
+import models._
 import play.api.libs.json.{JsNumber, JsObject, Json}
 
 /**
@@ -12,26 +12,25 @@ import play.api.libs.json.{JsNumber, JsObject, Json}
 
 trait NewMessageEvent extends EventDefinition {
 
-  def conversationId: MongoId
+  def conversation: Conversation
 
   def message: Message
 
-  def unreadMessages: Option[Int]
-  def unreadMessagesDisplay : Int = unreadMessages.getOrElse(-1)
+  def userSettings: Option[AccountUserSettings]
 
   def eventType = "conversation:new-message"
 
   def toEventContent = Json.obj(
-    "conversationId" -> conversationId.toJson,
+    "conversationId" -> conversation.id.toJson,
     "message" -> message.toJson,
-    "unreadMessages" -> unreadMessagesDisplay
+    "unreadMessages" -> conversation.getNumberOfUnreadMessages(sendToIdentity, userSettings)
   )
 
 }
 
-case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, message: Message, unreadMessages: Option[Int]) extends NewMessageEvent with PushEvent {
+case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversation: Conversation, message: Message, userSettings: Option[AccountUserSettings]) extends NewMessageEvent with PushEvent {
 
-  def context = "message:" + conversationId.id
+  def context = "message:" + conversation.id
 
   def localizationKeyTitle = "PUSH_MESSAGE.NEW_MESSAGE.TITLE"
   def localizationKeyMsg = "PUSH_MESSAGE.NEW_MESSAGE.MSG"
@@ -42,13 +41,13 @@ case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender
 
 }
 
-case class ConversationNewMessage(sendToIdentity: MongoId, conversationId: MongoId, message: Message, unreadMessages: Option[Int]) extends NewMessageEvent
+case class ConversationNewMessage(sendToIdentity: MongoId, conversation: Conversation, message: Message, userSettings: Option[AccountUserSettings]) extends NewMessageEvent
 
 case class ConversationNew(sendToIdentity: MongoId, conversation: Conversation) extends EventDefinition {
 
   def eventType: String = "conversation:new"
 
-  def toEventContent: JsObject = conversation.toJson(sendToIdentity)
+  def toEventContent: JsObject = conversation.toJson(sendToIdentity, None) ++ Json.obj("unreadMessages" -> 0)
 }
 
 case class ConversationUpdate(sendToIdentity: MongoId, conversationId: MongoId, updatedValues: JsObject) extends EventDefinition {

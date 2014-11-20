@@ -185,7 +185,7 @@ object FileController extends ExtendedController {
     implicit val format = Json.format[FileComplete]
   }
 
-  def uploadFileComplete(id: String) = AuthAction().async(parse.tolerantJson) {
+  def uploadFileComplete(id: String) = AuthAction(getAccount = true).async(parse.tolerantJson) {
     request =>
       FileMeta.find(id).flatMap {
         case None => Future(resNotFound("file"))
@@ -204,7 +204,7 @@ object FileController extends ExtendedController {
                         val message = conversation.messages.find(_.id.id.equals(messageId)).get
                         conversation.recipients.foreach {
                           recipient =>
-                            actors.eventRouter ! ConversationNewMessage(recipient.identityId, conversation.id, message, None)
+                            actors.eventRouter ! ConversationNewMessage(recipient.identityId, conversation, message, request.account.map(_.userSettings))
                         }
                         resOk("completed")
                     }

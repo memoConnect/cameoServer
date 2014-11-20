@@ -34,7 +34,7 @@ object MessageController extends ExtendedController {
                 conversation.hasMemberFutureResult(request.identity.id) {
                   conversation.addMessage(message, request.identity.id)
                   // send notification to user
-                  actors.externalMessageRouter ! ExternalMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
+                  actors.externalMessageRouter ! ExternalMessage(message, conversation)
                   Future(resOk(message.toJson))
                 }
             }

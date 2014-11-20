@@ -18,13 +18,13 @@ import scala.concurrent.Future
  * Time: 5:36 PM
  */
 
-case class ExternalMessage(message: Message, conversationId: MongoId, recipients: Seq[Recipient], subject: String)
+case class ExternalMessage(message: Message, conversation: Conversation)
 
 class ExternalMessageActor extends Actor {
 
   def receive = {
 
-    case ExternalMessage(message, conversationId, recipients, subject) =>
+    case ExternalMessage(message, conversation) =>
 
       // get identity of sender
       Identity.find(message.fromIdentityId).map {
@@ -36,7 +36,7 @@ class ExternalMessageActor extends Actor {
           lazy val sendMailActor = Akka.system.actorOf(SendMailActorProps)
           lazy val sendSmsActor = Akka.system.actorOf(SendSmsActorProps)
 
-          recipients.map {
+          conversation.recipients.map {
             recipient =>
               Identity.find(recipient.identityId).map {
                 case None => Logger.error("DBError: Could not find identityID " + recipient.identityId)
@@ -46,20 +46,12 @@ class ExternalMessageActor extends Actor {
                     maybeAccount =>
                       // don't send external message to sender
                       if (recipient.identityId.equals(fromIdentity.id)) {
-//                        val unreadMessages = maybeAccount.map{
-//                          account =>
-//                            if(account.userSettings.enableUnreadMessages)
-//                              conversation
-//                        }
-                        // send event
-                        eventRouter ! ConversationNewMessage(recipient.identityId, conversationId, message, None)
+                        eventRouter ! ConversationNewMessage(recipient.identityId, conversation, message, maybeAccount.map(_.userSettings))
                       } else {
-                        // send event
-                        eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversationId, message, None)
+                        eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversation, message, maybeAccount.map(_.userSettings))
 
+                        // check if identity has an event subscription or is the support
                         val supportIdentityId = Play.configuration.getString("support.contact.identityId").getOrElse("")
-
-                        // check if identity has an event subscription
                         EventSubscription.find(Json.obj("identityId" -> recipientIdentity.id)).map {
                           case None                                                   => sendExternalEvents()
                           case Some(es) if es.identityId.id.equals(supportIdentityId) => sendExternalEvents()
@@ -73,7 +65,7 @@ class ExternalMessageActor extends Actor {
                               if (recipientIdentity.phoneNumber.isDefined) {
                                 sendSmsActor ! generateSms(message, fromIdentity, recipientIdentity, recipientIdentity.phoneNumber.get.value)
                               } else if (recipientIdentity.email.isDefined) {
-                                sendMailActor ! generateMail(message, fromIdentity, recipientIdentity, subject, recipientIdentity.email.get.value)
+                                sendMailActor ! generateMail(message, fromIdentity, recipientIdentity, conversation.subject.getOrElse("no subject"), recipientIdentity.email.get.value)
                               } else {
                                 Logger.info("SendMessageActor: Identity " + recipientIdentity.id + " has no valid mail or sms")
                               }
@@ -84,7 +76,7 @@ class ExternalMessageActor extends Actor {
                                   if (account.phoneNumber.isDefined) {
                                     sendSmsActor ! generateSms(message, fromIdentity, recipientIdentity, account.phoneNumber.get.value)
                                   } else if (account.email.isDefined) {
-                                    sendMailActor ! generateMail(message, fromIdentity, recipientIdentity, subject, account.email.get.value)
+                                    sendMailActor ! generateMail(message, fromIdentity, recipientIdentity, conversation.subject.getOrElse("no subject"), account.email.get.value)
                                   } else {
                                     Logger.info("SendMessageActor: Account " + account.id + " has no valid mail or sms")
                                   }
