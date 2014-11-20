@@ -52,7 +52,7 @@ object IdentityController extends ExtendedController {
 
   def updateIdentity() = AuthAction().async(parse.tolerantJson) {
     request =>
-      IdentityUpdate.validateRequest(request.body) {
+      IdentityModelUpdate.validateRequest(request.body) {
         update =>
           Identity.update(request.identity.id, update).map {
             case false => resNotFound("identity")

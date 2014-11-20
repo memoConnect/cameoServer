@@ -100,7 +100,7 @@ object AccountController extends ExtendedController {
                                       "accountId" -> account.id,
                                       "isDefaultIdentity" -> true,
                                       "displayName" -> additionalValues.displayName.getOrElse(""))
-                                    Identity.update(identity.id, IdentityUpdate.setValues(set))
+                                    Identity.update(identity.id, IdentityModelUpdate.setValues(set))
                                   }
                                   deleteDetails <- {
                                     val deleteValues =

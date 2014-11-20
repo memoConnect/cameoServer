@@ -61,7 +61,7 @@ case class Contact(id: MongoId,
               contactUpdate.phoneNumber.map(s => Map("phoneNumber" -> VerifiedString.create(s))).getOrElse(Map()) ++
               contactUpdate.email.map(s => Map("email" -> VerifiedString.create(s))).getOrElse(Map()) ++
               contactUpdate.displayName.map(s => Map("displayName" -> s)).getOrElse(Map())
-            val update = IdentityUpdate.setValues(set)
+            val update = IdentityModelUpdate.setValues(set)
             Identity.update(identity.id, update)
         }
     }

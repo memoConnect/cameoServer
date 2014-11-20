@@ -454,7 +454,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
 }
 
-object IdentityUpdate extends ModelUpdate {
+object IdentityModelUpdate extends ModelUpdate {
   def values = Seq(
     StringUpdateValue("displayName", externalEdit = true),
     MongoIdUpdateValue("avatar", externalEdit = true),
