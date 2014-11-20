@@ -29,6 +29,7 @@ case class Account(id: MongoId,
                    phoneNumber: Option[VerifiedString],
                    email: Option[VerifiedString],
                    properties: AccountProperties,
+                   userSettings: AccountUserSettings,
                    created: Date,
                    lastUpdated: Date) {
 
@@ -60,6 +61,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
       Reads.pure[AccountProperties](AccountProperties.defaultProperties) and
+      Reads.pure[AccountUserSettings](AccountUserSettings.defaultSettings) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -80,7 +82,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
   }
 
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, AccountProperties.defaultProperties, new Date, new Date)
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, AccountProperties.defaultProperties, AccountUserSettings.defaultSettings, new Date, new Date)
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -102,14 +104,15 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 5
+  def docVersion = 6
 
   def evolutions = Map(
     0 -> AccountEvolutions.migrateToVerifiedString,
     1 -> AccountEvolutions.addDeviceIds,
     2 -> AccountEvolutions.convertToPushDevice,
     3 -> AccountEvolutions.removePushDevices,
-    4 -> AccountEvolutions.addAccountProperties
+    4 -> AccountEvolutions.addAccountProperties,
+    5 -> AccountEvolutions.addUserSettings
   )
 }
 
@@ -229,6 +232,13 @@ object AccountEvolutions {
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
       js.transform(addProperties andThen addVersion)
   }
+
+  def addUserSettings: Reads[JsObject] = Reads {
+    js =>
+      val addSettings = __.json.update((__ \ 'userSettings).json.put(Json.toJson(AccountUserSettings.defaultSettings)))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(6)))
+      js.transform(addSettings andThen addVersion)
+  }
 }
 
 object AccountUpdate extends ModelUpdate {
@@ -242,10 +252,24 @@ object AccountUpdate extends ModelUpdate {
 case class AccountProperties(fileQuota: Int)
 
 object AccountProperties {
-  implicit def format: Format[AccountProperties] = Json.format[AccountProperties]
+  implicit val format: Format[AccountProperties] = Json.format[AccountProperties]
 
   def defaultProperties: AccountProperties = {
     def defaultQuota = Play.configuration.getInt("accounts.properties.default.file.quota").getOrElse(10000) * 1024 * 1024
     AccountProperties(defaultQuota)
   }
+}
+
+case class AccountUserSettings(enableUnreadMessages: Boolean,
+                               convertSmileysToEmojis: Boolean,
+                               sendOnReturn: Boolean,
+                               languageSettings: String,
+                               dateFormat: String,
+                               timeFormat: String)
+
+object AccountUserSettings {
+  implicit val format = Json.format[AccountUserSettings]
+
+  def defaultSettings: AccountUserSettings =
+    AccountUserSettings(enableUnreadMessages = true, convertSmileysToEmojis = true, sendOnReturn = false, "", "dd.MM.yyyy", "HH:mm")
 }
