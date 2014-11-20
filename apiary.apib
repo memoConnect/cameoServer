@@ -737,7 +737,7 @@ Sending and reading messages
           }
         }
 
-## Get Conversation [/conversation/{id}{?offset,limit}]
+## Get Conversation [/conversation/{id}{?offset,limit,timeLimit}]
 
 ### GET
 
@@ -818,7 +818,7 @@ Sending and reading messages
         }
 
 
-## Get Conversation (messages only) [/conversation/{id}/messages{?offset,limit}]
+## Get Conversation - messages only [/conversation/{id}/messages{?offset,limit,timeLimit}]
 
 ### GET
 
@@ -924,7 +924,7 @@ Sending and reading messages
 
 + Parameters
     + id ... Conversation id
-    
+
 
 + Request
     + Headers
@@ -1137,7 +1137,7 @@ Sending and reading messages
 + Parameters
     + id ... Conversation id
     + recipientId ... Recipient to be deleted
-    
+
 
 + Request
     + Headers
@@ -1163,7 +1163,7 @@ Sending and reading messages
 
             Authorization: {token}
     + Body
-    
+
             {
               "encrypted": "blob",
               "plain": {
@@ -1194,6 +1194,30 @@ Sending and reading messages
         }
 
 
+## Mark messages read [/conversation/{id}/message/{messageId}/read]
+
+### POST
+
++ Parameters
+    + id ... Conversation id
+    + messageId ... Message id
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+
++ Response 200
+
+        {
+          "res": "OK",
+          "data": "updated"
+        }
+
+
+
 ## add aePassphrases to conversation [/conversation/{id}/aePassphrases]
 
 ### POST
@@ -1206,11 +1230,11 @@ Sending and reading messages
     + Headers
 
             Authorization: {token}
-    
+
     + Body
-    
+
             {
-              "eaPassphraseList": 
+              "eaPassphraseList":
               [{
                   "keyId": "some Id",
                   "encryptedPassphrase": "someEncryptedString"
@@ -1224,7 +1248,7 @@ Sending and reading messages
           "res": "OK",
           "data": "updated"
         }
-        
+
 
 ## Get single Message [/message/{id}]
 
@@ -1232,7 +1256,7 @@ Sending and reading messages
 
 + Parameters
     + id ... Message id
-    
+
 
 + Request
     + Headers
@@ -1364,22 +1388,22 @@ Get meta-information of a file
     + Headers
 
             Authorization: {token}
-            
-            
+
+
     + Body
-            
+
             {
                 "messaageId":"id (optional)"
             }
 
-            
+
 + Response 200
 
         {
           "res": "OK",
           "data": "completed"
         }
-        
+
 
 ## Download chunk [/file/{id}/{chunkIndex}]
 Download chunks of a file
@@ -1403,9 +1427,9 @@ Download chunks of a file
 + Parameters
     + id ... fileId
     + token ... authorization token
-    
-+ Response 200  
-    
+
++ Response 200
+
         Raw File
 
 
@@ -1417,9 +1441,9 @@ Download chunks of a file
     + id ... fileId
     + size ... size of the boundary square for the image
     + token ... authorization token
-    
+
 + Response 200
-    
+
         Scaled Image or Blank image
 
 
@@ -1454,7 +1478,7 @@ Manage your Contacts
 
             Authorization: {token}
     + Body
-    
+
             {
               "identity": {
                 "displayName": "Ulrich",
@@ -1498,7 +1522,7 @@ Manage your Contacts
 + Parameters
     + offset (optional) ... First contact to be returned
     + limit  (optional)... Max number of contacts returned
-    
+
 
 + Request
     + Headers
@@ -1556,7 +1580,7 @@ Manage your Contacts
 
 + Parameters
     + id ... Contact id
-    
+
 
 + Request
     + Headers
@@ -1587,18 +1611,18 @@ Manage your Contacts
             }
           }
         }
-        
-        
+
+
 ### DELETE
 
 + Parameters
     + id ... Contact id
-    
+
 + Request
     + Headers
 
             Authorization: {token}
-            
+
 + Response 200
 
         {
@@ -1611,9 +1635,9 @@ Edit a contact. All values are optional. Only values contained in the json will 
 
 + Request
     + Headers
-    
+
             Authorization: {token}
-    
+
     + Body
 
             {
@@ -1708,7 +1732,7 @@ Edit a contact. All values are optional. Only values contained in the json will 
             }
           ]
         }
-        
+
 ## Get Frienship Requests [/friendRequests]
 
 ### GET
@@ -1748,16 +1772,16 @@ Send a Friendship Request to an other identity. Either the identityID or the cam
 
 + Request
     + Headers
-    
+
             Authorization: {token}
     + Body
-    
+
             {
               "identityId":"adfaasdv46abghart",
               "cameoId":"test",
               "message":"some message (optional)"
             }
- 
+
 + Response 200
 
         {
@@ -1774,9 +1798,9 @@ Accept or Reject FriendshipRequests
     + Headers
 
             Authorization: {token}
-            
+
     + Body
-    
+
             {
               "identityId":"adfaasdv46abghart",
               "type": "accept || reject"
@@ -1842,8 +1866,8 @@ check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]
         {
             "res": "KO"
         }
-        
-        
+
+
 ## get browser info [/a/v1/services/getBrowserInfo]
 
 ### GET
@@ -1857,18 +1881,18 @@ check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]
                 "versionIsSupported" : true
             }
         }
-    
-        
+
+
 ### POST
-        
-+ Request 
-        
+
++ Request
+
         {
           "version" : "client version"
         }
-        
-+ Response 200 
-       
+
++ Response 200
+
         {
            "res": "OK",
            "data": {
@@ -1876,7 +1900,7 @@ check emailAddresses, must match """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z]
                "versionIsSupported" : true
            }
         }
-        
+
 # Group Util
 
 ## call stack [/api/v1/callStack]
@@ -1994,14 +2018,14 @@ Events will be deleted after each call
              },
              {
                "name": "friendRequest:new",
-               "data": { 
+               "data": {
                  "friendRequest":{ object },
                  "to": "identityId"
                }
              },
              {
                "name": "friendRequest:accepted",
-               "data": { 
+               "data": {
                  "from": "identityId",
                  "to": "identityId"
                }
@@ -2034,7 +2058,7 @@ Events will be deleted after each call
            "id": "QvySbPNwtdKPXm5SUami"
          }
         }
-        
+
 ## broadcast event to all eventSubscriptions [/api/v1/event/broadcast]
 
 ### POST
@@ -2052,4 +2076,4 @@ Events will be deleted after each call
           "res": "OK",
           "data": "event send"
         }
-        
+

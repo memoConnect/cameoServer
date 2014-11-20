@@ -1080,6 +1080,61 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "unreadMessages").asOpt[Int] must beSome(3)
     }
 
+    "third recipient disable unread messages" in {
+      val path = basePath + "/account"
+      val json = Json.obj("userSettings" -> Json.obj("enableUnreadMessages" -> false))
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "third recipient should get -1 for unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(-1)
+    }
+
+    "third recipient should not be able to mark messages as read" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message/" + messageId + "/read"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "third recipient renable unread messages" in {
+      val path = basePath + "/account"
+      val json = Json.obj("userSettings" -> Json.obj("enableUnreadMessages" -> true))
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+
     "third recipient mark first message read" in {
       val path = basePath + "/conversation/" + cidNew3 + "/message/" + messageId + "/read"
 
