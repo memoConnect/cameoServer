@@ -81,7 +81,7 @@ class AccountControllerSpec extends StartedApp {
       val path = basePath + "/account"
       val json = Json.obj("userSettings" -> newSettings)
 
-      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
       if (status(res) != OK) {
@@ -93,7 +93,7 @@ class AccountControllerSpec extends StartedApp {
     "Account should contain new settings" in {
       val path = basePath + "/account"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
       val res = route(req).get
 
       if (status(res) != OK) {

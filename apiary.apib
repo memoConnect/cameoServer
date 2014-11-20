@@ -153,7 +153,16 @@ Get Account details of current user
                   "language": "en-US",
                   "platform": "android"
                 }
-          ],
+            ],
+            "userSettings":
+            {
+              "enableUnreadMessages": true,
+              "convertSmileysToEmojis": true,
+              "sendOnReturn": false,
+              "languageSettings": "",
+              "dateFormat": "dd.MM.yyyy",
+              "timeFormat": "HH:mm"
+            },
             "created": 1392301163329,
             "lastUpdated": 1392301163329,
             "identities": [
@@ -185,7 +194,15 @@ Update existing account
           "password": "password",
           "oldPassword" : "oldPassword", (required when setting new password)
           "email": "mail",
-          "phoneNumber": "12335"
+          "phoneNumber": "12335",
+          "userSettings": {
+            "enableUnreadMessages": true,
+            "convertSmileysToEmojis": true,
+            "sendOnReturn": false,
+            "languageSettings": "",
+            "dateFormat": "dd.MM.yyyy",
+            "timeFormat": "HH:mm"
+          }
         }
 
 + Response 200 (application/json)
@@ -1967,7 +1984,8 @@ Events will be deleted after each call
                "name": "conversation:new-message",
                "data": {
                  "conversationId": "O5DjLp2CZ6Q3BVroM4mX",
-                 "message": {message object}
+                 "message": {message object},
+                 "unreadMessages": 2
                }
              },
              {
@@ -2003,6 +2021,12 @@ Events will be deleted after each call
                  "conversationIds": [
                    "VqkdgXcpj9HnGK7V1dVI"
                  ]
+               }
+             },
+             {
+               "name": "conversation:update",
+               "data": {
+                 "unreadMessages": 4
                }
              }
            }
