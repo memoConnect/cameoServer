@@ -375,8 +375,6 @@ object DbUtilities {
   def addLastMessageRead: Any => Future[Boolean] = foo => {
     Logger.info("added last message read to conversations")
 
-    val start = System.currentTimeMillis()
-
     def processConversation: (Conversation => Future[Boolean]) = {
       conversation =>
         // get messageId of last message
@@ -393,12 +391,7 @@ object DbUtilities {
       (result, c) => processConversation(c).map(r => r && result)
     }
 
-    val res = enumerator.run(iteratee)
-
-    val duration = System.currentTimeMillis() - start
-    Logger.info("Duration: " + duration + " milliseconds ")
-
-    res
+    enumerator.run(iteratee)
   }
 
   def migrations: Map[Int, Any => Future[Boolean]] = Map(

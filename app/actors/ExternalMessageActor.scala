@@ -44,11 +44,12 @@ class ExternalMessageActor extends Actor {
                   // get account, if identity has one
                   recipientIdentity.accountId.fold[Future[Option[Account]]](Future(None))(Account.find).map {
                     maybeAccount =>
+                      val conversationWithMessage = conversation.copy(messages = conversation.messages :+ message)
                       // don't send external message to sender
                       if (recipient.identityId.equals(fromIdentity.id)) {
-                        eventRouter ! ConversationNewMessage(recipient.identityId, conversation, message, maybeAccount.map(_.userSettings))
+                        eventRouter ! ConversationNewMessage(recipient.identityId, conversationWithMessage, message, maybeAccount.map(_.userSettings))
                       } else {
-                        eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversation, message, maybeAccount.map(_.userSettings))
+                        eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversationWithMessage, message, maybeAccount.map(_.userSettings))
 
                         // check if identity has an event subscription or is the support
                         val supportIdentityId = Play.configuration.getString("support.contact.identityId").getOrElse("")
