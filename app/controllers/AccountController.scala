@@ -1,5 +1,6 @@
 package controllers
 
+import events.IdentityUpdate
 import helper.JsonHelper
 import helper.ResultHelper._
 import models._
@@ -11,7 +12,7 @@ import play.api.mvc.{ Action, Result }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, UpdatedIdentity }
+import services.AuthenticationActions
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -56,7 +57,7 @@ object AccountController extends ExtendedController {
                     lastError =>
                       lastError.ok match {
                         case true =>
-                          // create statd event when user is not a test user
+                          // create statsd event when user is not a test user
                           val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
                           if (!accountLowerCase.loginName.startsWith(testUserPrefix.toLowerCase)) {
                             Statsd.increment("custom.account.create")
@@ -100,7 +101,7 @@ object AccountController extends ExtendedController {
                                       "accountId" -> account.id,
                                       "isDefaultIdentity" -> true,
                                       "displayName" -> additionalValues.displayName.getOrElse(""))
-                                    Identity.update(identity.id, IdentityUpdate.setValues(set))
+                                    Identity.update(identity.id, IdentityModelUpdate.fromMap(set))
                                   }
                                   deleteDetails <- {
                                     val deleteValues =
@@ -121,7 +122,7 @@ object AccountController extends ExtendedController {
                                     // send identity update event to other identity
                                     Identity.find(identity.id).map {
                                       case None    => // do nothing
-                                      case Some(i) => actors.eventRouter ! UpdatedIdentity(otherIdentity.id, identity.id, i.toPublicJson())
+                                      case Some(i) => actors.eventRouter ! IdentityUpdate(otherIdentity.id, identity.id, i.toPublicJson())
                                     }
                                     createAccountWithIdentity(identity)
                                 }
@@ -251,7 +252,7 @@ object AccountController extends ExtendedController {
             }
           }
 
-          AccountUpdate.validateRequest(request.body) {
+          AccountModelUpdate.fromRequest(request.body) {
             js =>
               // check if there is a password change
               val newPassword = (request.body \ "password").asOpt[String](JsonHelper.hashPassword)
@@ -268,7 +269,7 @@ object AccountController extends ExtendedController {
                         case false => Future(resBadRequest("invalid old password"))
                         case true =>
                           val set = Map("password" -> newPw)
-                          val update = js.deepMerge(AccountUpdate.setValues(set))
+                          val update = js.deepMerge(AccountModelUpdate.fromMap(set))
                           doAccountUpdate(update)
                       }
                   }

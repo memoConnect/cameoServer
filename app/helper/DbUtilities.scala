@@ -1,6 +1,7 @@
 package helper
 
 import java.io.{ File, FileWriter }
+import java.util.Date
 
 import helper.MongoCollections._
 import models._
@@ -119,7 +120,7 @@ object DbUtilities {
 
   }
 
-  val latestDbVersion = 8
+  val latestDbVersion = 9
 
   def migrate(currentVersion: Int): Future[Boolean] = {
 
@@ -135,7 +136,7 @@ object DbUtilities {
       case false =>
         Logger.info("not migrating, since migrating flag is already set to true in global State"); Future(false)
       case true =>
-        val res: Seq[Future[Boolean]] = Seq.range[Int](currentVersion, latestDbVersion).map {
+        val res: Seq[Future[Boolean]] = Seq.range[Int](currentVersion, latestDbVersion).seq.map {
           i =>
             Logger.info("migrating version " + i + " (latestVersion: " + latestDbVersion + ")")
             migrations.get(i) match {
@@ -371,6 +372,35 @@ object DbUtilities {
     enumerator.run(iteratee)
   }
 
+  def addLastMessageRead: Any => Future[Boolean] = foo => {
+    Logger.info("added last message read to conversations")
+
+    val start = System.currentTimeMillis()
+
+    def processConversation: (Conversation => Future[Boolean]) = {
+      conversation =>
+        // get messageId of last message
+        val updatedRecipients = conversation.recipients.map {
+          _.copy(messagesRead = Some(conversation.numberOfMessages))
+        }
+        val update = Json.obj("$set" -> Json.obj("recipients" -> updatedRecipients))
+        Conversation.update(conversation.id, update)
+    }
+
+    val enumerator = conversationCollection.find(Json.obj()).cursor[Conversation].enumerate()
+
+    val iteratee: Iteratee[Conversation, Boolean] = Iteratee.foldM(true) {
+      (result, c) => processConversation(c).map(r => r && result)
+    }
+
+    val res = enumerator.run(iteratee)
+
+    val duration = System.currentTimeMillis() - start
+    Logger.info("Duration: " + duration + " milliseconds ")
+
+    res
+  }
+
   def migrations: Map[Int, Any => Future[Boolean]] = Map(
     0 -> migrateTokensWithIteratee,
     1 -> migrateRecipients,
@@ -379,6 +409,7 @@ object DbUtilities {
     4 -> setDefaultIdentity,
     5 -> reverseConversations,
     6 -> clearScaleCache,
-    7 -> setAvatarOwnership
+    7 -> setAvatarOwnership,
+    8 -> addLastMessageRead
   )
 }

@@ -1,14 +1,16 @@
 package controllers
 
 import actors.ExternalMessage
+import events.{ ConversationUpdate, ConversationNew }
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, NewConversation }
+import services.AuthenticationActions
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -43,7 +45,7 @@ object ConversationController extends ExtendedController {
                   // send notification for last message only
                   messages.lastOption match {
                     case None          => // do nothing
-                    case Some(message) => actors.externalMessageRouter ! ExternalMessage(message, conversation.id, conversation.recipients, conversation.subject.getOrElse(""))
+                    case Some(message) => actors.externalMessageRouter ! ExternalMessage(message, conversation)
                   }
                   Left(conversation.copy(messages = messages))
               }.recoverTotal {
@@ -58,10 +60,9 @@ object ConversationController extends ExtendedController {
               // send conversation:new event to all recipients
               conversation.recipients.foreach {
                 recipient =>
-                  actors.eventRouter ! NewConversation(recipient.identityId, conversation)
+                  actors.eventRouter ! ConversationNew(recipient.identityId, conversation)
               }
-
-              resOk(conversation.toJson)
+              resOk(conversation.toJson(identityId = request.identity.id, request.account.map(_.userSettings)))
           }
         }
 
@@ -80,7 +81,7 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversation(id: String, offset: Int, limit: Int, keyId: List[String], timeLimit: Long) = AuthAction(allowExternal = true).async {
+  def getConversation(id: String, offset: Int, limit: Int, keyId: List[String], timeLimit: Long) = AuthAction(allowExternal = true, getAccount = true).async {
     request =>
       // check if a timeLimit is specified
       val futureConversation = if (timeLimit > 0) {
@@ -92,7 +93,8 @@ object ConversationController extends ExtendedController {
       futureConversation.map {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
-          resOk(c.toJsonWithKey(keyId))
+          val res = c.toJson(request.identity.id, request.account.map(_.userSettings), Some(keyId))
+          resOk(res)
         }
       }
   }
@@ -109,7 +111,7 @@ object ConversationController extends ExtendedController {
 
   def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      ConversationUpdate.validateRequest(request.body) {
+      ConversationModelUpdate.fromRequest(request.body) {
         update =>
           Conversation.find(id, -1, 0).flatMap {
             case None => Future(resNotFound("conversation"))
@@ -168,17 +170,17 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversationSummary(id: String, keyId: List[String]) = AuthAction(allowExternal = true).async {
+  def getConversationSummary(id: String, keyId: List[String]) = AuthAction(allowExternal = true, getAccount = true).async {
     request =>
       Conversation.find(id, 1, 0).map {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
-          resOk(c.toSummaryJsonWithKey(keyId))
+          resOk(c.toSummaryJson(request.identity.id, request.account.map(_.userSettings), keyId))
         }
       }
   }
 
-  def getConversations(offset: Int, limit: Int, keyId: List[String]) = AuthAction().async {
+  def getConversations(offset: Int, limit: Int, keyId: List[String]) = AuthAction(getAccount = true).async {
     request =>
       Conversation.findByIdentityId(request.identity.id).map {
         list =>
@@ -186,7 +188,7 @@ object ConversationController extends ExtendedController {
           val sorted = list.sortBy(_.lastUpdated).reverse
           val limited = OutputLimits.applyLimits(sorted, offset, limit)
           val res = Json.obj(
-            "conversations" -> limited.map(_.toSummaryJsonWithKey(keyId)),
+            "conversations" -> limited.map(_.toSummaryJson(request.identity.id, request.account.map(_.userSettings), keyId)),
             "numberOfConversations" -> list.length
           )
           resOk(res)
@@ -195,8 +197,8 @@ object ConversationController extends ExtendedController {
 
   def addAePassphrases(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      Conversation.find(new MongoId(id), -1, 0).flatMap {
-        case None => Future.successful(resNotFound("conversation"))
+      Conversation.find(MongoId(id), 1, 0).flatMap {
+        case None => Future(resNotFound("conversation"))
         case Some(conversation) =>
           conversation.hasMemberFutureResult(request.identity.id) {
             validateFuture(request.body \ "aePassphraseList", Reads.seq(EncryptedPassphrase.createReads)) {
@@ -206,6 +208,35 @@ object ConversationController extends ExtendedController {
               }
             }
           }
+      }
+  }
+
+  def markMessageRead(id: String, messageId: String) = AuthAction(getAccount = true).async {
+    request =>
+      if (request.account.isDefined && request.account.get.userSettings.enableUnreadMessages) {
+        // we assume that the message we are marking as read is in the last 10 messages, so we do not have to get all messages from the db.
+        val messageLimit = 10
+
+        Conversation.find(MongoId(id), messageLimit, 0).flatMap {
+          case None => Future(resNotFound("conversation"))
+          case Some(conversation) =>
+            conversation.hasMemberFutureResult(request.identity.id) {
+              val index = conversation.messages.indexWhere(_.id.equals(MongoId(messageId)))
+              Logger.debug("index:" + index)
+              val stillUnread = if (index >= 0) index else messageLimit
+
+              conversation.markMessageRead(request.identity.id, stillUnread).map {
+                case false => resBadRequest("unable to update")
+                case true =>
+                  // send event
+                  actors.eventRouter ! ConversationUpdate(request.identity.id, conversation.id, Json.obj("unreadMessages" -> stillUnread))
+                  resOk("updated")
+              }
+            }
+        }
+      } else {
+        Logger.error("User with disabled unread message submitted message read. IdentityId: " + request.identity.id.id)
+        Future(resBadRequest("unread messages are disabled"))
       }
   }
 }

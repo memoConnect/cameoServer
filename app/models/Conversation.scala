@@ -41,23 +41,31 @@ case class Conversation(id: MongoId,
                         keyTransmission: Option[String],
                         docVersion: Int) {
 
-  def toJson: JsObject = Json.toJson(this)(Conversation.outputWrites).as[JsObject]
+  def toJson(identityId: MongoId, settings: Option[AccountUserSettings], keyIds: Option[Seq[String]] = None): JsObject =
+    Json.toJson(this)(Conversation.outputWrites).as[JsObject] ++
+      Json.obj("unreadMessages" -> this.getNumberOfUnreadMessages(identityId, settings)) ++
+      maybeEmptyJson("aePassphraseList", keyIds.map(this.getPassphraseList))
 
-  def getPassphraseList(keyIds: Seq[String]): JsObject = {
-    val list = aePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId))
-    Json.obj("aePassphraseList" -> list.map(_.toJson))
+  def getPassphraseList(keyIds: Seq[String]): Seq[JsObject] = {
+    aePassphraseList.filter(passphrase => keyIds.contains(passphrase.keyId)).map(_.toJson)
   }
 
-  def toJsonWithKey(keyIds: Seq[String]): JsObject = {
-    this.toJson ++ getPassphraseList(keyIds)
+  def getNumberOfUnreadMessages(identityId: MongoId, settings: Option[AccountUserSettings]): Int = {
+    (settings.map(_.enableUnreadMessages), this.recipients.find(_.identityId.equals(identityId))) match {
+      case (_, None) =>
+        Logger.error("Trying to get number of messages of recipient who is not member of the conversation"); -1
+      case (None, _)                     => -1
+      case (Some(false), _)              => -1
+      case (Some(true), Some(recipient)) => this.numberOfMessages - recipient.messagesRead.getOrElse(0)
+    }
   }
 
   def toMessageJson: JsObject = Json.toJson(this)(Conversation.messageWrites).as[JsObject]
 
-  def toSummaryJson: JsObject = Json.toJson(this)(Conversation.summaryWrites).as[JsObject]
-
-  def toSummaryJsonWithKey(keyIds: Seq[String]): JsObject = {
-    this.toSummaryJson ++ getPassphraseList(keyIds)
+  def toSummaryJson(identityId: MongoId, settings: Option[AccountUserSettings], keyIds: Seq[String]): JsObject = {
+    Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
+      Json.obj("aePassphraseList" -> getPassphraseList(keyIds)) ++
+      Json.obj("unreadMessages" -> getNumberOfUnreadMessages(identityId, settings))
   }
 
   def query = Json.obj("_id" -> this.id)
@@ -123,7 +131,13 @@ case class Conversation(id: MongoId,
     }
   }
 
-  def addMessage(message: Message): Future[Boolean] = {
+  def addMessage(message: Message, fromIdentityId: MongoId): Future[Boolean] = {
+    val query =
+      Json.obj(
+        "_id" -> this.id,
+        "recipients.identityId" -> fromIdentityId
+      )
+
     val set =
       Json.obj(
         "$push" -> Json.obj("messages" ->
@@ -131,7 +145,8 @@ case class Conversation(id: MongoId,
             "$each" -> Seq(message),
             "$position" -> 0
           )),
-        "$inc" -> Json.obj("numberOfMessages" -> 1)
+        "$inc" -> Json.obj("numberOfMessages" -> 1),
+        "$inc" -> Json.obj("recipients.$.messagesRead" -> 1)
       )
     Conversation.col.update(query, setLastUpdated(set)).map(_.updatedExisting)
   }
@@ -153,6 +168,12 @@ case class Conversation(id: MongoId,
         }
     }
     Future.sequence(futureKeys).map(_.flatten)
+  }
+
+  def markMessageRead(identityId: MongoId, stillUnread: Int): Future[Boolean] = {
+    val query = Json.obj("_id" -> this.id, "recipients.identityId" -> identityId)
+    val set = Json.obj("$set" -> Json.obj("recipients.$.messagesRead" -> (this.numberOfMessages - stillUnread)))
+    Conversation.col.update(query, set).map(_.updatedExisting)
   }
 }
 
@@ -291,7 +312,7 @@ object Conversation extends Model[Conversation] {
   }
 }
 
-object ConversationUpdate extends ModelUpdate {
+object ConversationModelUpdate extends ModelUpdate {
   def values = Seq(
     StringUpdateValue("subject", externalEdit = true),
     MongoIdUpdateValue("passCaptcha", externalEdit = true),

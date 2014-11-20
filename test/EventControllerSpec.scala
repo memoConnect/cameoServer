@@ -312,6 +312,7 @@ class EventControllerSpec extends StartedApp {
         (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
         (js \ "data" \ "recipients").asOpt[Seq[JsObject]] must beSome
         (js \ "data" \ "messages").asOpt[Seq[JsObject]] must beSome
+        (js \ "data" \ "unreadMessages").asOpt[Int] must beSome(0)
       }
 
       checkEvent(events1, eventNameFinder("conversation:new"), eventCheck)
@@ -331,6 +332,7 @@ class EventControllerSpec extends StartedApp {
         (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
         (js \ "data" \ "recipients").asOpt[Seq[JsObject]] must beSome
         (js \ "data" \ "messages").asOpt[Seq[JsObject]] must beSome
+        (js \ "data" \ "unreadMessages").asOpt[Int] must beSome(0)
       }
 
       checkEvent(events1, eventNameFinder("conversation:new"), eventCheck)
@@ -339,11 +341,11 @@ class EventControllerSpec extends StartedApp {
     "Send some messages" in {
       // send messages
       (1 to numberOfMessages).map { i =>
-        val path2 = basePath + "/conversation/" + conversationId + "/message"
-        val json2 = Json.obj("plain" -> Json.obj("text" -> ( text + i)))
-        val req2 = FakeRequest(POST, path2).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json2)
-        val res2 = route(req2).get
-        status(res2) must equalTo(OK)
+        val path = basePath + "/conversation/" + conversationId + "/message"
+        val json = Json.obj("plain" -> Json.obj("text" -> ( text + i)))
+        val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
+        val res = route(req).get
+        status(res) must equalTo(OK)
       }
       1 === 1
     }
@@ -353,7 +355,11 @@ class EventControllerSpec extends StartedApp {
       val events1 = waitForEvents(testUser1.token, subscriptionId, numberOfMessages)
       val events2 = waitForEvents(testUser1.token, subscriptionId2, numberOfMessages)
 
-      def eventCheck(js: JsObject) = (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
+      def eventCheck(js: JsObject) ={
+        (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
+        (js \ "data" \ "unreadMessages").asOpt[Int] must beSome(0)
+
+      }
 
       (1 to numberOfMessages).map { i =>
         def finder(js: JsObject) = {
@@ -377,7 +383,10 @@ class EventControllerSpec extends StartedApp {
 
       val events1 = waitForEvents(testUser2.token, subscription2Id, numberOfMessages)
 
-      def eventCheck(js: JsObject) = (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
+        (js \ "data" \ "unreadMessages").asOpt[Int] must beSome
+      }
 
       (1 to numberOfMessages).map { i =>
         def finder(js: JsObject) = {
@@ -463,6 +472,7 @@ class EventControllerSpec extends StartedApp {
         (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
         (js \ "data" \ "message").asOpt[JsObject] must beSome
         (js \ "data" \ "message" \ "plain" \ "fileIds").asOpt[Seq[String]] must beSome
+        (js \ "data" \ "unreadMessages").asOpt[Int] must beSome(0)
       }
 
       checkEvent(events1, eventNameFinder("conversation:new-message"), eventCheck)
@@ -476,9 +486,39 @@ class EventControllerSpec extends StartedApp {
         (js \ "data" \ "conversationId").asOpt[String] must beSome(conversationId)
         (js \ "data" \ "message").asOpt[JsObject] must beSome
         (js \ "data" \ "message" \ "plain" \ "fileIds").asOpt[Seq[String]] must beSome
+        (js \ "data" \ "unreadMessages").asOpt[Int] must beSome(4)
       }
 
       checkEvent(events1, eventNameFinder("conversation:new-message"), eventCheck)
+    }
+
+    "mark messages as read" in {
+      val path = basePath + "/conversation/" + conversationId + "/message/" + messageId + "/read"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser2.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "conversation:update event should appear in subscription of second user" in {
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
+        (js \ "data" \ "unreadMessages").asOpt[Int] must beSome(0)
+      }
+
+      checkEvent(events1, eventNameFinder("conversation:update"), eventCheck)
+    }
+
+    "first user should not receive an event" in {
+      waitForEvents(testUser1.token, subscriptionId, 0)
+      waitForEvents(testUser1.token, subscriptionId2, 0)
+      1===1
     }
 
     var pubKeyId = ""
@@ -695,5 +735,8 @@ class EventControllerSpec extends StartedApp {
       checkEvent(events1, eventNameFinder("identity:new"), eventCheck)
       checkEvent(events2, eventNameFinder("identity:new"), eventCheck)
     }
+
+
+
   }
 }

@@ -1,8 +1,9 @@
 package actors
 
 import akka.actor.Actor
+import events.{PushEvent, EventDefinition}
 import models.Identity
-import services.{ EventDefinition, LocalizationMessages, PushEvent, PushdConnector }
+import services.{ LocalizationMessages, PushdConnector }
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

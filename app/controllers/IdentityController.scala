@@ -1,5 +1,6 @@
 package controllers
 
+import events.IdentityNew
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -8,7 +9,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Request, Result }
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, AvatarGenerator, NewIdentity }
+import services.{ AuthenticationActions, AvatarGenerator }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -52,7 +53,7 @@ object IdentityController extends ExtendedController {
 
   def updateIdentity() = AuthAction().async(parse.tolerantJson) {
     request =>
-      IdentityUpdate.validateRequest(request.body) {
+      IdentityModelUpdate.fromRequest(request.body) {
         update =>
           Identity.update(request.identity.id, update).map {
             case false => resNotFound("identity")
@@ -143,7 +144,7 @@ object IdentityController extends ExtendedController {
                         insertedIdentity =>
                           // send event to all other identities
                           Identity.findAll(Json.obj("accountId" -> accountId)).map { list =>
-                            list.foreach(i => actors.eventRouter ! NewIdentity(i.id, insertedIdentity))
+                            list.foreach(i => actors.eventRouter ! IdentityNew(i.id, insertedIdentity))
                           }
                           // create token for new identity
                           val token = Token.createDefault()

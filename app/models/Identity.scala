@@ -211,7 +211,7 @@ case class Identity(id: MongoId,
                 for {
                   // add contact and message
                   contactOk <- this.addContact(contact)
-                  messageOk <- conversation.addMessage(message)
+                  messageOk <- conversation.addMessage(message, supportIdentity.id)
                 } yield {
                   contactOk && messageOk
                 }
@@ -454,7 +454,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
 }
 
-object IdentityUpdate extends ModelUpdate {
+object IdentityModelUpdate extends ModelUpdate {
   def values = Seq(
     StringUpdateValue("displayName", externalEdit = true),
     MongoIdUpdateValue("avatar", externalEdit = true),

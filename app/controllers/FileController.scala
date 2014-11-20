@@ -6,6 +6,7 @@ import java.io.{ ByteArrayInputStream, ByteArrayOutputStream }
 import javax.imageio.ImageIO
 
 import constants.ErrorCodes
+import events.ConversationNewMessage
 import helper.ResultHelper._
 import helper.{ IdHelper, MongoCollections, Utils }
 import models._
@@ -17,7 +18,7 @@ import play.api.mvc._
 import reactivemongo.api.gridfs.DefaultFileToSave
 import reactivemongo.bson.{ BSONDocument, BSONObjectID, _ }
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, ImageScaler, NewMessage }
+import services.{ AuthenticationActions, ImageScaler }
 import sun.misc.BASE64Decoder
 import traits.ExtendedController
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
@@ -184,7 +185,7 @@ object FileController extends ExtendedController {
     implicit val format = Json.format[FileComplete]
   }
 
-  def uploadFileComplete(id: String) = AuthAction().async(parse.tolerantJson) {
+  def uploadFileComplete(id: String) = AuthAction(getAccount = true).async(parse.tolerantJson) {
     request =>
       FileMeta.find(id).flatMap {
         case None => Future(resNotFound("file"))
@@ -203,7 +204,7 @@ object FileController extends ExtendedController {
                         val message = conversation.messages.find(_.id.id.equals(messageId)).get
                         conversation.recipients.foreach {
                           recipient =>
-                            actors.eventRouter ! NewMessage(recipient.identityId, conversation.id, message)
+                            actors.eventRouter ! ConversationNewMessage(recipient.identityId, conversation, message, request.account.map(_.userSettings))
                         }
                         resOk("completed")
                     }
