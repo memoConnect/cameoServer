@@ -72,6 +72,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
         Json.obj("loginName" -> a.loginName) ++
         maybeEmptyJson("phoneNumber", a.phoneNumber.map(_.toJson)) ++
         maybeEmptyJson("email", a.email.map(_.toJson)) ++
+        Json.obj("userSettings" -> a.userSettings) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
@@ -241,11 +242,17 @@ object AccountEvolutions {
   }
 }
 
-object AccountUpdate extends ModelUpdate {
+object AccountModelUpdate extends ModelUpdate {
   def values = Seq(
     VerifiedStringUpdateValue("email", JsonHelper.verifyMail, externalEdit = true),
     VerifiedStringUpdateValue("phoneNumber", JsonHelper.verifyPhoneNumber, externalEdit = true),
-    StringUpdateValue("password")
+    StringUpdateValue("password"),
+    BooleanUpdateSubvalue("userSettings", "enableUnreadMessages", externalEdit = true),
+    BooleanUpdateSubvalue("userSettings", "convertSmileysToEmojis", externalEdit = true),
+    BooleanUpdateSubvalue("userSettings", "sendOnReturn", externalEdit = true),
+    StringUpdateSubvalue("userSettings", "languageSettings", externalEdit = true),
+    StringUpdateSubvalue("userSettings", "dateFormat", externalEdit = true),
+    StringUpdateSubvalue("userSettings", "timeFormat", externalEdit = true)
   )
 }
 

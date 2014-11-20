@@ -111,7 +111,7 @@ object ConversationController extends ExtendedController {
 
   def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      ConversationModelUpdate.validateRequest(request.body) {
+      ConversationModelUpdate.fromRequest(request.body) {
         update =>
           Conversation.find(id, -1, 0).flatMap {
             case None => Future(resNotFound("conversation"))

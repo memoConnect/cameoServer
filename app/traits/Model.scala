@@ -73,7 +73,11 @@ trait Model[A] {
 
   // todo: maybe find a more typesave way to do this
   def update(id: MongoId, update: JsObject): Future[Boolean] = {
-    if (update.keys.isEmpty || (update \ "$set").asOpt[JsObject].exists(_.keys.isEmpty)) {
+
+    val noSet = update.keys.isEmpty || (update \ "$set").asOpt[JsObject].exists(_.keys.isEmpty)
+    val noUnset = (update \ "$unset").asOpt[JsObject].exists(_.keys.isEmpty)
+
+    if (noSet && noUnset) {
       Future(true)
     } else {
       val query = Json.obj("_id" -> id)

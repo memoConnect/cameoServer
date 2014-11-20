@@ -59,6 +59,50 @@ class AccountControllerSpec extends StartedApp {
       (data \ "email" \ "value").asOpt[String] must beSome
       (data \ "email" \ "isVerified").asOpt[Boolean] must beSome
       (data \ "identities").asOpt[Seq[JsObject]] must beSome
+      (data \ "userSettings").asOpt[JsObject] must beSome
+      (data \ "userSettings" \ "enableUnreadMessages").asOpt[Boolean] must beSome(true)
+      (data \ "userSettings" \ "convertSmileysToEmojis").asOpt[Boolean] must beSome(true)
+      (data \ "userSettings" \ "sendOnReturn").asOpt[Boolean] must beSome(false)
+      (data \ "userSettings" \ "languageSettings").asOpt[String] must beSome
+      (data \ "userSettings" \ "dateFormat").asOpt[String] must beSome
+      (data \ "userSettings" \ "timeFormat").asOpt[String] must beSome
+    }
+
+    val newSettings = Json.obj(
+      "enableUnreadMessages" -> false,
+      "convertSmileysToEmojis" -> false,
+      "sendOnReturn" -> true,
+      "languageSettings" -> "foo",
+      "dateFormat" -> "baa",
+      "timeFormat" -> "moep"
+    )
+
+    "Edit account settings" in {
+      val path = basePath + "/account"
+      val json = Json.obj("userSettings" -> newSettings)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "Account should contain new settings" in {
+      val path = basePath + "/account"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "userSettings").asOpt[JsObject] must beSome(newSettings)
     }
 
     "Refuse invalid Logins" in {

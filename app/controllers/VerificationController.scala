@@ -56,7 +56,7 @@ object VerificationController extends Controller with ExtendedController {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
                 val set = Map("email" -> i.email.get.copy(isVerified = true))
-                Identity.update(i.id, IdentityModelUpdate.setValues(set))
+                Identity.update(i.id, IdentityModelUpdate.fromMap(set))
                 resOk("verified")
               } else {
                 resUnauthorized("mail has changed")
@@ -67,7 +67,7 @@ object VerificationController extends Controller with ExtendedController {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
                 val set = Map("phoneNumber" -> i.email.get.copy(isVerified = true))
-                Identity.update(i.id, IdentityModelUpdate.setValues(set))
+                Identity.update(i.id, IdentityModelUpdate.fromMap(set))
                 resOk("verified")
               } else {
                 resUnauthorized("phonenumber has changed")

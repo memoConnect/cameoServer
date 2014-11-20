@@ -101,7 +101,7 @@ object AccountController extends ExtendedController {
                                       "accountId" -> account.id,
                                       "isDefaultIdentity" -> true,
                                       "displayName" -> additionalValues.displayName.getOrElse(""))
-                                    Identity.update(identity.id, IdentityModelUpdate.setValues(set))
+                                    Identity.update(identity.id, IdentityModelUpdate.fromMap(set))
                                   }
                                   deleteDetails <- {
                                     val deleteValues =
@@ -252,7 +252,7 @@ object AccountController extends ExtendedController {
             }
           }
 
-          AccountUpdate.validateRequest(request.body) {
+          AccountModelUpdate.fromRequest(request.body) {
             js =>
               // check if there is a password change
               val newPassword = (request.body \ "password").asOpt[String](JsonHelper.hashPassword)
@@ -269,7 +269,7 @@ object AccountController extends ExtendedController {
                         case false => Future(resBadRequest("invalid old password"))
                         case true =>
                           val set = Map("password" -> newPw)
-                          val update = js.deepMerge(AccountUpdate.setValues(set))
+                          val update = js.deepMerge(AccountModelUpdate.fromMap(set))
                           doAccountUpdate(update)
                       }
                   }
