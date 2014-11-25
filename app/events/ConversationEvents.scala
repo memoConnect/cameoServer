@@ -12,25 +12,25 @@ import play.api.libs.json.{ JsNumber, JsObject, Json }
 
 trait NewMessageEvent extends EventDefinition {
 
-  def conversation: Conversation
+  def conversationId: MongoId
+
+  def unreadMessages: Int
 
   def message: Message
-
-  def userSettings: Option[AccountUserSettings]
 
   def eventType = "conversation:new-message"
 
   def toEventContent = Json.obj(
-    "conversationId" -> conversation.id.toJson,
+    "conversationId" -> conversationId,
     "message" -> message.toJson,
-    "unreadMessages" -> conversation.getNumberOfUnreadMessages(sendToIdentity, userSettings)
+    "unreadMessages" -> unreadMessages
   )
 
 }
 
-case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversation: Conversation, message: Message, userSettings: Option[AccountUserSettings]) extends NewMessageEvent with PushEvent {
+case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, unreadMessages: Int, message: Message) extends NewMessageEvent with PushEvent {
 
-  def context = "message:" + conversation.id
+  def context = "message:" + conversationId
 
   def localizationKeyTitle = "PUSH_MESSAGE.NEW_MESSAGE.TITLE"
   def localizationKeyMsg = "PUSH_MESSAGE.NEW_MESSAGE.MSG"
@@ -41,7 +41,7 @@ case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender
 
 }
 
-case class ConversationNewMessage(sendToIdentity: MongoId, conversation: Conversation, message: Message, userSettings: Option[AccountUserSettings]) extends NewMessageEvent
+case class ConversationNewMessage(sendToIdentity: MongoId, conversationId: MongoId, unreadMessages: Int, message: Message) extends NewMessageEvent
 
 case class ConversationNew(sendToIdentity: MongoId, conversation: Conversation) extends EventDefinition {
 
