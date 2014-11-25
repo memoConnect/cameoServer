@@ -204,7 +204,8 @@ object FileController extends ExtendedController {
                         val message = conversation.messages.find(_.id.id.equals(messageId)).get
                         conversation.recipients.foreach {
                           recipient =>
-                            actors.eventRouter ! ConversationNewMessage(recipient.identityId, conversation, message, request.account.map(_.userSettings))
+                            val unreadMessages = conversation.getNumberOfUnreadMessages(recipient.identityId, request.account.map(_.userSettings))
+                            actors.eventRouter ! ConversationNewMessage(recipient.identityId, conversation.id, unreadMessages, message)
                         }
                         resOk("completed")
                     }

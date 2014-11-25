@@ -45,12 +45,13 @@ class ExternalMessageActor extends Actor {
                   recipientIdentity.accountId.fold[Future[Option[Account]]](Future(None))(Account.find).map {
                     maybeAccount =>
                       val unreadMessages = conversation.getNumberOfUnreadMessages(recipient.identityId, maybeAccount.map(_.userSettings))
+                      val unreadMessagesCorrected = if(recipient.identityId.equals(fromIdentity.id)) unreadMessages else unreadMessages + 1
+
                       // don't send external message to sender
                       if (recipient.identityId.equals(fromIdentity.id)) {
-                        eventRouter ! ConversationNewMessage(recipient.identityId, conversation.id, unreadMessages, message)
+                        eventRouter ! ConversationNewMessage(recipient.identityId, conversation.id, unreadMessagesCorrected, message)
                       } else {
-                        eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversation.id, unreadMessages, message)
-
+                        eventRouter ! ConversationNewMessageWithPush(recipient.identityId, fromIdentity, conversation.id, unreadMessagesCorrected, message)
                         // check if identity has an event subscription or is the support
                         val supportIdentityId = Play.configuration.getString("support.contact.identityId").getOrElse("")
                         EventSubscription.find(Json.obj("identityId" -> recipientIdentity.id)).map {
