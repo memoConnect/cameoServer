@@ -124,9 +124,8 @@ case class BooleanUpdateSubvalue(parentName: String, name: String, externalEdit:
 
   def fromJson(json: JsValue): JsResult[Option[JsObject]] = {
     (json \ parentName \ name).validate[Option[Boolean]].map {
-      case None =>
-        Logger.debug("none:" + name); Some(Json.obj())
-      case Some(b) => Logger.debug("some:" + name); Some(Json.obj(parentName + "." + name -> b))
+      case None    => Some(Json.obj())
+      case Some(b) => Some(Json.obj(parentName + "." + name -> b))
     }
   }
   // todo: type checking at runtime, can do better

@@ -108,6 +108,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "subject").asOpt[String] must beSome(subject)
       (data \ "keyTransmission").asOpt[String] must beSome(keyTransmission)
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
     }
 
     "Create a new conversation without subject" in {

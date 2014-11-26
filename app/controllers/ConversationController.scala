@@ -22,7 +22,7 @@ import scala.concurrent.Future
  */
 object ConversationController extends ExtendedController {
 
-  def createConversation = AuthAction(includeContacts = true).async(parse.tolerantJson) {
+  def createConversation = AuthAction(includeContacts = true, getAccount = true).async(parse.tolerantJson) {
     request =>
       {
         def addRecipients(conversation: Conversation): Either[Conversation, Result] = {
@@ -62,7 +62,7 @@ object ConversationController extends ExtendedController {
                 recipient =>
                   actors.eventRouter ! ConversationNew(recipient.identityId, conversation)
               }
-              resOk(conversation.toJson(identityId = request.identity.id, request.account.map(_.userSettings)))
+              resOk(conversation.toJson(request.identity.id, request.account.map(_.userSettings)))
           }
         }
 
@@ -222,9 +222,7 @@ object ConversationController extends ExtendedController {
           case Some(conversation) =>
             conversation.hasMemberFutureResult(request.identity.id) {
               val index = conversation.messages.indexWhere(_.id.equals(MongoId(messageId)))
-              Logger.debug("index:" + index)
               val stillUnread = if (index >= 0) index else messageLimit
-
               conversation.markMessageRead(request.identity.id, stillUnread).map {
                 case false => resBadRequest("unable to update")
                 case true =>

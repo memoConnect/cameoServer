@@ -46,13 +46,12 @@ object FileController extends ExtendedController {
         fileName.isEmpty ||
           maxChunks.isEmpty ||
           fileSize.isEmpty ||
-          fileType.isEmpty ||
           Utils.safeStringToInt(maxChunks.get).isEmpty ||
           Utils.safeStringToInt(fileSize.get).isEmpty
       }
 
       def createFile(): Future[Result] = {
-        val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.get, Some(request.identity.id))
+        val fileMeta = FileMeta.create(Seq(), fileName.get, maxChunks.get.toInt, fileSize.get.toInt, fileType.getOrElse(""), Some(request.identity.id))
         FileMeta.col.insert(fileMeta).map { lastError =>
           lastError.ok match {
             case false => resServerError("could not save chunk")
