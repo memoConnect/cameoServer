@@ -1,14 +1,13 @@
 package controllers
 
-import services.{AuthenticationActions, UpdatedIdentity}
-import AuthenticationActions._
 import helper.IdHelper
 import helper.ResultHelper._
 import models._
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.UpdatedIdentity
+import services.AuthenticationActions._
+import services.{ AuthenticationActions, UpdatedIdentity }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

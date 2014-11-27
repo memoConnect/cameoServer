@@ -2,12 +2,12 @@ package models
 
 import java.util.Date
 
-import helper.{JsonHelper, IdHelper}
 import helper.JsonHelper._
 import helper.MongoCollections._
+import helper.{ IdHelper, JsonHelper }
 import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
-import play.api.{Logger, Play}
+import play.api.Play
 import play.api.Play.current
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -28,6 +28,7 @@ case class Account(id: MongoId,
                    password: String,
                    phoneNumber: Option[VerifiedString],
                    email: Option[VerifiedString],
+                   properties: AccountProperties,
                    created: Date,
                    lastUpdated: Date) {
 
@@ -58,6 +59,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+      Reads.pure[AccountProperties](AccountProperties.defaultProperties) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -78,11 +80,10 @@ object Account extends Model[Account] with CockpitEditable[Account] {
   }
 
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, new Date, new Date)
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, AccountProperties.defaultProperties, new Date, new Date)
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
-
     Seq(
       CockpitAttributeString[String](name = "loginName", displayName = "Login Name", nullValue = "", showInList = true),
       CockpitAttributeString[String](name = "password", displayName = "Password", nullValue = ""),
@@ -101,13 +102,14 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 4
+  def docVersion = 5
 
   def evolutions = Map(
     0 -> AccountEvolutions.migrateToVerifiedString,
     1 -> AccountEvolutions.addDeviceIds,
     2 -> AccountEvolutions.convertToPushDevice,
-    3 -> AccountEvolutions.removePushDevices
+    3 -> AccountEvolutions.removePushDevices,
+    4 -> AccountEvolutions.addAccountProperties
   )
 }
 
@@ -220,12 +222,30 @@ object AccountEvolutions {
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
       js.transform(deleteArray andThen addVersion)
   }
+
+  def addAccountProperties: Reads[JsObject] = Reads {
+    js =>
+      val addProperties = __.json.update((__ \ 'properties).json.put(Json.toJson(AccountProperties.defaultProperties)))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
+      js.transform(addProperties andThen addVersion)
+  }
 }
 
 object AccountUpdate extends ModelUpdate {
-   def values = Seq(
+  def values = Seq(
     VerifiedStringUpdateValue("email", JsonHelper.verifyMail, externalEdit = true),
     VerifiedStringUpdateValue("phoneNumber", JsonHelper.verifyPhoneNumber, externalEdit = true),
     StringUpdateValue("password")
   )
+}
+
+case class AccountProperties(fileQuota: Int)
+
+object AccountProperties {
+  implicit def format: Format[AccountProperties] = Json.format[AccountProperties]
+
+  def defaultProperties: AccountProperties = {
+    def defaultQuota = Play.configuration.getInt("accounts.properties.default.file.quota").getOrElse(10000) * 1024 * 1024
+    AccountProperties(defaultQuota)
+  }
 }

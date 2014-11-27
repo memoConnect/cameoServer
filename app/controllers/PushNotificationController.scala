@@ -1,12 +1,11 @@
 package controllers
 
-import services.{AuthenticationActions, PushdConnector}
-import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models.Identity
 import play.api.i18n.Lang
 import play.api.libs.json._
-import services.PushdConnector
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, PushdConnector }
 import services.PushdConnector._
 import traits.ExtendedController
 

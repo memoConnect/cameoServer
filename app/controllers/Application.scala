@@ -1,7 +1,7 @@
 package controllers
 
+import helper.DbUtilities
 import helper.ResultHelper._
-import helper.{ DbAdminUtilities, Utils }
 import models.Account
 import play.api.Play
 import play.api.Play.current
@@ -20,13 +20,13 @@ object Application extends Controller {
 
   def index = Action.async {
     request =>
-      Future(Ok(views.html.index(DbAdminUtilities.mongoVersion)))
+      Future(Ok(views.html.index(DbUtilities.mongoVersion)))
   }
 
   def dumpDb() = Action {
     Play.isDev match {
       case true =>
-        DbAdminUtilities.dumpDb()
+        DbUtilities.dumpDb()
         Ok("dumped")
       case false =>
         resBadRequest("not in dev mode")
@@ -36,7 +36,7 @@ object Application extends Controller {
   def loadFixtures = Action {
     Play.isDev match {
       case true =>
-        DbAdminUtilities.loadFixtures()
+        DbUtilities.loadFixtures()
         Ok("loaded")
       case false =>
         resBadRequest("not in dev mode")
@@ -48,7 +48,7 @@ object Application extends Controller {
       case false =>
         resBadRequest("not in dev mode")
       case true =>
-        DbAdminUtilities.migrateAll()
+        DbUtilities.migrateAll()
         Ok("migrating")
     }
   }

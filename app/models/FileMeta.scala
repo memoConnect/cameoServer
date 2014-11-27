@@ -2,11 +2,14 @@ package models
 
 import java.util.Date
 
-import helper.IdHelper
 import helper.JsonHelper._
 import helper.MongoCollections._
+import helper.{ IdHelper, MongoCollections }
+import play.api.Logger
 import play.api.libs.json._
-import reactivemongo.core.commands.LastError
+import play.modules.reactivemongo.json.BSONFormats._
+import reactivemongo.bson.BSONNull
+import reactivemongo.core.commands._
 import traits.Model
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -25,6 +28,7 @@ case class FileMeta(id: MongoId,
                     fileType: String,
                     isCompleted: Boolean,
                     scaleCache: Map[String, String], // Map: Scale size -> id of cached file
+                    owner: Option[MongoId],
                     created: Date,
                     docVersion: Int) {
 
@@ -33,7 +37,7 @@ case class FileMeta(id: MongoId,
   val query = Json.obj("_id" -> this.id)
 
   def addChunk(chunkMeta: ChunkMeta): Future[LastError] = {
-    //upsert does not work on nested arrays in mongo. we need to get rid of all existing values before inserting
+    //upsert does not work on nested arrays in mongo. So we need to get rid of all existing values before inserting
     val remove = Json.obj("$pull" -> Json.obj("chunks" -> Json.obj("index" -> chunkMeta.index)))
     FileMeta.col.update(query, remove).flatMap {
       lastError =>
@@ -44,13 +48,14 @@ case class FileMeta(id: MongoId,
 
   def setCompleted(value: Boolean): Future[Boolean] = {
     val set = Json.obj("$set" -> Json.obj("isCompleted" -> value))
-    FileMeta.col.update(query, set).map(_.updatedExisting)
+    FileMeta.update(this.id, set)
   }
 
   def addToScaleCache(size: String, id: String): Future[Boolean] = {
     val set = Json.obj("$set" -> Json.obj(("scaleCache." + size) -> id))
-    FileMeta.col.update(query, set).map(_.updatedExisting)
+    FileMeta.update(this.id, set)
   }
+
 }
 
 object FileMeta extends Model[FileMeta] {
@@ -78,7 +83,7 @@ object FileMeta extends Model[FileMeta] {
         addCreated(fm.created)
   }
 
-  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String, isCompleted: Boolean = false, conversationId: Option[MongoId] = None): FileMeta = {
+  def create(chunks: Seq[ChunkMeta], fileName: String, maxChunks: Int, fileSize: Int, fileType: String, owner: Option[MongoId], isCompleted: Boolean = false, conversationId: Option[MongoId] = None): FileMeta = {
     new FileMeta(
       IdHelper.generateFileId(),
       chunks,
@@ -88,9 +93,15 @@ object FileMeta extends Model[FileMeta] {
       fileType,
       isCompleted,
       Map(),
+      owner,
       new Date,
       docVersion
     )
+  }
+
+  def setOwner(id: MongoId, identityId: MongoId): Future[Boolean] = {
+    val set = Json.obj("$set" -> Json.obj("owner" -> identityId))
+    FileMeta.update(id, set)
   }
 
   def deleteWithChunks(id: MongoId): Future[Boolean] = {
@@ -106,7 +117,26 @@ object FileMeta extends Model[FileMeta] {
   }
 
   def createDefault(): FileMeta = {
-    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, Map(), new Date, docVersion)
+    new FileMeta(IdHelper.generateFileId(), Seq(), "filename", 0, 0, "none", false, Map(), None, new Date, docVersion)
+  }
+
+  def getTotalFileSize(identityId: MongoId): Future[Int] = {
+    val pipeline: Seq[PipelineOperator] = Seq(
+      Match(toBson(Json.obj("owner" -> identityId)).get),
+      Group(BSONNull)(("totalFileSize", SumField("fileSize"))))
+
+    val command = Aggregate(FileMeta.col.name, pipeline)
+
+    MongoCollections.mongoDB.command(command).map {
+      _.headOption match {
+        case None =>
+          Logger.error("Could not get total file size")
+          0
+        case Some(bson) =>
+          val fileSize = (Json.toJson(bson) \ "totalFileSize").as[Int]
+          fileSize
+      }
+    }
   }
 }
 

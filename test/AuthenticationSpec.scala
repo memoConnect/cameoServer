@@ -86,6 +86,7 @@ class AuthenticationSpec extends StartedApp {
         r._2.startsWith("/dc") ||
         r._2.startsWith("/dl") ||
         r._2.startsWith("/c") ||
+        r._2.startsWith("/as") ||
         r._2.equals("/") ||
         r._2.startsWith("/a/v1/util") ||
         r._1.equals("OPTIONS") ||

@@ -2,7 +2,7 @@ package services
 
 import constants.Authentication._
 import helper.ResultHelper._
-import models.{Identity, MongoId, TwoFactorToken}
+import models.{ Identity, MongoId, TwoFactorToken }
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,7 +21,7 @@ object AuthenticationActions {
   def AuthAction(allowExternal: Boolean = false, includeContacts: Boolean = false, nonAuthBlock: Option[Request[Any] => Future[Result]] = None) =
     new ActionBuilder[AuthRequest] {
       def invokeBlock[A](request: Request[A], block: AuthRequest[A] => Future[Result]) =
-        doAuthAction(allowExternal,includeContacts, request, block, nonAuthBlock)
+        doAuthAction(allowExternal, includeContacts, request, block, nonAuthBlock)
     }
 
   def TwoFactorAuthAction(includeContacts: Boolean = false) = new ActionBuilder[TwoFactorAuthRequest] {

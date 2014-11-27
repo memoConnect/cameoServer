@@ -1,5 +1,6 @@
 package helper
 
+import constants.ErrorCodes.ErrorCode
 import constants.Notifications._
 import play.api.libs.json._
 import play.api.mvc.Result
@@ -21,14 +22,10 @@ object ResultHelper {
   def resOk(data: JsValue): Result =
     Ok(Json.obj("res" -> "OK") ++
       Json.obj("data" -> data))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
   def resOk(data: Seq[JsValue]): Result =
     Ok(Json.obj("res" -> "OK") ++
       Json.obj("data" -> data))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
   def resOk(data: String): Result = Ok(Json.obj("res" -> "OK") ++ Json.obj("data" -> data))
 
@@ -58,45 +55,57 @@ object ResultHelper {
   def resNotModified(): Result = NotModified
 
   // OK but could not fullfill request
-  def resKO(data: JsValue): Result =
+  def resKo(data: JsValue): Result =
     Status(232)(Json.obj("res" -> "KO")
       ++ Json.obj("data" -> data))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
-  def resKO(): Result =
+  def resKo(): Result =
     Status(232)(Json.obj("res" -> "KO"))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
 
   def resKo(error: String): Result =
     Status(232)(Json.obj("res" -> "KO")
       ++ Json.obj("error" -> error))
-  //      ++
-  //      addMessagesOrEmpty(notifications))
-
-  def resKO(notifications: Seq[UserNotification] = Seq()): Result =
-    Status(232)(
-      Json.obj("res" -> "KO") ++
-        addMessagesOrEmpty(notifications))
 
   // Bad Request
   def resBadRequest(error: String): Result = {
     BadRequest(
-      Json.obj("res" -> "KO") ++
-        Json.obj("error" -> error))
+      Json.obj(
+        "res" -> "KO",
+        "error" -> error)
+    )
+  }
+
+  def resBadRequest(error: String, errorCode: ErrorCode): Result = {
+    BadRequest(
+      Json.obj(
+        "res" -> "KO",
+        "error" -> error,
+        "errorCode" -> errorCode
+      ))
   }
 
   def resBadRequest(error: JsObject): Result = {
     BadRequest(
-      Json.obj("res" -> "KO") ++
-        Json.obj("error" -> error))
+      Json.obj(
+        "res" -> "KO",
+        "error" -> error)
+    )
   }
 
-  def resBadRequest(notifications: Seq[UserNotification] = Seq()): Result =
+  def resBadRequest(error: JsObject, errorCode: ErrorCode): Result = {
     BadRequest(
-      Json.obj("res" -> "KO") ++
-        addMessagesOrEmpty(notifications))
+      Json.obj(
+        "res" -> "KO",
+        "error" -> error,
+        "errorCode" -> errorCode
+      ))
+  }
+
+  def resBadRequest(): Result = {
+    BadRequest(
+      Json.obj("res" -> "KO")
+    )
+  }
 
   // NotFound
   def resNotFound(what: String, notifications: Seq[UserNotification] = Seq()): Result = {

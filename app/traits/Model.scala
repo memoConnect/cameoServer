@@ -53,7 +53,7 @@ trait Model[A] {
     col.remove(query)
   }
 
-  def deleteOptionalValues(id: MongoId, values: Seq[String]): Future[LastError] = {
+  def deleteValues(id: MongoId, values: Seq[String]): Future[LastError] = {
     val unsetValues = values.foldLeft(Json.obj())((js, value) => js ++ Json.obj(value -> ""))
     val set = Json.obj("$unset" -> unsetValues)
     val query = Json.obj("_id" -> id)

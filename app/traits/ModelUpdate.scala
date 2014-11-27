@@ -1,13 +1,11 @@
 package traits
 
-import java.lang.String
-
-import helper.JsonHelper
 import helper.ResultHelper._
-import models.{ MongoId, VerifiedString, Identity }
+import models.{ MongoId, VerifiedString }
 import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -107,7 +105,7 @@ trait ModelUpdate {
 
   def values: Seq[UpdateValue]
 
-  def validateUpdate(json: JsValue)(action: ((JsObject => Future[Result]))): Future[Result] = {
+  def validateRequest(json: JsValue)(action: ((JsObject => Future[Result]))): Future[Result] = {
     values
       .filter(_.externalEdit)
       .foldLeft[JsResult[JsObject]](JsSuccess(Json.obj())) {

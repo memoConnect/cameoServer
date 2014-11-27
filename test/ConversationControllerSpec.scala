@@ -282,9 +282,89 @@ class ConversationControllerSpec extends StartedApp {
       (r \ "identityId").asOpt[String] must beSome(identityExisting)
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
-      m.length must beEqualTo(100)
+      m.length must beEqualTo(cidExistingNumberOfMessages)
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
+    }
+
+    "Get an existing conversation with offset" in {
+
+      val offset = Stuff.random.nextInt(cidExistingNumberOfMessages)
+
+      val path = basePath + "/conversation/" + cidExisting    +"?offset=" + offset
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
+      m.length must beEqualTo(cidExistingNumberOfMessages - offset)
+    }
+
+    "Get an existing conversation with limit" in {
+
+      val limit = Math.max(Stuff.random.nextInt(cidExistingNumberOfMessages), 1)
+
+      val path = basePath + "/conversation/" + cidExisting    +"?limit=" + limit
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
+      m.length must beEqualTo(limit)
+    }
+
+    "Get an existing conversation with limit and offset" in {
+      val limit = Math.max(Stuff.random.nextInt(cidExistingNumberOfMessages), 1)
+      val offset = Stuff.random.nextInt(cidExistingNumberOfMessages)
+
+      val path = basePath + "/conversation/" + cidExisting    +"?offset=" + offset + "&limit=" + limit
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
+      m.length must beEqualTo(Math.min(limit, cidExistingNumberOfMessages - offset))
+    }
+
+    "Get an existing conversation with time limit" in {
+
+      val timeLimit: Long = 1392301170107L
+
+      val path = basePath + "/conversation/" + cidExisting    +"?timeLimit=" + timeLimit
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val m: Seq[JsObject] = (data \ "messages").as[Seq[JsObject]]
+      m.length must beEqualTo(6)
     }
 
     "get conversation summary" in {
@@ -622,9 +702,9 @@ class ConversationControllerSpec extends StartedApp {
     }
 
     val encryptedPassphrase: Seq[(String, String)] = Seq(
-      ("keyId1" -> "phrase1"),
-      ("keyId2" -> "phrase2"),
-      ("keyId3" -> "phrase3")
+      "keyId1" -> "phrase1",
+      "keyId2" -> "phrase2",
+      "keyId3" -> "phrase3"
     )
 
     "add encrypted passphrase list to conversation" in {

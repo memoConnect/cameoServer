@@ -3,8 +3,6 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
-import services.{ AuthenticationActions, AcceptedFriendRequest, AvatarGenerator, NewFriendRequest }
-import AuthenticationActions.AuthAction
 import helper.JsonHelper._
 import helper.ResultHelper._
 import helper.{ CheckHelper, IdHelper, OutputLimits }
@@ -13,7 +11,8 @@ import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.{ AcceptedFriendRequest, AvatarGenerator, NewFriendRequest }
+import services.AuthenticationActions.AuthAction
+import services.{ AcceptedFriendRequest, AuthenticationActions, AvatarGenerator, NewFriendRequest }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

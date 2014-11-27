@@ -1,7 +1,5 @@
 package controllers
 
-import services.AuthenticationActions
-import AuthenticationActions.AuthAction
 import helper.JsonHelper
 import helper.ResultHelper._
 import models._
@@ -12,6 +10,8 @@ import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, UpdatedIdentity }
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -110,14 +110,20 @@ object AccountController extends ExtendedController {
                                           case Some(d) => Seq()
                                         }
                                       }
-                                    Identity.deleteOptionalValues(identity.id, deleteValues).map(_.updatedExisting)
+                                    Identity.deleteValues(identity.id, deleteValues).map(_.updatedExisting)
                                   }
                                 } yield {
                                   addContact && updateIdentity && deleteDetails
                                 }
                                 futureRes.flatMap {
                                   case false => Future(resServerError("unable to update identity"))
-                                  case true  => createAccountWithIdentity(identity)
+                                  case true =>
+                                    // send identity update event to other identity
+                                    Identity.find(identity.id).map {
+                                      case None    => // do nothing
+                                      case Some(i) => actors.eventRouter ! UpdatedIdentity(otherIdentity.id, identity.id, i.toPublicJson())
+                                    }
+                                    createAccountWithIdentity(identity)
                                 }
                             }
                         }
@@ -185,7 +191,7 @@ object AccountController extends ExtendedController {
               case true =>
                 // it exists, find alternative
                 findAlternative(login).map {
-                  newLoginName => resKO(Json.obj("alternative" -> newLoginName))
+                  newLoginName => resKo(Json.obj("alternative" -> newLoginName))
                 }
               case false =>
                 // it does not exist, check if it is reserved
@@ -193,7 +199,7 @@ object AccountController extends ExtendedController {
                   // it is reserved, get alternative
                   case Some(ra) =>
                     findAlternative(login).map {
-                      newLoginName => resKO(Json.obj("alternative" -> newLoginName))
+                      newLoginName => resKo(Json.obj("alternative" -> newLoginName))
                     }
                   // not reserved, reserve it and return reservation Secret
                   case None =>
@@ -245,7 +251,7 @@ object AccountController extends ExtendedController {
             }
           }
 
-          AccountUpdate.validateUpdate(request.body) {
+          AccountUpdate.validateRequest(request.body) {
             js =>
               // check if there is a password change
               val newPassword = (request.body \ "password").asOpt[String](JsonHelper.hashPassword)

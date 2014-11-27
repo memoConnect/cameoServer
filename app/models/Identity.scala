@@ -4,9 +4,9 @@ import java.util.Date
 
 import constants.Contacts._
 import constants.Messaging._
-import helper.{ JsonHelper, IdHelper }
 import helper.JsonHelper._
 import helper.MongoCollections._
+import helper.{ IdHelper, JsonHelper }
 import models.cockpit._
 import models.cockpit.attributes._
 import play.api.Play.current
@@ -50,7 +50,7 @@ case class Identity(id: MongoId,
   def toExternalJson: JsObject = Json.toJson(this)(Identity.externalWrites).as[JsObject]
   def toExternalOwnerJson: JsObject = Json.toJson(this)(Identity.externalOwnerWrites).as[JsObject]
 
-  def toPublicJson(additionalPublicKeySignatures: Option[Map[String, Signature]]): JsObject = {
+  def toPublicJson(additionalPublicKeySignatures: Option[Map[String, Signature]] = None): JsObject = {
 
     val updatedPublicKeys: Seq[PublicKey] = additionalPublicKeySignatures match {
       case None => this.publicKeys

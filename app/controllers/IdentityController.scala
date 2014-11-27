@@ -1,8 +1,5 @@
 package controllers
 
-import play.api.Logger
-import services.{ AuthenticationActions, AvatarGenerator, NewIdentity }
-import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -10,7 +7,8 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Request, Result }
-import services.{ AvatarGenerator, NewIdentity }
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, AvatarGenerator, NewIdentity }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -54,9 +52,9 @@ object IdentityController extends ExtendedController {
 
   def updateIdentity() = AuthAction().async(parse.tolerantJson) {
     request =>
-      IdentityUpdate.validateUpdate(request.body) {
-        js =>
-          Identity.update(request.identity.id, js).map {
+      IdentityUpdate.validateRequest(request.body) {
+        update =>
+          Identity.update(request.identity.id, update).map {
             case false => resNotFound("identity")
             case true  => resOk("updated")
           }

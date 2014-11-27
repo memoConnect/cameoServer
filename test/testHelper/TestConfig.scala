@@ -23,7 +23,7 @@ object TestConfig {
 
   // Use the same FakeApplication for all tests, so the mongoConnection does not break
   val eventTimeout = 3
-  val additionalConfig = Map("mongodb.db" -> dbName, "events.subscription.expire.period" -> eventTimeout)
+  val additionalConfig = Map("mongodb.db" -> dbName, "events.subscription.expire.period" -> eventTimeout, "accounts.properties.default.file.quota" -> 9)
   val additionalConfigWithLoggingDisabled = Map("mongodb.db" -> dbName, "logger.application" -> "ERROR", "logger.play" -> "ERROR")
 
   lazy val app = FakeApplication(additionalConfiguration = additionalConfig)
@@ -33,6 +33,7 @@ object TestConfig {
   val domain = "cameonet.de"
 
   val cidExisting = "rQHQZHv4ARDXRmnEzJ92"
+  val cidExistingNumberOfMessages = 100
   val cidExisting2 = "dLBDYFdfj9ymiTblElmN"
   val cidExisting3 = "OM9QeJ4RfJcdscyo52g4"
   val cidExisting4 = "IXhJ0BwoLjRtrRn41zIw"

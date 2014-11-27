@@ -1,15 +1,14 @@
 package controllers
 
 import actors.ExternalMessage
-import services.{AuthenticationActions, NewConversation}
-import AuthenticationActions.AuthAction
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
-import services.NewConversation
+import services.AuthenticationActions.AuthAction
+import services.{ AuthenticationActions, NewConversation }
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -81,9 +80,16 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def getConversation(id: String, offset: Int, limit: Int, keyId: List[String]) = AuthAction(allowExternal = true).async {
+  def getConversation(id: String, offset: Int, limit: Int, keyId: List[String], timeLimit: Long) = AuthAction(allowExternal = true).async {
     request =>
-      Conversation.find(id, limit, offset).map {
+      // check if a timeLimit is specified
+      val futureConversation = if (timeLimit > 0) {
+        Conversation.findWithTimeLimit(id, timeLimit)
+      } else {
+        Conversation.find(id, limit, offset)
+      }
+
+      futureConversation.map {
         case None => resNotFound("conversation")
         case Some(c) => c.hasMemberResult(request.identity.id) {
           resOk(c.toJsonWithKey(keyId))
@@ -103,7 +109,7 @@ object ConversationController extends ExtendedController {
 
   def updateConversation(id: String) = AuthAction().async(parse.tolerantJson) {
     request =>
-      ConversationUpdate.validateUpdate(request.body) {
+      ConversationUpdate.validateRequest(request.body) {
         update =>
           Conversation.find(id, -1, 0).flatMap {
             case None => Future(resNotFound("conversation"))

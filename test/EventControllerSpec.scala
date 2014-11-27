@@ -111,10 +111,25 @@ class EventControllerSpec extends StartedApp {
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser2.token))
       val res = route(req).get
 
-      if (status(res) != OK) {
+      if (status(res) != 232) {
         Logger.error("Response: " + contentAsString(res))
       }
-      status(res) must equalTo(NOT_FOUND)
+      status(res) must equalTo(232)
+    }
+
+    "return alternative when subsciption id does not exist"in {
+      val path = basePath + "/eventSubscription/asdfasdf"
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser2.token))
+      val res = route(req).get
+
+      if (status(res) != 232) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(232)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "subscriptionId").asOpt[String] must beSome
     }
 
     "Get another event subscription" in {

@@ -3,12 +3,12 @@ package controllers
 import java.util.Date
 
 import actors.ExternalMessage
-import services.AuthenticationActions
-import AuthenticationActions.AuthAction
 import helper.ResultHelper._
 import models._
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+import services.AuthenticationActions
+import services.AuthenticationActions.AuthAction
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
