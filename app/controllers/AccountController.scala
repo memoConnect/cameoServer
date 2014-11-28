@@ -1,6 +1,6 @@
 package controllers
 
-import events.IdentityUpdate
+import events.{ ContactUpdate, IdentityUpdate }
 import helper.JsonHelper
 import helper.ResultHelper._
 import models._
@@ -119,10 +119,14 @@ object AccountController extends ExtendedController {
                                 futureRes.flatMap {
                                   case false => Future(resServerError("unable to update identity"))
                                   case true =>
-                                    // send identity update event to other identity
+                                    // send contact update event to other identity
                                     Identity.find(identity.id).map {
-                                      case None    => // do nothing
-                                      case Some(i) => actors.eventRouter ! IdentityUpdate(otherIdentity.id, identity.id, i.toPublicJson())
+                                      case None => // do nothing
+                                      case Some(i) =>
+                                        otherIdentity.contacts.find(_.identityId.equals(identity.id)) match {
+                                          case None          => // do nothing
+                                          case Some(contact) => actors.eventRouter ! ContactUpdate(otherIdentity.id, contact, i)
+                                        }
                                     }
                                     createAccountWithIdentity(identity)
                                 }

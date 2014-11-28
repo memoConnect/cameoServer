@@ -30,6 +30,7 @@ object ContactController extends ExtendedController {
                                    phoneNumber: Option[String],
                                    email: Option[String],
                                    mixed: Option[String])
+
   object CreateExternalContact {
     implicit def reads(implicit stringReads: Reads[String]): Reads[CreateExternalContact] = (
       (__ \ 'displayName).readNullable[String] and
@@ -113,7 +114,7 @@ object ContactController extends ExtendedController {
       maybeContact match {
         case None => Future(resNotFound("contact"))
         case Some(contact) =>
-          validateFuture(request.body, ContactUpdate.format) {
+          validateFuture(request.body, ContactModelUpdate.format) {
             contactUpdate =>
               contact.update(contactUpdate).map {
                 case true  => resOk("updated")
