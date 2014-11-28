@@ -2027,33 +2027,26 @@ Events will be deleted after each call
                "name": "friendRequest:accepted",
                "data": {
                  "from": "identityId",
-                 "to": "identityId"
+                 "to": "identityId",
+                 "contact" : {new contact object}
                }
              },
              {
-               "name": "identity:update",
+                "name": "friendRequest:rejected",
+                "data": {
+                  "from": "identityId",
+                  "to": "identityId"
+                }
+             },
+             {
+               "name": "identity:updated",
                "data": { identity object (updated fields only)}
              },
              {
                "name": "identity:new",
                "data": { identity object  }
              },
-             {
-                 "name": "contact:update",
-                 "data": {
-                   "id": "uNFMP3CO9gC1c3HUKJPO",
-                   "groups": [],
-                   "identityId": "2zv5JgvjgY2iPMJsevzd",
-                   "identity": {
-                     "id": "2zv5JgvjgY2iPMJsevzd",
-                     "cameoId": "asdfasdf@cameonet.de",
-                     "avatar": "lYVSZ4mtwJZo10gVAV2e",
-                     "displayName": "some name",
-                     "publicKeys": []
-                   },
-                   "contactType": "internal"
-                 }
-             },
+
              {
                "name": "conversation:new-aePassphrase",
                "data": {

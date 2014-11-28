@@ -240,6 +240,77 @@ class EventControllerSpec extends StartedApp {
       1 === 1
     }
 
+    "Reject friend request" in {
+      val path = basePath + "/friendRequest/answer"
+
+      val json = Json.obj("answerType" -> "reject", "identityId" -> testUser2.identityId)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "friendRequest:rejected event should appear in both subscriptions of first user" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
+        (js \ "data" \ "from").asOpt[String] must beSome(testUser2.identityId)
+      }
+
+      checkEvent(events1, eventNameFinder("friendRequest:rejected"), eventCheck)
+      checkEvent(events2, eventNameFinder("friendRequest:rejected"), eventCheck)
+    }
+
+    "friendRequest:rejected event should appear in subscription of second user" in {
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
+        (js \ "data" \ "from").asOpt[String] must beSome(testUser2.identityId)
+      }
+
+      checkEvent(events1, eventNameFinder("friendRequest:rejected"), eventCheck)
+    }
+
+    "Send another FriendRequest" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> testUser1.identityId, "message" -> friendRequestMessage)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser2.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "friendRequest:new event should appear in both subscriptions" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject): MatchResult[Option[String]] = {
+        (js \ "data" \ "friendRequest" \ "message").asOpt[String] must beSome(friendRequestMessage)
+        (js \ "data" \ "friendRequest" \ "identity").asOpt[JsObject] must beSome
+        (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
+      }
+      checkEvent(events1, eventNameFinder("friendRequest:new"), eventCheck)
+      checkEvent(events2, eventNameFinder("friendRequest:new"), eventCheck)
+    }
+
+    "Events should be cleared" in {
+      waitForEvents(testUser1.token, subscriptionId, 0)
+      waitForEvents(testUser1.token, subscriptionId2, 0)
+      1 === 1
+    }
+
     "Accept friend request" in {
       val path = basePath + "/friendRequest/answer"
 
@@ -281,6 +352,9 @@ class EventControllerSpec extends StartedApp {
 
       checkEvent(events1, eventNameFinder("friendRequest:accepted"), eventCheck)
     }
+
+
+
 
     val numberOfMessages = 3
     val text = "the FooBaaMoep"

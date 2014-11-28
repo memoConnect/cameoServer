@@ -3,7 +3,7 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
-import events.{FriendRequestAccepted, FriendRequestNew}
+import events.{FriendRequestRejected, FriendRequestAccepted, FriendRequestNew}
 import helper.JsonHelper._
 import helper.ResultHelper._
 import helper.{ CheckHelper, IdHelper, OutputLimits }
@@ -292,6 +292,8 @@ object ContactController extends ExtendedController {
               case FRIEND_REQUEST_REJECT =>
                 // delete friend request and do nothing else
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
+                actors.eventRouter ! FriendRequestRejected(request.identity.id, MongoId(afr.identityId), request.identity.id)
+                actors.eventRouter ! FriendRequestRejected(MongoId(afr.identityId), MongoId(afr.identityId), request.identity.id)
                 Future(resOk())
               case FRIEND_REQUEST_ACCEPT =>
                 // add contact to both identites

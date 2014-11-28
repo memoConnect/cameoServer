@@ -40,3 +40,14 @@ case class FriendRequestAccepted(sendToIdentity: MongoId, fromIdentity: MongoId,
       "contact" -> contact
     )
 }
+
+case class FriendRequestRejected(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId) extends EventDefinition {
+
+  def eventType = "friendRequest:rejected"
+
+  def toEventContent =
+    Json.obj(
+      "from" -> fromIdentity.toJson,
+      "to" -> toIdentityId.toJson
+    )
+}
