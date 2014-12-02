@@ -4,5 +4,16 @@
         "NEW_MESSAGE.MSG" : "Message from {{sender}}",
         "FRIEND_REQUEST.TITLE" : "Friend Request",
         "FRIEND_REQUEST.MSG" : "Friend request from {{sender}}"
+    },
+    "VERIFICATION":{
+        "SMS" : {
+            "SENDER": "cameoNet",
+            "MESSAGE": "The verification code is {{code}}. You can also click on the following link: {{link}}"
+        },
+        "MAIL" : {
+            "SENDER": "cameoNet",
+            "MESSAGE" : "Welcome to cameoNet,\n the verification code for this email is {{code}}. You can also click on the following link to verify this email:\n {{link}}",
+            "SUBJECT" : "Verify your email at cameoNet"
+        }
     }
 }

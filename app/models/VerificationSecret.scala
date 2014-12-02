@@ -14,25 +14,33 @@ import traits.Model
  */
 
 case class VerificationSecret(id: MongoId,
-                              identityId: MongoId,
-                              verificationType: String,
+                              accountId: MongoId,
+                              valueType: String,
                               valueToBeVerified: String,
-                              created: Date)
+                              created: Date) {
+
+  val verificationCodeLength = 6
+
+  def getVerificationCode: String = this.id.id.substring(0,verificationCodeLength)
+
+  def checkVerificationCode(code: String) = getVerificationCode.equals(code)
+
+}
 
 object VerificationSecret extends Model[VerificationSecret] {
 
   implicit val mongoFormat: Format[VerificationSecret] = createMongoFormat(Json.reads[VerificationSecret], Json.writes[VerificationSecret])
 
-  implicit def col = verificationCollection
+  val col = verificationCollection
 
   def docVersion = 0
 
   def evolutions = Map()
 
-  def create(identityId: MongoId, valueToBeVerified: String, verificationType: String): VerificationSecret = {
+  def create(accountId: MongoId, valueToBeVerified: String, verificationType: String): VerificationSecret = {
     new VerificationSecret(
       IdHelper.generateVerificationSecret(),
-      identityId,
+      accountId,
       verificationType,
       valueToBeVerified,
       new Date)

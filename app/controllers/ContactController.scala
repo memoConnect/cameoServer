@@ -290,7 +290,7 @@ object ContactController extends ExtendedController {
             case None => Future(resBadRequest("no friendRequests from this identityId"))
             case Some(o) => afr.answerType match {
               case FRIEND_REQUEST_REJECT =>
-                // delete friend request and do nothing else
+                // delete friend request and send events
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
                 actors.eventRouter ! FriendRequestRejected(request.identity.id, MongoId(afr.identityId), request.identity.id)
                 actors.eventRouter ! FriendRequestRejected(MongoId(afr.identityId), MongoId(afr.identityId), request.identity.id)

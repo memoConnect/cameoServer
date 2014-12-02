@@ -29,7 +29,6 @@ object VerificationController extends Controller with ExtendedController {
       // TODO: Write tests for this
       validate[VerifyRequest](request.body, reads) {
         vr =>
-
           lazy val verifyActor = Akka.system.actorOf(Props[VerifyActor])
 
           if (vr.verifyPhoneNumber.getOrElse(false)) {
@@ -46,12 +45,12 @@ object VerificationController extends Controller with ExtendedController {
 
     VerificationSecret.find(new MongoId(id)).flatMap {
       case None => Future(resNotFound("verification secret"))
-      case Some(vs) => {
+      case Some(vs) =>
         // set verified boolean to true
         Identity.find(vs.identityId).map {
           case None => resUnauthorized("identity not found")
           case Some(i) => vs.verificationType match {
-            case VERIFY_TYPE_MAIL => {
+            case VERIFY_TYPE_MAIL =>
               if (i.email.map {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
@@ -61,8 +60,7 @@ object VerificationController extends Controller with ExtendedController {
               } else {
                 resUnauthorized("mail has changed")
               }
-            }
-            case VERIFY_TYPE_PHONENUMBER => {
+            case VERIFY_TYPE_PHONENUMBER =>
               if (i.phoneNumber.map {
                 _.toString
               }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
@@ -72,10 +70,8 @@ object VerificationController extends Controller with ExtendedController {
               } else {
                 resUnauthorized("phonenumber has changed")
               }
-            }
           }
         }
-      }
     }
   }
 }
