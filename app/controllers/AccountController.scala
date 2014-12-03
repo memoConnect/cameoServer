@@ -1,5 +1,6 @@
 package controllers
 
+import actors.{VerifyPhoneNumber, VerifyMail}
 import events.{ ContactUpdate, IdentityUpdate }
 import helper.JsonHelper
 import helper.ResultHelper._
@@ -12,7 +13,7 @@ import play.api.mvc.{ Action, Result }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import services.AuthenticationActions.AuthAction
-import services.AuthenticationActions
+import services.{LocalizationMessages, AuthenticationActions}
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -41,6 +42,7 @@ object AccountController extends ExtendedController {
     request =>
 
       val jsBody: JsValue = request.body
+      val lang = LocalizationMessages.getBrowserLanguage(request)
 
       validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
         additionalValues =>
@@ -62,6 +64,14 @@ object AccountController extends ExtendedController {
                           if (!accountLowerCase.loginName.startsWith(testUserPrefix.toLowerCase)) {
                             Statsd.increment("custom.account.create")
                           }
+                          // send verification mails and sms
+                          if(accountLowerCase.email.isDefined) {
+                            actors.verificationRouter ! VerifyMail(accountLowerCase.id, lang)
+                          }
+                          if(accountLowerCase.phoneNumber.isDefined) {
+                            actors.verificationRouter ! VerifyPhoneNumber(accountLowerCase.id, lang)
+                          }
+
                           accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
                         case false =>
                           Future(resServerError("MongoError: " + lastError))
@@ -243,8 +253,10 @@ object AccountController extends ExtendedController {
       }
   }
 
-  def updateAccount() = AuthAction().async(parse.tolerantJson) {
+  def updateAccount() = AuthAction(getAccount = true).async(parse.tolerantJson) {
     request =>
+      val lang = LocalizationMessages.getBrowserLanguage(request)
+
       request.identity.accountId match {
         case None => Future(resBadRequest("no account"))
         case Some(accountId) =>
@@ -252,7 +264,20 @@ object AccountController extends ExtendedController {
           def doAccountUpdate(update: JsObject): Future[Result] = {
             Account.update(accountId, update).map {
               case false => resServerError("could not update")
-              case true  => resOk("updated")
+              case true  =>
+                // check if update contains a phoneNumber or email. Start verification if it does
+                if((request.body \ "email").asOpt[String].isDefined) {
+                  request.account.map {
+                    account => actors.verificationRouter ! VerifyMail(account.id, lang)
+                  }
+                }
+                if((request.body \ "phoneNumber").asOpt[String].isDefined) {
+                  request.account.map {
+                    account => actors.verificationRouter ! VerifyPhoneNumber(account.id, lang)
+                  }
+                }
+
+                resOk("updated")
             }
           }
 

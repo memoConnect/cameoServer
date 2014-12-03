@@ -1,6 +1,6 @@
 package controllers
 
-import actors.VerifyActor
+import actors.VerificationActor
 import akka.actor.Props
 import constants.Verification._
 import helper.ResultHelper._
@@ -29,7 +29,7 @@ object VerificationController extends Controller with ExtendedController {
       // TODO: Write tests for this
       validate[VerifyRequest](request.body, reads) {
         vr =>
-          lazy val verifyActor = Akka.system.actorOf(Props[VerifyActor])
+          lazy val verifyActor = Akka.system.actorOf(Props[VerificationActor])
 
           if (vr.verifyPhoneNumber.getOrElse(false)) {
             verifyActor ! (VERIFY_TYPE_PHONENUMBER, request.identity)
@@ -42,20 +42,19 @@ object VerificationController extends Controller with ExtendedController {
   }
 
   def verify(id: String) = Action.async {
-
     request =>
       val lang = LocalizationMessages.getBrowserLanguage(request)
-
       VerificationSecret.find(new MongoId(id)).flatMap {
         case None => Future(Ok(views.html.verify(true, false, lang)))
-        case Some(vs) =>
-          Account.find(vs.accountId).map {
+        case Some(verificationSecret) =>
+          VerificationSecret.delete(verificationSecret.id)
+          Account.find(verificationSecret.accountId).map {
             case None => Ok(views.html.verify(false, true, lang))
-            case Some(account) => vs.valueType match {
+            case Some(account) => verificationSecret.valueType match {
               case VERIFY_TYPE_MAIL =>
                 account.email match {
                   case None                                                     => Ok(views.html.verify(true, false, lang))
-                  case Some(email) if !email.value.equals(vs.valueToBeVerified) => Ok(views.html.verify(true, false, lang))
+                  case Some(email) if !email.value.equals(verificationSecret.valueToBeVerified) => Ok(views.html.verify(true, false, lang))
                   case Some(email) =>
                     val set = Map("email" -> email.copy(isVerified = true))
                     Account.update(account.id, AccountModelUpdate.fromMap(set))
@@ -64,17 +63,15 @@ object VerificationController extends Controller with ExtendedController {
               case VERIFY_TYPE_PHONENUMBER =>
                 account.phoneNumber match {
                   case None                                                                 => Ok(views.html.verify(true, false, lang))
-                  case Some(phoneNumber) if !phoneNumber.value.equals(vs.valueToBeVerified) => Ok(views.html.verify(true, false, lang))
+                  case Some(phoneNumber) if !phoneNumber.value.equals(verificationSecret.valueToBeVerified) => Ok(views.html.verify(true, false, lang))
                   case Some(phoneNumber) =>
                     val set = Map("phoneNumber" -> phoneNumber.copy(isVerified = true))
                     Account.update(account.id, AccountModelUpdate.fromMap(set))
                     Ok(views.html.verify(false, false, lang))
                 }
-
               case _ => Ok(views.html.verify(false, true, lang))
             }
           }
       }
-
   }
 }
