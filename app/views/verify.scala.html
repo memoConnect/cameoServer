@@ -1,4 +1,4 @@
-@(success: Boolean, lang: Lang)
+@(expired: Boolean, error: Boolean, lang: Lang)
 @import _root_.services.LocalizationMessages
 
 
@@ -40,14 +40,20 @@
                     <i class="cm-logo"></i>
                 </a>
                 <br />
-                @if(success) {
-                    <span class="cm-success border-radius">
-                        <i class="cm-icon cm-checkbox-right"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.SUCCESS", lang)}
-                    </span>
-                } else {
+                @if(expired) {
                     <span class="cm-error border-radius">
                         <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.EXPIRED", lang)}
                     </span>
+                } else {
+                    @if(error) {
+                        <span class="cm-error border-radius">
+                            <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.ERROR", lang)}
+                        </span>
+                    } else  {
+                        <span class="cm-success border-radius">
+                            <i class="cm-icon cm-checkbox-right"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.SUCCESS", lang)}
+                        </span>
+                    }
                 }
             </div>
         </div>

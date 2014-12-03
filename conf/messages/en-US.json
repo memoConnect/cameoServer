@@ -17,7 +17,8 @@
         } ,
         "LANDING_PAGE" : {
             "SUCCESS" : "Verification was successfull.",
-            "EXPIRED" : "The verifcation code has expired."
+            "EXPIRED" : "The verifcation code has expired.",
+            "EXPIRED" : "An error has occured."
         }
     }
 }

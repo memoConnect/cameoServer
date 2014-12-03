@@ -44,41 +44,37 @@ object VerificationController extends Controller with ExtendedController {
   def verify(id: String) = Action.async {
 
     request =>
-
       val lang = LocalizationMessages.getBrowserLanguage(request)
 
       VerificationSecret.find(new MongoId(id)).flatMap {
-        case None     => Future(Ok(views.html.verify(true, lang)))
+        case None => Future(Ok(views.html.verify(true, false, lang)))
         case Some(vs) =>
-                Account.find(vs.accountId).map {
-                  case None => resUnauthorized("identity not found")
-                  case Some(account) => vs.valueType match {
-                    case VERIFY_TYPE_MAIL =>
-
-
-
-                      if (i.email.map {
-                        _.toString
-                      }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
-                        val set = Map("email" -> i.email.get.copy(isVerified = true))
-                        Identity.update(i.id, IdentityModelUpdate.fromMap(set))
-                        resOk("verified")
-                      } else {
-                        resUnauthorized("mail has changed")
-                      }
-                    case VERIFY_TYPE_PHONENUMBER =>
-                      if (i.phoneNumber.map {
-                        _.toString
-                      }.getOrElse("").equalsIgnoreCase(vs.valueToBeVerified)) {
-                        val set = Map("phoneNumber" -> i.email.get.copy(isVerified = true))
-                        Identity.update(i.id, IdentityModelUpdate.fromMap(set))
-                        resOk("verified")
-                      } else {
-                        resUnauthorized("phonenumber has changed")
-                      }
-                  }
+          Account.find(vs.accountId).map {
+            case None => Ok(views.html.verify(false, true, lang))
+            case Some(account) => vs.valueType match {
+              case VERIFY_TYPE_MAIL =>
+                account.email match {
+                  case None                                                     => Ok(views.html.verify(true, false, lang))
+                  case Some(email) if !email.value.equals(vs.valueToBeVerified) => Ok(views.html.verify(true, false, lang))
+                  case Some(email) =>
+                    val set = Map("email" -> email.copy(isVerified = true))
+                    Account.update(account.id, AccountModelUpdate.fromMap(set))
+                    Ok(views.html.verify(false, false, lang))
                 }
-      }
-  }
+              case VERIFY_TYPE_PHONENUMBER =>
+                account.phoneNumber match {
+                  case None                                                                 => Ok(views.html.verify(true, false, lang))
+                  case Some(phoneNumber) if !phoneNumber.value.equals(vs.valueToBeVerified) => Ok(views.html.verify(true, false, lang))
+                  case Some(phoneNumber) =>
+                    val set = Map("phoneNumber" -> phoneNumber.copy(isVerified = true))
+                    Account.update(account.id, AccountModelUpdate.fromMap(set))
+                    Ok(views.html.verify(false, false, lang))
+                }
 
+              case _ => Ok(views.html.verify(false, true, lang))
+            }
+          }
+      }
+
+  }
 }
