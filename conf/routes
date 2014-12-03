@@ -168,5 +168,10 @@ GET            /dc/*file                                             controllers
 # App Redirector
 GET            /as                                                   controllers.ServicesController.redirectToApp()
 
+# Landingpages
+GET            /vr                                                   controllers.Application.verify
+
 # Redirect / to /m
 GET            /                                                     controllers.Application.redirect(url = "/m/")
+
+
