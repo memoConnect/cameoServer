@@ -12,13 +12,13 @@
         },
         "MAIL" : {
             "SENDER": "cameoNet",
-            "MESSAGE" : "Welcome to cameoNet,\n the verification code for this email is {{code}}. You can also click on the following link to verify this email:\n {{link}}",
+            "MESSAGE" : "Welcome to cameoNet,\nthe verification code for this email is {{code}}. You can also click on the following link to verify this email:\n{{link}}",
             "SUBJECT" : "Verify your email at cameoNet"
         } ,
         "LANDING_PAGE" : {
-            "SUCCESS" : "Verification was successfull.",
-            "EXPIRED" : "The verifcation code has expired.",
-            "EXPIRED" : "An error has occured."
+            "SUCCESS" : "Verification was successful",
+            "EXPIRED" : "This verification code has expired",
+            "ERROR" : "An error has occurred"
         }
     }
 }

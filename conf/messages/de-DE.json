@@ -12,13 +12,13 @@
         },
         "MAIL" : {
             "SENDER": "cameoNet",
-            "MESSAGE" : "Willkommen bei cameoNet,\n der Code zur verifikation dieser E-Mailaddresse lautet {{code}}. Alternativ können Sie auch auf folgenden Link klicken:\n {{link}}",
+            "MESSAGE" : "Willkommen bei cameoNet,\nder Code zur verifikation dieser E-Mailaddresse lautet {{code}}. Alternativ können Sie auch auf folgenden Link klicken:\n{{link}}",
             "SUBJECT" : "Verifikation Ihrer E-Mailaddresse bei cameoNet"
         },
         "LANDING_PAGE" : {
-            "SUCCESS" : "Verifikation erfolgreich.",
-            "EXPIRED" : "Verifikationscode ist abgelaufen.",
-            "ERROR" : "Es ist ein Fehler aufgetreten."
+            "SUCCESS" : "Verifikation erfolgreich",
+            "EXPIRED" : "Verifikationscode ist abgelaufen",
+            "ERROR" : "Es ist ein Fehler aufgetreten"
         }
     }
 }

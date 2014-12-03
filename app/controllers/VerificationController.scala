@@ -5,6 +5,7 @@ import akka.actor.Props
 import constants.Verification._
 import helper.ResultHelper._
 import models._
+import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.api.libs.functional.syntax._
@@ -53,8 +54,8 @@ object VerificationController extends Controller with ExtendedController {
             case Some(account) => verificationSecret.valueType match {
               case VERIFY_TYPE_MAIL =>
                 account.email match {
-                  case None                                                     => Ok(views.html.verify(true, false, lang))
-                  case Some(email) if !email.value.equals(verificationSecret.valueToBeVerified) => Ok(views.html.verify(true, false, lang))
+                  case None                                                                     => Ok(views.html.verify(false, true, lang))
+                  case Some(email) if !email.value.equals(verificationSecret.valueToBeVerified) => Ok(views.html.verify(false, true, lang))
                   case Some(email) =>
                     val set = Map("email" -> email.copy(isVerified = true))
                     Account.update(account.id, AccountModelUpdate.fromMap(set))
@@ -62,8 +63,8 @@ object VerificationController extends Controller with ExtendedController {
                 }
               case VERIFY_TYPE_PHONENUMBER =>
                 account.phoneNumber match {
-                  case None                                                                 => Ok(views.html.verify(true, false, lang))
-                  case Some(phoneNumber) if !phoneNumber.value.equals(verificationSecret.valueToBeVerified) => Ok(views.html.verify(true, false, lang))
+                  case None                                                                                 => Ok(views.html.verify(false, true, lang))
+                  case Some(phoneNumber) if !phoneNumber.value.equals(verificationSecret.valueToBeVerified) => Ok(views.html.verify(false, true, lang))
                   case Some(phoneNumber) =>
                     val set = Map("phoneNumber" -> phoneNumber.copy(isVerified = true))
                     Account.update(account.id, AccountModelUpdate.fromMap(set))
