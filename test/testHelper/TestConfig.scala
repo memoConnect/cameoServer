@@ -43,9 +43,9 @@ object TestConfig {
   val loginExisting2 = "BMeSfHXQ"
 
   val accountExisting2Tel = "560277123"
-  val accountExisting2Mail = "moep2@foo.de"
+  val accountExisting2Mail = "devnull@cameo.io"
   val accountExisting3Tel = "5602772323"
-  val accountExisting4Mail = "moep4@foo.de"
+  val accountExisting4Mail = "devnull2@cameo.io"
 
   val password = "XohImNooBHFR0OVvjcYpJ3NgPQ1qq73WKhHvch0VQtg="
 
