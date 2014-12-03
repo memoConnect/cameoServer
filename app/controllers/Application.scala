@@ -66,4 +66,9 @@ object Application extends Controller {
       }
     }
   }
+
+  def verify = Action.async {
+      request =>
+        Future(Ok(views.html.verify()))
+    }
 }
