@@ -41,7 +41,7 @@ object VerificationController extends Controller with ExtendedController {
       }
   }
 
-  def verifyMessage(id: String) = Action.async {
+  def verify(id: String) = Action.async {
 
     VerificationSecret.find(new MongoId(id)).flatMap {
       case None => Future(resNotFound("verification secret"))
