@@ -17,7 +17,6 @@ object ShortUrlController extends Controller {
 
       urlType match {
         case "p" => Redirect(redirect + "/purl/" + id)
-        case "v" => Redirect(redirect + "/verification/" + id)
         case _   => Redirect(redirect)
       }
   }

@@ -1,10 +1,11 @@
 package services
 
 import com.fasterxml.jackson.core.JsonParseException
-import play.api.Logger
+import play.api.{Play, Logger}
 import play.api.i18n.Lang
 import play.api.libs.json.{ JsObject, Json }
-
+import play.api.mvc.Request
+import play.api.Play.current
 import scala.annotation.tailrec
 import scala.io.Source
 
@@ -86,6 +87,12 @@ object LocalizationMessages {
   def getAll(key: String, variables: Map[String, String] = Map()): Map[Lang, String] = {
     messages.mapValues {
       json => replaceVariables(getKeyFromJson(json, key, key), variables)
+    }
+  }
+
+  def getBrowserLanguage[A](request: Request[A]): Lang = {
+    request.acceptLanguages.headOption.getOrElse {
+      Lang(Play.configuration.getString("language.default").getOrElse("en-US"))
     }
   }
 

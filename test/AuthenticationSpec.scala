@@ -47,7 +47,7 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/a/v1/purl/AthaUuGR"),
       (GET, "/a/v1/identity/$id<[^/]+>"),
       (GET, "/a/v1/verify/$id<[^/]+>"),
-      (GET, "/v/$id<[^/]+>"),
+      (GET, "/vr/$id<[^/]+>"),
       (GET, "/p/$id<[^/]+>"),
       (GET, "/a/v1/purl/$id<[^/]+>"),
       (GET, "/a/v1/testUser/$id<[^/]+>"),

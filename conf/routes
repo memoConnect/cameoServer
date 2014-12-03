@@ -134,7 +134,6 @@ GET            /a/v1/util/checkApp                                   controllers
 
 # Redirect for Shorturls
 GET            /p/:id                                                controllers.ShortUrlController.redirect(urlType = "p", id: String)
-GET            /v/:id                                                controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
 ##
 ##   Frontend: Static files
@@ -167,9 +166,6 @@ GET            /dc/*file                                             controllers
 
 # App Redirector
 GET            /as                                                   controllers.ServicesController.redirectToApp()
-
-# Landingpages
-GET            /vr                                                   controllers.Application.verify
 
 # Redirect / to /m
 GET            /                                                     controllers.Application.redirect(url = "/m/")

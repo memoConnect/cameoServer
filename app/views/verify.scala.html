@@ -1,4 +1,6 @@
-@import _root_.helper.Utils
+@(success: Boolean, lang: Lang)
+@import _root_.services.LocalizationMessages
+
 
 @main("cameoNet verification") {
 <html>
@@ -38,12 +40,15 @@
                     <i class="cm-logo"></i>
                 </a>
                 <br />
-                <span class="cm-success border-radius">
-                    <i class="cm-icon cm-checkbox-right"></i> verfication success: go to app
-                </span>
-                <span class="cm-error border-radius">
-                    <i class="cm-icon cm-attention"></i> verfication error: because of expired
-                </span>
+                @if(success) {
+                    <span class="cm-success border-radius">
+                        <i class="cm-icon cm-checkbox-right"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.SUCCESS", lang)}
+                    </span>
+                } else {
+                    <span class="cm-error border-radius">
+                        <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.EXPIRED", lang)}
+                    </span>
+                }
             </div>
         </div>
     </body>

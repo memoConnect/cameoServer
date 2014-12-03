@@ -39,7 +39,7 @@ class VerifyActor extends Actor {
           val body = LocalizationMessages.get("VERIFICATION.MAIL.MESSAGES", lang, variables)
           val subject = LocalizationMessages.get("VERIFICATION.MAIL.SUBJECT", lang)
           val fromMail = Play.configuration.getString("verification.mail.from").get
-          val from = "<" + fromMail ">" + LocalizationMessages.get("VERIFICATION.MAIL.SENDER", lang)
+          val from = "<" + fromMail + ">" + LocalizationMessages.get("VERIFICATION.MAIL.SENDER", lang)
 
           lazy val sendMailActor = Akka.system.actorOf(Props[SendMailActor])
           sendMailActor ! Mail("Verification", from, email.value, body, subject)
