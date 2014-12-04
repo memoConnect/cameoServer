@@ -42,16 +42,16 @@
                 <br />
                 @if(expired) {
                     <span class="cm-error border-radius">
-                        <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.EXPIRED", lang)}
+                        <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("BACKEND.VERIFICATION.LANDING_PAGE.EXPIRED", lang)}
                     </span>
                 } else {
                     @if(error) {
                         <span class="cm-error border-radius">
-                            <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.ERROR", lang)}
+                            <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("BACKEND.VERIFICATION.LANDING_PAGE.ERROR", lang)}
                         </span>
                     } else  {
                         <span class="cm-success border-radius">
-                            <i class="cm-icon cm-checkbox-right"></i> @{LocalizationMessages.get("VERIFICATION.LANDING_PAGE.SUCCESS", lang)}
+                            <i class="cm-icon cm-checkbox-right"></i> @{LocalizationMessages.get("BACKEND.VERIFICATION.LANDING_PAGE.SUCCESS", lang)}
                         </span>
                     }
                 }

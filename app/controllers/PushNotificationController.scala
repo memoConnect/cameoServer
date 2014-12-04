@@ -67,7 +67,7 @@ object PushNotificationController extends ExtendedController {
       validateFuture(JsString(platform), PushdConnector.platformReads) {
         platform =>
           // get id for this token
-          PushdConnector.getSubscriberId(id, platform, Lang("en-US")).flatMap {
+          PushdConnector.getSubscriberId(id, platform, Lang("en")).flatMap {
             case None => Future(resKo("Pushd is down"))
             case Some(subscriberId) =>
               // set subscription to identityId of this user

@@ -19,14 +19,14 @@ import scala.io.Source
 object LocalizationMessages {
 
   // parse language files
-  private val messageFolder = "conf/messages/"
-  val defaultLanguage: Lang = Lang("en-Us")
+  private val messageFolder = Play.configuration.getString("language.messages.path").getOrElse("")
+  val defaultLanguage: Lang = Lang(Play.configuration.getString("language.default").getOrElse("en"))
 
   private val messages: Map[Lang, JsObject] = new java.io.File(messageFolder).listFiles.toSeq.foldLeft[Map[Lang, JsObject]](Map()) {
     case (map, file) =>
       Logger.info("Parsing language file: " + file.getAbsolutePath)
       try {
-        // todo: parsing like takes a lot of memory for large files, use streaming
+        // todo: parsing like this takes a lot of memory for large files, use streaming
         val json: JsObject = Json.parse(Source.fromFile(file.getAbsolutePath).getLines().mkString).as[JsObject]
         map + (Lang(file.getName.split('.')(0)) -> json)
       } catch {
@@ -92,7 +92,7 @@ object LocalizationMessages {
 
   def getBrowserLanguage[A](request: Request[A]): Lang = {
     request.acceptLanguages.headOption.getOrElse {
-      Lang(Play.configuration.getString("language.default").getOrElse("en-US"))
+      Lang(Play.configuration.getString("language.default").getOrElse("en"))
     }
   }
 

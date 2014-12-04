@@ -41,12 +41,12 @@ class VerificationActor extends Actor {
                 "code" -> secret.getVerificationCode
               )
 
-              val body = LocalizationMessages.get("VERIFICATION.MAIL.MESSAGE", lang, variables)
-              val subject = LocalizationMessages.get("VERIFICATION.MAIL.SUBJECT", lang)
+              val body = LocalizationMessages.get("BACKEND.VERIFICATION.MAIL.MESSAGE", lang, variables)
+              val subject = LocalizationMessages.get("BACKEND.VERIFICATION.MAIL.SUBJECT", lang)
               val fromMail = Play.configuration.getString("verification.mail.from").get
 
               lazy val sendMailActor = Akka.system.actorOf(actors.SendMailActorProps)
-              sendMailActor ! Mail(LocalizationMessages.get("VERIFICATION.MAIL.SENDER", lang), fromMail, email.value, body, subject)
+              sendMailActor ! Mail(LocalizationMessages.get("BACKEND.VERIFICATION.MAIL.SENDER", lang), fromMail, email.value, body, subject)
           }
       }
 
@@ -65,8 +65,8 @@ class VerificationActor extends Actor {
                 "code" -> secret.getVerificationCode
               )
 
-              val body = LocalizationMessages.get("VERIFICATION.SMS.MESSAGE", lang, variables)
-              val from = LocalizationMessages.get("VERIFICATION.MAIL.SENDER", lang)
+              val body = LocalizationMessages.get("BACKEND.VERIFICATION.SMS.MESSAGE", lang, variables)
+              val from = LocalizationMessages.get("BACKEND.VERIFICATION.MAIL.SENDER", lang)
 
               lazy val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
               sendSmsActor ! Sms(from, phoneNumber.value, body)
