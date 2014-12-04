@@ -2054,7 +2054,7 @@ Events will be deleted after each call
                 }
              },
              {
-               "name": "identity:updated",
+               "name": "identity:update",
                "data": { identity object (updated fields only)}
              },
              {
@@ -2075,6 +2075,19 @@ Events will be deleted after each call
                "name": "conversation:update",
                "data": {
                  "unreadMessages": 4
+               }
+             },
+             {
+               "name": "account:update",
+               "data": {
+                 "email": {
+                   "isVerified": true,
+                   "value": "foooo@cameo.io",
+                 "phoneNumber": {
+                   "isVerified": true,
+                   "value": "+12341234"
+                 },
+                 "id": "jTJSuuSh2FwNn5o4pHEb"
                }
              }
            }

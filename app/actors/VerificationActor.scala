@@ -25,20 +25,17 @@ class VerificationActor extends Actor {
   def receive = {
 
     case VerifyMail(accountId, lang) =>
-      Logger.debug("verify mail")
-
       Account.find(accountId).map {
         case None => // do nothing
         case Some(account) =>
           account.email match {
             case None => // do nothing
             case Some(email) =>
-              val secret = VerificationSecret.create(account.id, email.value, VERIFY_TYPE_MAIL)
-              VerificationSecret.insert(secret)
+              val secret = VerificationSecret.createAndInsert(account.id, email.value, VERIFY_TYPE_MAIL)
 
               val variables = Map(
                 "link" -> (Play.configuration.getString("shortUrl.address").get + "/vr/" + secret.id),
-                "code" -> secret.getVerificationCode
+                "code" -> secret.code
               )
 
               val body = LocalizationMessages.get("BACKEND.VERIFICATION.MAIL.MESSAGE", lang, variables)
@@ -57,12 +54,11 @@ class VerificationActor extends Actor {
           account.phoneNumber match {
             case None => // do nothing
             case Some(phoneNumber) =>
-              val secret = VerificationSecret.create(account.id, phoneNumber.value, VERIFY_TYPE_PHONENUMBER)
-              VerificationSecret.insert(secret)
+              val secret = VerificationSecret.createAndInsert(account.id, phoneNumber.value, VERIFY_TYPE_PHONENUMBER)
 
               val variables = Map(
                 "link" -> (Play.configuration.getString("shortUrl.address").get + "/vr/" + secret.id),
-                "code" -> secret.getVerificationCode
+                "code" -> secret.code
               )
 
               val body = LocalizationMessages.get("BACKEND.VERIFICATION.SMS.MESSAGE", lang, variables)

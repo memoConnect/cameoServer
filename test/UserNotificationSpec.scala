@@ -83,14 +83,10 @@ class UserNotificationSpec extends StartedApp {
       val mails = TestValueStore.getValues("mail")
       val sms = TestValueStore.getValues("sms")
 
-      Logger.debug("SMS:" + sms)
-
       sms.exists(js => (js \ "to").as[String].equals(telExt2)) must beTrue
       sms.exists(js => (js \ "to").as[String].equals(telExt3)) must beTrue
       sms.exists(js => (js \ "to").as[String].equals(telInt2)) must beTrue
       sms.exists(js => (js \ "to").as[String].equals(telInt3)) must beTrue
-
-      Logger.debug("Mail:" + mails)
 
       mails.exists(js => (js \ "to").as[String].equals(mailExt1)) must beTrue
       mails.exists(js => (js \ "to").as[String].equals(mailExt3)) must beFalse

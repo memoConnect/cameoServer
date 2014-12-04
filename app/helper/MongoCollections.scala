@@ -43,6 +43,7 @@ object MongoCollections {
     val expireAfter = Play.configuration.getInt("verification.expire.period").get * 60
     val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
     col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
+    col.indexesManager.ensure(Index(List("code" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
     col
   }
   lazy val accountCollection: JSONCollection = {

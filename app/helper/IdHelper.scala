@@ -51,6 +51,10 @@ object IdHelper {
     new MongoId(randomString(15))
   }
 
+  def generateVerificationCode(): String = {
+    randomString(6).toUpperCase
+  }
+
   def generateMongoId(): MongoId = {
     new MongoId(randomString(defaultLength))
   }

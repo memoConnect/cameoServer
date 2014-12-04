@@ -20,9 +20,11 @@ class VerificationControllerSpec extends StartedApp {
 
     val phoneNumber = "+4912345"
     val phoneNumber2 = "+49123456"
+    val phoneNumber3 = "+491234567"
     val mail = "devnull@cameo.io"
     val mail2 = "devnull2@cameo.io"
     val mail3 = "devnull3@cameo.io"
+    val mail4 = "devnull4@cameo.io"
 
     var testUser: TestUser = null
 
@@ -355,6 +357,143 @@ class VerificationControllerSpec extends StartedApp {
       contentAsString(res) must contain("expired")
     }
 
+    step(TestValueStore.start())
+    "update email and phoneNumber of account" in {
+      val path = basePath + "/account"
+      val json = Json.obj("email" -> mail4, "phoneNumber" -> phoneNumber3)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    var verifyEmail4 = ""
+    var verifyPhoneNumber2 = ""
+    "should have received verification email with link" in {
+      Stuff.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
+      val mail = TestValueStore.getValues("mail")(0)
+      val sms = TestValueStore.getValues("sms")(0)
+      (sms \ "body").as[String] must contain("https://")
+      (mail \ "body").as[String] must contain("https://")
+      verifyEmail4 = (mail \ "body").as[String].split("https:").last.split("/").last
+      verifyPhoneNumber2 = (sms \ "body").as[String].split("https:").last.split("/").last
+      1 === 1
+    }
+    step(TestValueStore.stop())
+
+    step(TestValueStore.start())
+    "start verification of phonenumber and email manually" in {
+      val path = basePath + "/verify"
+      val json = Json.obj("verifyMail" -> true, "verifyPhoneNumber" -> true)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    var verifyEmailCode = ""
+    var verifyPhoneNumberCode = ""
+
+    "should have received verification email and sms with link" in {
+      Stuff.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
+      val mail = TestValueStore.getValues("mail")(0)
+      val sms = TestValueStore.getValues("sms")(0)
+      (sms \ "body").as[String] must contain("https://")
+      (mail \ "body").as[String] must contain("https://")
+      verifyEmailCode = (mail \ "body").as[String].split("\"")(1)
+      verifyPhoneNumberCode = (sms \ "body").as[String].split("\"")(1)
+      1 === 1
+    }
+    step(TestValueStore.stop())
+
+    "refuse to verify with wrong account" in {
+      val path = basePath + "/verify/" + verifyEmailCode
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "verify email with code" in {
+      val path = basePath + "/verify/" + verifyEmailCode
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "refuse to verify again" in {
+      val path = basePath + "/verify/" + verifyEmailCode
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "verify phonenumber with code" in {
+      val path = basePath + "/verify/" + verifyPhoneNumberCode
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "email and phonenumber should now be verified" in {
+      val path = basePath + "/account"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(testUser.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "email" \ "isVerified").asOpt[Boolean] must beSome(true)
+      (data \ "email" \ "value").asOpt[String] must beSome(mail4)
+      (data \ "phoneNumber" \ "isVerified").asOpt[Boolean] must beSome(true)
+      (data \ "phoneNumber" \ "value").asOpt[String] must beSome(phoneNumber3)
+    }
+
+    "the old verification link should not work any more" in {
+      val path = "/vr/" + verifyEmail4
+
+      val req = FakeRequest(GET, path)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      contentAsString(res) must contain("expired")
+    }
 
 
   }
