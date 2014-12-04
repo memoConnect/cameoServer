@@ -9,7 +9,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Request, Result }
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, AvatarGenerator }
+import services.AvatarGenerator
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

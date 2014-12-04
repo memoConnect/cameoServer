@@ -1,11 +1,12 @@
 package services
 
 import com.fasterxml.jackson.core.JsonParseException
-import play.api.{Play, Logger}
+import play.api.Play.current
 import play.api.i18n.Lang
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.Request
-import play.api.Play.current
+import play.api.{ Logger, Play }
+
 import scala.annotation.tailrec
 import scala.io.Source
 

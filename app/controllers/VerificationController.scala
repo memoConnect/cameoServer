@@ -1,20 +1,15 @@
 package controllers
 
-import actors.{ VerifyMail, VerifyPhoneNumber, VerificationActor }
-import akka.actor.Props
+import actors.{ VerifyMail, VerifyPhoneNumber }
 import constants.ErrorCodes
 import constants.Verification._
 import events.AccountUpdate
 import helper.ResultHelper._
 import models._
-import play.api.Logger
-import play.api.Play.current
-import play.api.libs.concurrent.Akka
-import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import play.api.mvc.{ Result, Action, Controller }
-import services.{ LocalizationMessages, AuthenticationActions }
+import play.api.mvc.{ Action, Controller }
 import services.AuthenticationActions.AuthAction
+import services.LocalizationMessages
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -95,9 +90,9 @@ object VerificationController extends Controller with ExtendedController {
   }
 
   def sendAccountUpdateEvent(account: Account, updatedValues: JsObject) = {
-    Identity.findAll(Json.obj("accountId" -> account.id)).map{
-      _.foreach{
-       identity => actors.eventRouter ! AccountUpdate(identity.id, account.id, updatedValues)
+    Identity.findAll(Json.obj("accountId" -> account.id)).map {
+      _.foreach {
+        identity => actors.eventRouter ! AccountUpdate(identity.id, account.id, updatedValues)
       }
     }
   }

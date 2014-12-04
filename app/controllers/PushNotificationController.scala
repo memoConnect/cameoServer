@@ -5,7 +5,7 @@ import models.Identity
 import play.api.i18n.Lang
 import play.api.libs.json._
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, PushdConnector }
+import services.PushdConnector
 import services.PushdConnector._
 import traits.ExtendedController
 

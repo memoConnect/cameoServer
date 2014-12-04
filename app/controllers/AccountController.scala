@@ -1,7 +1,7 @@
 package controllers
 
-import actors.{VerifyPhoneNumber, VerifyMail}
-import events.{ ContactUpdate, IdentityUpdate }
+import actors.{ VerifyMail, VerifyPhoneNumber }
+import events.ContactUpdate
 import helper.JsonHelper
 import helper.ResultHelper._
 import models._
@@ -13,7 +13,7 @@ import play.api.mvc.{ Action, Result }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
 import services.AuthenticationActions.AuthAction
-import services.{LocalizationMessages, AuthenticationActions}
+import services.LocalizationMessages
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -65,10 +65,10 @@ object AccountController extends ExtendedController {
                             Statsd.increment("custom.account.create")
                           }
                           // send verification mails and sms
-                          if(accountLowerCase.email.isDefined) {
+                          if (accountLowerCase.email.isDefined) {
                             actors.verificationRouter ! VerifyMail(accountLowerCase.id, lang)
                           }
-                          if(accountLowerCase.phoneNumber.isDefined) {
+                          if (accountLowerCase.phoneNumber.isDefined) {
                             actors.verificationRouter ! VerifyPhoneNumber(accountLowerCase.id, lang)
                           }
 
@@ -264,14 +264,14 @@ object AccountController extends ExtendedController {
           def doAccountUpdate(update: JsObject): Future[Result] = {
             Account.update(accountId, update).map {
               case false => resServerError("could not update")
-              case true  =>
+              case true =>
                 // check if update contains a phoneNumber or email. Start verification if it does
-                if((request.body \ "email").asOpt[String].isDefined) {
+                if ((request.body \ "email").asOpt[String].isDefined) {
                   request.account.map {
                     account => actors.verificationRouter ! VerifyMail(account.id, lang)
                   }
                 }
-                if((request.body \ "phoneNumber").asOpt[String].isDefined) {
+                if ((request.body \ "phoneNumber").asOpt[String].isDefined) {
                   request.account.map {
                     account => actors.verificationRouter ! VerifyPhoneNumber(account.id, lang)
                   }

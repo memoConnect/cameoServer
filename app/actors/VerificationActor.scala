@@ -1,9 +1,9 @@
 package actors
 
-import akka.actor.{ Actor, Props }
+import akka.actor.Actor
 import constants.Verification._
-import models.{ MongoId, Account, Identity, VerificationSecret }
-import play.api.{Logger, Play}
+import models.{ Account, MongoId, VerificationSecret }
+import play.api.Play
 import play.api.Play.current
 import play.api.i18n.Lang
 import play.api.libs.concurrent.Akka

@@ -8,7 +8,6 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions._
-import services.AuthenticationActions
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

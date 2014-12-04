@@ -1,12 +1,13 @@
 package models
 
 import java.util.Date
-import scala.concurrent.ExecutionContext.Implicits.global
+
 import helper.IdHelper
 import helper.MongoCollections._
 import play.api.libs.json._
 import traits.Model
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**

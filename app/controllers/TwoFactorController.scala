@@ -4,7 +4,7 @@ import helper.ResultHelper._
 import models.TwoFactorToken
 import play.api.libs.json.{ Json, Reads }
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, TwoFactorAuth }
+import services.TwoFactorAuth
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

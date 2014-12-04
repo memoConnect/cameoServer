@@ -1,7 +1,7 @@
 package events
 
-import models.{Signature, Contact, Identity, MongoId}
-import play.api.libs.json.{Json, JsObject}
+import models.{ Contact, Identity, MongoId }
+import play.api.libs.json.{ JsObject, Json }
 
 /**
  * User: Björn Reimer

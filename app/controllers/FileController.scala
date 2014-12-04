@@ -18,7 +18,7 @@ import play.api.mvc._
 import reactivemongo.api.gridfs.DefaultFileToSave
 import reactivemongo.bson.{ BSONDocument, BSONObjectID, _ }
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, ImageScaler }
+import services.ImageScaler
 import sun.misc.BASE64Decoder
 import traits.ExtendedController
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader

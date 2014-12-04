@@ -1,7 +1,6 @@
 package helper
 
 import java.io.{ File, FileWriter }
-import java.util.Date
 
 import helper.MongoCollections._
 import models._

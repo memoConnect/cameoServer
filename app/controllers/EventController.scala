@@ -6,7 +6,6 @@ import models.{ EventSubscription, MongoId }
 import play.api.libs.json.{ JsObject, Json }
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
-import services.AuthenticationActions
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global

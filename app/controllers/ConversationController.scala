@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ExternalMessage
-import events.{ ConversationUpdate, ConversationNew }
+import events.{ ConversationNew, ConversationUpdate }
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -10,7 +10,6 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
-import services.AuthenticationActions
 import traits.ExtendedController
 
 import scala.concurrent.Future

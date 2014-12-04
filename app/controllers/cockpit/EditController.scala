@@ -4,7 +4,6 @@ import helper.ResultHelper._
 import models.cockpit.CockpitEdit
 import play.api.libs.json.JsObject
 import play.api.mvc.BodyParsers.parse
-import services.AuthenticationActions
 import services.AuthenticationActions._
 
 import scala.concurrent.ExecutionContext.Implicits.global

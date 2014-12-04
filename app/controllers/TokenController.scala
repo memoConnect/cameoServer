@@ -6,7 +6,6 @@ import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
-import services.AuthenticationActions
 import services.AuthenticationActions.AuthAction
 import traits.ExtendedController
 

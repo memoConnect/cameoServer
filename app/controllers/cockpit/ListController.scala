@@ -4,7 +4,6 @@ import helper.ResultHelper._
 import models.{ Account, CockpitAccess, Identity, MongoId }
 import play.api.libs.json.{ Json, Reads }
 import play.api.mvc.Result
-import services.AuthenticationActions
 import services.AuthenticationActions._
 import traits.{ CockpitEditableDefinition, ExtendedController }
 

@@ -54,7 +54,7 @@ package object actors {
     val props = RoundRobinPool(1).props(PushNotificationActorProps)
     Akka.system.actorOf(props, "push_notification_router")
   }
-  
+
   lazy val verificationRouter: ActorRef = {
     val props = RoundRobinPool(5).props(Props[VerificationActor])
     Akka.system.actorOf(props, "verification_router")

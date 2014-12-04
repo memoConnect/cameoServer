@@ -1,8 +1,7 @@
 package events
 
-import helper.JsonHelper
 import models._
-import play.api.libs.json.{ JsNumber, JsObject, Json }
+import play.api.libs.json.{ JsObject, Json }
 
 /**
  * User: Björn Reimer
