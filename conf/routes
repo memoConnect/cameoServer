@@ -82,8 +82,9 @@ GET            /a/v1/file/:id/scale/:size                            controllers
 GET            /a/v1/file/:id/:chunkIndex                            controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
-POST           /a/v1/verify                                          controllers.VerificationController.sendVerifyMessage()
-GET            /a/v1/verify/:id                                      controllers.VerificationController.verifyMessage(id)
+GET            /vr/:id                                               controllers.VerificationController.verifyLink(id)
+POST           /a/v1/verify                                          controllers.VerificationController.startVerification()
+POST           /a/v1/verify/:id                                      controllers.VerificationController.verifyCode(id)
 
 # PURLS
 GET            /a/v1/purl/:id                                        controllers.PurlController.getPurl(id: String, offset: Int ?= 0, limit: Int ?= 0)
@@ -134,7 +135,6 @@ GET            /a/v1/util/checkApp                                   controllers
 
 # Redirect for Shorturls
 GET            /p/:id                                                controllers.ShortUrlController.redirect(urlType = "p", id: String)
-GET            /v/:id                                                controllers.ShortUrlController.redirect(urlType = "v", id: String)
 
 ##
 ##   Frontend: Static files
@@ -170,3 +170,5 @@ GET            /as                                                   controllers
 
 # Redirect / to /m
 GET            /                                                     controllers.Application.redirect(url = "/m/")
+
+

@@ -165,7 +165,7 @@ trait ModelUpdate {
   def fromMap(setValues: Map[String, Any]): JsObject = {
     setValues.foldLeft[JsObject](Json.obj()) {
       (res, setValue) =>
-        // todo: again kinda typchecking at runtime
+        // todo: again kinda type checking at runtime
         values.find(_.name.equals(setValue._1)) match {
           case None =>
             Logger.error("trying to update value that doesn't exist: " + setValue._1)

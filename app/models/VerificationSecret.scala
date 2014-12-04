@@ -1,11 +1,13 @@
 package models
 
 import java.util.Date
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import helper.IdHelper
 import helper.MongoCollections._
 import play.api.libs.json._
 import traits.Model
+
+import scala.concurrent.Future
 
 /**
  * User: Björn Reimer
@@ -14,8 +16,9 @@ import traits.Model
  */
 
 case class VerificationSecret(id: MongoId,
-                              identityId: MongoId,
-                              verificationType: String,
+                              code: String,
+                              accountId: MongoId,
+                              valueType: String,
                               valueToBeVerified: String,
                               created: Date)
 
@@ -23,22 +26,39 @@ object VerificationSecret extends Model[VerificationSecret] {
 
   implicit val mongoFormat: Format[VerificationSecret] = createMongoFormat(Json.reads[VerificationSecret], Json.writes[VerificationSecret])
 
-  implicit def col = verificationCollection
+  val col = verificationCollection
 
   def docVersion = 0
 
   def evolutions = Map()
 
-  def create(identityId: MongoId, valueToBeVerified: String, verificationType: String): VerificationSecret = {
+  def create(accountId: MongoId, valueToBeVerified: String, verificationType: String): VerificationSecret = {
     new VerificationSecret(
       IdHelper.generateVerificationSecret(),
-      identityId,
+      IdHelper.generateVerificationCode(),
+      accountId,
       verificationType,
       valueToBeVerified,
       new Date)
   }
 
+  def createAndInsert(accountId: MongoId, valueToBeVerified: String, verificationType: String): VerificationSecret = {
+    val secret = create(accountId, valueToBeVerified, verificationType)
+
+    // delete any secretes with same account and verification type, then insert the new one
+    val query = Json.obj("accountId" -> accountId, "valueType" -> verificationType)
+    VerificationSecret.deleteAll(query).map {
+      le => VerificationSecret.insert(secret)
+    }
+    secret
+  }
+
   override def createDefault(): VerificationSecret = {
     VerificationSecret.create(IdHelper.generateIdentityId(), "", "")
+  }
+
+  def findByCode(code: String): Future[Option[VerificationSecret]] = {
+    val query = Json.obj("code" -> code)
+    VerificationSecret.find(query)
   }
 }

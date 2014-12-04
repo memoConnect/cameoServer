@@ -39,8 +39,11 @@ object MongoCollections {
     col
   }
   lazy val verificationCollection: JSONCollection = {
-    // TODO: create ttl index to expire verification secrets
     val col = mongoDB.collection[JSONCollection]("verifications")
+    val expireAfter = Play.configuration.getInt("verification.expire.period").get * 60
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
+    col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
+    col.indexesManager.ensure(Index(List("code" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
     col
   }
   lazy val accountCollection: JSONCollection = {
@@ -67,7 +70,7 @@ object MongoCollections {
   lazy val eventSubscriptionCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("eventSubscriptions")
     // expire subscriptions
-    val expireAfter = Play.configuration.getInt("events.subscription.expire.period").get
+    val expireAfter = Play.configuration.getInt("events.subscription.expire.period").get * 60
     val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
     col.indexesManager.ensure(Index(List("lastAccessed" -> IndexType.Ascending), options = options))
     col.indexesManager.ensure(Index(List("identityId" -> IndexType.Ascending)))

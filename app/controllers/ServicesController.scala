@@ -8,6 +8,7 @@ import play.api.Play.current
 import play.api.libs.json.{ JsValue, Json }
 import play.api.mvc.Action
 import play.modules.statsd.api.Statsd
+import services.LocalizationMessages
 import traits.ExtendedController
 
 /**
@@ -71,11 +72,7 @@ object ServicesController extends ExtendedController {
 
           Statsd.increment("custom.version." + getBrowserInfo.version)
 
-          val language = request.acceptLanguages.headOption match {
-            case None       => Play.configuration.getString("language.default").getOrElse("en-US")
-            case Some(lang) => lang.code
-          }
-
+          val language = LocalizationMessages.getBrowserLanguage(request).code
           val supportedVersion = Play.configuration.getString("client.version.min").getOrElse("0")
           try {
             val supported = Utils.compareVersions(supportedVersion, getBrowserInfo.version)
@@ -91,7 +88,7 @@ object ServicesController extends ExtendedController {
   def getBrowserInfoGet = Action {
     request =>
       val language = request.acceptLanguages.headOption match {
-        case None       => Play.configuration.getString("language.default").getOrElse("enUS")
+        case None       => Play.configuration.getString("language.default").getOrElse("en")
         case Some(lang) => lang.code
       }
       resOk(Json.toJson(GetBrowserInfoResponse(language, versionIsSupported = true, false)))
