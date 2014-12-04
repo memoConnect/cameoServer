@@ -82,8 +82,9 @@ GET            /a/v1/file/:id/scale/:size                            controllers
 GET            /a/v1/file/:id/:chunkIndex                            controllers.FileController.getFileChunk(id, chunkIndex)
 
 # VERIFICATION
-GET            /vr/:id                                               controllers.VerificationController.verify(id)
-POST           /a/v1/verify                                          controllers.VerificationController.sendVerifyMessage()
+GET            /vr/:id                                               controllers.VerificationController.verifyLink(id)
+POST           /a/v1/verify                                          controllers.VerificationController.startVerification()
+POST           /a/v1/verify/:id                                      controllers.VerificationController.verifyCode(id)
 
 # PURLS
 GET            /a/v1/purl/:id                                        controllers.PurlController.getPurl(id: String, offset: Int ?= 0, limit: Int ?= 0)

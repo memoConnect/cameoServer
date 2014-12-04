@@ -48,7 +48,7 @@ object IdHelper {
   }
 
   def generateVerificationSecret(): MongoId = {
-    new MongoId(randomString(8))
+    new MongoId(randomString(15))
   }
 
   def generateMongoId(): MongoId = {

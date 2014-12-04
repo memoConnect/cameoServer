@@ -223,6 +223,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
     + Headers
     
             Authorization: {token}
+
     + Body
     
             {
@@ -237,18 +238,32 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
         }
 
 
-## Confirm Verification [/verify/{secret}]
+## Confirm Verification [/verify/{code}]
 
-### GET
+### POST
 
 + Parameters
-    + secret ... The secret that is contained in the verification link
+    + secret ... The code from the verification message
 
 + Response 200
 
         {
             "res": "OK",
             "data": "verified"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"VERIFY.EXPIRED"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"VERIFY.VALUE.CHANGED"
         }
 
 
