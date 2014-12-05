@@ -388,7 +388,7 @@ class VerificationControllerSpec extends StartedApp {
     step(TestValueStore.start())
     "start verification of phonenumber and email manually" in {
       val path = basePath + "/verify"
-      val json = Json.obj("verifyMail" -> true, "verifyPhoneNumber" -> true)
+      val json = Json.obj("verifyEmail" -> true, "verifyPhoneNumber" -> true)
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(testUser.token))
       val res = route(req).get

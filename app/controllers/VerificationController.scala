@@ -31,7 +31,7 @@ object VerificationController extends Controller with ExtendedController {
               if (svr.verifyPhoneNumber.getOrElse(false)) {
                 actors.verificationRouter ! VerifyPhoneNumber(accountId, lang)
               }
-              if (svr.verifyMail.getOrElse(false)) {
+              if (svr.verifyEmail.getOrElse(false)) {
                 actors.verificationRouter ! VerifyMail(accountId, lang)
               }
               resOk()
