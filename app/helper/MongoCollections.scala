@@ -38,20 +38,14 @@ object MongoCollections {
     col.indexesManager.ensure(Index(Seq("publicKeys._id" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
     col
   }
-  lazy val verificationCollection: JSONCollection = {
-    val col = mongoDB.collection[JSONCollection]("verifications")
-    val expireAfter = Play.configuration.getInt("verification.expire.period").get * 60
+  lazy val confirmationCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("confirmations")
+    val expireAfter = Play.configuration.getInt("confirmation.expire.period").get * 60
     val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
     col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
     col.indexesManager.ensure(Index(List("code" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
-    col
-  }
-  lazy val passwordResetCollection: JSONCollection = {
-    val col = mongoDB.collection[JSONCollection]("passwordResets")
-    val expireAfter = Play.configuration.getInt("password.reset.expire.period").get * 60
-    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
-    col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
-    col.indexesManager.ensure(Index(List("code" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
+    col.indexesManager.ensure(Index(List("confirmationPath" -> IndexType.Ascending)))
+    col.indexesManager.ensure(Index(List("confirmationType" -> IndexType.Ascending)))
     col
   }
   lazy val accountCollection: JSONCollection = {

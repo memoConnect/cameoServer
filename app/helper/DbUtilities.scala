@@ -33,7 +33,7 @@ object DbUtilities {
     purlCollection,
     globalStateCollection,
     fileMetaCollection,
-    verificationCollection,
+    confirmationCollection,
     twoFactorTokenCollection,
     twoFactorSmsKeyCollection,
     cockpitAccessCollection

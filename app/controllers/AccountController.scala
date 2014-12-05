@@ -1,6 +1,6 @@
 package controllers
 
-import actors.{ VerifyMail, VerifyPhoneNumber }
+import actors.{ ConfirmMail, ConfirmPhoneNumber }
 import constants.ErrorCodes
 import events.ContactUpdate
 import helper.{ CheckHelper, JsonHelper }
@@ -68,10 +68,10 @@ object AccountController extends ExtendedController {
                           }
                           // send verification mails and sms
                           if (accountLowerCase.email.isDefined) {
-                            actors.verificationRouter ! VerifyMail(accountLowerCase.id, lang)
+                            actors.verificationRouter ! ConfirmMail(accountLowerCase.id, lang)
                           }
                           if (accountLowerCase.phoneNumber.isDefined) {
-                            actors.verificationRouter ! VerifyPhoneNumber(accountLowerCase.id, lang)
+                            actors.verificationRouter ! ConfirmPhoneNumber(accountLowerCase.id, lang)
                           }
 
                           accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
@@ -270,12 +270,12 @@ object AccountController extends ExtendedController {
                 // check if update contains a phoneNumber or email. Start verification if it does
                 if ((request.body \ "email").asOpt[String].isDefined) {
                   request.account.map {
-                    account => actors.verificationRouter ! VerifyMail(account.id, lang)
+                    account => actors.verificationRouter ! ConfirmMail(account.id, lang)
                   }
                 }
                 if ((request.body \ "phoneNumber").asOpt[String].isDefined) {
                   request.account.map {
-                    account => actors.verificationRouter ! VerifyPhoneNumber(account.id, lang)
+                    account => actors.verificationRouter ! ConfirmPhoneNumber(account.id, lang)
                   }
                 }
 
@@ -307,74 +307,5 @@ object AccountController extends ExtendedController {
               }
           }
       }
-  }
-
-  case class ResetPasswordRequest(identifier: String, foo: Option[Boolean])
-  object ResetPasswordRequest { implicit val format = Json.format[ResetPasswordRequest] }
-
-  def resetPassword() = Action.async(parse.tolerantJson) {
-    request =>
-      val lang = LocalizationMessages.getBrowserLanguage(request)
-
-      validateFuture[ResetPasswordRequest](request.body, ResetPasswordRequest.format) {
-        rpr =>
-          // check what kind of value the identifier is
-          CheckHelper.checkAndCleanMixed(rpr.identifier) match {
-            case Some(Left(phoneNumber)) => resetWithPhoneNumber(phoneNumber, lang)
-            case Some(Right(email))      => resetWithEmail(email, lang)
-            case None                    => resetWithLoginOrCameoId(rpr.identifier, lang)
-          }
-      }
-  }
-
-  def resetWithPhoneNumber(phoneNumber: String, lang: Lang): Future[Result] = {
-    val query = Json.obj(
-      "phoneNumber" -> Json.obj(
-        "value" -> phoneNumber,
-        "isVerified" -> true
-      ))
-
-    Account.findAll(query).flatMap {
-      case Seq()    => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND))
-      case accounts => resetWithAccounts(accounts, lang)
-    }
-  }
-
-  def resetWithEmail(email: String, lang: Lang): Future[Result] = {
-    val query = Json.obj(
-      "email" -> Json.obj(
-        "value" -> email,
-        "isVerified" -> true
-      ))
-
-    Account.findAll(query).flatMap {
-      case Seq()    => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND))
-      case accounts => resetWithAccounts(accounts, lang)
-    }
-  }
-
-  def resetWithLoginOrCameoId(identifier: String, lang: Lang): Future[Result] = {
-    // start with search for loginName
-    Account.findByLoginName(identifier).flatMap {
-      case Some(account) => resetWithAccounts(Seq(account), lang)
-      case None =>
-        // search for cameoId
-        Identity.findByCameoId(identifier).flatMap {
-          case None => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_LOGIN_NOT_FOUND))
-          case Some(identity) =>
-            identity.accountId match {
-              case None => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_LOGIN_NOT_FOUND))
-              case Some(accountId) =>
-                Account.find(accountId).flatMap {
-                  case None          => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_LOGIN_NOT_FOUND))
-                  case Some(account) => resetWithAccounts(Seq(account), lang)
-                }
-            }
-        }
-    }                                                            \
-  }
-
-  def resetWithAccounts(accounts: Seq[Account], lang: Lang): Future[Result] = {
-
   }
 }

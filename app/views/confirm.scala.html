@@ -1,8 +1,7 @@
-@(expired: Boolean, error: Boolean, lang: Lang)
+@(error: Boolean, languageKey: String, lang: Lang)
 @import _root_.services.LocalizationMessages
 
-
-@main("cameoNet verification") {
+@main("cameoNet confirmation") {
 <html>
     <head>
         <title></title>
@@ -40,20 +39,14 @@
                     <i class="cm-logo"></i>
                 </a>
                 <br />
-                @if(expired) {
+                @if(error) {
                     <span class="cm-error border-radius">
-                        <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("BACKEND.VERIFICATION.LANDING_PAGE.EXPIRED", lang)}
+                        <i class="cm-icon cm-attention"></i>@{LocalizationMessages.get(languageKey, lang)}
                     </span>
                 } else {
-                    @if(error) {
-                        <span class="cm-error border-radius">
-                            <i class="cm-icon cm-attention"></i> @{LocalizationMessages.get("BACKEND.VERIFICATION.LANDING_PAGE.ERROR", lang)}
-                        </span>
-                    } else  {
-                        <span class="cm-success border-radius">
-                            <i class="cm-icon cm-checkbox-right"></i> @{LocalizationMessages.get("BACKEND.VERIFICATION.LANDING_PAGE.SUCCESS", lang)}
-                        </span>
-                    }
+                    <span class="cm-success border-radius">
+                        <i class="cm-icon cm-checkbox-right"></i>@{LocalizationMessages.get(languageKey, lang)}
+                    </span>
                 }
             </div>
         </div>
