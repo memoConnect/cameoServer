@@ -2,7 +2,7 @@ package actors
 
 import akka.actor.Actor
 import constants.Verification._
-import models.{ Account, MongoId, VerificationSecret }
+import models.{TestUserNotification, Account, MongoId, VerificationSecret}
 import play.api.Play
 import play.api.Play.current
 import play.api.i18n.Lang
@@ -62,7 +62,13 @@ class VerificationActor extends Actor {
               )
 
               val body = LocalizationMessages.get("BACKEND.VERIFICATION.SMS.MESSAGE", lang, variables)
-              val from = LocalizationMessages.get("BACKEND.VERIFICATION.MAIL.SENDER", lang)
+              val from = LocalizationMessages.get("BACKEND.VERIFICATION.SMS.SENDER", lang)
+
+              // check if we have a test user and save message
+              val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+              if (account.loginName.startsWith(testUserPrefix.toLowerCase))  {
+                TestUserNotification.createAndInsert(account.id, "sms", body, false)
+              }
 
               lazy val sendSmsActor = Akka.system.actorOf(actors.SendSmsActorProps)
               sendSmsActor ! Sms(from, phoneNumber.value, body)
