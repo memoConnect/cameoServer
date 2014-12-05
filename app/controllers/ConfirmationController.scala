@@ -5,7 +5,7 @@ import constants.ErrorCodes
 import constants.Confirmation._
 import controllers.AccountController._
 import events.AccountUpdate
-import helper.CheckHelper
+import helper.{ JsonHelper, CheckHelper }
 import helper.ResultHelper._
 import models._
 import play.api.Logger
@@ -186,12 +186,16 @@ object ConfirmationController extends Controller with ExtendedController {
       }
   }
 
-  case class ResetPasswordRequest(newPassword: String, foo: Option[Boolean])
-  object ResetPasswordRequest { implicit val format = Json.format[ResetPasswordRequest] }
+  case class ResetPasswordRequest(newPassword: String)
+  object ResetPasswordRequest {
+    implicit val reads = Reads[ResetPasswordRequest] {
+      js => (js \ "newPassword").validate[String](JsonHelper.hashPassword).map(ResetPasswordRequest(_))
+    }
+  }
 
   def resetPassword(id: String) = Action.async(parse.tolerantJson) {
     request =>
-      validateFuture[ResetPasswordRequest](request.body, ResetPasswordRequest.format) {
+      validateFuture[ResetPasswordRequest](request.body, ResetPasswordRequest.reads) {
         rpr =>
           // determine whether we are dealing with a code or id todo: find a more robust way to do this
           val idl = if (id.length < 10) Left(id) else Right(MongoId(id))

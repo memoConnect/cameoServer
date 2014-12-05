@@ -293,7 +293,7 @@ class ResetPasswordSpec extends StartedApp {
       (mail \ "body").as[String] must contain("https://")
       (sms \ "body").as[String] must contain("https://")
       confirmCodeMail2 = (mail \ "body").as[String].split("\"")(1)
-      confirmCodeSms = (mail \ "body").as[String].split("\"")(1)
+      confirmCodeSms = (sms \ "body").as[String].split("\"")(1)
       1 === 1
     }
     step(TestValueStore.stop())
