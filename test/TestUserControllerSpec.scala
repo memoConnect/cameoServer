@@ -169,7 +169,7 @@ class TestUserControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
-      data.length must beEqualTo(1)
+      data.length must beEqualTo(2)
       (data(0) \ "content").asOpt[String] must beSome(contain(messageText))
       (data(0) \ "messageType").asOpt[String] must beSome("sms")
     }
