@@ -39,7 +39,6 @@ class AuthenticationSpec extends StartedApp {
       (POST, "/a/v1/services/checkPhoneNumber"),
       (GET, "/a/v1/services/getBrowserInfo"),
       (POST, "/a/v1/services/getBrowserInfo"),
-      // (POST, "/a/v1/identity/search"),
       (POST, "/a/v1/account"),
       (POST, "/a/v1/account/check"),
       (GET, "/a/v1/token"),
@@ -52,7 +51,10 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/a/v1/testUser/$id<[^/]+>"),
       (DELETE, "/a/v1/testUser/$id<[^/]+>"),
       (DELETE, "/a/v1/testUsers"),
-      (POST, "/a/v1/callStack")
+      (POST, "/a/v1/callStack"),
+      (POST, "/a/v1/resetPassword"),
+      (POST, "/a/v1/resetPassword/$id<[^/]+>"),
+      (GET, "/pr/$id<[^/]+>")
     )
 
     val twoFactorAuthRoutes: Seq[(String, String)] =
@@ -85,6 +87,7 @@ class AuthenticationSpec extends StartedApp {
         r._2.startsWith("/dc") ||
         r._2.startsWith("/dl") ||
         r._2.startsWith("/c") ||
+        r._2.startsWith("/as") ||
         r._2.startsWith("/as") ||
         r._2.equals("/") ||
         r._2.startsWith("/a/v1/util") ||

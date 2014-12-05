@@ -243,7 +243,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 ### POST
 
 + Parameters
-    + secret ... The code from the verification message
+    + code ... The code from the verification message
 
 + Response 200
 
@@ -264,6 +264,83 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
         {
             "res":"KO",
             "errorCode" :"VERIFY.VALUE.CHANGED"
+        }
+
+
+## Password reset [/passwordReset]
+
+### POST
+
++ Request
+
+    + Body
+
+            {
+              "identifier": "loginName/cameoId/phoneNumber/email"
+            }
+
+
++ Response 200
+
+        {
+            "res": "OK",
+            "data": "send confirmation"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.EMAIL.NOT.FOUND"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.LOGIN.NOT.FOUND"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.PHONENUMBER.NOT.FOUND"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.NO.EMAIL.PHONENUMBER"
+        }
+
+
+## Reset Password [/passwordReset/{code}]
+
++ Parameters
+    + code ... The code from the verification message
+
++ Request
+
+    + Body
+
+            {
+              "newPassword": "new password"
+            }
+
++ Response 200
+
+        {
+            "res": "OK",
+            "data": "updated"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.EXPIRED"
         }
 
 

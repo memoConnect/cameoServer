@@ -1,12 +1,14 @@
 package controllers
 
-import actors.{ VerifyMail, VerifyPhoneNumber }
+import actors.{ ConfirmMail, ConfirmPhoneNumber }
+import constants.ErrorCodes
 import events.ContactUpdate
-import helper.JsonHelper
+import helper.{ CheckHelper, JsonHelper }
 import helper.ResultHelper._
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Play.current
+import play.api.i18n.Lang
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
@@ -66,10 +68,10 @@ object AccountController extends ExtendedController {
                           }
                           // send verification mails and sms
                           if (accountLowerCase.email.isDefined) {
-                            actors.verificationRouter ! VerifyMail(accountLowerCase.id, lang)
+                            actors.verificationRouter ! ConfirmMail(accountLowerCase.id, lang)
                           }
                           if (accountLowerCase.phoneNumber.isDefined) {
-                            actors.verificationRouter ! VerifyPhoneNumber(accountLowerCase.id, lang)
+                            actors.verificationRouter ! ConfirmPhoneNumber(accountLowerCase.id, lang)
                           }
 
                           accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
@@ -268,12 +270,12 @@ object AccountController extends ExtendedController {
                 // check if update contains a phoneNumber or email. Start verification if it does
                 if ((request.body \ "email").asOpt[String].isDefined) {
                   request.account.map {
-                    account => actors.verificationRouter ! VerifyMail(account.id, lang)
+                    account => actors.verificationRouter ! ConfirmMail(account.id, lang)
                   }
                 }
                 if ((request.body \ "phoneNumber").asOpt[String].isDefined) {
                   request.account.map {
-                    account => actors.verificationRouter ! VerifyPhoneNumber(account.id, lang)
+                    account => actors.verificationRouter ! ConfirmPhoneNumber(account.id, lang)
                   }
                 }
 
@@ -306,5 +308,4 @@ object AccountController extends ExtendedController {
           }
       }
   }
-
 }
