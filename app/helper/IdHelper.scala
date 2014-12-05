@@ -55,6 +55,14 @@ object IdHelper {
     randomString(6).toUpperCase
   }
 
+  def generatePasswordResetSecret(): MongoId = {
+    new MongoId(randomString(15))
+  }
+
+  def generatePasswordResetCode(): String = {
+    randomString(6).toUpperCase
+  }
+
   def generateMongoId(): MongoId = {
     new MongoId(randomString(defaultLength))
   }

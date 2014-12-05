@@ -1,12 +1,14 @@
 package controllers
 
 import actors.{ VerifyMail, VerifyPhoneNumber }
+import constants.ErrorCodes
 import events.ContactUpdate
-import helper.JsonHelper
+import helper.{ CheckHelper, JsonHelper }
 import helper.ResultHelper._
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Play.current
+import play.api.i18n.Lang
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import play.api.mvc.{ Action, Result }
@@ -307,4 +309,72 @@ object AccountController extends ExtendedController {
       }
   }
 
+  case class ResetPasswordRequest(identifier: String, foo: Option[Boolean])
+  object ResetPasswordRequest { implicit val format = Json.format[ResetPasswordRequest] }
+
+  def resetPassword() = Action.async(parse.tolerantJson) {
+    request =>
+      val lang = LocalizationMessages.getBrowserLanguage(request)
+
+      validateFuture[ResetPasswordRequest](request.body, ResetPasswordRequest.format) {
+        rpr =>
+          // check what kind of value the identifier is
+          CheckHelper.checkAndCleanMixed(rpr.identifier) match {
+            case Some(Left(phoneNumber)) => resetWithPhoneNumber(phoneNumber, lang)
+            case Some(Right(email))      => resetWithEmail(email, lang)
+            case None                    => resetWithLoginOrCameoId(rpr.identifier, lang)
+          }
+      }
+  }
+
+  def resetWithPhoneNumber(phoneNumber: String, lang: Lang): Future[Result] = {
+    val query = Json.obj(
+      "phoneNumber" -> Json.obj(
+        "value" -> phoneNumber,
+        "isVerified" -> true
+      ))
+
+    Account.findAll(query).flatMap {
+      case Seq()    => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND))
+      case accounts => resetWithAccounts(accounts, lang)
+    }
+  }
+
+  def resetWithEmail(email: String, lang: Lang): Future[Result] = {
+    val query = Json.obj(
+      "email" -> Json.obj(
+        "value" -> email,
+        "isVerified" -> true
+      ))
+
+    Account.findAll(query).flatMap {
+      case Seq()    => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND))
+      case accounts => resetWithAccounts(accounts, lang)
+    }
+  }
+
+  def resetWithLoginOrCameoId(identifier: String, lang: Lang): Future[Result] = {
+    // start with search for loginName
+    Account.findByLoginName(identifier).flatMap {
+      case Some(account) => resetWithAccounts(Seq(account), lang)
+      case None =>
+        // search for cameoId
+        Identity.findByCameoId(identifier).flatMap {
+          case None => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_LOGIN_NOT_FOUND))
+          case Some(identity) =>
+            identity.accountId match {
+              case None => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_LOGIN_NOT_FOUND))
+              case Some(accountId) =>
+                Account.find(accountId).flatMap {
+                  case None          => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_LOGIN_NOT_FOUND))
+                  case Some(account) => resetWithAccounts(Seq(account), lang)
+                }
+            }
+        }
+    }                                                            \
+  }
+
+  def resetWithAccounts(accounts: Seq[Account], lang: Lang): Future[Result] = {
+
+  }
 }

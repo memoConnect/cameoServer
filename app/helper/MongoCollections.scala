@@ -46,6 +46,14 @@ object MongoCollections {
     col.indexesManager.ensure(Index(List("code" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
     col
   }
+  lazy val passwordResetCollection: JSONCollection = {
+    val col = mongoDB.collection[JSONCollection]("passwordResets")
+    val expireAfter = Play.configuration.getInt("password.reset.expire.period").get * 60
+    val options: BSONDocument = JsonHelper.toBson(Json.obj("expireAfterSeconds" -> expireAfter)).get
+    col.indexesManager.ensure(Index(List("created" -> IndexType.Ascending), options = options))
+    col.indexesManager.ensure(Index(List("code" -> IndexType.Ascending), unique = true, dropDups = true, sparse = true))
+    col
+  }
   lazy val accountCollection: JSONCollection = {
     val col = mongoDB.collection[JSONCollection]("accounts")
     col.indexesManager.ensure(Index(List("loginName" -> IndexType.Ascending), unique = true, sparse = true))
