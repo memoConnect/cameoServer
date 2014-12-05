@@ -17,7 +17,7 @@ import scala.concurrent.Future
 
 object VerificationController extends Controller with ExtendedController {
 
-  case class StartVerifyRequest(verifyPhoneNumber: Option[Boolean], verifyMail: Option[Boolean])
+  case class StartVerifyRequest(verifyPhoneNumber: Option[Boolean], verifyEmail: Option[Boolean])
   object StartVerifyRequest { implicit val format = Json.format[StartVerifyRequest] }
 
   def startVerification() = AuthAction()(parse.tolerantJson) {
