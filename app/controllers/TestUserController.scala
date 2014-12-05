@@ -105,7 +105,7 @@ object TestUserController extends ExtendedController {
           Identity.findAll(Json.obj("accountId" -> account.id)).flatMap {
             identities =>
 
-              val query = Json.obj("$or" -> identities.map(i => Json.obj("identityId" -> i.id)))
+              val query = Json.obj("$or" -> (identities.map(i => Json.obj("identityId" -> i.id)) :+ Json.obj("identityId" -> account.id)))
               TestUserNotification.findAll(query).map { seq =>
                 // delete them
                 TestUserNotification.deleteAll(query)
