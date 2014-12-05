@@ -8,6 +8,7 @@ import events.AccountUpdate
 import helper.CheckHelper
 import helper.ResultHelper._
 import models._
+import play.api.Logger
 import play.api.i18n.Lang
 import play.api.libs.json._
 import play.api.mvc.{ Result, Action, Controller }
@@ -105,10 +106,9 @@ object ConfirmationController extends Controller with ExtendedController {
 
     def resetWithPhoneNumber(phoneNumber: String, lang: Lang): Future[Result] = {
       val query = Json.obj(
-        "phoneNumber" -> Json.obj(
-          "value" -> phoneNumber,
-          "isVerified" -> true
-        ))
+        "phoneNumber.value" -> phoneNumber,
+        "phoneNumber.isVerified" -> true
+      )
 
       Account.findAll(query).map {
         case Seq()    => resBadRequest("", ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND)
@@ -118,10 +118,9 @@ object ConfirmationController extends Controller with ExtendedController {
 
     def resetWithEmail(email: String, lang: Lang): Future[Result] = {
       val query = Json.obj(
-        "email" -> Json.obj(
-          "value" -> email,
-          "isVerified" -> true
-        ))
+        "email.value" -> email,
+        "email.isVerified" -> true
+      )
 
       Account.findAll(query).map {
         case Seq()    => resBadRequest("", ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND)
@@ -151,18 +150,27 @@ object ConfirmationController extends Controller with ExtendedController {
     }
 
     def resetWithAccounts(accounts: Seq[Account], lang: Lang): Result = {
-      accounts.map {
+      val res = accounts.map {
         account =>
-          account.email match {
-            case None        => // do nothing
-            case Some(email) => actors.resetPasswordRouter ! ConfirmMail(account.id, lang)
-          }
-          account.phoneNumber match {
-            case None              => // do nothing
-            case Some(phoneNumber) => actors.resetPasswordRouter ! ConfirmPhoneNumber(account.id, lang)
+          (account.email.map(_.isVerified), account.phoneNumber.map(_.isVerified)) match {
+            case (Some(true), Some(true)) =>
+              actors.resetPasswordRouter ! ConfirmPhoneNumber(account.id, lang)
+              actors.resetPasswordRouter ! ConfirmMail(account.id, lang)
+              true
+            case (_, Some(true)) =>
+              actors.resetPasswordRouter ! ConfirmPhoneNumber(account.id, lang)
+              true
+            case (Some(true), _) =>
+              actors.resetPasswordRouter ! ConfirmMail(account.id, lang)
+              true
+            case _ => false
           }
       }
-      resOk("reset started")
+      if (res.forall(!_)) {
+        resBadRequest("", ErrorCodes.PASSWORD_RESET_NO_EMAIL_OR_PHONENUMBER)
+      } else {
+        resOk("confirmation send")
+      }
     }
 
     request =>
@@ -206,14 +214,16 @@ object ConfirmationController extends Controller with ExtendedController {
       ConfirmationToken.delete(c.id)
       confirmedAction(a, c)
     }
+
     id.fold(ConfirmationToken.findByCode, ConfirmationToken.find).flatMap {
       case None                                                                                    => Future(ConfirmExpired)
       case Some(confirmationToken) if !confirmationToken.confirmationType.equals(confirmationType) => Future(ConfirmError)
       case Some(confirmationToken) =>
+
         // check if accountIds match
         account match {
           case Some(a) if a.id.equals(confirmationToken.accountId) => Future(deleteAndAction(a, confirmationToken))
-          case None if id.isRight =>
+          case None =>
             Account.find(confirmationToken.accountId).map {
               case Some(a) => deleteAndAction(a, confirmationToken)
               case _       => ConfirmError

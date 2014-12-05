@@ -4,6 +4,7 @@ import java.util.Date
 
 import helper.IdHelper
 import helper.MongoCollections._
+import play.api.Logger
 import play.api.libs.json._
 import traits.Model
 

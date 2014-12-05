@@ -12,7 +12,7 @@ import testHelper.TestConfig._
  * Date: 03.12.14
  * Time: 18:26
  */
-class VerificationControllerSpec extends StartedApp {
+class VerificationSpec extends StartedApp {
 
   sequential
 
