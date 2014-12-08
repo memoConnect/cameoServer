@@ -64,7 +64,7 @@ object CallStackController extends ExtendedController {
 
             // check length of call stack
             callStack.requests.length <= Play.configuration.getInt("callstack.length.max").get match {
-              case false => Future(resBadRequest(Json.obj("maxLength" -> Play.configuration.getInt("callstack.length.max").get)))
+              case false => Future(resBadRequest("callstack is too long", data = Some(Json.obj("maxLength" -> Play.configuration.getInt("callstack.length.max").get))))
               case true =>
                 val responses = callStack.requests.map {
                   call =>

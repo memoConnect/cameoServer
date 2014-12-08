@@ -34,7 +34,7 @@ object EventController extends ExtendedController {
         case None =>
           // create new event subscription
           EventSubscription.checkAndCreate(request.identity.id).map {
-            case None                    => resKo()
+            case None                    => resKo("")
             case Some(eventSubscription) => resKo(Json.obj("subscriptionId" -> eventSubscription.id.toJson))
           }
         case Some(subscription) => Future(resOk(subscription.toJson))

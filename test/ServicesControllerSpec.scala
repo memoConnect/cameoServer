@@ -86,11 +86,8 @@ class ServicesControllerSpec extends StartedApp {
 
           status(res) aka "http result code bad request" must equalTo(232)
 
-          val resStatus = (contentAsJson(res) \ "res").as[String]
-          resStatus must beEqualTo("KO")
-
-          val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
-          errorMsg must beSome
+          (contentAsJson(res) \ "res").as[String]  must beEqualTo("KO")
+          (contentAsJson(res) \ "data").asOpt[String] must beSome
       }
     }
 
@@ -129,11 +126,8 @@ class ServicesControllerSpec extends StartedApp {
 
           status(res) aka "http result code bad request" must equalTo(232)
 
-          val resStatus = (contentAsJson(res) \ "res").as[String]
-          resStatus must beEqualTo("KO")
-
-          val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
-          errorMsg must beSome
+          (contentAsJson(res) \ "res").as[String] must beEqualTo("KO")
+          (contentAsJson(res) \ "data").asOpt[String] must beSome
       }
     }
 
@@ -172,11 +166,8 @@ class ServicesControllerSpec extends StartedApp {
 
           status(res) aka "http result code bad request" must equalTo(232)
 
-          val resStatus = (contentAsJson(res) \ "res").as[String]
-          resStatus must beEqualTo("KO")
-
-          val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
-          errorMsg must beSome
+          (contentAsJson(res) \ "res").as[String] must beEqualTo("KO")
+          (contentAsJson(res) \ "data").asOpt[String]  must beSome
       }
     }
 
@@ -215,11 +206,8 @@ class ServicesControllerSpec extends StartedApp {
 
           status(res) aka "http result code bad request" must equalTo(232)
 
-          val resStatus = (contentAsJson(res) \ "res").as[String]
-          resStatus must beEqualTo("KO")
-
-          val errorMsg = (contentAsJson(res) \ "error").asOpt[String]
-          errorMsg must beSome
+          (contentAsJson(res) \ "res").as[String] must beEqualTo("KO")
+          (contentAsJson(res) \ "data").asOpt[String] must beSome
       }
     }
 

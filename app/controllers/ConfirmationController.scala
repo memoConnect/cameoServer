@@ -38,7 +38,7 @@ object ConfirmationController extends Controller with ExtendedController {
               if (svr.verifyEmail.getOrElse(false)) {
                 actors.verificationRouter ! ConfirmMail(accountId, lang)
               }
-              resOk()
+              resOk("verification started")
           }
       }
   }

@@ -54,7 +54,7 @@ object PushNotificationController extends ExtendedController {
                       val identityIds = identities.map(_.id.id)
                       setSubscriptions(id, identityIds).map {
                         case false => resKo("could not set subscription")
-                        case true  => resOk()
+                        case true  => resOk("added")
                       }
                   }
               }
@@ -73,7 +73,7 @@ object PushNotificationController extends ExtendedController {
               // set subscription to identityId of this user
               setSubscriptions(subscriberId, Seq()).map {
                 case false => resKo("Pushd is down")
-                case true  => resOk()
+                case true  => resOk("deleted")
               }
           }
       }

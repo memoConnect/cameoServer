@@ -324,8 +324,8 @@ class FileControllerSpec extends StartedApp {
 
       status(res) must equalTo(BAD_REQUEST)
 
-      (contentAsJson(res) \ "error" \ "maxFileSize").asOpt[Int] must beSome(maxSize)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.FILE_UPLOAD_FILESIZE_EXCEEDED)
+      (contentAsJson(res) \ "data" \ "maxFileSize").asOpt[Int] must beSome(maxSize)
+      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.FILE_UPLOAD_FILESIZE_EXCEEDED.get)
     }
 
     "return error if actual size exceeds submitted size" in {
@@ -397,7 +397,7 @@ class FileControllerSpec extends StartedApp {
       }
       status(res) must equalTo(BAD_REQUEST)
 
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED)
+      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED.get)
     }
 
     "return raw image file" in {
