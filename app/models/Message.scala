@@ -17,6 +17,7 @@ case class Message(id: MongoId,
                    fromIdentityId: MongoId,
                    plain: Option[PlainMessagePart],
                    encrypted: Option[String],
+                   signatures: Option[MessageSignature],
                    created: Date,
                    docVersion: Int) {
 
@@ -40,6 +41,7 @@ object Message extends SubModel[Message, Conversation] {
     //    Reads.pure[Seq[MessageStatus]](Seq()) and
     (__ \ 'plain).readNullable[PlainMessagePart](PlainMessagePart.createReads) and
     (__ \ 'encrypted).readNullable[String] and
+    (__ \ 'signatures).readNullable[MessageSignature] and
     Reads.pure[Date](new Date) and
     Reads.pure[Int](docVersion)
   )(Message.apply _)
@@ -50,15 +52,16 @@ object Message extends SubModel[Message, Conversation] {
         Json.obj("fromIdentity" -> m.fromIdentityId.toJson) ++
         Json.obj("plain" -> m.plain.map(_.toJson)) ++
         Json.obj("encrypted" -> m.encrypted) ++
+        maybeEmptyJson("signatures", m.signatures) ++
         addCreated(m.created)
   }
 
   def create(fromId: MongoId, text: String): Message = {
-    new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, new Date, docVersion)
+    new Message(IdHelper.generateMessageId(), fromId, Some(PlainMessagePart.create(text)), None, None, new Date, docVersion)
   }
 
   override def createDefault(): Message = {
-    new Message(IdHelper.generateMessageId(), MongoId(""), None, None, new Date, docVersion)
+    create(MongoId(""), "")
   }
 }
 
@@ -102,10 +105,10 @@ object MessageEvolutions {
 }
 
 case class PlainMessagePart(text: Option[String],
-                            fileIds: Seq[MongoId]) {
-  def toJson(): JsObject = {
-    maybeEmptyString("text", this.text) ++
-      Json.obj("fileIds" -> this.fileIds.map(_.toJson))
+                            fileIds: Option[Seq[MongoId]]) {
+  def toJson: JsObject = {
+    maybeEmptyJson("text", this.text) ++
+      maybeEmptyJson("fileIds", this.fileIds.map(_.map(_.toJson)))
   }
 }
 
@@ -114,11 +117,18 @@ object PlainMessagePart {
 
   val createReads = (
     (__ \ 'text).readNullable[String] and
-    ((__ \ 'fileIds).read[Seq[MongoId]](Reads.seq(MongoId.createReads)) or Reads.pure[Seq[MongoId]](Seq()))
+    (__ \ 'fileIds).readNullable[Seq[MongoId]](Reads.seq(MongoId.createReads))
   )(PlainMessagePart.apply _)
 
   def create(text: String): PlainMessagePart = {
-    new PlainMessagePart(Some(text), Seq())
+    new PlainMessagePart(Some(text), None)
   }
+}
+
+case class MessageSignature(encrypted: Option[String],
+                            plain: Option[Seq[JsObject]])
+
+object MessageSignature {
+  implicit val format: Format[MessageSignature] = Json.format[MessageSignature]
 }
 

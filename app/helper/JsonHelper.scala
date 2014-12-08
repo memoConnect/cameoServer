@@ -55,30 +55,9 @@ object JsonHelper {
     Json.obj("lastUpdated" -> PrintDate.toString(date))
   }
 
-  def maybeEmptyString(key: String, value: Option[String]): JsObject = {
+  def maybeEmptyJson[A](key: String, value: Option[A])(implicit writes: Writes[A]): JsObject = {
     value match {
-      case Some(s) => Json.obj(key -> JsString(s))
-      case None    => Json.obj()
-    }
-  }
-
-  def maybeEmptyInt(key: String, value: Option[Int]): JsObject = {
-    value match {
-      case Some(s) => Json.obj(key -> JsNumber(s))
-      case None    => Json.obj()
-    }
-  }
-
-  def maybeEmptySeq(key: String, value: Option[Seq[String]]): JsObject = {
-    value match {
-      case Some(s) => Json.obj(key -> JsArray(s.map(JsString)))
-      case None    => Json.obj()
-    }
-  }
-
-  def maybeEmptyJsValue(key: String, value: Option[JsValue]): JsObject = {
-    value match {
-      case Some(s) => Json.obj(key -> s)
+      case Some(s) => Json.obj(key -> value)
       case None    => Json.obj()
     }
   }

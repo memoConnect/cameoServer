@@ -3,6 +3,7 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
+import events.{FriendRequestAccepted, FriendRequestNew}
 import helper.JsonHelper._
 import helper.ResultHelper._
 import helper.{ CheckHelper, IdHelper, OutputLimits }
@@ -12,7 +13,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
-import services.{ AcceptedFriendRequest, AuthenticationActions, AvatarGenerator, NewFriendRequest }
+import services.{ AuthenticationActions, AvatarGenerator }
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -249,7 +250,7 @@ object ContactController extends ExtendedController {
                         val fr = new FriendRequest(request.identity.id, message, new Date)
                         other.addFriendRequest(fr).map {
                           case true =>
-                            actors.eventRouter ! NewFriendRequest(receiver, fr, request.identity, receiver)
+                            actors.eventRouter ! FriendRequestNew(receiver, fr, request.identity, receiver)
                             resOk("request added")
                           case false =>
                             resServerError("could not update")
@@ -311,8 +312,8 @@ object ContactController extends ExtendedController {
                           val contactJs = contact.toJsonWithIdentity(None, Seq(otherIdentity, request.identity))
                           val otherContactJs = otherContact.toJsonWithIdentity(None, Seq(otherIdentity, request.identity))
                           // send event to both parties
-                          actors.eventRouter ! AcceptedFriendRequest(otherIdentity.id, otherIdentity.id, request.identity.id, otherContactJs)
-                          actors.eventRouter ! AcceptedFriendRequest(request.identity.id, otherIdentity.id, request.identity.id, contactJs)
+                          actors.eventRouter ! FriendRequestAccepted(otherIdentity.id, otherIdentity.id, request.identity.id, otherContactJs)
+                          actors.eventRouter ! FriendRequestAccepted(request.identity.id, otherIdentity.id, request.identity.id, contactJs)
                           resOk("added contacts")
                         case false => resKo("duplicate entries")
                       }

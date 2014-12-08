@@ -53,6 +53,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "numberOfMessages").asOpt[Int] must beSome(100)
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
     }
 
     "Get only messages an existing conversation with messages" in {
@@ -107,6 +108,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "subject").asOpt[String] must beSome(subject)
       (data \ "keyTransmission").asOpt[String] must beSome(keyTransmission)
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
     }
 
     "Create a new conversation without subject" in {
@@ -131,7 +133,6 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "subject").asOpt[String] must beNone
-
     }
 
     "Get the created conversation" in {
@@ -386,6 +387,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages")(0).asOpt[JsObject] must beSome
       (data \ "messages")(1).asOpt[JsObject] must beNone
       (data \ "subject").asOpt[String] must beSome
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
 
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       val recipients = (data \ "recipients").as[Seq[JsObject]]
@@ -497,78 +499,6 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "numberOfConversations").asOpt[Int] must beSome(numberOfConversations)
       conversations.length must beEqualTo(Math.min(limit, numberOfConversations - offset))
     }
-
-    //    "Edit subject of an conversation" in {
-    //      val path = basePath + "/conversation/" + cidExisting
-    //
-    //      val json = Json.obj("subject" -> newSubject)
-    //
-    //      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-    //      val res = route(req).get
-    //
-    //      if (status(res) != OK) {
-    //        Logger.error("Response: " + contentAsString(res))
-    //      }
-    //      status(res) must equalTo(OK)
-    //    }
-    //
-    //    "Check if subject has changed" in {
-    //      val path = basePath + "/conversation/" + cidExisting
-    //
-    //      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-    //      val res = route(req).get
-    //
-    //      if (status(res) != OK) {
-    //        Logger.error("Response: " + contentAsString(res))
-    //      }
-    //      status(res) must equalTo(OK)
-    //
-    //      val data = (contentAsJson(res) \ "data").as[JsObject]
-    //
-    //      (data \ "subject").asOpt[String] must beSome(newSubject)
-    //    }
-    //
-    //    val newKeyTransmission = "veryMoepSecure"
-    //    "Edit keyTransmission of an conversation" in {
-    //      val path = basePath + "/conversation/" + cidExisting
-    //
-    //      val json = Json.obj("keyTransmission" -> newKeyTransmission)
-    //
-    //      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
-    //      val res = route(req).get
-    //
-    //      if (status(res) != OK) {
-    //        Logger.error("Response: " + contentAsString(res))
-    //      }
-    //      status(res) must equalTo(OK)
-    //    }
-    //
-    //    "Check if keyTransmission has changed" in {
-    //      val path = basePath + "/conversation/" + cidExisting
-    //
-    //      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-    //      val res = route(req).get
-    //
-    //      if (status(res) != OK) {
-    //        Logger.error("Response: " + contentAsString(res))
-    //      }
-    //      status(res) must equalTo(OK)
-    //
-    //      val data = (contentAsJson(res) \ "data").as[JsObject]
-    //
-    //      (data \ "keyTransmission").asOpt[String] must beSome(newKeyTransmission)
-    //    }
-    //
-    //    "Refuse non-member to edit subject of an conversation" in {
-    //      val path = basePath + "/conversation/" + cidExisting
-    //
-    //      val json = Json.obj("subject" -> (newSubject + "moep"))
-    //
-    //      val req = FakeRequest(PUT, path).withHeaders(tokenHeader(tokenExisting2)).withJsonBody(json)
-    //      val res = route(req).get
-    //
-    //      status(res) must equalTo(UNAUTHORIZED)
-    //    }
 
     "add recipient to conversation" in {
       val path = basePath + "/conversation/" + cidExisting + "/recipient"
@@ -1002,7 +932,7 @@ class ConversationControllerSpec extends StartedApp {
     "create new conversation with three recipients" in {
       val path = basePath + "/conversation"
 
-      val json = Json.obj("recipients" -> validRecipients)
+      val json = Json.obj("recipients" -> Seq(internalContactIdentityId, internalContact2IdentityId))
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -1017,6 +947,318 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "id").asOpt[String] must beSome
       cidNew3 = (data \ "id").as[String]
       1 === 1
+    }
+
+    var messageId = ""
+    "send a message as first recipient" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message"
+      val json = Json.obj("plain" -> Json.obj("text" -> "moep"))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId = (data \ "id").as[String]
+      1 ==1
+    }
+
+    "first recipient should not have any unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
+    }
+
+    "second recipient should have one unread message" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContactToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(1)
+    }
+
+    var messageId2a= ""
+    var messageId2b= ""
+    "send two messages as second recipient" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message"
+      val json = Json.obj("plain" -> Json.obj("text" -> "moep"))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContactToken)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId2a = (data \ "id").as[String]
+
+      val req2 = FakeRequest(POST, path).withHeaders(tokenHeader(internalContactToken)).withJsonBody(json)
+      val res2 = route(req2).get
+
+      if (status(res2) != OK) {
+        Logger.error("Response: " + contentAsString(res2))
+      }
+      status(res2) must equalTo(OK)
+
+      val data2 = (contentAsJson(res2) \ "data").as[JsObject]
+
+      (data2 \ "id").asOpt[String] must beSome
+      messageId2b = (data2 \ "id").as[String]
+      1 ==1
+    }
+
+    "first recipient should have two unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(2)
+    }
+
+    "second recipient should have one unread message" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContactToken))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(1)
+    }
+
+    "third recipient should have three unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(3)
+    }
+
+    "third recipient disable unread messages" in {
+      val path = basePath + "/account"
+      val json = Json.obj("userSettings" -> Json.obj("enableUnreadMessages" -> false))
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "third recipient should get -1 for unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(-1)
+    }
+
+    "third recipient should not be able to mark messages as read" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message/" + messageId + "/read"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+    }
+
+    "third recipient renable unread messages" in {
+      val path = basePath + "/account"
+      val json = Json.obj("userSettings" -> Json.obj("enableUnreadMessages" -> true))
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+
+    "third recipient mark first message read" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message/" + messageId + "/read"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "third recipient should have two unread messages now" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(2)
+    }
+
+    var messageId3 = ""
+    "first recipient send another message" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message"
+      val json = Json.obj("plain" -> Json.obj("text" -> "moep"))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId3 = (data \ "id").as[String]
+      1 ==1
+    }
+
+    "third recipient should have three unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(3)
+    }
+
+    "third recipient send a message" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message"
+      val json = Json.obj("plain" -> Json.obj("text" -> "moep"))
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContact2Token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      messageId3 = (data \ "id").as[String]
+      1 ==1
+    }
+
+    "third recipient should still have three unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(3)
+    }
+
+    "third recipient mark last message read" in {
+      val path = basePath + "/conversation/" + cidNew3 + "/message/" + messageId3 + "/read"
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "third recipient should have no unread messages" in {
+      val path = basePath + "/conversation/" + cidNew3
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContact2Token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "unreadMessages").asOpt[Int] must beSome(0)
     }
   }
 }

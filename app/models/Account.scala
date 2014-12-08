@@ -29,6 +29,7 @@ case class Account(id: MongoId,
                    phoneNumber: Option[VerifiedString],
                    email: Option[VerifiedString],
                    properties: AccountProperties,
+                   userSettings: AccountUserSettings,
                    created: Date,
                    lastUpdated: Date) {
 
@@ -60,6 +61,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
       Reads.pure[AccountProperties](AccountProperties.defaultProperties) and
+      Reads.pure[AccountUserSettings](AccountUserSettings.defaultSettings) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -68,8 +70,9 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     a =>
       Json.obj("id" -> a.id.toJson) ++
         Json.obj("loginName" -> a.loginName) ++
-        maybeEmptyJsValue("phoneNumber", a.phoneNumber.map(_.toJson)) ++
-        maybeEmptyJsValue("email", a.email.map(_.toJson)) ++
+        maybeEmptyJson("phoneNumber", a.phoneNumber.map(_.toJson)) ++
+        maybeEmptyJson("email", a.email.map(_.toJson)) ++
+        Json.obj("userSettings" -> a.userSettings) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
@@ -80,7 +83,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
   }
 
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, AccountProperties.defaultProperties, new Date, new Date)
+    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, AccountProperties.defaultProperties, AccountUserSettings.defaultSettings, new Date, new Date)
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {
@@ -102,14 +105,15 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 5
+  def docVersion = 6
 
   def evolutions = Map(
     0 -> AccountEvolutions.migrateToVerifiedString,
     1 -> AccountEvolutions.addDeviceIds,
     2 -> AccountEvolutions.convertToPushDevice,
     3 -> AccountEvolutions.removePushDevices,
-    4 -> AccountEvolutions.addAccountProperties
+    4 -> AccountEvolutions.addAccountProperties,
+    5 -> AccountEvolutions.addUserSettings
   )
 }
 
@@ -229,23 +233,50 @@ object AccountEvolutions {
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(5)))
       js.transform(addProperties andThen addVersion)
   }
+
+  def addUserSettings: Reads[JsObject] = Reads {
+    js =>
+      val addSettings = __.json.update((__ \ 'userSettings).json.put(Json.toJson(AccountUserSettings.defaultSettings)))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(6)))
+      js.transform(addSettings andThen addVersion)
+  }
 }
 
-object AccountUpdate extends ModelUpdate {
+object AccountModelUpdate extends ModelUpdate {
   def values = Seq(
     VerifiedStringUpdateValue("email", JsonHelper.verifyMail, externalEdit = true),
     VerifiedStringUpdateValue("phoneNumber", JsonHelper.verifyPhoneNumber, externalEdit = true),
-    StringUpdateValue("password")
+    StringUpdateValue("password"),
+    BooleanUpdateSubvalue("userSettings", "enableUnreadMessages", externalEdit = true),
+    BooleanUpdateSubvalue("userSettings", "convertSmileysToEmojis", externalEdit = true),
+    BooleanUpdateSubvalue("userSettings", "sendOnReturn", externalEdit = true),
+    StringUpdateSubvalue("userSettings", "languageSettings", externalEdit = true),
+    StringUpdateSubvalue("userSettings", "dateFormat", externalEdit = true),
+    StringUpdateSubvalue("userSettings", "timeFormat", externalEdit = true)
   )
 }
 
 case class AccountProperties(fileQuota: Int)
 
 object AccountProperties {
-  implicit def format: Format[AccountProperties] = Json.format[AccountProperties]
+  implicit val format: Format[AccountProperties] = Json.format[AccountProperties]
 
   def defaultProperties: AccountProperties = {
     def defaultQuota = Play.configuration.getInt("accounts.properties.default.file.quota").getOrElse(10000) * 1024 * 1024
     AccountProperties(defaultQuota)
   }
+}
+
+case class AccountUserSettings(enableUnreadMessages: Boolean,
+                               convertSmileysToEmojis: Boolean,
+                               sendOnReturn: Boolean,
+                               languageSettings: String,
+                               dateFormat: String,
+                               timeFormat: String)
+
+object AccountUserSettings {
+  implicit val format: Format[AccountUserSettings] = Json.format[AccountUserSettings]
+
+  def defaultSettings: AccountUserSettings =
+    AccountUserSettings(enableUnreadMessages = true, convertSmileysToEmojis = true, sendOnReturn = false, "", "dd.MM.yyyy", "HH:mm")
 }
