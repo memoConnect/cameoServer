@@ -16,7 +16,7 @@ import play.api.libs.json._
 import play.api.mvc.{ Request, Action, Result }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
-import services.AuthenticationActions.AuthAction
+import services.AuthenticationActions._
 import services.LocalizationMessages
 import traits.ExtendedController
 import play.api.libs.functional.syntax._
@@ -150,8 +150,7 @@ object AccountController extends ExtendedController {
   case class CheckLoginRequest(loginName: Option[String], cameoId: Option[String])
   object CheckLoginRequest { implicit val format = Json.format[CheckLoginRequest] }
 
-  def checkLoginName = Action.async(parse.tolerantJson) {
-    request =>
+  def doReserveLogin(body: JsValue, ownLogin: Option[String]): Future[Result] = {
 
       def findAlternative(value: String, count: Int = 1): Future[String] = {
         val currentTry = value + "_" + count
@@ -160,7 +159,7 @@ object AccountController extends ExtendedController {
           account <- Account.findByLoginName(currentTry)
           identity <- Identity.findByCameoId(currentTry)
         } yield {
-          account.isDefined || identity.isDefined
+          (account.isDefined && !ownLogin.exists(_.equals(account.get.loginName))) || identity.isDefined
         }
 
         loginExists.flatMap {
@@ -174,7 +173,7 @@ object AccountController extends ExtendedController {
         }
       }
 
-      def reserveOrAlternative(login: String): Future[Result] = {
+      def reserveOrAlternative(login: String, ownLogin: Option[String]): Future[Result] = {
 
         checkLogin(login) match {
           case false => Future(resBadRequest("invalid loginName/cameoId"))
@@ -184,7 +183,7 @@ object AccountController extends ExtendedController {
               account <- Account.findByLoginName(login)
               identity <- Identity.findByCameoId(login)
             } yield {
-              account.isDefined || identity.isDefined
+              account.isDefined && !ownLogin.exists(_.equals(account.get.loginName)) || identity.isDefined
             }
 
             maybeExists.flatMap {
@@ -212,16 +211,29 @@ object AccountController extends ExtendedController {
         }
       }
 
-      validateFuture[CheckLoginRequest](request.body, CheckLoginRequest.format) {
+      validateFuture[CheckLoginRequest](body, CheckLoginRequest.format) {
         checkLoginRequest =>
           Logger.info("Login check: " + checkLoginRequest)
           checkLoginRequest match {
             case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
-            case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName required"))
-            case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId)
-            case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName)
+            case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName"))
+            case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId, ownLogin)
+            case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName, None)
           }
       }
+  }
+
+  def reserveLoginNonAuth(request: Request[Any]): Future[Result] = {
+    request.body match {
+      case js: JsValue => doReserveLogin(js, None)
+      case _ => Future(resBadRequest("bad content type"))
+    }
+  }
+
+  def reserveLogin() = BasicAuthAction(reserveLoginNonAuth).async(parse.tolerantJson) {
+    request =>
+    Logger.debug("BASIC TRUTH")
+    doReserveLogin(request.body, Some(request.account.loginName))
   }
 
   def deleteAccount(loginName: String) = AuthAction().async {

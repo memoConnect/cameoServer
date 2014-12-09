@@ -419,7 +419,41 @@ class AccountControllerSpec extends StartedApp {
       1 === 1
     }
 
-    "allow reservation of own loginName as cameoId"
+    "refuse to reserve loginName of other account" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("cameoId" -> loginExisting)
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((login + ":" + pass).getBytes)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != 232) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(232)
+    }
+
+    "allow reservation of own loginName as cameoId" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("cameoId" -> login)
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((login + ":" + pass).getBytes)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "reservationSecret").asOpt[String] must beSome
+      regSec2 = (data \ "reservationSecret").as[String]
+      1 === 1
+    }
 
     "add identity using basic auth" in {
       val path = basePath + "/identity/initial"
@@ -452,7 +486,22 @@ class AccountControllerSpec extends StartedApp {
       (identity \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
-    "refuse to add another identity using basic auth"
+    "refuse to add another identity using basic auth" in {
+      val path = basePath + "/identity/initial"
+      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId, "reservationSecret" -> regSec2)
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((login + ":" + pass).getBytes)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+
+      (contentAsJson(res) \ "error").as[String] must contain("already has")
+    }
 
     "Return a token" in {
       val path = basePath + "/token"

@@ -44,8 +44,6 @@ class AuthenticationSpec extends StartedApp {
       (POST, "/a/v1/account"),
       (POST, "/a/v2/account"),
       (POST, "/a/v1/account/check"),
-      (GET, "/a/v1/token"),
-      (POST, "/a/v1/identity/initial"),
       (GET, "/a/v1"),
       (GET, "/a/v1/purl/AthaUuGR"),
       (GET, "/a/v1/identity/$id<[^/]+>"),
@@ -94,6 +92,8 @@ class AuthenticationSpec extends StartedApp {
         r._2.startsWith("/as") ||
         r._2.startsWith("/as") ||
         r._2.equals("/") ||
+        r._2.equals("/a/v1/token") ||
+        r._2.equals("/a/v1/identity/initial") ||
         r._2.startsWith("/a/v1/util") ||
         r._1.equals("OPTIONS") ||
         (r._1.equals("POST") && r._2.startsWith("/a/v1/file/$id<[^/]+>"))

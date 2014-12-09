@@ -40,19 +40,19 @@ object AuthenticationActions {
     }
   }
 
-  def BasicAuthAction() = new ActionBuilder[BasicAuthRequest] {
+  def BasicAuthAction(nonAuthBlock: Request[Any] => Future[Result] = accessDenied) = new ActionBuilder[BasicAuthRequest] {
     def invokeBlock[A](request: Request[A], block: BasicAuthRequest[A] => Future[Result]) = {
       request.headers.get("Authorization") match {
-        case None => Future.successful(resBadRequest("No Authorization field in header"))
+        case None => nonAuthBlock(request)
         case Some(basicAuth) if !basicAuth.contains("Basic") =>
           Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
         case Some(basicAuth) =>
           val (loginName, password) = Utils.decodeBasicAuth(basicAuth)
           val loginNameLower = loginName.toLowerCase
-          //find accounty and check password
+          //find account and check password
           Account.findByLoginName(loginNameLower).flatMap {
             case Some(account) if BCrypt.checkpw(password, account.password) => block(new BasicAuthRequest[A](account, request))
-            case _                                                           => Future(resUnauthorized("Invalid password/loginName"))
+            case _                                                           => nonAuthBlock(request)
           }
       }
     }
