@@ -368,6 +368,11 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     col.find(query, projection).cursor[Identity].collect[Seq]()
   }
 
+  def findByAccountId(id: MongoId): Future[Seq[Identity]] = {
+    val query = Json.obj("accountId" -> id)
+    findAll(query)
+  }
+
   def findByToken(tokenId: MongoId, includeContacts: Boolean = false): Future[Option[Identity]] = {
     val query = Json.obj("tokens._id" -> tokenId)
     val projection = getProjection(includeContacts)

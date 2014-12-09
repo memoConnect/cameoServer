@@ -6,7 +6,6 @@ import events.ContactUpdate
 import helper.JsonHelper._
 import helper.{ CheckHelper, JsonHelper }
 import helper.ResultHelper._
-import legacy.v1.AccountController._
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Play.current
@@ -47,20 +46,24 @@ object AccountController extends ExtendedController {
     )(CreateAccountRequest.apply _)
   }
 
-  def createAccountNonAuth(request: Request[JsObject]): Future[Result] = {
-    validateFuture(request.body, CreateAccountRequest.reads) {
-      car =>
-        AccountReservation.checkReservationSecret(car.loginName, car.reservationSecret).flatMap {
-          case false => Future(resBadRequest("invalid reservation secret"))
-          case true =>
-            val account = Account.create(car.loginName, car.password)
-            storeAccount(account, None)
+  def createAccountNonAuth[A](request: Request[A]): Future[Result] = {
+    request.body match {
+      case js: JsValue =>
+        validateFuture(js, CreateAccountRequest.reads) {
+          car =>
+            AccountReservation.checkReservationSecret(car.loginName, car.reservationSecret).flatMap {
+              case false => Future(resBadRequest("invalid reservation secret"))
+              case true =>
+                val account = Account.create(car.loginName, car.password)
+                storeAccount(account, None)
+            }
         }
+      case _ => Future(resBadRequest("bad content type"))
     }
   }
 
   def storeAccount(account: Account, identityId: Option[MongoId]): Future[Result] = {
-    Account.insert(account).map {
+    Account.insert(account).flatMap {
       le =>
         // create statsd event when user is not a test user
         val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
@@ -68,8 +71,8 @@ object AccountController extends ExtendedController {
           Statsd.increment("custom.account.create")
         }
         identityId match {
-          case None     => resOk(account.toJson)
-          case Some(id) => resOk(account.toJsonWithIdentities(id))
+          case None     => Future(resOk(account.toJson))
+          case Some(id) => account.toJsonWithIdentities(id).map(resOk[JsObject])
         }
     }
   }

@@ -6,7 +6,7 @@ import events.ContactUpdate
 import helper.ResultHelper._
 import models._
 import play.api.Play
-import play.api.libs.json.{JsObject, Json, JsValue}
+import play.api.libs.json.{Reads, JsObject, Json, JsValue}
 import play.api.mvc.{Result, Action}
 import play.api.mvc.BodyParsers.parse
 import play.modules.statsd.api.Statsd
@@ -24,6 +24,12 @@ import play.api.Play.current
 object AccountController extends ExtendedController {
 
   implicit val depreciated = true
+
+  case class AdditionalValues(reservationSecret: String, displayName: Option[String])
+
+  object AdditionalValues {
+    val reads: Reads[AdditionalValues] = Json.reads[AdditionalValues]
+  }
 
   def createAccount = Action.async(parse.tolerantJson) {
     request =>

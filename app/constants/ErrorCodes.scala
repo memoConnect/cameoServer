@@ -10,6 +10,8 @@ object ErrorCodes {
 
   type ErrorCode = Option[String]
 
+  val ACCOUNT_MISSING_IDENTITY: ErrorCode = Some("ACCOUNT.MISSING.IDENTITY")
+
   val FILE_UPLOAD_QUOTA_EXCEEDED: ErrorCode = Some("FILE.UPLOAD.QUOTA.EXCEEDED")
   val FILE_UPLOAD_FILESIZE_EXCEEDED: ErrorCode = Some("FILE.UPLOAD.FILESIZE.EXCEEDED")
 

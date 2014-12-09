@@ -19,6 +19,7 @@ GET            /a/v1/identity/:id                                    controllers
 GET            /a/v1/identity                                        controllers.IdentityController.getOwnIdentity()
 PUT            /a/v1/identity                                        controllers.IdentityController.updateIdentity()
 POST           /a/v1/identity                                        controllers.IdentityController.addIdentity()
+POST           /a/v1/identity/initial                                controllers.IdentityController.addInitialIdentity()
 POST           /a/v1/identity/search                                 controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
 
 # PUBLIC KEYS

@@ -36,7 +36,7 @@ class AccountControllerV1Spec extends StartedApp {
   var regSec = ""
   var regSec2 = ""
 
-  "AccountController" should {
+  "legacy AccountController" should {
 
     "Reserve Login" in {
       val path = basePath + "/account/check"
@@ -311,7 +311,7 @@ class AccountControllerV1Spec extends StartedApp {
     var externalToken = ""
     "get purl object for external user" in {
 
-      val path = basePath + "/purl/" + purlExtern2
+      val path = basePath + "/purl/" + purlExtern3
 
       val req = FakeRequest(GET, path)
       val res = route(req).get
@@ -366,7 +366,7 @@ class AccountControllerV1Spec extends StartedApp {
 
       val identity = (data \ "identities")(0).as[JsObject]
 
-      (identity \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
+      (identity \ "id").asOpt[String] must beSome(purlExtern3IdentitityId)
       (identity \ "phoneNumber" \ "value").asOpt[String] must beNone
       (identity \ "email" \ "value").asOpt[String] must beNone
       (identity \ "displayName").asOpt[String] must beSome(displayName2)
@@ -394,7 +394,7 @@ class AccountControllerV1Spec extends StartedApp {
 
     "get identity of new account" in {
 
-      val path = basePath + "/identity/" + purlExtern2IdentitityId
+      val path = basePath + "/identity/" + purlExtern3IdentitityId
 
       val req = FakeRequest(GET, path)
       val res = route(req).get
@@ -406,7 +406,7 @@ class AccountControllerV1Spec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "id").asOpt[String] must beSome(purlExtern2IdentitityId)
+      (data \ "id").asOpt[String] must beSome(purlExtern3IdentitityId)
       (data \ "cameoId").asOpt[String] must beSome(loginExternal + "@" + domain)
       (data \ "avatar").asOpt[String] must beSome
       (data \ "displayName").asOpt[String] must beSome(displayName2)
@@ -428,7 +428,7 @@ class AccountControllerV1Spec extends StartedApp {
 
       data.length must beEqualTo(2)
 
-      data.find(js => (js \ "identityId").asOpt[String].equals(Some(identityExisting2))) must beSome
+      data.find(js => (js \ "identityId").asOpt[String].equals(Some(identityExisting))) must beSome
     }
 
     "identity should have support contact" in {

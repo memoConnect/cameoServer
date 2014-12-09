@@ -49,7 +49,7 @@ object PushNotificationController extends ExtendedController {
               request.identity.accountId match {
                 case None => Future(resBadRequest("no account"))
                 case Some(accountId) =>
-                  Identity.findAll(Json.obj("accountId" -> accountId)).flatMap {
+                  Identity.findByAccountId(accountId).flatMap {
                     identities =>
                       val identityIds = identities.map(_.id.id)
                       setSubscriptions(id, identityIds).map {

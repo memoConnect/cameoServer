@@ -8,7 +8,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.{ Request, Result }
-import services.AuthenticationActions.AuthAction
+import services.AuthenticationActions._
 import services.AvatarGenerator
 import traits.ExtendedController
 
@@ -22,7 +22,7 @@ import scala.concurrent.Future
  */
 object IdentityController extends ExtendedController {
 
-  def nonAuthGetIdentity(id: String): Request[JsObject] => Future[Result] = {
+  def nonAuthGetIdentity[A](id: String): Request[A] => Future[Result] = {
     request =>
       val mongoId = new MongoId(id)
       Identity.find(mongoId).map {
@@ -118,48 +118,61 @@ object IdentityController extends ExtendedController {
 
   def addIdentity() = AuthAction().async(parse.tolerantJson) {
     request =>
-      validateFuture(request.body, Identity.createReads) {
-        identity =>
-          request.identity.accountId match {
-            case None => Future(resBadRequest("identity has no account"))
-            case Some(accountId) =>
-              validateFuture(request.body, AdditionalValues.format) {
-                additionalValues =>
-                  AccountReservation.checkReservationSecret(identity.cameoId, additionalValues.reservationSecret).flatMap {
-                    case false => Future(resBadRequest("invalid reservation secret"))
-                    case true =>
-                      val identityWithAccount = identity.copy(accountId = request.identity.accountId)
-                      val res = for {
-                        fileId <- AvatarGenerator.generate(identityWithAccount)
-                        insertedIdentity <- {
-                          val identityWithAvatar = identityWithAccount.copy(avatar = fileId)
-                          Identity.col.insert(identityWithAvatar).map(foo => identityWithAvatar)
-                        }
-                        supportAdded <- insertedIdentity.addSupport()
-                      } yield {
-                        insertedIdentity
-                      }
-
-                      res.map {
-                        insertedIdentity =>
-                          // send event to all other identities
-                          Identity.findAll(Json.obj("accountId" -> accountId)).map { list =>
-                            list.foreach(i => actors.eventRouter ! IdentityNew(i.id, insertedIdentity))
-                          }
-                          // create token for new identity
-                          val token = Token.createDefault()
-                          insertedIdentity.addToken(token)
-
-                          resOk(
-                            Json.obj(
-                              "identity" -> insertedIdentity.toPrivateJson,
-                              "token" -> token.toJson
-                            ))
-                      }
-                  }
-              }
-          }
+      request.identity.accountId match {
+        case None            => Future(resBadRequest("identity has no account"))
+        case Some(accountId) => createAndInsertIdentity(request.body, accountId)
       }
+  }
+
+  def addInitialIdentity() = BasicAuthAction().async(parse.tolerantJson) {
+    request =>
+      // make sure that the account has no identity
+      Identity.findByAccountId(request.account.id).flatMap {
+        case Seq() => createAndInsertIdentity(request.body, request.account.id)
+        case _     => Future(resBadRequest("this account already has an identity"))
+      }
+  }
+
+  def createAndInsertIdentity(body: JsValue, accountId: MongoId): Future[Result] = {
+    validateFuture(body, Identity.createReads) {
+      identity =>
+        validateFuture(body, AdditionalValues.format) {
+          additionalValues =>
+            AccountReservation.checkReservationSecret(identity.cameoId, additionalValues.reservationSecret).flatMap {
+              case false => Future(resBadRequest("invalid reservation secret"))
+              case true =>
+                val identityWithAccount = identity.copy(accountId = Some(accountId))
+                // generate avatar and add support user
+                val res = for {
+                  fileId <- AvatarGenerator.generate(identityWithAccount)
+                  insertedIdentity <- {
+                    val identityWithAvatar = identityWithAccount.copy(avatar = fileId)
+                    Identity.col.insert(identityWithAvatar).map(foo => identityWithAvatar)
+                  }
+                  supportAdded <- insertedIdentity.addSupport()
+                } yield {
+                  insertedIdentity
+                }
+
+                res.map {
+                  insertedIdentity =>
+                    // send event to all other identities
+                    Identity.findByAccountId(accountId).map { list =>
+                      list.foreach(i => actors.eventRouter ! IdentityNew(i.id, insertedIdentity))
+                    }
+                    // create token for new identity
+                    val token = Token.createDefault()
+                    insertedIdentity.addToken(token)
+
+                    resOk(
+                      Json.obj(
+                        "identity" -> insertedIdentity.toPrivateJson,
+                        "token" -> token.toJson
+                      ))
+                }
+            }
+        }
+    }
   }
 }
 

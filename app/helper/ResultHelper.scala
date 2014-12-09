@@ -2,6 +2,7 @@ package helper
 
 import constants.ErrorCodes.ErrorCode
 import constants.Notifications._
+import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.{ Results, Result }
 import play.api.mvc.Results._
@@ -35,11 +36,13 @@ object ResultHelper {
   def resNotModified(): Result = NotModified
 
   // OK but could not fullfill request
-  def resKo[A](data: A)(implicit writes: Writes[A], depreciated: Boolean = false): Result = {
+  def resKo[A](data: A, errorCode: ErrorCode = noErrorCode)(implicit writes: Writes[A], depreciated: Boolean = false): Result = {
     val body = Json.obj(
       "res" -> "KO",
       "data" -> data
-    )
+    ) ++
+      JsonHelper.maybeEmptyJson("errorCode", errorCode)
+
     response(Status(CAMEO_ERROR_CODE), body)
   }
 
@@ -91,7 +94,9 @@ object ResultHelper {
 
     val depreciatedJs = depreciated match {
       case false => Json.obj()
-      case true  => Json.obj("depreciated" -> true)
+      case true =>
+        Logger.warn("Deprecated call used")
+        Json.obj("depreciated" -> true)
     }
 
     status(body ++ depreciatedJs)

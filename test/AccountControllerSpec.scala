@@ -1,4 +1,5 @@
 
+import constants.ErrorCodes
 import org.specs2.matcher.MatchResult
 import play.api.libs.json._
 import play.api.test._
@@ -336,7 +337,7 @@ class AccountControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      (data \ "identities").asOpt[Seq[JsObject]] must beSome(Seq())
+      (data \ "identities").asOpt[Seq[JsObject]] must beNone
     }
 
     "Refuse to register again with same secret" in {
@@ -377,7 +378,21 @@ class AccountControllerSpec extends StartedApp {
       (data \ "alternative").asOpt[String] must beSome(cameoIdExisting + "_1")
     }
 
-    "return error when getting a token without an identity"
+    "return error when getting a token without an identity" in {
+      val path = basePath + "/token"
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((login + ":" + pass).getBytes)
+
+      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != 232) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(232)
+
+      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.ACCOUNT_MISSING_IDENTITY.get)
+    }
 
     "add identity using basic auth"
 
@@ -620,6 +635,8 @@ class AccountControllerSpec extends StartedApp {
       (data \ "cameoId").asOpt[String] must beSome(loginExternal + "@" + domain)
       (data \ "avatar").asOpt[String] must beSome
       (data \ "displayName").asOpt[String] must beNone
+      (data \ "email").asOpt[JsObject] must beNone
+      (data \ "phoneNumber").asOpt[JsObject] must beNone
     }
 
     "identity should have sender as contact" in {
@@ -677,6 +694,7 @@ class AccountControllerSpec extends StartedApp {
       data.length must beEqualTo(2)
     }
 
+    var regSec3 = ""
     "Reserve another login" in {
       val path = basePath + "/account/check"
       val json = Json.obj("loginName" -> (loginExternal + "moep"))
@@ -691,16 +709,15 @@ class AccountControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      regSecExternal = (data \ "reservationSecret").as[String]
+      regSec3 = (data \ "reservationSecret").as[String]
 
       1 === 1
     }
 
     "refuse to register with token of internal user" in {
       val path = basePath + "/account"
-      val json = createUser(loginExternal, pass, Some(tel2), Some(mail2)) ++
-        Json.obj("reservationSecret" -> regSecExternal) ++
-        Json.obj("displayName" -> displayName2)
+      val json = createUser(loginExternal, pass) ++
+        Json.obj("reservationSecret" -> regSec3)
 
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get

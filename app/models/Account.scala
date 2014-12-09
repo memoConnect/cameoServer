@@ -13,7 +13,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
 import traits._
-
+import play.api.libs.functional.syntax._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -61,6 +61,20 @@ object Account extends Model[Account] with CockpitEditable[Account] {
         Json.obj("userSettings" -> a.userSettings) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
+  }
+
+  // deprecated. ToDo: delete when legacacy code is deleted
+  def createReads(): Reads[Account] = {
+    val id = IdHelper.generateAccountId()
+    (Reads.pure[MongoId](id) and
+      (__ \ 'loginName).read[String] and
+      (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
+      (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
+      (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
+      Reads.pure[AccountProperties](AccountProperties.defaultProperties) and
+      Reads.pure[AccountUserSettings](AccountUserSettings.defaultSettings) and
+      Reads.pure[Date](new Date()) and
+      Reads.pure[Date](new Date()))(Account.apply _)
   }
 
   def findByLoginName(loginName: String): Future[Option[Account]] = {
