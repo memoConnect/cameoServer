@@ -30,7 +30,7 @@ trait NewMessageEvent extends EventDefinition {
 
 case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender: Identity, conversationId: MongoId, unreadMessages: Int, message: Message) extends NewMessageEvent with PushEvent {
 
-  def context = "message:" + conversationId.toJson
+  def context = "message:" + conversationId.id
 
   def localizationKeyTitle = "PUSH_MESSAGE.NEW_MESSAGE.TITLE"
   def localizationKeyMsg = "PUSH_MESSAGE.NEW_MESSAGE.MSG"
