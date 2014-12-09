@@ -19,7 +19,7 @@ object TwoFactorController extends ExtendedController {
   def initiate() = AuthAction().async {
     request =>
       TwoFactorAuth.sendNewKey(request.identity).map {
-        case None        => resOk()
+        case None        => resOk("send")
         case Some(error) => resBadRequest(error)
       }
   }

@@ -11,6 +11,7 @@ import play.api.test.FakeApplication
 object TestConfig {
 
   val basePath = "/a/v1"
+  val basePathV2 = "/a/v2"
   val baseCockpitPath = "/a/cockpit/v1"
   val dbName = "cameo_test"
 
@@ -75,9 +76,11 @@ object TestConfig {
 
   val purlExtern = "MSaKlj4hJP"
   val purlExtern2 = "V3Ml6hzqX9"
+  val purlExtern3 = "V3Ml6hzqX6"
   val purlExternInvalid = "V3Ml6hzqX7"
   val purlExternIdentitityId = "GhEWGfy3Jqx8BRP1pITO"
   val purlExtern2IdentitityId = "B0F6gKOnoDVTI57dVyBU"
+  val purlExtern3IdentitityId = "vRPeJOGSXFbQnP9qIK1W"
   val purlIntern = "V3Ml6hzqX8"
   val purlIntern2 = "u02iLiIeQu"
   val purlConversationId = "OM9QeJ4RfJcdscyo52g4"

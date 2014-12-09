@@ -9,12 +9,11 @@ import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
 import traits._
-
+import play.api.libs.functional.syntax._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -53,6 +52,18 @@ object Account extends Model[Account] with CockpitEditable[Account] {
 
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
 
+  def outputWrites: Writes[Account] = Writes {
+    a =>
+      Json.obj("id" -> a.id.toJson) ++
+        Json.obj("loginName" -> a.loginName) ++
+        maybeEmptyJson("phoneNumber", a.phoneNumber.map(_.toJson)) ++
+        maybeEmptyJson("email", a.email.map(_.toJson)) ++
+        Json.obj("userSettings" -> a.userSettings) ++
+        addCreated(a.created) ++
+        addLastUpdated(a.lastUpdated)
+  }
+
+  // deprecated. ToDo: delete when legacacy code is deleted
   def createReads(): Reads[Account] = {
     val id = IdHelper.generateAccountId()
     (Reads.pure[MongoId](id) and
@@ -66,24 +77,27 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       Reads.pure[Date](new Date()))(Account.apply _)
   }
 
-  def outputWrites: Writes[Account] = Writes {
-    a =>
-      Json.obj("id" -> a.id.toJson) ++
-        Json.obj("loginName" -> a.loginName) ++
-        maybeEmptyJson("phoneNumber", a.phoneNumber.map(_.toJson)) ++
-        maybeEmptyJson("email", a.email.map(_.toJson)) ++
-        Json.obj("userSettings" -> a.userSettings) ++
-        addCreated(a.created) ++
-        addLastUpdated(a.lastUpdated)
-  }
-
   def findByLoginName(loginName: String): Future[Option[Account]] = {
     val query = Json.obj("loginName" -> loginName.toLowerCase)
     find(query)
   }
 
+  def create(loginName: String, password: String, phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None): Account = {
+    new Account(
+      IdHelper.generateAccountId(),
+      loginName.toLowerCase,
+      password,
+      phoneNumber,
+      email,
+      AccountProperties.defaultProperties,
+      AccountUserSettings.defaultSettings,
+      new Date,
+      new Date
+    )
+  }
+
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, AccountProperties.defaultProperties, AccountUserSettings.defaultSettings, new Date, new Date)
+    this.create(IdHelper.randomString(8), "")
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {

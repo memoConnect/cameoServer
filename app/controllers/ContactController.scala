@@ -242,7 +242,7 @@ object ContactController extends ExtendedController {
               case Some(other) =>
                 // check if identity is ignored
                 other.ignoredIdentities.exists(_.equals(request.identity.id)) match {
-                  case true => Future(resOk())
+                  case true => Future(resOk(""))
                   case false =>
                     // check if there already is a friend request of this identity
                     other.friendRequests.exists(_.identityId.equals(request.identity.id)) match {
@@ -294,7 +294,7 @@ object ContactController extends ExtendedController {
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
                 actors.eventRouter ! FriendRequestRejected(request.identity.id, MongoId(afr.identityId), request.identity.id)
                 actors.eventRouter ! FriendRequestRejected(MongoId(afr.identityId), MongoId(afr.identityId), request.identity.id)
-                Future(resOk())
+                Future(resOk("rejected"))
               case FRIEND_REQUEST_ACCEPT =>
                 // add contact to both identites
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
@@ -326,7 +326,7 @@ object ContactController extends ExtendedController {
                 // delete friend request and add identity to ignore list
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
                 request.identity.addIgnored(new MongoId(afr.identityId))
-                Future(resOk())
+                Future(resOk(""))
               case _ => Future(resBadRequest("invalid answer type"))
             }
           }

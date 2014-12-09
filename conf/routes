@@ -7,10 +7,11 @@ GET            /a/v1                                                 controllers
 POST           /a/v1/callStack                                       controllers.CallStackController.processCallStack()
 
 # ACCOUNT
-POST           /a/v1/account                                         controllers.AccountController.createAccount()
+POST           /a/v1/account                                         legacy.v1.AccountController.createAccount()
+POST           /a/v2/account                                         controllers.AccountController.createAccount()
 GET            /a/v1/account                                         controllers.AccountController.getAccount()
 PUT            /a/v1/account                                         controllers.AccountController.updateAccount()
-POST           /a/v1/account/check                                   controllers.AccountController.checkLoginName
+POST           /a/v1/account/check                                   controllers.AccountController.reserveLogin()
 #DELETE         /a/v1/account/:loginName                             controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
@@ -18,6 +19,7 @@ GET            /a/v1/identity/:id                                    controllers
 GET            /a/v1/identity                                        controllers.IdentityController.getOwnIdentity()
 PUT            /a/v1/identity                                        controllers.IdentityController.updateIdentity()
 POST           /a/v1/identity                                        controllers.IdentityController.addIdentity()
+POST           /a/v1/identity/initial                                controllers.IdentityController.addInitialIdentity()
 POST           /a/v1/identity/search                                 controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
 
 # PUBLIC KEYS

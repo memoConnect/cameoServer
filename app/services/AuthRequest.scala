@@ -2,7 +2,10 @@ package services
 
 import constants.Authentication._
 import helper.ResultHelper._
-import models.{ Account, Identity, MongoId, TwoFactorToken }
+import helper.Utils
+import models._
+import org.mindrot.jbcrypt.BCrypt
+import play.api.libs.json.JsObject
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -15,6 +18,7 @@ import scala.concurrent.Future
  */
 class AuthRequest[A](val identity: Identity, val account: Option[Account], request: Request[A]) extends WrappedRequest[A](request)
 class TwoFactorAuthRequest[A](val identity: Identity, request: Request[A]) extends WrappedRequest[A](request)
+class BasicAuthRequest[A](val account: Account, request: Request[A]) extends WrappedRequest[A](request)
 
 object AuthenticationActions {
 
@@ -22,16 +26,35 @@ object AuthenticationActions {
     request => Future(resUnauthorized(REQUEST_ACCESS_DENIED))
   }
 
-  def AuthAction(allowExternal: Boolean = false, includeContacts: Boolean = false, getAccount: Boolean = false, nonAuthBlock: Option[Request[Any] => Future[Result]] = None) =
+  def AuthAction(allowExternal: Boolean = false, includeContacts: Boolean = false, getAccount: Boolean = false, nonAuthBlock: Request[Any] => Future[Result] = accessDenied) = {
     new ActionBuilder[AuthRequest] {
       def invokeBlock[A](request: Request[A], block: AuthRequest[A] => Future[Result]) =
-        doAuthAction(allowExternal, includeContacts, getAccount, request, block, nonAuthBlock.getOrElse(accessDenied))
+        doAuthAction(allowExternal, includeContacts, getAccount, request, block, nonAuthBlock)
     }
+  }
 
   def TwoFactorAuthAction(includeContacts: Boolean = false, getAccount: Boolean = false) = new ActionBuilder[TwoFactorAuthRequest] {
     def invokeBlock[A](request: Request[A], block: TwoFactorAuthRequest[A] => Future[Result]) = {
       // do normal Auth and then try to elevate it to two factor auth
       doAuthAction(allowExternal = false, includeContacts, getAccount, request, elevate(block), accessDenied)
+    }
+  }
+
+  def BasicAuthAction(nonAuthBlock: Request[Any] => Future[Result] = accessDenied) = new ActionBuilder[BasicAuthRequest] {
+    def invokeBlock[A](request: Request[A], block: BasicAuthRequest[A] => Future[Result]) = {
+      request.headers.get("Authorization") match {
+        case None => nonAuthBlock(request)
+        case Some(basicAuth) if !basicAuth.contains("Basic") =>
+          Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
+        case Some(basicAuth) =>
+          val (loginName, password) = Utils.decodeBasicAuth(basicAuth)
+          val loginNameLower = loginName.toLowerCase
+          //find account and check password
+          Account.findByLoginName(loginNameLower).flatMap {
+            case Some(account) if BCrypt.checkpw(password, account.password) => block(new BasicAuthRequest[A](account, request))
+            case _                                                           => nonAuthBlock(request)
+          }
+      }
     }
   }
 

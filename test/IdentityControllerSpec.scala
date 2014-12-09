@@ -626,7 +626,7 @@ class IdentityControllerSpec extends StartedApp {
     val testUser = createTestUser()
     val newIdentityDisplayName = "Mooeepp"
     val newIdentityTel = "+49123456"
-    val newIdentityEmail = "foo@moep.de"
+    val newIdentityEmail = "devnull7@cameo.io"
     val newIdentityCameoId = "myMoep"
     var newIdentityId = ""
 

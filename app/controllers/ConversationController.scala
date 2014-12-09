@@ -48,7 +48,7 @@ object ConversationController extends ExtendedController {
                   }
                   Left(conversation.copy(messages = messages))
               }.recoverTotal {
-                error => Right(resBadRequest(JsError.toFlatJson(error)))
+                error => Right(resBadRequest("invalid json", data = Some(JsError.toFlatJson(error))))
               }
           }
         }
@@ -163,7 +163,7 @@ object ConversationController extends ExtendedController {
         case Some(c) => c.hasMemberFutureResult(request.identity.id) {
           c.deleteRecipient(new MongoId(rid)).map {
             case false => resNotFound("recipient")
-            case true  => resOk()
+            case true  => resOk("deleted")
           }
         }
       }

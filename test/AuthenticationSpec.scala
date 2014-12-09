@@ -33,6 +33,8 @@ class AuthenticationSpec extends StartedApp {
 
     val allRoutes = app.routes.get.documentation.map { r => (r._1, r._2) }.filterNot(_._1.equals("OPTIONS"))
 
+    // todo: add basic auth routes
+
     val nonAuthRoutes: Seq[(String, String)] = Seq(
       (POST, "/a/v1/services/checkEmailAddress"),
       (POST, "/a/v1/services/checkMixed"),
@@ -40,8 +42,8 @@ class AuthenticationSpec extends StartedApp {
       (GET, "/a/v1/services/getBrowserInfo"),
       (POST, "/a/v1/services/getBrowserInfo"),
       (POST, "/a/v1/account"),
+      (POST, "/a/v2/account"),
       (POST, "/a/v1/account/check"),
-      (GET, "/a/v1/token"),
       (GET, "/a/v1"),
       (GET, "/a/v1/purl/AthaUuGR"),
       (GET, "/a/v1/identity/$id<[^/]+>"),
@@ -90,6 +92,8 @@ class AuthenticationSpec extends StartedApp {
         r._2.startsWith("/as") ||
         r._2.startsWith("/as") ||
         r._2.equals("/") ||
+        r._2.equals("/a/v1/token") ||
+        r._2.equals("/a/v1/identity/initial") ||
         r._2.startsWith("/a/v1/util") ||
         r._1.equals("OPTIONS") ||
         (r._1.equals("POST") && r._2.startsWith("/a/v1/file/$id<[^/]+>"))

@@ -38,7 +38,7 @@ object ConfirmationController extends Controller with ExtendedController {
               if (svr.verifyEmail.getOrElse(false)) {
                 actors.verificationRouter ! ConfirmMail(accountId, lang)
               }
-              resOk()
+              resOk("verification started")
           }
       }
   }
@@ -92,7 +92,7 @@ object ConfirmationController extends Controller with ExtendedController {
   }
 
   def sendAccountUpdateEvent(account: Account, updatedValues: JsObject) = {
-    Identity.findAll(Json.obj("accountId" -> account.id)).map {
+    Identity.findByAccountId(account.id).map {
       _.foreach {
         identity => actors.eventRouter ! AccountUpdate(identity.id, account.id, updatedValues)
       }

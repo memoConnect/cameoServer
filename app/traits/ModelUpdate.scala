@@ -158,7 +158,7 @@ trait ModelUpdate {
       .map {
         js => action(js)
       }.recoverTotal {
-        error => Future(resBadRequest(JsError.toFlatJson(error)))
+        error => Future(resBadRequest("invalid json", data = Some(JsError.toFlatJson(error))))
       }
   }
 

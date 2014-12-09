@@ -3,6 +3,7 @@ package controllers
 import actors.{ ConfirmMail, ConfirmPhoneNumber }
 import constants.ErrorCodes
 import events.ContactUpdate
+import helper.JsonHelper._
 import helper.{ CheckHelper, JsonHelper }
 import helper.ResultHelper._
 import models._
@@ -10,14 +11,15 @@ import org.mindrot.jbcrypt.BCrypt
 import play.api.Play.current
 import play.api.i18n.Lang
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Reads._
 import play.api.libs.json._
-import play.api.mvc.{ Action, Result }
+import play.api.mvc.{ Request, Action, Result }
 import play.api.{ Logger, Play }
 import play.modules.statsd.api.Statsd
-import services.AuthenticationActions.AuthAction
+import services.AuthenticationActions._
 import services.LocalizationMessages
 import traits.ExtendedController
-
+import play.api.libs.functional.syntax._
 import scala.concurrent.Future
 
 /**
@@ -34,122 +36,103 @@ object AccountController extends ExtendedController {
       login.count(_.isLetterOrDigit) > 0
   }
 
-  case class AdditionalValues(reservationSecret: String, displayName: Option[String])
+  case class CreateAccountRequest(loginName: String, password: String, reservationSecret: String)
 
-  object AdditionalValues {
-    val reads: Reads[AdditionalValues] = Json.reads[AdditionalValues]
+  object CreateAccountRequest {
+    implicit def reads: Reads[CreateAccountRequest] = (
+      (__ \ 'loginName).read[String] and
+      (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
+      (__ \ 'reservationSecret).read[String]
+    )(CreateAccountRequest.apply _)
   }
 
-  def createAccount = Action.async(parse.tolerantJson) {
+  def createAccountNonAuth[A](request: Request[A]): Future[Result] = {
+    request.body match {
+      case js: JsValue =>
+        validateFuture(js, CreateAccountRequest.reads) {
+          car =>
+            AccountReservation.checkReservationSecret(car.loginName, car.reservationSecret).flatMap {
+              case false => Future(resBadRequest("invalid reservation secret"))
+              case true =>
+                val account = Account.create(car.loginName, car.password)
+                storeAccount(account, None)
+            }
+        }
+      case _ => Future(resBadRequest("bad content type"))
+    }
+  }
+
+  def createAccount = AuthAction(allowExternal = true, nonAuthBlock = createAccountNonAuth).async(parse.tolerantJson) {
     request =>
+      validateFuture(request.body, CreateAccountRequest.reads) {
+        car =>
+          AccountReservation.checkReservationSecret(car.loginName, car.reservationSecret).flatMap {
+            case false => Future(resBadRequest("invalid reservation secret"))
+            case true =>
+              // check if this identity is already registered
+              request.identity.accountId match {
+                case Some(i) => Future(resBadRequest("token belongs to a registered user"))
+                case None =>
+                  val account = Account.create(car.loginName, car.password)
 
-      val jsBody: JsValue = request.body
-      val lang = LocalizationMessages.getBrowserLanguage(request)
-
-      validateFuture[AdditionalValues](jsBody, AdditionalValues.reads) {
-        additionalValues =>
-          validateFuture[Account](jsBody, Account.createReads()) {
-            account =>
-              {
-                def createAccountWithIdentity(identity: Identity): Future[Result] = {
-                  val accountLowerCase = account.copy(loginName = account.loginName.toLowerCase)
-
-                  // add support user
-                  identity.addSupport()
-
-                  Account.col.insert(accountLowerCase).flatMap {
-                    lastError =>
-                      lastError.ok match {
+                  // find the user that added the external contact
+                  val query = Json.obj("contacts.identityId" -> request.identity.id)
+                  Identity.find(query).flatMap {
+                    case None => Future(resBadRequest("this user is in nobodies contact book"))
+                    case Some(otherIdentity) =>
+                      val futureRes: Future[Boolean] = for {
+                        // add other identity as contact
+                        addContact <- request.identity.addContact(Contact.create(otherIdentity.id))
+                        updateIdentity <- {
+                          // update identity
+                          val map = Map(
+                            "cameoId" -> car.loginName,
+                            "accountId" -> account.id,
+                            "isDefaultIdentity" -> true
+                          )
+                          Identity.update(request.identity.id, IdentityModelUpdate.fromMap(map))
+                          request.identity.addSupport()
+                        }
+                        deleteDetails <- {
+                          val deleteValues = Seq("email", "phoneNumber", "displayName")
+                          Identity.deleteValues(request.identity.id, deleteValues).map(_.updatedExisting)
+                        }
+                      } yield {
+                        addContact && updateIdentity && deleteDetails
+                      }
+                      futureRes.flatMap {
+                        case false => Future(resServerError("unable to update identity"))
                         case true =>
-                          // create statsd event when user is not a test user
-                          val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
-                          if (!accountLowerCase.loginName.startsWith(testUserPrefix.toLowerCase)) {
-                            Statsd.increment("custom.account.create")
+                          // send contact update event to other identity
+                          Identity.find(request.identity.id).map {
+                            case None => // do nothing
+                            case Some(i) =>
+                              otherIdentity.contacts.find(_.identityId.equals(request.identity.id)) match {
+                                case None          => // do nothing
+                                case Some(contact) => actors.eventRouter ! ContactUpdate(otherIdentity.id, contact, i)
+                              }
                           }
-                          // send verification mails and sms
-                          if (accountLowerCase.email.isDefined) {
-                            actors.verificationRouter ! ConfirmMail(accountLowerCase.id, lang)
-                          }
-                          if (accountLowerCase.phoneNumber.isDefined) {
-                            actors.verificationRouter ! ConfirmPhoneNumber(accountLowerCase.id, lang)
-                          }
-
-                          accountLowerCase.toJsonWithIdentities(identity.id).map(resOk)
-                        case false =>
-                          Future(resServerError("MongoError: " + lastError))
+                          storeAccount(account, Some(request.identity.id))
                       }
                   }
-                }
-
-                AccountReservation.checkReservationSecret(account.loginName, additionalValues.reservationSecret).flatMap {
-                  case false => Future(resBadRequest("invalid reservation secret"))
-                  case true =>
-
-                    // check if there is a token
-                    request.headers.get("Authorization") match {
-                      case None =>
-                        // no token, create new identity
-                        Identity.createAndInsert(Some(account.id), account.loginName, None, None, true, additionalValues.displayName)
-                          .flatMap(createAccountWithIdentity)
-
-                      case Some(token) =>
-                        // there is a token, check if it belongs to an external user
-                        Identity.findByToken(new MongoId(token)).flatMap {
-                          case None                                           => Future(resBadRequest("invalid token"))
-                          case Some(identity) if identity.accountId.isDefined => Future(resBadRequest("token belongs to a registered user"))
-                          case Some(identity) =>
-
-                            // find the user that added the external contact
-                            val query = Json.obj("contacts.identityId" -> identity.id)
-                            Identity.find(query).flatMap {
-                              case None => Future(resBadRequest("this user is in nobodies contact book"))
-                              case Some(otherIdentity) =>
-                                val futureRes: Future[Boolean] = for {
-                                  // add other identity as contact
-                                  addContact <- identity.addContact(Contact.create(otherIdentity.id))
-                                  updateIdentity <- {
-                                    // add update identity with details from registration
-                                    val set = Map("cameoId" -> account.loginName,
-                                      "accountId" -> account.id,
-                                      "isDefaultIdentity" -> true,
-                                      "displayName" -> additionalValues.displayName.getOrElse(""))
-                                    Identity.update(identity.id, IdentityModelUpdate.fromMap(set))
-                                  }
-                                  deleteDetails <- {
-                                    val deleteValues =
-                                      Seq("email", "phoneNumber") ++ {
-                                        additionalValues.displayName match {
-                                          case None    => Seq("displayName")
-                                          case Some(d) => Seq()
-                                        }
-                                      }
-                                    Identity.deleteValues(identity.id, deleteValues).map(_.updatedExisting)
-                                  }
-                                } yield {
-                                  addContact && updateIdentity && deleteDetails
-                                }
-                                futureRes.flatMap {
-                                  case false => Future(resServerError("unable to update identity"))
-                                  case true =>
-                                    // send contact update event to other identity
-                                    Identity.find(identity.id).map {
-                                      case None => // do nothing
-                                      case Some(i) =>
-                                        otherIdentity.contacts.find(_.identityId.equals(identity.id)) match {
-                                          case None          => // do nothing
-                                          case Some(contact) => actors.eventRouter ! ContactUpdate(otherIdentity.id, contact, i)
-                                        }
-                                    }
-                                    createAccountWithIdentity(identity)
-                                }
-                            }
-                        }
-                    }
-                }
-
               }
           }
       }
+  }
+
+  def storeAccount(account: Account, identityId: Option[MongoId]): Future[Result] = {
+    Account.insert(account).flatMap {
+      le =>
+        // create statsd event when user is not a test user
+        val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+        if (!account.loginName.startsWith(testUserPrefix.toLowerCase)) {
+          Statsd.increment("custom.account.create")
+        }
+        identityId match {
+          case None     => Future(resOk(account.toJson))
+          case Some(id) => account.toJsonWithIdentities(id).map(resOk[JsObject])
+        }
+    }
   }
 
   def getAccount = AuthAction().async {
@@ -159,7 +142,7 @@ object AccountController extends ExtendedController {
         case Some(id) =>
           Account.find(id).flatMap {
             case None          => Future(resNotFound("account"))
-            case Some(account) => account.toJsonWithIdentities(request.identity.id).map(resOk)
+            case Some(account) => account.toJsonWithIdentities(request.identity.id).map(resOk[JsObject])
           }
       }
   }
@@ -167,8 +150,7 @@ object AccountController extends ExtendedController {
   case class CheckLoginRequest(loginName: Option[String], cameoId: Option[String])
   object CheckLoginRequest { implicit val format = Json.format[CheckLoginRequest] }
 
-  def checkLoginName = Action.async(parse.tolerantJson) {
-    request =>
+  def doReserveLogin(body: JsValue, ownLogin: Option[String]): Future[Result] = {
 
       def findAlternative(value: String, count: Int = 1): Future[String] = {
         val currentTry = value + "_" + count
@@ -177,7 +159,7 @@ object AccountController extends ExtendedController {
           account <- Account.findByLoginName(currentTry)
           identity <- Identity.findByCameoId(currentTry)
         } yield {
-          account.isDefined || identity.isDefined
+          (account.isDefined && !ownLogin.exists(_.equals(account.get.loginName))) || identity.isDefined
         }
 
         loginExists.flatMap {
@@ -191,7 +173,7 @@ object AccountController extends ExtendedController {
         }
       }
 
-      def reserveOrAlternative(login: String): Future[Result] = {
+      def reserveOrAlternative(login: String, ownLogin: Option[String]): Future[Result] = {
 
         checkLogin(login) match {
           case false => Future(resBadRequest("invalid loginName/cameoId"))
@@ -201,7 +183,7 @@ object AccountController extends ExtendedController {
               account <- Account.findByLoginName(login)
               identity <- Identity.findByCameoId(login)
             } yield {
-              account.isDefined || identity.isDefined
+              account.isDefined && !ownLogin.exists(_.equals(account.get.loginName)) || identity.isDefined
             }
 
             maybeExists.flatMap {
@@ -229,16 +211,29 @@ object AccountController extends ExtendedController {
         }
       }
 
-      validateFuture[CheckLoginRequest](request.body, CheckLoginRequest.format) {
+      validateFuture[CheckLoginRequest](body, CheckLoginRequest.format) {
         checkLoginRequest =>
           Logger.info("Login check: " + checkLoginRequest)
           checkLoginRequest match {
             case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
-            case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName required"))
-            case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId)
-            case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName)
+            case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName"))
+            case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId, ownLogin)
+            case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName, None)
           }
       }
+  }
+
+  def reserveLoginNonAuth(request: Request[Any]): Future[Result] = {
+    request.body match {
+      case js: JsValue => doReserveLogin(js, None)
+      case _ => Future(resBadRequest("bad content type"))
+    }
+  }
+
+  def reserveLogin() = BasicAuthAction(reserveLoginNonAuth).async(parse.tolerantJson) {
+    request =>
+    Logger.debug("BASIC TRUTH")
+    doReserveLogin(request.body, Some(request.account.loginName))
   }
 
   def deleteAccount(loginName: String) = AuthAction().async {

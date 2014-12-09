@@ -23,6 +23,14 @@ HOST: http://cameo.io
           }
         }
 
+
++ Response 232
+
+        {
+            "res": "KO",
+            "errorCode" : "ACCOUNT.MISSING.IDENTITY"
+        }
+
 ## Delete Token [/token/{token}]
 
 ### DELETE
@@ -70,9 +78,15 @@ Account Management
 
 + Request (application/json)
 
-        {
-            "loginName":"testtest"
-        }
+    + Headers
+
+                Authorization: Basic (optional)
+
+    + Body
+
+            {
+                "loginName":"testtest"
+            }
 
 + Response 200
 
@@ -103,8 +117,6 @@ Create new account
         {
           "loginName": "testtest",
           "password": "password",
-          "email": "mail",
-          "phoneNumber": "12335",
           "reservationSecret":"VaXdx3xAAzk3cTXvdDlC"
         }
 
@@ -114,9 +126,6 @@ Create new account
           "res": "OK",
           "data": {
             "loginName": "test",
-            "identities": [
-              "ZVtXkxMmPj4WtLYea8ci"
-            ],
             "phoneNumber": "12335",
             "email": "mail",
             "created": "22.01.2014 16:34:54",
@@ -490,6 +499,24 @@ Add a new identity to account
           }
         }
         
+
+## Create initial identity for account [/identity/initial]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: Basic
+
+    + Body
+
+            { same as POST /identity }
+
++ Response 200
+
+            { same as POST /identity }
+
 
         
 ## Add public key to identity [/publicKey]
