@@ -93,13 +93,15 @@ object JsonHelper {
 
   val hashPassword: Reads[String] = Reads[String] {
     js =>
-      js.asOpt[String] match {
-        case None => JsError("No password")
-        case Some(pass) => JsSuccess({
-          val hashed = BCrypt.hashpw(pass, BCrypt.gensalt())
+      js.validate[String].map {
+        password =>
+          val hashed = BCrypt.hashpw(password, BCrypt.gensalt())
           hashed
-        })
       }
+  }
+
+  val toLowerCase: Reads[String] = Reads[String] {
+    js => js.validate[String].map(_.toLowerCase)
   }
 
   val verifyLanguageId: Reads[String] = Reads[String] {

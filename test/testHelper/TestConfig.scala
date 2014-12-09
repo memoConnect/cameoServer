@@ -11,6 +11,7 @@ import play.api.test.FakeApplication
 object TestConfig {
 
   val basePath = "/a/v1"
+  val basePathV2 = "/a/v2"
   val baseCockpitPath = "/a/cockpit/v1"
   val dbName = "cameo_test"
 

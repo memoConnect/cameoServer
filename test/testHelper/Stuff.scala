@@ -20,12 +20,10 @@ object Stuff {
     value.map(v => Json.obj(key -> v)).getOrElse(Json.obj())
   }
 
-  def createUser(login: String, password: String, tel: Option[String] = None, email: Option[String] = None): JsObject = {
+  def createUser(login: String, password: String): JsObject = {
     Json.obj(
       "loginName" -> login,
-      "password" -> password) ++
-      toJsonOrEmpty("phoneNumber", tel) ++
-      toJsonOrEmpty("email", email)
+      "password" -> password)
   }
 
   val random = new scala.util.Random

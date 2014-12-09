@@ -9,7 +9,6 @@ import models.cockpit.CockpitListFilter
 import models.cockpit.attributes._
 import play.api.Play
 import play.api.Play.current
-import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
@@ -53,19 +52,6 @@ object Account extends Model[Account] with CockpitEditable[Account] {
 
   implicit val mongoFormat: Format[Account] = createMongoFormat(Json.reads[Account], Json.writes[Account])
 
-  def createReads(): Reads[Account] = {
-    val id = IdHelper.generateAccountId()
-    (Reads.pure[MongoId](id) and
-      (__ \ 'loginName).read[String] and
-      (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
-      (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
-      (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
-      Reads.pure[AccountProperties](AccountProperties.defaultProperties) and
-      Reads.pure[AccountUserSettings](AccountUserSettings.defaultSettings) and
-      Reads.pure[Date](new Date()) and
-      Reads.pure[Date](new Date()))(Account.apply _)
-  }
-
   def outputWrites: Writes[Account] = Writes {
     a =>
       Json.obj("id" -> a.id.toJson) ++
@@ -82,8 +68,22 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     find(query)
   }
 
+  def create(loginName: String, password: String, phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None): Account = {
+    new Account(
+      IdHelper.generateAccountId(),
+      loginName,
+      password,
+      phoneNumber,
+      email,
+      AccountProperties.defaultProperties,
+      AccountUserSettings.defaultSettings,
+      new Date,
+      new Date
+    )
+  }
+
   def createDefault(): Account = {
-    new Account(IdHelper.generateAccountId(), IdHelper.randomString(8), "", None, None, AccountProperties.defaultProperties, AccountUserSettings.defaultSettings, new Date, new Date)
+    this.create(IdHelper.randomString(8), "")
   }
 
   def cockpitMapping: Seq[CockpitAttribute] = {

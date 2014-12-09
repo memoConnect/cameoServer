@@ -22,7 +22,7 @@ import scala.concurrent.Future
  */
 object IdentityController extends ExtendedController {
 
-  def nonAuthGetIdentity[A](id: String): Request[A] => Future[Result] = {
+  def nonAuthGetIdentity(id: String): Request[JsObject] => Future[Result] = {
     request =>
       val mongoId = new MongoId(id)
       Identity.find(mongoId).map {
@@ -35,7 +35,7 @@ object IdentityController extends ExtendedController {
       }
   }
 
-  def getIdentity(id: String) = AuthAction(nonAuthBlock = Some(nonAuthGetIdentity(id)), includeContacts = true).async {
+  def getIdentity(id: String) = AuthAction(nonAuthBlock = nonAuthGetIdentity(id), includeContacts = true).async {
     request =>
       val mongoId = new MongoId(id)
       // todo: return external identities only to their owner and conversation members

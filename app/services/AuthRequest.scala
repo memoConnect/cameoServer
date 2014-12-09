@@ -3,6 +3,7 @@ package services
 import constants.Authentication._
 import helper.ResultHelper._
 import models.{ Account, Identity, MongoId, TwoFactorToken }
+import play.api.libs.json.JsObject
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -22,10 +23,10 @@ object AuthenticationActions {
     request => Future(resUnauthorized(REQUEST_ACCESS_DENIED))
   }
 
-  def AuthAction(allowExternal: Boolean = false, includeContacts: Boolean = false, getAccount: Boolean = false, nonAuthBlock: Option[Request[Any] => Future[Result]] = None) =
+  def AuthAction(allowExternal: Boolean = false, includeContacts: Boolean = false, getAccount: Boolean = false, nonAuthBlock: Request[JsObject] => Future[Result] = accessDenied) =
     new ActionBuilder[AuthRequest] {
       def invokeBlock[A](request: Request[A], block: AuthRequest[A] => Future[Result]) =
-        doAuthAction(allowExternal, includeContacts, getAccount, request, block, nonAuthBlock.getOrElse(accessDenied))
+        doAuthAction(allowExternal, includeContacts, getAccount, request, block, nonAuthBlock)
     }
 
   def TwoFactorAuthAction(includeContacts: Boolean = false, getAccount: Boolean = false) = new ActionBuilder[TwoFactorAuthRequest] {

@@ -8,7 +8,7 @@ POST           /a/v1/callStack                                       controllers
 
 # ACCOUNT
 POST           /a/v1/account                                         legacy.v1.AccountController.createAccount()
-#POST           /a/v2/account                                         controllers.AccountController.createAccount()
+POST           /a/v2/account                                         controllers.AccountController.createAccount()
 GET            /a/v1/account                                         controllers.AccountController.getAccount()
 PUT            /a/v1/account                                         controllers.AccountController.updateAccount()
 POST           /a/v1/account/check                                   controllers.AccountController.checkLoginName
