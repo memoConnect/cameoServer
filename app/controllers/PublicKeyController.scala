@@ -116,9 +116,21 @@ object PublicKeyController extends ExtendedController {
                   resOk(signature.toJson)
               }
             case None =>
-              request.identity.addPublicKeySignature(id, signature).map {
-                case false => resBadRequest("could not add")
-                case true  => resOk(signature.toJson)
+              request.identity.addPublicKeySignature(id, signature).flatMap {
+                case false => Future(resBadRequest("could not add"))
+                case true  =>
+                  val query = Json.obj("publicKeys._id" -> MongoId(id))
+                  Identity.find(query).map {
+                    case None => resNotFound("key")
+                    case Some(otherIdentity) =>
+                      otherIdentity.publicKeys.find(_.id.id.equals(id)) match {
+                        case None => resServerError("key not found")
+                        case Some(key) =>
+                          val event = IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(key.toJson)))
+                          actors.eventRouter ! event
+                          resOk(signature.toJson)
+                      }
+                  }
               }
           }
       }
