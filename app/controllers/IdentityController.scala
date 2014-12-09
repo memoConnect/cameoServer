@@ -4,6 +4,7 @@ import events.IdentityNew
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
+import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
@@ -120,7 +121,7 @@ object IdentityController extends ExtendedController {
     request =>
       request.identity.accountId match {
         case None            => Future(resBadRequest("identity has no account"))
-        case Some(accountId) => createAndInsertIdentity(request.body, accountId)
+        case Some(accountId) => createAndInsertIdentity(request.body, accountId, false)
       }
   }
 
@@ -128,12 +129,12 @@ object IdentityController extends ExtendedController {
     request =>
       // make sure that the account has no identity
       Identity.findByAccountId(request.account.id).flatMap {
-        case Seq() => createAndInsertIdentity(request.body, request.account.id)
+        case Seq() => createAndInsertIdentity(request.body, request.account.id, true)
         case _     => Future(resBadRequest("this account already has an identity"))
       }
   }
 
-  def createAndInsertIdentity(body: JsValue, accountId: MongoId): Future[Result] = {
+  def createAndInsertIdentity(body: JsValue, accountId: MongoId, isDefaultIdentity: Boolean): Future[Result] = {
     validateFuture(body, Identity.createReads) {
       identity =>
         validateFuture(body, AdditionalValues.format) {
@@ -141,15 +142,15 @@ object IdentityController extends ExtendedController {
             AccountReservation.checkReservationSecret(identity.cameoId, additionalValues.reservationSecret).flatMap {
               case false => Future(resBadRequest("invalid reservation secret"))
               case true =>
-                val identityWithAccount = identity.copy(accountId = Some(accountId))
+                val identityWithAccount = identity.copy(accountId = Some(accountId), isDefaultIdentity = isDefaultIdentity)
                 // generate avatar and add support user
                 val res = for {
                   fileId <- AvatarGenerator.generate(identityWithAccount)
                   insertedIdentity <- {
                     val identityWithAvatar = identityWithAccount.copy(avatar = fileId)
-                    Identity.col.insert(identityWithAvatar).map(foo => identityWithAvatar)
+                    Identity.insert(identityWithAvatar).map(foo => identityWithAvatar)
                   }
-                  supportAdded <- insertedIdentity.addSupport()
+                  supportAdded <- identityWithAccount.addSupport()
                 } yield {
                   insertedIdentity
                 }

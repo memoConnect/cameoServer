@@ -85,7 +85,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
   def create(loginName: String, password: String, phoneNumber: Option[VerifiedString] = None, email: Option[VerifiedString] = None): Account = {
     new Account(
       IdHelper.generateAccountId(),
-      loginName,
+      loginName.toLowerCase,
       password,
       phoneNumber,
       email,

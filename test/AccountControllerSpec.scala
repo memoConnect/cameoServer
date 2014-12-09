@@ -39,6 +39,12 @@ class AccountControllerSpec extends StartedApp {
   var regSec = ""
   var regSec2 = ""
 
+  val newIdentityDisplayName = "Mooeeppss"
+  val newIdentityTel = "+49123456"
+  val newIdentityEmail = "devnull@cameo.io"
+  val newIdentityCameoId = "myMoepDieMoep"
+  var newIdentityId = ""
+
   "AccountController" should {
 
     "Get existing account" in {
@@ -394,9 +400,59 @@ class AccountControllerSpec extends StartedApp {
       (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.ACCOUNT_MISSING_IDENTITY.get)
     }
 
-    "add identity using basic auth"
+    "reserve cameoId for new identity" in {
+      val path = basePath + "/account/check"
+      val json = Json.obj("cameoId" -> newIdentityCameoId)
 
-    "account should contain that identity"
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "reservationSecret").asOpt[String] must beSome
+      regSec = (data \ "reservationSecret").as[String]
+      1 === 1
+    }
+
+    "allow reservation of own loginName as cameoId"
+
+    "add identity using basic auth" in {
+      val path = basePath + "/identity/initial"
+      val json = Json.obj("displayName" -> newIdentityDisplayName, "phoneNumber" -> newIdentityTel, "email" -> newIdentityEmail, "cameoId" -> newIdentityCameoId, "reservationSecret" -> regSec)
+
+      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((login + ":" + pass).getBytes)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(("Authorization", auth))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "identity").asOpt[JsObject] must beSome
+      (data \ "token" \ "token").asOpt[String] must beSome
+
+      val identity = (data \ "identity").as[JsObject]
+      (identity \ "id").asOpt[String] must beSome
+      newIdentityId = (identity \ "id").as[String]
+      (identity \ "userKey").asOpt[String] must beSome
+      (identity \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
+      (identity \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (identity \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (identity \ "avatar").asOpt[String] must beSome
+      (identity \ "publicKeys").asOpt[Seq[JsObject]] must beSome
+    }
+
+    "refuse to add another identity using basic auth"
 
     "Return a token" in {
       val path = basePath + "/token"
@@ -418,6 +474,32 @@ class AccountControllerSpec extends StartedApp {
       }
 
       tokenOpt must beSome
+    }
+
+    "account should contain new identity" in {
+      val path = basePath + "/account"
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+      (data \ "identities").asOpt[Seq[JsObject]] must beSome
+      (data \ "identities").as[Seq[JsObject]].length must beEqualTo(1)
+
+      val identity = (data \ "identities")(0).as[JsObject]
+      (identity \ "id").asOpt[String] must beSome(newIdentityId)
+      (identity \ "userKey").asOpt[String] must beSome
+      (identity \ "cameoId").asOpt[String] must beSome(newIdentityCameoId + "@" + domain)
+      (identity \ "email" \ "value").asOpt[String] must beSome(newIdentityEmail)
+      (identity \ "phoneNumber" \ "value").asOpt[String] must beSome(newIdentityTel)
+      (identity \ "displayName").asOpt[String] must beSome(newIdentityDisplayName)
+      (identity \ "avatar").asOpt[String] must beSome
+      (identity \ "publicKeys").asOpt[Seq[JsObject]] must beSome
     }
 
     "Return a token and ignore capitalization of loginName" in {
@@ -512,7 +594,6 @@ class AccountControllerSpec extends StartedApp {
       (data(0) \ "identityId").asOpt[String] must beEqualTo(Play.configuration.getString("support.contact.identityId"))
     }
 
-    var conversationId = ""
     "automatically add talk with support" in {
       val path = basePath + "/conversations"
 
@@ -618,7 +699,6 @@ class AccountControllerSpec extends StartedApp {
     }
 
     "get identity of new account" in {
-
       val path = basePath + "/identity/" + purlExtern2IdentitityId
 
       val req = FakeRequest(GET, path)
@@ -726,7 +806,7 @@ class AccountControllerSpec extends StartedApp {
     }
 
     val newPhoneNumber = "+49123456"
-    val newEmail = "asdfasdf@moep.de"
+    val newEmail = "devnull4@cameo.io"
     val newPassword = "asdfasdfasdf"
 
     "update phoneNumber and email of account" in {

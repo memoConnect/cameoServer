@@ -40,7 +40,7 @@ object AccountController extends ExtendedController {
 
   object CreateAccountRequest {
     implicit def reads: Reads[CreateAccountRequest] = (
-      (__ \ 'loginName).read[String](toLowerCase) and
+      (__ \ 'loginName).read[String] and
       (__ \ 'password).read[String](minLength[String](8) andKeep hashPassword) and
       (__ \ 'reservationSecret).read[String]
     )(CreateAccountRequest.apply _)
@@ -62,21 +62,6 @@ object AccountController extends ExtendedController {
     }
   }
 
-  def storeAccount(account: Account, identityId: Option[MongoId]): Future[Result] = {
-    Account.insert(account).flatMap {
-      le =>
-        // create statsd event when user is not a test user
-        val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
-        if (!account.loginName.startsWith(testUserPrefix.toLowerCase)) {
-          Statsd.increment("custom.account.create")
-        }
-        identityId match {
-          case None     => Future(resOk(account.toJson))
-          case Some(id) => account.toJsonWithIdentities(id).map(resOk[JsObject])
-        }
-    }
-  }
-
   def createAccount = AuthAction(allowExternal = true, nonAuthBlock = createAccountNonAuth).async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, CreateAccountRequest.reads) {
@@ -84,12 +69,11 @@ object AccountController extends ExtendedController {
           AccountReservation.checkReservationSecret(car.loginName, car.reservationSecret).flatMap {
             case false => Future(resBadRequest("invalid reservation secret"))
             case true =>
-              val account = Account.create(car.loginName, car.password)
-
               // check if this identity is already registered
               request.identity.accountId match {
                 case Some(i) => Future(resBadRequest("token belongs to a registered user"))
                 case None =>
+                  val account = Account.create(car.loginName, car.password)
 
                   // find the user that added the external contact
                   val query = Json.obj("contacts.identityId" -> request.identity.id)
@@ -101,10 +85,13 @@ object AccountController extends ExtendedController {
                         addContact <- request.identity.addContact(Contact.create(otherIdentity.id))
                         updateIdentity <- {
                           // update identity
-                          val map = Map("cameoId" -> account.loginName,
+                          val map = Map(
+                            "cameoId" -> car.loginName,
                             "accountId" -> account.id,
-                            "isDefaultIdentity" -> true)
+                            "isDefaultIdentity" -> true
+                          )
                           Identity.update(request.identity.id, IdentityModelUpdate.fromMap(map))
+                          request.identity.addSupport()
                         }
                         deleteDetails <- {
                           val deleteValues = Seq("email", "phoneNumber", "displayName")
@@ -131,6 +118,21 @@ object AccountController extends ExtendedController {
               }
           }
       }
+  }
+
+  def storeAccount(account: Account, identityId: Option[MongoId]): Future[Result] = {
+    Account.insert(account).flatMap {
+      le =>
+        // create statsd event when user is not a test user
+        val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+        if (!account.loginName.startsWith(testUserPrefix.toLowerCase)) {
+          Statsd.increment("custom.account.create")
+        }
+        identityId match {
+          case None     => Future(resOk(account.toJson))
+          case Some(id) => account.toJsonWithIdentities(id).map(resOk[JsObject])
+        }
+    }
   }
 
   def getAccount = AuthAction().async {
