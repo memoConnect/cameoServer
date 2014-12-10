@@ -152,17 +152,19 @@ object AccountController extends ExtendedController {
 
   def doReserveLogin(body: JsValue, ownLogin: Option[String]): Future[Result] = {
 
-      def findAlternative(value: String, count: Int = 1): Future[String] = {
-        val currentTry = value + "_" + count
-
-        val loginExists: Future[Boolean] = for {
-          account <- Account.findByLoginName(currentTry)
-          identity <- Identity.findByCameoId(currentTry)
+      def checkLoginExists(value: String):Future[Boolean] = {
+        for {
+          account <- Account.findByLoginName(value)
+          identity <- Identity.findByCameoId(value)
         } yield {
           (account.isDefined && !ownLogin.exists(_.equals(account.get.loginName))) || identity.isDefined
         }
+      }
 
-        loginExists.flatMap {
+      def findAlternative(value: String, count: Int = 1): Future[String] = {
+        val currentTry = value + "_" + count
+
+        checkLoginExists(currentTry).flatMap {
           case true => findAlternative(value, count + 1) // recursive futures ftw!
           case false =>
             // check if it is reserved
@@ -179,14 +181,7 @@ object AccountController extends ExtendedController {
           case false => Future(resBadRequest("invalid loginName/cameoId"))
           case true =>
             // check if loginName exists or is a cameoId
-            val maybeExists: Future[Boolean] = for {
-              account <- Account.findByLoginName(login)
-              identity <- Identity.findByCameoId(login)
-            } yield {
-              account.isDefined && !ownLogin.exists(_.equals(account.get.loginName)) || identity.isDefined
-            }
-
-            maybeExists.flatMap {
+            checkLoginExists(login).flatMap {
               case true =>
                 // it exists, find alternative
                 findAlternative(login).map {
@@ -249,7 +244,45 @@ object AccountController extends ExtendedController {
           }
       }
   }
+  
+  def doAccountUpdate(body: JsValue, account: Account, lang: Lang): Future[Result] = {
+    
+    def doUpdate(update: JsObject): Future[Result] = {
+      Account.update(account.id, update).map {
+        case false => resServerError("could not update")
+        case true =>
+          // check if update contains a phoneNumber or email. Start verification if it does
+          if ((body \ "email").asOpt[String].isDefined) {
+            actors.verificationRouter ! ConfirmMail(account.id, lang)
+          }
+          if ((body \ "phoneNumber").asOpt[String].isDefined) {
+            actors.verificationRouter ! ConfirmPhoneNumber(account.id, lang)
+          }
+          resOk("updated")
+      }
+    }
 
+    AccountModelUpdate.fromRequest(body) {
+      js =>
+        // check if there is a password change
+        val newPassword = (body \ "password").asOpt[String](JsonHelper.hashPassword)
+        val oldPassword = (body \ "oldPassword").asOpt[String]
+
+        (newPassword, oldPassword) match {
+          case (None, _)           => doUpdate(js)
+          case (Some(newPw), None) => Future(resBadRequest("old password required"))
+          case (Some(newPw), Some(oldPw)) =>
+                BCrypt.checkpw(oldPw, account.password) match {
+                  case false => Future(resBadRequest("invalid old password"))
+                  case true =>
+                    val set = Map("password" -> newPw)
+                    val update = js.deepMerge(AccountModelUpdate.fromMap(set))
+                    doUpdate(update)
+                }
+            }
+        }
+    }
+  
   def updateAccount() = AuthAction(getAccount = true).async(parse.tolerantJson) {
     request =>
       val lang = LocalizationMessages.getBrowserLanguage(request)
@@ -257,50 +290,18 @@ object AccountController extends ExtendedController {
       request.identity.accountId match {
         case None => Future(resBadRequest("no account"))
         case Some(accountId) =>
-
-          def doAccountUpdate(update: JsObject): Future[Result] = {
-            Account.update(accountId, update).map {
-              case false => resServerError("could not update")
-              case true =>
-                // check if update contains a phoneNumber or email. Start verification if it does
-                if ((request.body \ "email").asOpt[String].isDefined) {
-                  request.account.map {
-                    account => actors.verificationRouter ! ConfirmMail(account.id, lang)
-                  }
-                }
-                if ((request.body \ "phoneNumber").asOpt[String].isDefined) {
-                  request.account.map {
-                    account => actors.verificationRouter ! ConfirmPhoneNumber(account.id, lang)
-                  }
-                }
-
-                resOk("updated")
-            }
-          }
-
-          AccountModelUpdate.fromRequest(request.body) {
-            js =>
-              // check if there is a password change
-              val newPassword = (request.body \ "password").asOpt[String](JsonHelper.hashPassword)
-              val oldPassword = (request.body \ "oldPassword").asOpt[String]
-
-              (newPassword, oldPassword) match {
-                case (None, _)           => doAccountUpdate(js)
-                case (Some(newPw), None) => Future(resBadRequest("old password required"))
-                case (Some(newPw), Some(oldPw)) =>
-                  Account.find(accountId).flatMap {
-                    case None => Future(resServerError("could not retreive account"))
-                    case Some(account) =>
-                      BCrypt.checkpw(oldPw, account.password) match {
-                        case false => Future(resBadRequest("invalid old password"))
-                        case true =>
-                          val set = Map("password" -> newPw)
-                          val update = js.deepMerge(AccountModelUpdate.fromMap(set))
-                          doAccountUpdate(update)
-                      }
-                  }
-              }
+          Account.find(accountId).flatMap{
+            case None => Future(resServerError("Error getting account"))
+            case Some(account) => doAccountUpdate(request.body, account, lang)
           }
       }
   }
+  
+  def updateInitialAccount() = BasicAuthAction().async(parse.tolerantJson) {
+    request =>
+      val lang = LocalizationMessages.getBrowserLanguage(request)
+      doAccountUpdate(request.body, request.account, lang)
+  }
+  
+  
 }

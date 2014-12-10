@@ -94,6 +94,7 @@ class AuthenticationSpec extends StartedApp {
         r._2.equals("/") ||
         r._2.equals("/a/v1/token") ||
         r._2.equals("/a/v1/identity/initial") ||
+        r._2.equals("/a/v1/account/initial") ||
         r._2.startsWith("/a/v1/util") ||
         r._1.equals("OPTIONS") ||
         (r._1.equals("POST") && r._2.startsWith("/a/v1/file/$id<[^/]+>"))
