@@ -44,8 +44,7 @@ object AuthenticationActions {
     def invokeBlock[A](request: Request[A], block: BasicAuthRequest[A] => Future[Result]) = {
       request.headers.get("Authorization") match {
         case None => nonAuthBlock(request)
-        case Some(basicAuth) if !basicAuth.contains("Basic") =>
-          Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
+        case Some(basicAuth) if !basicAuth.contains("Basic") => nonAuthBlock(request)
         case Some(basicAuth) =>
           val (loginName, password) = Utils.decodeBasicAuth(basicAuth)
           val loginNameLower = loginName.toLowerCase
