@@ -69,7 +69,7 @@ object IdentityController extends ExtendedController {
       case class IdentitySearch(search: String, fields: Seq[String], excludeContacts: Option[Boolean])
 
       def reads: Reads[IdentitySearch] = (
-        (__ \ 'search).read[String](minLength[String](4)) and
+        (__ \ 'search).read[String](minLength[String](3)) and
         (__ \ 'fields).read[Seq[String]] and
         (__ \ 'excludeContacts).readNullable[Boolean]
       )(IdentitySearch.apply _)
