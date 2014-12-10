@@ -126,7 +126,7 @@ object PublicKeyController extends ExtendedController {
                       otherIdentity.publicKeys.find(_.id.id.equals(id)) match {
                         case None => resServerError("key not found")
                         case Some(key) =>
-                          val event = IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(key.toJson)))
+                          val event = IdentityUpdate(request.identity.id, otherIdentity.id, Json.obj("publicKeys" -> Seq(key.toJson)))
                           actors.eventRouter ! event
                           resOk(signature.toJson)
                       }
