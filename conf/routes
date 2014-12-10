@@ -122,6 +122,7 @@ PUT            /a/cockpit/v1/:elementName/:id                        controllers
 
 # Deal with options
 OPTIONS        /a/v1/*foo                                            controllers.TokenController.getTokenOptions(foo)
+OPTIONS        /a/v2/*foo                                            controllers.TokenController.getTokenOptions(foo)
 OPTIONS        /a/cockpit/v1/*foo                                    controllers.TokenController.getTokenOptions(foo)
 
 # Utitility functions
