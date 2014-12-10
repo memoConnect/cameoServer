@@ -31,7 +31,7 @@ object IdentityController extends ExtendedController {
         case Some(identity) =>
           identity.accountId match {
             case None    => resNotFound("identity")
-            case Some(a) => resOk(identity.toPublicJson(None))
+            case Some(a) => resOk(identity.toPublicJson())
           }
       }
   }
@@ -42,7 +42,7 @@ object IdentityController extends ExtendedController {
       // todo: return external identities only to their owner and conversation members
       Identity.find(mongoId).map {
         case None                                                                                 => resNotFound("identity")
-        case Some(identity) if identity.accountId.isDefined                                       => resOk(identity.toPublicJson(Some(request.identity.publicKeySignatures)))
+        case Some(identity) if identity.accountId.isDefined                                       => resOk(identity.toPublicJson(request.identity.publicKeySignatures))
         case Some(identity) if request.identity.contacts.exists(_.identityId.equals(identity.id)) => resOk(identity.toExternalOwnerJson)
         case Some(identity)                                                                       => resOk(identity.toExternalJson)
       }
@@ -104,7 +104,7 @@ object IdentityController extends ExtendedController {
                       // filter excluded identities
                       val filtered = list.filterNot(identity => exclude.exists(_.equals(identity.id)))
                       val limited = OutputLimits.applyLimits(filtered, offset, limit)
-                      resOk(limited.map { i => i.toPublicJson(None) })
+                      resOk(limited.map { i => i.toPublicJson() })
                   }
               }
           }

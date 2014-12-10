@@ -21,7 +21,7 @@ case class Contact(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
-  def toJsonWithIdentity(publicKeySignatures: Option[Map[String, Signature]], identities: Seq[Identity]): JsObject = {
+  def toJsonWithIdentity(publicKeySignatures: Map[String, Signature], identities: Seq[Identity]): JsObject = {
     identities.find(_.id.equals(this.identityId)).map {
       identity =>
         val contactType = identity.accountId match {

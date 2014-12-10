@@ -91,7 +91,7 @@ object ContactController extends ExtendedController {
             {
               request.identity.addContact(contact).map {
                 case false => resBadRequest("could not create contact")
-                case true  => resOk(contact.toJsonWithIdentity(None, Seq(identity)))
+                case true  => resOk(contact.toJsonWithIdentity(Map(), Seq(identity)))
               }
             }
         }
@@ -134,7 +134,7 @@ object ContactController extends ExtendedController {
           Identity.find(contact.identityId).map {
             case None => resServerError("could not find matching identity")
             case Some(identity) =>
-              val res = contact.toJsonWithIdentity(Some(request.identity.publicKeySignatures), Seq(identity))
+              val res = contact.toJsonWithIdentity(request.identity.publicKeySignatures, Seq(identity))
               resOk(res)
           }
       }
@@ -152,7 +152,7 @@ object ContactController extends ExtendedController {
           _.map {
             identity =>
               Contact.create(identity.id, id = Some(new MongoId(""))).toJson ++
-                Json.obj("identity" -> identity.toPublicJson(Some(request.identity.publicKeySignatures))) ++
+                Json.obj("identity" -> identity.toPublicJson(request.identity.publicKeySignatures)) ++
                 Json.obj("contactType" -> CONTACT_TYPE_PENDING)
           }
         }
@@ -163,7 +163,7 @@ object ContactController extends ExtendedController {
       } yield {
         // use identities to get contact jsons
         val contactJsons = request.identity.contacts.map {
-          _.toJsonWithIdentity(Some(request.identity.publicKeySignatures), identities)
+          _.toJsonWithIdentity(request.identity.publicKeySignatures, identities)
         }
 
         val all = contactJsons ++ futurePendingContacts
@@ -312,8 +312,8 @@ object ContactController extends ExtendedController {
                     } yield {
                       le1 && le2 match {
                         case true =>
-                          val contactJs = contact.toJsonWithIdentity(None, Seq(otherIdentity, request.identity))
-                          val otherContactJs = otherContact.toJsonWithIdentity(None, Seq(otherIdentity, request.identity))
+                          val contactJs = contact.toJsonWithIdentity(Map(), Seq(otherIdentity, request.identity))
+                          val otherContactJs = otherContact.toJsonWithIdentity(Map(), Seq(otherIdentity, request.identity))
                           // send event to both parties
                           actors.eventRouter ! FriendRequestAccepted(otherIdentity.id, otherIdentity.id, request.identity.id, otherContactJs)
                           actors.eventRouter ! FriendRequestAccepted(request.identity.id, otherIdentity.id, request.identity.id, contactJs)

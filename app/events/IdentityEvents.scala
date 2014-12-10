@@ -28,7 +28,7 @@ case class ContactUpdate(sendToIdentity: MongoId, contact: Contact, identity: Id
 
   def eventType = "contact:update"
 
-  def toEventContent = contact.toJsonWithIdentity(None, Seq(identity))
+  def toEventContent = contact.toJsonWithIdentity(Map(), Seq(identity))
 }
 
 case class AccountUpdate(sendToIdentity: MongoId, accountId: MongoId, updatedValues: JsObject) extends EventDefinition {

@@ -27,7 +27,14 @@ case class PublicKey(id: MongoId,
                      deleted: Boolean,
                      docVersion: Int) {
 
-  def toJson: JsObject = Json.toJson(this)(PublicKey.outputWrites).as[JsObject]
+  def toJson(additionalPublicKeySignatures: Map[String, Signature] = Map()): JsObject = {
+    val allSignatures = additionalPublicKeySignatures.get(this.id.id) match {
+      case None => signatures
+      case Some(signature) => signatures :+ signature
+    }
+
+    Json.toJson(this.copy(signatures = allSignatures))(PublicKey.outputWrites).as[JsObject]
+  }
 
 }
 
