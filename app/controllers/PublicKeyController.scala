@@ -36,10 +36,10 @@ object PublicKeyController extends ExtendedController {
           def sendEvent() {
             request.identity.contacts.foreach {
               contact =>
-                actors.eventRouter ! IdentityUpdate(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                actors.eventRouter ! IdentityUpdate(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson())))
             }
             // send event to ourselves
-            actors.eventRouter ! IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+            actors.eventRouter ! IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson())))
           }
 
           // check if this key has already been uploaded by this user
@@ -51,7 +51,7 @@ object PublicKeyController extends ExtendedController {
                 case false => resBadRequest("unable to update")
                 case true =>
                   sendEvent()
-                  resOk(withId.toJson)
+                  resOk(withId.toJson())
               }
             case None =>
               // check if this id already exists
@@ -63,7 +63,7 @@ object PublicKeyController extends ExtendedController {
                     case true =>
                       // send event to all people in address book
                       sendEvent()
-                      resOk(withId.toJson)
+                      resOk(withId.toJson())
                   }
               }
           }
@@ -111,7 +111,7 @@ object PublicKeyController extends ExtendedController {
                 case false => resBadRequest("could not add")
                 case true =>
                   val newPublicKey = publicKey.copy(signatures = publicKey.signatures :+ signature)
-                  val event = IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson)))
+                  val event = IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson())))
                   actors.eventRouter ! event
                   resOk(signature.toJson)
               }
@@ -126,7 +126,7 @@ object PublicKeyController extends ExtendedController {
                       otherIdentity.publicKeys.find(_.id.id.equals(id)) match {
                         case None => resServerError("key not found")
                         case Some(key) =>
-                          val event = IdentityUpdate(request.identity.id, otherIdentity.id, Json.obj("publicKeys" -> Seq(key.toJson)))
+                          val event = IdentityUpdate(request.identity.id, otherIdentity.id, Json.obj("publicKeys" -> Seq(key.toJson(request.identity.publicKeySignatures))))
                           actors.eventRouter ! event
                           resOk(signature.toJson)
                       }
