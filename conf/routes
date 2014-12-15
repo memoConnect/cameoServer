@@ -89,6 +89,7 @@ GET            /vr/:id                                               controllers
 POST           /a/v1/verify                                          controllers.ConfirmationController.manualVerification()
 POST           /a/v1/verify/:id                                      controllers.ConfirmationController.verifyCode(id)
 POST           /a/v1/resetPassword                                   controllers.ConfirmationController.startPasswordReset()
+GET            /a/v1/resetPassword/:id                               controllers.ConfirmationController.verifyReset(id)
 POST           /a/v1/resetPassword/:id                               controllers.ConfirmationController.resetPassword(id)
 
 # PURLS

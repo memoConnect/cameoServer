@@ -55,6 +55,7 @@ class AuthenticationSpec extends StartedApp {
       (DELETE, "/a/v1/testUsers"),
       (POST, "/a/v1/callStack"),
       (POST, "/a/v1/resetPassword"),
+      (GET, "/a/v1/resetPassword/$id<[^/]+>"),
       (POST, "/a/v1/resetPassword/$id<[^/]+>"),
       (GET, "/pr/$id<[^/]+>")
     )

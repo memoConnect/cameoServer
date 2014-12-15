@@ -23,7 +23,12 @@ case class ConfirmationToken(id: MongoId,
                              confirmationType: String,
                              confirmationPath: String,
                              confirmationAddress: String,
-                             created: Date)
+                             created: Date) {
+  def toJson: JsObject = Json.obj(
+    "id" -> this.id.toJson,
+    "code" -> this.code
+  )
+}
 
 object ConfirmationToken extends Model[ConfirmationToken] {
 
@@ -64,6 +69,7 @@ object ConfirmationToken extends Model[ConfirmationToken] {
     val query = Json.obj("code" -> code)
     ConfirmationToken.find(query)
   }
+
 }
 
 trait ConfirmResult

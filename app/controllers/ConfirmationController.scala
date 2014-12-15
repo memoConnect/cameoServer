@@ -206,6 +206,15 @@ object ConfirmationController extends Controller with ExtendedController {
       }
   }
 
+  def verifyReset(id: String) = Action.async(parse.tolerantJson) {
+    request =>
+      val token = if (id.length < 10) ConfirmationToken.findByCode(id) else ConfirmationToken.find(id)
+      token.map {
+        case None     => resBadRequest("", ErrorCodes.PASSWORD_RESET_EXPIRED)
+        case Some(ct) => resOk(ct.toJson)
+      }
+  }
+
   def applyPasswordReset(rpr: ResetPasswordRequest)(account: Account, confirmationSecret: ConfirmationToken): ConfirmResult = {
     val map = Map("password" -> rpr.newPassword)
     val update = AccountModelUpdate.fromMap(map)

@@ -325,6 +325,23 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
         }
 
 
+### GET
+
++ Response 200
+
+        {
+            "code": "submitted code",
+            "id": "id"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.EXPIRED"
+        }
+
+
 ## Reset Password [/passwordReset/{code}]
 
 ### POST

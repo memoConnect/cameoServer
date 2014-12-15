@@ -23,7 +23,8 @@ import play.api.Play.current
  */
 object AccountController extends ExtendedController {
 
-  implicit val depreciated = true
+  // not depreciated anymore since we temporarily reverted back to the previous registration
+  implicit val depreciated = false
 
   case class AdditionalValues(reservationSecret: String, displayName: Option[String])
 
