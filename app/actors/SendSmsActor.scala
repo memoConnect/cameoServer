@@ -36,6 +36,7 @@ class SendSmsActor extends Actor {
 
       val key = Play.configuration.getString("nexmo.key")
       val secret = Play.configuration.getString("nexmo.secret")
+      val senderMaxLength = Play.configuration.getInt("sms.sender.maxLength").getOrElse(11)
 
       key.isEmpty || secret.isEmpty match {
         case true =>
@@ -45,7 +46,7 @@ class SendSmsActor extends Actor {
             Json.obj(
               "api_key" -> JsString(key.get),
               "api_secret" -> JsString(secret.get),
-              "from" -> removeSpecialCharacters(sms.from),
+              "from" -> removeSpecialCharacters(sms.from).take(senderMaxLength),
               "to" -> sms.to,
               "text" -> sms.body
             )
