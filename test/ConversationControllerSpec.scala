@@ -47,6 +47,7 @@ class ConversationControllerSpec extends StartedApp {
   val encryptedKey = "foobarbaz!"
   val passCaptchaId = "NOBKao9AhhXUaBZVNevr"
   var numberOfConversations = 0
+  val recipientListSignature= "moepSigMoepSigMoepSig"
 
   "ConversationController" should {
 
@@ -246,6 +247,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beNone
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithSender)
 
@@ -269,6 +271,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beNone
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithSender)
     }
@@ -294,6 +297,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beNone
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
     }
@@ -316,6 +320,58 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beNone
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
+    }
+
+    "Create new conversation with recipients and keys and recipientListSignature" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> validRecipientsWithKeys, "recipientListSignature" -> recipientListSignature)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      Logger.debug("DATA: " + data)
+
+      (data \ "id").asOpt[String] must beSome
+      cidNew2 = (data \ "id").as[String]
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beSome(recipientListSignature)
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
+    }
+
+    "Get the created conversation" in {
+      val path = basePath + "/conversation/" + cidNew2
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beSome(recipientListSignature)
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
     }
