@@ -47,7 +47,7 @@ class ConversationControllerSpec extends StartedApp {
   val encryptedKey = "foobarbaz!"
   val passCaptchaId = "NOBKao9AhhXUaBZVNevr"
   var numberOfConversations = 0
-  val recipientListSignature= "moepSigMoepSigMoepSig"
+  val recipientListSignature= Json.obj("keyId" -> "moepSigMoepSigMoepSig", "content" -> "")
 
   "ConversationController" should {
 
@@ -346,7 +346,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
-      (data \ "recipientListSignature").asOpt[String] must beSome(recipientListSignature)
+      (data \ "recipientListSignature").asOpt[JsObject] must beSome(recipientListSignature)
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
     }
@@ -369,7 +369,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "messages").asOpt[Seq[JsObject]] must beSome
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
-      (data \ "recipientListSignature").asOpt[String] must beSome(recipientListSignature)
+      (data \ "recipientListSignature").asOpt[JsObject] must beSome(recipientListSignature)
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
       (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
     }

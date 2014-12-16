@@ -31,7 +31,7 @@ import scala.concurrent.Future
 case class Conversation(id: MongoId,
                         subject: Option[String],
                         recipients: Seq[Recipient],
-                        recipientListSignature: Option[String],
+                        recipientListSignature: Option[Signature],
                         messages: Seq[Message],
                         aePassphraseList: Seq[EncryptedPassphrase],
                         sePassphrase: Option[String],
@@ -189,7 +189,7 @@ object Conversation extends Model[Conversation] {
   def createReads: Reads[Conversation] = (
     (__ \ "subject").readNullable[String] and
     Reads.pure(Seq()) and
-    (__ \ "recipientListSignature").readNullable[String] and
+    (__ \ "recipientListSignature").readNullable[Signature] and
     (__ \ "passCaptcha").readNullable[String] and
     (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
     (__ \ "sePassphrase").readNullable[String] and
@@ -296,7 +296,7 @@ object Conversation extends Model[Conversation] {
 
   def create(subject: Option[String] = None,
              recipients: Seq[Recipient] = Seq(),
-             recipientListSignature: Option[String] = None,
+             recipientListSignature: Option[Signature] = None,
              passCaptcha: Option[String] = None,
              aePassphraseList: Option[Seq[EncryptedPassphrase]] = None,
              sePassphrase: Option[String] = None,
