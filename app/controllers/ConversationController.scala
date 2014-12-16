@@ -25,12 +25,30 @@ object ConversationController extends ExtendedController {
     request =>
       {
         def addRecipients(conversation: Conversation): Either[Conversation, Result] = {
-          (request.body \ "recipients").asOpt[Seq[String]] match {
-            case None => Left(conversation)
-            case Some(recipientIds) =>
-              checkRecipients(recipientIds, conversation, request.identity) match {
-                case None             => Right(resKo("Invalid recipients. Not in contact book."))
-                case Some(recipients) => Left(conversation.copy(recipients = recipients ++ conversation.recipients))
+
+          def withRecipients(newRecipients: Seq[Recipient]): Either[Conversation, Result] = {
+            checkRecipients(newRecipients, conversation, request.identity).left.map {
+              checkedRecipients =>
+                val allRecipients = conversation.recipients ++ checkedRecipients
+                // make sure that the sender is a recipient
+                val withSender = if (allRecipients.exists(_.identityId.equals(request.identity.id))) {
+                  allRecipients
+                } else {
+                  allRecipients :+ Recipient.create(request.identity.id)
+                }
+                conversation.copy(recipients = withSender)
+            }
+          }
+
+          // recipients can be either an array of strings or recipient objects
+          (request.body \ "recipients").asOpt[JsValue] match {
+            case None => Left(conversation.copy(recipients = Seq(Recipient.create(request.identity.id))))
+            case Some(recipientsJs) if recipientsJs.asOpt[Seq[String]].isDefined =>
+              val recipientIds = recipientsJs.as[Seq[String]]
+              withRecipients(recipientIds.map(id => Recipient.create(MongoId(id))))
+            case Some(recipientsJs) =>
+              validateEither(recipientsJs, Reads.seq(Recipient.createReads)).left.flatMap {
+                recipientsJs => withRecipients(recipientsJs)
               }
           }
         }
@@ -65,8 +83,10 @@ object ConversationController extends ExtendedController {
           }
         }
 
-        validateFuture[Conversation](request.body, Conversation.createReads(Recipient.create(request.identity.id))) {
+        validateFuture[Conversation](request.body, Conversation.createReads) {
           conversation =>
+            Logger.debug("SIG: "+ conversation.recipientListSignature)
+
             addRecipients(conversation) match {
               case Right(result) => Future(result)
               case Left(withRecipients) =>
@@ -124,50 +144,50 @@ object ConversationController extends ExtendedController {
       }
   }
 
-  def checkRecipients(recipientIds: Seq[String], conversation: Conversation, identity: Identity): Option[Seq[Recipient]] = {
-    // remove all recipients that are already a member of this conversation and the sender himself
-    val filtered = recipientIds.filterNot(id => conversation.recipients.exists(_.identityId.id.equals(id)) || id.equals(identity.id.id))
+  def checkRecipients(recipients: Seq[Recipient], conversation: Conversation, sender: Identity): Either[Seq[Recipient], Result] = {
+    // remove all recipients that are already a member of this conversation
+    val filtered = recipients.diff(conversation.recipients)
 
-    // check if all recipients are in the users address book
-    filtered.forall(recipient => identity.contacts.exists(_.identityId.id.equals(recipient))) match {
-      case false => None
-      case true  => Some(filtered.map(Recipient.create))
+    // check if all recipients are in the users address book or the sender
+    filtered.forall(recipient => sender.contacts.exists(_.identityId.equals(recipient.identityId)) || sender.id.equals(recipient.identityId)) match {
+      case false => Right(resBadRequest("Invalid recipients. Not in contact book."))
+      case true  => Left(filtered)
     }
   }
 
-  def addRecipients(id: String) = AuthAction(includeContacts = true).async(parse.tolerantJson) {
-    request =>
-      Conversation.find(new MongoId(id), -1, 0).flatMap {
-        case None => Future.successful(resNotFound("conversation"))
-        case Some(conversation) =>
-          conversation.hasMemberFutureResult(request.identity.id) {
-            validateFuture[Seq[String]](request.body \ "recipients", Reads.seq[String]) {
-              recipientIds =>
-                checkRecipients(recipientIds, conversation, request.identity) match {
-                  case Some(recipients) =>
-                    conversation.addRecipients(recipients).map {
-                      case true  => resOk("updated")
-                      case false => resServerError("update failed")
-                    }
-                  case None => Future(resKo("invalid recipient list"))
-                }
-            }
-          }
-      }
-  }
+  //  def addRecipients(id: String) = AuthAction(includeContacts = true).async(parse.tolerantJson) {
+  //    request =>
+  //      Conversation.find(new MongoId(id), -1, 0).flatMap {
+  //        case None => Future.successful(resNotFound("conversation"))
+  //        case Some(conversation) =>
+  //          conversation.hasMemberFutureResult(request.identity.id) {
+  //            validateFuture[Seq[String]](request.body \ "recipients", Reads.seq[String]) {
+  //              recipientIds =>
+  //                checkRecipients(recipientIds, conversation, request.identity) match {
+  //                  case Some(recipients) =>
+  //                    conversation.addRecipients(recipients).map {
+  //                      case true  => resOk("updated")
+  //                      case false => resServerError("update failed")
+  //                    }
+  //                  case None => Future(resKo("invalid recipient list"))
+  //                }
+  //            }
+  //          }
+  //      }
+  //  }
 
-  def deleteRecipient(id: String, rid: String) = AuthAction().async {
-    request =>
-      Conversation.find(id, -1, 0).flatMap {
-        case None => Future(resNotFound("conversation"))
-        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
-          c.deleteRecipient(new MongoId(rid)).map {
-            case false => resNotFound("recipient")
-            case true  => resOk("deleted")
-          }
-        }
-      }
-  }
+  //  def deleteRecipient(id: String, rid: String) = AuthAction().async {
+  //    request =>
+  //      Conversation.find(id, -1, 0).flatMap {
+  //        case None => Future(resNotFound("conversation"))
+  //        case Some(c) => c.hasMemberFutureResult(request.identity.id) {
+  //          c.deleteRecipient(new MongoId(rid)).map {
+  //            case false => resNotFound("recipient")
+  //            case true  => resOk("deleted")
+  //          }
+  //        }
+  //      }
+  //  }
 
   def getConversationSummary(id: String, keyId: List[String]) = AuthAction(allowExternal = true, getAccount = true).async {
     request =>

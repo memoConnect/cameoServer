@@ -24,11 +24,30 @@ class ConversationControllerSpec extends StartedApp {
 
   var cidNew = ""
   val newSubject = "moep"
-  val validRecipients = Seq("kJIcR9bXwZ1os5ckqTcn", "LhqsHt6VFtgBHGC6u4A0")
+  val validRecipients = Seq(Json.obj("identityId" -> "kJIcR9bXwZ1os5ckqTcn"), Json.obj("identityId" -> "LhqsHt6VFtgBHGC6u4A0"))
+  val validRecipientsWithSender = Seq(Json.obj("identityId" -> "kJIcR9bXwZ1os5ckqTcn"), Json.obj("identityId" -> "LhqsHt6VFtgBHGC6u4A0"), Json.obj("identityId" -> identityExisting))
+  val validRecipientsWithKeys:Seq[JsObject] =
+    Seq(
+      Json.obj(
+        "identityId" -> "kJIcR9bXwZ1os5ckqTcn",
+        "keys" -> Seq(
+          Json.obj("id" -> "lalskdkasljdf"),
+          Json.obj("id" -> "lalskdkasdfdf"))
+      ), Json.obj(
+        "identityId" -> "LhqsHt6VFtgBHGC6u4A0",
+        "keys" -> Seq(
+          Json.obj("id" -> "lddsdfsd"))
+      ), Json.obj(
+        "identityId" -> identityExisting,
+        "keys" -> Seq(
+          Json.obj("id" -> "lddsdfsdasdasd"))
+      ))
+  val validRecipientsString = Seq("kJIcR9bXwZ1os5ckqTcn", "LhqsHt6VFtgBHGC6u4A0")
   val recipientMemberOfConversation = "Tya0cZiaYFhFOBS2RNP1"
   val encryptedKey = "foobarbaz!"
   val passCaptchaId = "NOBKao9AhhXUaBZVNevr"
   var numberOfConversations = 0
+  val recipientListSignature= "moepSigMoepSigMoepSig"
 
   "ConversationController" should {
 
@@ -159,7 +178,7 @@ class ConversationControllerSpec extends StartedApp {
     }
 
     var cidNew2 = ""
-    "Create new conversation with recipients" in {
+    "Create new conversation with recipients as strings" in {
       val path = basePath + "/conversation"
 
       val json = Json.obj("recipients" -> validRecipients)
@@ -181,7 +200,7 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
-      (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithSender)
     }
 
     "Get the created conversation" in {
@@ -203,8 +222,160 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "created").asOpt[Long] must beSome
       (data \ "lastUpdated").asOpt[Long] must beSome
       (data \ "recipients").asOpt[Seq[JsObject]] must beSome
-      (data \ "recipients").as[Seq[JsObject]].length must beEqualTo(3)
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithSender)
+
     }
+
+    "Create new conversation with recipients as objects" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> validRecipients)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      cidNew2 = (data \ "id").as[String]
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beNone
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithSender)
+
+    }
+
+    "Get the created conversation" in {
+      val path = basePath + "/conversation/" + cidNew2
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beNone
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithSender)
+    }
+
+    "Create new conversation with recipients and keys" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> validRecipientsWithKeys)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      cidNew2 = (data \ "id").as[String]
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beNone
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
+    }
+
+    "Get the created conversation" in {
+      val path = basePath + "/conversation/" + cidNew2
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beNone
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
+    }
+
+    "Create new conversation with recipients and keys and recipientListSignature" in {
+      val path = basePath + "/conversation"
+
+      val json = Json.obj("recipients" -> validRecipientsWithKeys, "recipientListSignature" -> recipientListSignature)
+
+      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      Logger.debug("DATA: " + data)
+
+      (data \ "id").asOpt[String] must beSome
+      cidNew2 = (data \ "id").as[String]
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beSome(recipientListSignature)
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
+    }
+
+    "Get the created conversation" in {
+      val path = basePath + "/conversation/" + cidNew2
+
+      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "id").asOpt[String] must beSome
+      (data \ "recipients")(0).asOpt[JsObject] must beSome
+      (data \ "messages").asOpt[Seq[JsObject]] must beSome
+      (data \ "created").asOpt[Long] must beSome
+      (data \ "lastUpdated").asOpt[Long] must beSome
+      (data \ "recipientListSignature").asOpt[String] must beSome(recipientListSignature)
+      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+      (data \ "recipients").as[Seq[JsObject]] must containTheSameElementsAs(validRecipientsWithKeys)
+    }
+
 
     "Refuse to create new conversation with recipients that are not in the address book" in {
       val path = basePath + "/conversation"
@@ -214,10 +385,10 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-      if (status(res) != 232) {
+      if (status(res) != BAD_REQUEST) {
         Logger.error("Response: " + contentAsString(res))
       }
-      status(res) must equalTo(232)
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     var cidNew4 = ""
@@ -292,7 +463,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val offset = Stuff.random.nextInt(cidExistingNumberOfMessages)
 
-      val path = basePath + "/conversation/" + cidExisting    +"?offset=" + offset
+      val path = basePath + "/conversation/" + cidExisting + "?offset=" + offset
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -312,7 +483,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val limit = Math.max(Stuff.random.nextInt(cidExistingNumberOfMessages), 1)
 
-      val path = basePath + "/conversation/" + cidExisting    +"?limit=" + limit
+      val path = basePath + "/conversation/" + cidExisting + "?limit=" + limit
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -332,7 +503,7 @@ class ConversationControllerSpec extends StartedApp {
       val limit = Math.max(Stuff.random.nextInt(cidExistingNumberOfMessages), 1)
       val offset = Stuff.random.nextInt(cidExistingNumberOfMessages)
 
-      val path = basePath + "/conversation/" + cidExisting    +"?offset=" + offset + "&limit=" + limit
+      val path = basePath + "/conversation/" + cidExisting + "?offset=" + offset + "&limit=" + limit
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -352,7 +523,7 @@ class ConversationControllerSpec extends StartedApp {
 
       val timeLimit: Long = 1392301170107L
 
-      val path = basePath + "/conversation/" + cidExisting    +"?timeLimit=" + timeLimit
+      val path = basePath + "/conversation/" + cidExisting + "?timeLimit=" + timeLimit
 
       val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
@@ -500,136 +671,136 @@ class ConversationControllerSpec extends StartedApp {
       conversations.length must beEqualTo(Math.min(limit, numberOfConversations - offset))
     }
 
-    "add recipient to conversation" in {
-      val path = basePath + "/conversation/" + cidExisting + "/recipient"
-
-      val json = Json.obj("recipients" -> validRecipients)
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    "try to add duplicate recipient to conversation" in {
-      val path = basePath + "/conversation/" + cidExisting + "/recipient"
-
-      val json = Json.obj("recipients" -> Seq(validRecipients(0)))
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    "refuse to add recipient that is not in own address book" in {
-      val path = basePath + "/conversation/" + cidExisting + "/recipient"
-
-      val json = Json.obj("recipients" -> Seq(identityExisting2))
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-    }
-
-    "conversation should contain new recipients" in {
-      val path = basePath + "/conversation/" + cidExisting
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
-      val recipients = (data \ "recipients").as[Seq[JsObject]]
-
-      recipients.length must beEqualTo(4)
-
-      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(0))) must beTrue
-      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beTrue
-    }
-
-    "refuse to add non-existing recipients" in {
-      val path = basePath + "/conversation/" + cidExisting + "/recipient"
-
-      val json = Json.obj("recipients" -> Seq("asdf"))
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-    }
-
-    "refuse non-members to add recipients to conversation" in {
-
-      val path = basePath + "/conversation/" + cidExistingNonMember + "/recipient"
-
-      val json = Json.obj("recipients" -> validRecipients)
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(UNAUTHORIZED)
-
-      contentAsString(res) must contain("\"res\":\"KO\"")
-      contentAsString(res) must contain("identity is not a member of the conversation")
-    }
-
-    "delete recipient from conversation" in {
-
-      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
-
-      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    "refuse non-members to delete recipient from conversation" in {
-
-      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
-
-      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting2))
-      val res = route(req).get
-
-      status(res) must equalTo(UNAUTHORIZED)
-    }
-
-    "conversation must not contain deleted recipient" in {
-      val path = basePath + "/conversation/" + cidExisting
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
-      val recipients = (data \ "recipients").as[Seq[JsObject]]
-
-      recipients.length must beEqualTo(3)
-
-      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beFalse
-    }
+    //    "add recipient to conversation" in {
+    //      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+    //
+    //      val json = Json.obj("recipients" -> validRecipients)
+    //
+    //      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //    }
+    //
+    //    "try to add duplicate recipient to conversation" in {
+    //      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+    //
+    //      val json = Json.obj("recipients" -> Seq(validRecipients(0)))
+    //
+    //      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //    }
+    //
+    //    "refuse to add recipient that is not in own address book" in {
+    //      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+    //
+    //      val json = Json.obj("recipients" -> Seq(identityExisting2))
+    //
+    //      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      status(res) must equalTo(232)
+    //    }
+    //
+    //    "conversation should contain new recipients" in {
+    //      val path = basePath + "/conversation/" + cidExisting
+    //
+    //      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //
+    //      val data = (contentAsJson(res) \ "data").as[JsObject]
+    //
+    //      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+    //      val recipients = (data \ "recipients").as[Seq[JsObject]]
+    //
+    //      recipients.length must beEqualTo(4)
+    //
+    //      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(0))) must beTrue
+    //      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beTrue
+    //    }
+    //
+    //    "refuse to add non-existing recipients" in {
+    //      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+    //
+    //      val json = Json.obj("recipients" -> Seq("asdf"))
+    //
+    //      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      status(res) must equalTo(232)
+    //    }
+    //
+    //    "refuse non-members to add recipients to conversation" in {
+    //
+    //      val path = basePath + "/conversation/" + cidExistingNonMember + "/recipient"
+    //
+    //      val json = Json.obj("recipients" -> validRecipients)
+    //
+    //      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      status(res) must equalTo(UNAUTHORIZED)
+    //
+    //      contentAsString(res) must contain("\"res\":\"KO\"")
+    //      contentAsString(res) must contain("identity is not a member of the conversation")
+    //    }
+    //
+    //    "delete recipient from conversation" in {
+    //
+    //      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
+    //
+    //      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //    }
+    //
+    //    "refuse non-members to delete recipient from conversation" in {
+    //
+    //      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
+    //
+    //      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting2))
+    //      val res = route(req).get
+    //
+    //      status(res) must equalTo(UNAUTHORIZED)
+    //    }
+    //
+    //    "conversation must not contain deleted recipient" in {
+    //      val path = basePath + "/conversation/" + cidExisting
+    //
+    //      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //
+    //      val data = (contentAsJson(res) \ "data").as[JsObject]
+    //
+    //      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+    //      val recipients = (data \ "recipients").as[Seq[JsObject]]
+    //
+    //      recipients.length must beEqualTo(3)
+    //
+    //      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beFalse
+    //    }
 
     val encryptedPassphrase: Seq[(String, String)] = Seq(
       "keyId1" -> "phrase1",
@@ -965,7 +1136,7 @@ class ConversationControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       messageId = (data \ "id").as[String]
-      1 ==1
+      1 == 1
     }
 
     "first recipient should not have any unread messages" in {
@@ -1000,8 +1171,8 @@ class ConversationControllerSpec extends StartedApp {
       (data \ "unreadMessages").asOpt[Int] must beSome(1)
     }
 
-    var messageId2a= ""
-    var messageId2b= ""
+    var messageId2a = ""
+    var messageId2b = ""
     "send two messages as second recipient" in {
       val path = basePath + "/conversation/" + cidNew3 + "/message"
       val json = Json.obj("plain" -> Json.obj("text" -> "moep"))
@@ -1030,7 +1201,7 @@ class ConversationControllerSpec extends StartedApp {
 
       (data2 \ "id").asOpt[String] must beSome
       messageId2b = (data2 \ "id").as[String]
-      1 ==1
+      1 == 1
     }
 
     "first recipient should have two unread messages" in {
@@ -1135,7 +1306,6 @@ class ConversationControllerSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-
     "third recipient mark first message read" in {
       val path = basePath + "/conversation/" + cidNew3 + "/message/" + messageId + "/read"
 
@@ -1180,7 +1350,7 @@ class ConversationControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       messageId3 = (data \ "id").as[String]
-      1 ==1
+      1 == 1
     }
 
     "third recipient should have three unread messages" in {
@@ -1214,7 +1384,7 @@ class ConversationControllerSpec extends StartedApp {
 
       (data \ "id").asOpt[String] must beSome
       messageId3 = (data \ "id").as[String]
-      1 ==1
+      1 == 1
     }
 
     "third recipient should still have three unread messages" in {
