@@ -18,8 +18,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Time: 5:43 PM
  */
 
-case class ConfirmMail(accountId: MongoId, lang: Lang)
-case class ConfirmPhoneNumber(accountId: MongoId, lang: Lang)
+case class ConfirmMail(accountId: MongoId, lang: Lang, confirmationToken: Option[ConfirmationToken] = None)
+case class ConfirmPhoneNumber(accountId: MongoId, lang: Lang, confirmationToken: Option[ConfirmationToken]= None)
 
 trait ConfirmationActor extends Actor {
 
@@ -36,14 +36,14 @@ trait ConfirmationActor extends Actor {
 
   def receive = {
 
-    case ConfirmMail(accountId, lang) =>
+    case ConfirmMail(accountId, lang, ct) =>
       Account.find(accountId).map {
         case None => // do nothing
         case Some(account) =>
           account.email match {
             case None => // do nothing
             case Some(email) =>
-              val confirmation = ConfirmationToken.createAndInsert(account.id, confirmationType, CONFIRMATION_PATH_MAIL, email.value)
+              val confirmation = ct.getOrElse(ConfirmationToken.createAndInsert(account.id, confirmationType, CONFIRMATION_PATH_MAIL, email.value))
 
               val variables = Map(
                 "link" -> (Play.configuration.getString("shortUrl.address").get + shortUrlPath +"/" + confirmation.id),
@@ -53,19 +53,25 @@ trait ConfirmationActor extends Actor {
               val body = LocalizationMessages.get(mailMessage, lang, variables)
               val subject = LocalizationMessages.get(mailSubject, lang)
 
+              // check if we have a test user and save message
+              val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
+              if (account.loginName.startsWith(testUserPrefix.toLowerCase))  {
+                TestUserNotification.createAndInsert(account.id, "email", body, false)
+              }
+
               lazy val sendMailActor = Akka.system.actorOf(actors.SendMailActorProps)
               sendMailActor ! Mail(LocalizationMessages.get(mailSender, lang), mailFromAddress, email.value, body, subject)
           }
       }
 
-    case ConfirmPhoneNumber(accountId, lang) =>
+    case ConfirmPhoneNumber(accountId, lang, ct) =>
       Account.find(accountId).map {
         case None => // do nothing
         case Some(account) =>
           account.phoneNumber match {
             case None => // do nothing
             case Some(phoneNumber) =>
-              val confirmation = ConfirmationToken.createAndInsert(account.id, confirmationType, CONFIRMATION_PATH_PHONENUMBER, phoneNumber.value)
+              val confirmation = ct.getOrElse(ConfirmationToken.createAndInsert(account.id, confirmationType, CONFIRMATION_PATH_PHONENUMBER, phoneNumber.value))
 
               val variables = Map(
                 "link" -> (Play.configuration.getString("shortUrl.address").get + shortUrlPath +"/" + confirmation.id),

@@ -48,7 +48,7 @@ class SendSmsActor extends Actor {
               "api_secret" -> JsString(secret.get),
               "from" -> removeSpecialCharacters(sms.from).take(senderMaxLength),
               "to" -> sms.to,
-              "text" -> sms.body
+              "text" -> sms.body.take(160)
             )
 
           val response = WS.url(Play.configuration.getString("nexmo.url").getOrElse("")).post(postBody)

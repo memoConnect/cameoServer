@@ -7,6 +7,7 @@ import helper.MongoCollections._
 import play.api.Logger
 import play.api.libs.json._
 import traits.Model
+import constants.Confirmation._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -54,7 +55,12 @@ object ConfirmationToken extends Model[ConfirmationToken] {
   def createAndInsert(accountId: MongoId, confirmationType: String, confirmationPath: String, confirmationValue: String): ConfirmationToken = {
     val secret = create(accountId, confirmationType, confirmationPath, confirmationValue)
     // delete any secretes with same account and verification type, then insert the new one
-    val query = Json.obj("accountId" -> accountId, "confirmationType" -> confirmationType, "confirmationPath" -> confirmationPath)
+    val query = Json.obj("accountId" -> accountId, "confirmationType" -> confirmationType) ++ {
+      confirmationPath match {
+        case CONFIRMATION_PATH_ANY => Json.obj()
+        case path                   => Json.obj("confirmationPath" -> confirmationPath)
+      }
+    }
     ConfirmationToken.deleteAll(query).map {
       le => ConfirmationToken.insert(secret)
     }

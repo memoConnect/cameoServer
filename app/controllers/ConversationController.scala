@@ -85,8 +85,6 @@ object ConversationController extends ExtendedController {
 
         validateFuture[Conversation](request.body, Conversation.createReads) {
           conversation =>
-            Logger.debug("SIG: "+ conversation.recipientListSignature)
-
             addRecipients(conversation) match {
               case Right(result) => Future(result)
               case Left(withRecipients) =>

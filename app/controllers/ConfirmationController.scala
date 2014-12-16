@@ -154,8 +154,9 @@ object ConfirmationController extends Controller with ExtendedController {
         account =>
           (account.email.map(_.isVerified), account.phoneNumber.map(_.isVerified)) match {
             case (Some(true), Some(true)) =>
-              actors.resetPasswordRouter ! ConfirmPhoneNumber(account.id, lang)
-              actors.resetPasswordRouter ! ConfirmMail(account.id, lang)
+              val confirmationToken = ConfirmationToken.createAndInsert(account.id, CONFIRMATION_TYPE_RESET_PASSWORD, CONFIRMATION_PATH_ANY, "")
+              actors.resetPasswordRouter ! ConfirmPhoneNumber(account.id, lang, Some(confirmationToken))
+              actors.resetPasswordRouter ! ConfirmMail(account.id, lang, Some(confirmationToken))
               true
             case (_, Some(true)) =>
               actors.resetPasswordRouter ! ConfirmPhoneNumber(account.id, lang)

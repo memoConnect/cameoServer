@@ -354,8 +354,51 @@ class ResetPasswordSpec extends StartedApp {
       status(res) must equalTo(OK)
     }
 
-    "change password with confirmation code from sms" in {
+    "the code from the sms should not work any more" in {
       val path = basePath + "/resetPassword/" + confirmCodeSms
+      val json = Json.obj("newPassword" -> newPassword2)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EXPIRED")
+    }
+
+    step(TestValueStore.start())
+    "request password reset via phoneNumber again" in {
+      val path = basePath + "/resetPassword"
+      val json = Json.obj("identifier" -> phoneNumber)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    var confirmCodeMail3 = ""
+    var confirmCodeSms2 = ""
+    "should have receive a confirmation email and sms" in {
+      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
+      val mail = TestValueStore.getValues("mail")(0)
+      val sms = TestValueStore.getValues("sms")(0)
+      (mail \ "body").as[String] must contain("https://")
+      (sms \ "body").as[String] must contain("https://")
+      confirmCodeMail3 = (mail \ "body").as[String].split("\"")(1)
+      confirmCodeSms2 = (sms \ "body").as[String].split("\"")(1)
+      1 === 1
+    }
+    step(TestValueStore.stop())
+
+
+    "change password with confirmation code from sms" in {
+      val path = basePath + "/resetPassword/" + confirmCodeSms2
       val json = Json.obj("newPassword" -> newPassword2)
 
       val req = FakeRequest(POST, path).withJsonBody(json)
@@ -395,6 +438,23 @@ class ResetPasswordSpec extends StartedApp {
       }
       status(res) must equalTo(OK)
     }
+
+    "the code from the mail should not work any more" in {
+      val path = basePath + "/resetPassword/" + confirmCodeMail3
+      val json = Json.obj("newPassword" -> newPassword2)
+
+      val req = FakeRequest(POST, path).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EXPIRED")
+    }
+
+
+
 
   }
 }

@@ -340,8 +340,6 @@ class ConversationControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
-      Logger.debug("DATA: " + data)
-
       (data \ "id").asOpt[String] must beSome
       cidNew2 = (data \ "id").as[String]
       (data \ "recipients")(0).asOpt[JsObject] must beSome

@@ -32,6 +32,7 @@ object Confirmation {
   val CONFIRMATION_TYPE_RESET_PASSWORD = "reset-password"
   val CONFIRMATION_TYPE_VERIFICATION = "verification"
 
+  val CONFIRMATION_PATH_ANY = "both"
   val CONFIRMATION_PATH_MAIL = "mail"
   val CONFIRMATION_PATH_PHONENUMBER = "phoneNumber"
 }
