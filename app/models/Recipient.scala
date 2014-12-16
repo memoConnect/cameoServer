@@ -1,6 +1,6 @@
 package models
 
-import helper.IdHelper
+import helper.{ JsonHelper, IdHelper }
 import play.api.libs.json.{ Format, JsObject, Json, Writes }
 import traits.SubModel
 
@@ -11,7 +11,8 @@ import traits.SubModel
  */
 
 case class Recipient(identityId: MongoId,
-                     messagesRead: Option[Int]) {
+                     messagesRead: Option[Int],
+                     keys: Option[Seq[RecipientKey]]) {
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 }
 
@@ -29,18 +30,22 @@ object Recipient extends SubModel[Recipient, Conversation] {
 
   def outputWrites: Writes[Recipient] = Writes[Recipient] {
     r =>
-      Json.obj("identityId" -> r.identityId.toJson)
+      Json.obj("identityId" -> r.identityId.toJson) ++
+        JsonHelper.maybeEmptyJson("keys", r.keys)
   }
 
-  def create(identityId: MongoId): Recipient = {
-    new Recipient(identityId, None)
+  def create(identityId: MongoId, keys: Seq[RecipientKey] = Seq()): Recipient = {
+    new Recipient(identityId, None, Some(keys))
   }
 
-  def create(identityId: String): Recipient = {
-    new Recipient(new MongoId(identityId), None)
+  def create(identityId: String, keys: Seq[RecipientKey] = Seq()): Recipient = {
+    new Recipient(new MongoId(identityId), None, Some(keys))
   }
 
   override def createDefault(): Recipient = {
-    new Recipient(IdHelper.generateRecipientId(), None)
+    new Recipient(IdHelper.generateRecipientId(), None, None)
   }
 }
+
+case class RecipientKey(id: String)
+object RecipientKey { implicit val format = Json.format[RecipientKey] }
