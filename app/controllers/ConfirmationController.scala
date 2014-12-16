@@ -206,7 +206,7 @@ object ConfirmationController extends Controller with ExtendedController {
       }
   }
 
-  def verifyReset(id: String) = Action.async() {
+  def verifyReset(id: String) = Action.async {
     request =>
       val token = if (id.length < 10) ConfirmationToken.findByCode(id) else ConfirmationToken.find(id)
       token.map {
