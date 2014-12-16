@@ -214,10 +214,10 @@ class ConversationControllerSpec extends StartedApp {
       val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
       val res = route(req).get
 
-      if (status(res) != 232) {
+      if (status(res) != BAD_REQUEST) {
         Logger.error("Response: " + contentAsString(res))
       }
-      status(res) must equalTo(232)
+      status(res) must equalTo(BAD_REQUEST)
     }
 
     var cidNew4 = ""
@@ -500,136 +500,136 @@ class ConversationControllerSpec extends StartedApp {
       conversations.length must beEqualTo(Math.min(limit, numberOfConversations - offset))
     }
 
-    "add recipient to conversation" in {
-      val path = basePath + "/conversation/" + cidExisting + "/recipient"
-
-      val json = Json.obj("recipients" -> validRecipients)
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    "try to add duplicate recipient to conversation" in {
-      val path = basePath + "/conversation/" + cidExisting + "/recipient"
-
-      val json = Json.obj("recipients" -> Seq(validRecipients(0)))
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    "refuse to add recipient that is not in own address book" in {
-      val path = basePath + "/conversation/" + cidExisting + "/recipient"
-
-      val json = Json.obj("recipients" -> Seq(identityExisting2))
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-    }
-
-    "conversation should contain new recipients" in {
-      val path = basePath + "/conversation/" + cidExisting
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
-      val recipients = (data \ "recipients").as[Seq[JsObject]]
-
-      recipients.length must beEqualTo(4)
-
-      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(0))) must beTrue
-      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beTrue
-    }
-
-    "refuse to add non-existing recipients" in {
-      val path = basePath + "/conversation/" + cidExisting + "/recipient"
-
-      val json = Json.obj("recipients" -> Seq("asdf"))
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-    }
-
-    "refuse non-members to add recipients to conversation" in {
-
-      val path = basePath + "/conversation/" + cidExistingNonMember + "/recipient"
-
-      val json = Json.obj("recipients" -> validRecipients)
-
-      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(UNAUTHORIZED)
-
-      contentAsString(res) must contain("\"res\":\"KO\"")
-      contentAsString(res) must contain("identity is not a member of the conversation")
-    }
-
-    "delete recipient from conversation" in {
-
-      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
-
-      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    "refuse non-members to delete recipient from conversation" in {
-
-      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
-
-      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting2))
-      val res = route(req).get
-
-      status(res) must equalTo(UNAUTHORIZED)
-    }
-
-    "conversation must not contain deleted recipient" in {
-      val path = basePath + "/conversation/" + cidExisting
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
-      val recipients = (data \ "recipients").as[Seq[JsObject]]
-
-      recipients.length must beEqualTo(3)
-
-      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beFalse
-    }
+//    "add recipient to conversation" in {
+//      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+//
+//      val json = Json.obj("recipients" -> validRecipients)
+//
+//      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//    }
+//
+//    "try to add duplicate recipient to conversation" in {
+//      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+//
+//      val json = Json.obj("recipients" -> Seq(validRecipients(0)))
+//
+//      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//    }
+//
+//    "refuse to add recipient that is not in own address book" in {
+//      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+//
+//      val json = Json.obj("recipients" -> Seq(identityExisting2))
+//
+//      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      status(res) must equalTo(232)
+//    }
+//
+//    "conversation should contain new recipients" in {
+//      val path = basePath + "/conversation/" + cidExisting
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[JsObject]
+//
+//      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+//      val recipients = (data \ "recipients").as[Seq[JsObject]]
+//
+//      recipients.length must beEqualTo(4)
+//
+//      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(0))) must beTrue
+//      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beTrue
+//    }
+//
+//    "refuse to add non-existing recipients" in {
+//      val path = basePath + "/conversation/" + cidExisting + "/recipient"
+//
+//      val json = Json.obj("recipients" -> Seq("asdf"))
+//
+//      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      status(res) must equalTo(232)
+//    }
+//
+//    "refuse non-members to add recipients to conversation" in {
+//
+//      val path = basePath + "/conversation/" + cidExistingNonMember + "/recipient"
+//
+//      val json = Json.obj("recipients" -> validRecipients)
+//
+//      val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      status(res) must equalTo(UNAUTHORIZED)
+//
+//      contentAsString(res) must contain("\"res\":\"KO\"")
+//      contentAsString(res) must contain("identity is not a member of the conversation")
+//    }
+//
+//    "delete recipient from conversation" in {
+//
+//      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
+//
+//      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//    }
+//
+//    "refuse non-members to delete recipient from conversation" in {
+//
+//      val path = basePath + "/conversation/" + cidExisting + "/recipient/" + validRecipients(1)
+//
+//      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting2))
+//      val res = route(req).get
+//
+//      status(res) must equalTo(UNAUTHORIZED)
+//    }
+//
+//    "conversation must not contain deleted recipient" in {
+//      val path = basePath + "/conversation/" + cidExisting
+//
+//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response: " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//
+//      val data = (contentAsJson(res) \ "data").as[JsObject]
+//
+//      (data \ "recipients").asOpt[Seq[JsObject]] must beSome
+//      val recipients = (data \ "recipients").as[Seq[JsObject]]
+//
+//      recipients.length must beEqualTo(3)
+//
+//      recipients.exists(r => (r \ "identityId").as[String].equals(validRecipients(1))) must beFalse
+//    }
 
     val encryptedPassphrase: Seq[(String, String)] = Seq(
       "keyId1" -> "phrase1",

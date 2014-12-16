@@ -188,7 +188,7 @@ case class Identity(id: MongoId,
             case None => Future(false)
             case Some(supportIdentity) =>
               val contact = Contact.create(supportIdentity.id, Seq())
-              val conversation = Conversation.create(subject = subject, recipients = Seq(supportIdentity.id, this.id).map(Recipient.create))
+              val conversation = Conversation.create(subject = subject, recipients = Seq(supportIdentity.id, this.id).map(Recipient.create(_)))
               val message = Message.create(new MongoId(supportId), messageText)
 
               // create new conversation
