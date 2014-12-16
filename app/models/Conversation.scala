@@ -185,9 +185,9 @@ object Conversation extends Model[Conversation] {
 
   def docVersion = 3
 
-  def createReads(sender: Recipient): Reads[Conversation] = (
+  def createReads: Reads[Conversation] = (
     (__ \ "subject").readNullable[String] and
-    Reads.pure(Seq(sender)) and
+    Reads.pure(Seq()) and
     (__ \ "passCaptcha").readNullable[String] and
     (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
     (__ \ "sePassphrase").readNullable[String] and
