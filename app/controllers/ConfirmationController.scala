@@ -1,5 +1,6 @@
 package controllers
 
+import play.api.Play.current
 import actors.{ ConfirmMail, ConfirmPhoneNumber }
 import constants.ErrorCodes
 import constants.Confirmation._
@@ -8,7 +9,7 @@ import events.AccountUpdate
 import helper.{ JsonHelper, CheckHelper }
 import helper.ResultHelper._
 import models._
-import play.api.Logger
+import play.api.{ Play, Logger }
 import play.api.i18n.Lang
 import play.api.libs.json._
 import play.api.mvc.{ Result, Action, Controller }
@@ -122,9 +123,14 @@ object ConfirmationController extends Controller with ExtendedController {
         "email.isVerified" -> true
       )
 
-      Account.findAll(query).map {
-        case Seq()    => resBadRequest("", ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND)
-        case accounts => resetWithAccounts(accounts, lang)
+      Account.findAll(query).flatMap {
+        case Seq() =>
+          val serverDomain = Play.configuration.getString("domain").get
+          email.split('@').toList match {
+            case cameoId :: domain :: Nil if domain.equals(serverDomain) => resetWithLoginOrCameoId(cameoId, lang)
+            case _                                                       => Future(resBadRequest("", ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND))
+          }
+        case accounts => Future(resetWithAccounts(accounts, lang))
       }
     }
 
