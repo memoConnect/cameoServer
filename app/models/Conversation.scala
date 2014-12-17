@@ -31,7 +31,7 @@ import scala.concurrent.Future
 case class Conversation(id: MongoId,
                         subject: Option[String],
                         recipients: Seq[Recipient],
-                        recipientListSignature: Option[Signature],
+                        conversationSignatures: Option[Seq[Signature]],
                         messages: Seq[Message],
                         aePassphraseList: Seq[EncryptedPassphrase],
                         sePassphrase: Option[String],
@@ -189,7 +189,7 @@ object Conversation extends Model[Conversation] {
   def createReads: Reads[Conversation] = (
     (__ \ "subject").readNullable[String] and
     Reads.pure(Seq()) and
-    (__ \ "recipientListSignature").readNullable[Signature] and
+    (__ \ "conversationSignatures").readNullable[Seq[Signature]] and
     (__ \ "passCaptcha").readNullable[String] and
     (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
     (__ \ "sePassphrase").readNullable[String] and
@@ -207,7 +207,7 @@ object Conversation extends Model[Conversation] {
         maybeEmptyJson("subject", c.subject) ++
         maybeEmptyJson("keyTransmission", c.keyTransmission) ++
         maybeEmptyJson("passCaptcha", c.passCaptcha.map(_.toString)) ++
-        maybeEmptyJson("recipientListSignature", c.recipientListSignature) ++
+        maybeEmptyJson("conversationSignatures", c.conversationSignatures) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
@@ -296,13 +296,13 @@ object Conversation extends Model[Conversation] {
 
   def create(subject: Option[String] = None,
              recipients: Seq[Recipient] = Seq(),
-             recipientListSignature: Option[Signature] = None,
+             conversationSignatures: Option[Seq[Signature]] = None,
              passCaptcha: Option[String] = None,
              aePassphraseList: Option[Seq[EncryptedPassphrase]] = None,
              sePassphrase: Option[String] = None,
              keyTransmission: Option[String] = Some(KeyTransmission.KEY_TRANSMISSION_NONE)): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, subject, recipients, recipientListSignature, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, 0)
+    new Conversation(id, subject, recipients, conversationSignatures, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, 0)
   }
 
   def evolutions = Map(
