@@ -67,7 +67,7 @@ case class Conversation(id: MongoId,
     Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
       Json.obj("aePassphraseList" -> getPassphraseList(keyIds)) ++
       Json.obj("unreadMessages" -> getNumberOfUnreadMessages(identityId, settings)) ++
-      Json.obj("conversationSignatures" -> conversationSignatures.getOrElse(Seq()))
+      Json.obj("conversationSignatures" -> conversationSignatures)
   }
 
   def query = Json.obj("_id" -> this.id)
