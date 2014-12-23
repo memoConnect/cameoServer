@@ -67,7 +67,7 @@ case class Conversation(id: MongoId,
     Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
       Json.obj("aePassphraseList" -> getPassphraseList(keyIds)) ++
       Json.obj("unreadMessages" -> getNumberOfUnreadMessages(identityId, settings)) ++
-      Json.obj("conversationSignatures" -> conversationSignatures)
+      Json.obj("conversationSignatures" -> getConversationSignatures)
   }
 
   def query = Json.obj("_id" -> this.id)
@@ -170,6 +170,13 @@ case class Conversation(id: MongoId,
         }
     }
     Future.sequence(futureKeys).map(_.flatten)
+  }
+
+  def getConversationSignatures: Seq[Signature] = {
+    conversationSignatures  match {
+      case Some(sigs) => sigs
+      case None => Seq.empty
+    }
   }
 
   def markMessageRead(identityId: MongoId, stillUnread: Int): Future[Boolean] = {
