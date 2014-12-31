@@ -21,8 +21,8 @@ case class FriendRequestNew(sendToIdentity: MongoId, friendRequest: FriendReques
 
   def context = "friendRequest"
 
-  def localizationKeyTitle = "PUSH_MESSAGE.FRIEND_REQUEST.TITLE"
-  def localizationKeyMsg: String = "PUSH_MESSAGE.FRIEND_REQUEST.MSG"
+  def localizationKeyTitle = "BACKEND.PUSH_MESSAGE.FRIEND_REQUEST.TITLE"
+  def localizationKeyMsg: String = "BACKEND.PUSH_MESSAGE.FRIEND_REQUEST.MSG"
 
   def localizationVariables = Map {
     "sender" -> fromIdentity.getDisplayName
