@@ -7,10 +7,12 @@ GET            /a/v1                                                 controllers
 POST           /a/v1/callStack                                       controllers.CallStackController.processCallStack()
 
 # ACCOUNT
-POST           /a/v1/account                                         controllers.AccountController.createAccount()
+POST           /a/v1/account                                         legacy.v1.AccountController.createAccount()
+POST           /a/v2/account                                         controllers.AccountController.createAccount()
 GET            /a/v1/account                                         controllers.AccountController.getAccount()
 PUT            /a/v1/account                                         controllers.AccountController.updateAccount()
-POST           /a/v1/account/check                                   controllers.AccountController.checkLoginName
+PUT            /a/v1/account/initial                                 controllers.AccountController.updateInitialAccount()
+POST           /a/v1/account/check                                   controllers.AccountController.reserveLogin()
 #DELETE         /a/v1/account/:loginName                             controllers.AccountController.deleteAccount(loginName)
 
 # IDENTITIES
@@ -18,6 +20,7 @@ GET            /a/v1/identity/:id                                    controllers
 GET            /a/v1/identity                                        controllers.IdentityController.getOwnIdentity()
 PUT            /a/v1/identity                                        controllers.IdentityController.updateIdentity()
 POST           /a/v1/identity                                        controllers.IdentityController.addIdentity()
+POST           /a/v1/identity/initial                                controllers.IdentityController.addInitialIdentity()
 POST           /a/v1/identity/search                                 controllers.IdentityController.search(offset: Int ?= 0, limit: Int ?= 0)
 
 # PUBLIC KEYS
@@ -35,9 +38,9 @@ POST           /a/v1/conversation                                    controllers
 GET            /a/v1/conversation/:id                                controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0, keyId: List[String], timeLimit: Long ?= 0)
 GET            /a/v1/conversation/:id/messages                       controllers.ConversationController.getConversationMessages(id,  offset: Int ?= 0, limit: Int ?= 0)
 PUT            /a/v1/conversation/:id                                controllers.ConversationController.updateConversation(id)
-POST           /a/v1/conversation/:id/recipient                      controllers.ConversationController.addRecipients(id)
+#POST           /a/v1/conversation/:id/recipient                      controllers.ConversationController.addRecipients(id)
 POST           /a/v1/conversation/:id/aePassphrases                  controllers.ConversationController.addAePassphrases(id)
-DELETE         /a/v1/conversation/:id/recipient/:rid                 controllers.ConversationController.deleteRecipient(id, rid)
+#DELETE         /a/v1/conversation/:id/recipient/:rid                 controllers.ConversationController.deleteRecipient(id, rid)
 GET            /a/v1/conversation/:id/summary                        controllers.ConversationController.getConversationSummary(id: String, keyId: List[String])
 GET            /a/v1/conversations                                   controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
 POST           /a/v1/conversation/:id/message/:messageId/read        controllers.ConversationController.markMessageRead(id, messageId)
@@ -81,9 +84,13 @@ GET            /a/v1/file/:id/raw                                    controllers
 GET            /a/v1/file/:id/scale/:size                            controllers.FileController.getScaledImage(id,size)
 GET            /a/v1/file/:id/:chunkIndex                            controllers.FileController.getFileChunk(id, chunkIndex)
 
-# VERIFICATION
-POST           /a/v1/verify                                          controllers.VerificationController.sendVerifyMessage()
-GET            /a/v1/verify/:id                                      controllers.VerificationController.verifyMessage(id)
+# CONFIRMATIONS
+GET            /vr/:id                                               controllers.ConfirmationController.verifyLink(id)
+POST           /a/v1/verify                                          controllers.ConfirmationController.manualVerification()
+POST           /a/v1/verify/:id                                      controllers.ConfirmationController.verifyCode(id)
+POST           /a/v1/resetPassword                                   controllers.ConfirmationController.startPasswordReset()
+GET            /a/v1/resetPassword/:id                               controllers.ConfirmationController.verifyReset(id)
+POST           /a/v1/resetPassword/:id                               controllers.ConfirmationController.resetPassword(id)
 
 # PURLS
 GET            /a/v1/purl/:id                                        controllers.PurlController.getPurl(id: String, offset: Int ?= 0, limit: Int ?= 0)
@@ -117,6 +124,7 @@ PUT            /a/cockpit/v1/:elementName/:id                        controllers
 
 # Deal with options
 OPTIONS        /a/v1/*foo                                            controllers.TokenController.getTokenOptions(foo)
+OPTIONS        /a/v2/*foo                                            controllers.TokenController.getTokenOptions(foo)
 OPTIONS        /a/cockpit/v1/*foo                                    controllers.TokenController.getTokenOptions(foo)
 
 # Utitility functions
@@ -134,7 +142,7 @@ GET            /a/v1/util/checkApp                                   controllers
 
 # Redirect for Shorturls
 GET            /p/:id                                                controllers.ShortUrlController.redirect(urlType = "p", id: String)
-GET            /v/:id                                                controllers.ShortUrlController.redirect(urlType = "v", id: String)
+GET            /pr/:id                                               controllers.ShortUrlController.redirect(urlType = "pr", id: String)
 
 ##
 ##   Frontend: Static files
@@ -170,3 +178,5 @@ GET            /as                                                   controllers
 
 # Redirect / to /m
 GET            /                                                     controllers.Application.redirect(url = "/m/")
+
+

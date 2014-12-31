@@ -61,6 +61,10 @@ trait Model[A] {
     res
   }
 
+  def insert(value: A)(implicit writes: Writes[A]): Future[LastError] = {
+    col.insert(value)
+  }
+
   implicit def mongoFormat: Format[A]
 
   def evolutions: Map[Int, Reads[JsObject]]

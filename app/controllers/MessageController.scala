@@ -5,10 +5,8 @@ import java.util.Date
 import actors.ExternalMessage
 import helper.ResultHelper._
 import models._
-import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import services.AuthenticationActions
 import services.AuthenticationActions.AuthAction
 import traits.ExtendedController
 

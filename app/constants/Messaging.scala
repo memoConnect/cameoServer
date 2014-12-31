@@ -28,10 +28,13 @@ object Messaging {
   val MESSAGE_MAIL_FILE_ONLY_EN = "I have send you a file via cameoNet.de. Click here to download it and awnser: "
 }
 
-object Verification {
+object Confirmation {
+  val CONFIRMATION_TYPE_RESET_PASSWORD = "reset-password"
+  val CONFIRMATION_TYPE_VERIFICATION = "verification"
 
-  val VERIFY_TYPE_MAIL = "mail"
-  val VERIFY_TYPE_PHONENUMBER = "phoneNumber"
+  val CONFIRMATION_PATH_ANY = "both"
+  val CONFIRMATION_PATH_MAIL = "mail"
+  val CONFIRMATION_PATH_PHONENUMBER = "phoneNumber"
 }
 
 object KeyTransmission {

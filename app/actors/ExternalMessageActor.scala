@@ -2,7 +2,7 @@ package actors
 
 import akka.actor.Actor
 import constants.Messaging._
-import events.{ ConversationNewMessageWithPush, ConversationNewMessage }
+import events.{ ConversationNewMessage, ConversationNewMessageWithPush }
 import models._
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
@@ -45,7 +45,7 @@ class ExternalMessageActor extends Actor {
                   recipientIdentity.accountId.fold[Future[Option[Account]]](Future(None))(Account.find).map {
                     maybeAccount =>
                       val unreadMessages = conversation.getNumberOfUnreadMessages(recipient.identityId, maybeAccount.map(_.userSettings))
-                      val unreadMessagesCorrected = if(recipient.identityId.equals(fromIdentity.id)) unreadMessages else unreadMessages + 1
+                      val unreadMessagesCorrected = if (recipient.identityId.equals(fromIdentity.id)) unreadMessages else unreadMessages + 1
 
                       // don't send external message to sender
                       if (recipient.identityId.equals(fromIdentity.id)) {

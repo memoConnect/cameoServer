@@ -20,7 +20,7 @@ trait ExtendedController extends Controller with MongoController {
     js.validate(reads).map {
       action
     }.recoverTotal {
-      error => resBadRequest(JsError.toFlatJson(error))
+      error => resBadRequest("invalid json", data = Some(JsError.toFlatJson(error)))
     }
   }
 
@@ -28,7 +28,15 @@ trait ExtendedController extends Controller with MongoController {
     js.validate(reads).map {
       action
     }.recoverTotal {
-      error => Future(resBadRequest(JsError.toFlatJson(error)))
+      error => Future(resBadRequest("invalid json", data = Some(JsError.toFlatJson(error))))
+    }
+  }
+
+  def validateEither[T](js: JsValue, reads: Reads[T]): Either[T, Result] = {
+    js.validate(reads).map {
+      t => Left(t)
+    }.recoverTotal {
+      error => Right(resBadRequest("invalid json", data = Some(JsError.toFlatJson(error))))
     }
   }
 

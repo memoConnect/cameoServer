@@ -1,12 +1,16 @@
 package services
 
 import com.fasterxml.jackson.core.JsonParseException
-import play.api.Logger
+import play.api.Play.current
 import play.api.i18n.Lang
 import play.api.libs.json.{ JsObject, Json }
-
+import play.api.libs.ws.WS
+import play.api.mvc.Request
+import play.api.{ Logger, Play }
+import scala.concurrent.duration._
 import scala.annotation.tailrec
-import scala.io.Source
+import scala.concurrent.{ Await, Future }
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * User: Björn Reimer
@@ -18,19 +22,22 @@ import scala.io.Source
 object LocalizationMessages {
 
   // parse language files
-  private val messageFolder = "conf/messages/"
-  val defaultLanguage: Lang = Lang("en-Us")
+  private val messagesPath = Play.configuration.getString("language.messages.path").getOrElse("")
+  val defaultLanguage: Lang = Lang(Play.configuration.getString("language.default").getOrElse("en"))
+  val supportedLanguages: Seq[Lang] = Play.configuration.getStringSeq("language.supported").getOrElse(Seq()).map(Lang(_))
 
-  private val messages: Map[Lang, JsObject] = new java.io.File(messageFolder).listFiles.toSeq.foldLeft[Map[Lang, JsObject]](Map()) {
-    case (map, file) =>
-      Logger.info("Parsing language file: " + file.getAbsolutePath)
+  private val messages: Map[Lang, JsObject] = supportedLanguages.foldLeft[Map[Lang, JsObject]](Map()) {
+    case (map, lang) =>
+      val path = messagesPath + "/" + lang.code + ".json"
+      val res = Play.resource(path)
+      Logger.info("Getting messages from: " + path)
       try {
-        // todo: parsing like takes a lot of memory for large files, use streaming
-        val json: JsObject = Json.parse(Source.fromFile(file.getAbsolutePath).getLines().mkString).as[JsObject]
-        map + (Lang(file.getName.split('.')(0)) -> json)
+        // todo parse json directly from stream
+        val json = Json.parse(scala.io.Source.fromInputStream(res.get.openStream()).mkString).as[JsObject]
+        map + (lang -> json)
       } catch {
         case e: JsonParseException =>
-          Logger.error("Could not parse language file: " + file.getAbsolutePath, e)
+          Logger.error("Could not parse json from  " + path, e)
           map
       }
   }
@@ -86,6 +93,12 @@ object LocalizationMessages {
   def getAll(key: String, variables: Map[String, String] = Map()): Map[Lang, String] = {
     messages.mapValues {
       json => replaceVariables(getKeyFromJson(json, key, key), variables)
+    }
+  }
+
+  def getBrowserLanguage[A](request: Request[A]): Lang = {
+    request.acceptLanguages.headOption.getOrElse {
+      Lang(Play.configuration.getString("language.default").getOrElse("en"))
     }
   }
 

@@ -1,7 +1,7 @@
 package events
 
 import models._
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.JsObject
 
 /**
  * User: Björn Reimer

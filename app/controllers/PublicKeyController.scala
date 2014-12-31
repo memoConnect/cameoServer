@@ -8,7 +8,6 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions._
-import services.AuthenticationActions
 import traits.ExtendedController
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -37,10 +36,10 @@ object PublicKeyController extends ExtendedController {
           def sendEvent() {
             request.identity.contacts.foreach {
               contact =>
-                actors.eventRouter ! IdentityUpdate(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+                actors.eventRouter ! IdentityUpdate(contact.identityId, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson())))
             }
             // send event to ourselves
-            actors.eventRouter ! IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson)))
+            actors.eventRouter ! IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(withId.toJson())))
           }
 
           // check if this key has already been uploaded by this user
@@ -52,7 +51,7 @@ object PublicKeyController extends ExtendedController {
                 case false => resBadRequest("unable to update")
                 case true =>
                   sendEvent()
-                  resOk(withId.toJson)
+                  resOk(withId.toJson())
               }
             case None =>
               // check if this id already exists
@@ -64,7 +63,7 @@ object PublicKeyController extends ExtendedController {
                     case true =>
                       // send event to all people in address book
                       sendEvent()
-                      resOk(withId.toJson)
+                      resOk(withId.toJson())
                   }
               }
           }
@@ -112,14 +111,27 @@ object PublicKeyController extends ExtendedController {
                 case false => resBadRequest("could not add")
                 case true =>
                   val newPublicKey = publicKey.copy(signatures = publicKey.signatures :+ signature)
-                  val event = IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson)))
+                  val event = IdentityUpdate(request.identity.id, request.identity.id, Json.obj("publicKeys" -> Seq(newPublicKey.toJson())))
                   actors.eventRouter ! event
                   resOk(signature.toJson)
               }
             case None =>
-              request.identity.addPublicKeySignature(id, signature).map {
-                case false => resBadRequest("could not add")
-                case true  => resOk(signature.toJson)
+              request.identity.addPublicKeySignature(id, signature).flatMap {
+                case false => Future(resBadRequest("could not add"))
+                case true  =>
+                  val query = Json.obj("publicKeys._id" -> MongoId(id))
+                  Identity.find(query).map {
+                    case None => resNotFound("key")
+                    case Some(otherIdentity) =>
+                      otherIdentity.publicKeys.find(_.id.id.equals(id)) match {
+                        case None => resServerError("key not found")
+                        case Some(key) =>
+                          val publicKeySignatures = request.identity.publicKeySignatures ++ Map(id -> signature)
+                          val event = IdentityUpdate(request.identity.id, otherIdentity.id, Json.obj("publicKeys" -> Seq(key.toJson(publicKeySignatures))))
+                          actors.eventRouter ! event
+                          resOk(signature.toJson)
+                      }
+                  }
               }
           }
       }

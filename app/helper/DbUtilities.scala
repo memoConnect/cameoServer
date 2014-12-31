@@ -1,7 +1,6 @@
 package helper
 
 import java.io.{ File, FileWriter }
-import java.util.Date
 
 import helper.MongoCollections._
 import models._
@@ -34,7 +33,7 @@ object DbUtilities {
     purlCollection,
     globalStateCollection,
     fileMetaCollection,
-    verificationCollection,
+    confirmationCollection,
     twoFactorTokenCollection,
     twoFactorSmsKeyCollection,
     cockpitAccessCollection

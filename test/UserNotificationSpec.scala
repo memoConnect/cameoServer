@@ -18,13 +18,13 @@ class UserNotificationSpec extends StartedApp {
 
   "User Notifications" should {
 
-    val mailInt1 = "moep@int.de"
-    val mailInt3 = "moep@int3.de"
+    val mailInt1 = "devnull@cameo.de"
+    val mailInt3 = "devnull2@cameo.de"
     val telInt2 = "+49134564"
     val telInt3 = "+491345644654"
 
-    val mailExt1 = "foo@baa.de"
-    val mailExt3 = "moep@baa.de"
+    val mailExt1 = "devnull3@cameo.de"
+    val mailExt3 = "devnull4@cameo.de"
     val telExt2 = "+491234"
     val telExt3 = "+494561"
 
@@ -83,14 +83,10 @@ class UserNotificationSpec extends StartedApp {
       val mails = TestValueStore.getValues("mail")
       val sms = TestValueStore.getValues("sms")
 
-      Logger.debug("SMS:" + sms)
-
       sms.exists(js => (js \ "to").as[String].equals(telExt2)) must beTrue
       sms.exists(js => (js \ "to").as[String].equals(telExt3)) must beTrue
       sms.exists(js => (js \ "to").as[String].equals(telInt2)) must beTrue
       sms.exists(js => (js \ "to").as[String].equals(telInt3)) must beTrue
-
-      Logger.debug("Mail:" + mails)
 
       mails.exists(js => (js \ "to").as[String].equals(mailExt1)) must beTrue
       mails.exists(js => (js \ "to").as[String].equals(mailExt3)) must beFalse

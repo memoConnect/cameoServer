@@ -1,13 +1,13 @@
 package controllers
 
+import constants.ErrorCodes
 import helper.ResultHelper._
 import models.{ Account, Identity, Token }
 import org.mindrot.jbcrypt.BCrypt
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
-import services.AuthenticationActions
-import services.AuthenticationActions.AuthAction
+import services.AuthenticationActions._
 import traits.ExtendedController
 
 import scala.concurrent.Future
@@ -20,51 +20,19 @@ import scala.concurrent.Future
 object TokenController extends ExtendedController {
 
   /**
-   * Helper
-   */
-  // decode username and password
-  def decodeBasicAuth(auth: String): (String, String) = {
-    val baStr = auth.replaceFirst("Basic ", "").replace(" ", "")
-    new String(new sun.misc.BASE64Decoder().decodeBuffer(baStr), "UTF-8").split(":") match {
-      case Array(user: String, pass: String) => (user, pass)
-      case _                                 => ("", "")
-    }
-  }
-
-  /**
    * Actions
    */
-  def createToken() = Action.async {
+  def createToken() = BasicAuthAction().async {
     request =>
-      {
-        request.headers.get("Authorization") match {
-          case None => Future.successful(resBadRequest("No Authorization field in header"))
-          case Some(basicAuth) if !basicAuth.contains("Basic") =>
-            Future.successful(resBadRequest("Missing keyword \"Basic\" in authorization header"))
-          case Some(basicAuth) =>
-            val (loginName, password) = decodeBasicAuth(basicAuth)
-            val loginNameLower = loginName.toLowerCase
-            //find account and get first identity
-            Account.findByLoginName(loginNameLower).flatMap {
-              case None => Future(resUnauthorized("Invalid password/loginName"))
-              case Some(account) =>
-                Identity.findAll(Json.obj("accountId" -> account.id, "isDefaultIdentity" -> true)).flatMap {
-                  case Seq() => Future(resNotFound("default identity"))
-                  case Seq(identity) =>
-                    // check loginNames and passwords match
-                    if (BCrypt.checkpw(password, account.password) && account.loginName.equals(loginNameLower)) {
-                      // everything is ok
-                      val token = Token.createDefault()
-                      identity.addToken(token).map {
-                        le => resOk(token.toJson)
-                      }
-                    } else {
-                      Future(resUnauthorized("Invalid password/loginName"))
-                    }
-                  case _ => Future(resServerError("more than one default identity"))
-                }
-            }
-        }
+      //get default identity
+      Identity.findAll(Json.obj("accountId" -> request.account.id, "isDefaultIdentity" -> true)).flatMap {
+        case Seq() => Future(resKo("", ErrorCodes.ACCOUNT_MISSING_IDENTITY))
+        case Seq(identity) =>
+          val token = Token.createDefault()
+          identity.addToken(token).map {
+            le => resOk(token.toJson)
+          }
+        case _ => Future(resServerError("more than one default identity"))
       }
   }
 
@@ -95,7 +63,7 @@ object TokenController extends ExtendedController {
       request.identity.accountId match {
         case None => Future(resBadRequest("identity has no account"))
         case Some(accountId) =>
-          Identity.findAll(Json.obj("accountId" -> accountId)).map { list =>
+          Identity.findByAccountId(accountId).map { list =>
             list.find(_.id.id.equals(id)) match {
               case None => resNotFound("identity within account")
               case Some(identity) =>

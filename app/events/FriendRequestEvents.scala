@@ -21,8 +21,8 @@ case class FriendRequestNew(sendToIdentity: MongoId, friendRequest: FriendReques
 
   def context = "friendRequest"
 
-  def localizationKeyTitle = "PUSH_MESSAGE.FRIEND_REQUEST.TITLE"
-  def localizationKeyMsg: String = "PUSH_MESSAGE.FRIEND_REQUEST.MSG"
+  def localizationKeyTitle = "BACKEND.PUSH_MESSAGE.FRIEND_REQUEST.TITLE"
+  def localizationKeyMsg: String = "BACKEND.PUSH_MESSAGE.FRIEND_REQUEST.MSG"
 
   def localizationVariables = Map {
     "sender" -> fromIdentity.getDisplayName
@@ -38,5 +38,16 @@ case class FriendRequestAccepted(sendToIdentity: MongoId, fromIdentity: MongoId,
       "from" -> fromIdentity.toJson,
       "to" -> toIdentityId.toJson,
       "contact" -> contact
+    )
+}
+
+case class FriendRequestRejected(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId) extends EventDefinition {
+
+  def eventType = "friendRequest:rejected"
+
+  def toEventContent =
+    Json.obj(
+      "from" -> fromIdentity.toJson,
+      "to" -> toIdentityId.toJson
     )
 }

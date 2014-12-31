@@ -1,8 +1,7 @@
 package events
 
-import helper.JsonHelper
 import models._
-import play.api.libs.json.{ JsNumber, JsObject, Json }
+import play.api.libs.json.{ JsObject, Json }
 
 /**
  * User: Björn Reimer
@@ -32,8 +31,8 @@ case class ConversationNewMessageWithPush(sendToIdentity: MongoId, messageSender
 
   def context = "message:" + conversationId.id
 
-  def localizationKeyTitle = "PUSH_MESSAGE.NEW_MESSAGE.TITLE"
-  def localizationKeyMsg = "PUSH_MESSAGE.NEW_MESSAGE.MSG"
+  def localizationKeyTitle = "BACKEND.PUSH_MESSAGE.NEW_MESSAGE.TITLE"
+  def localizationKeyMsg = "BACKEND.PUSH_MESSAGE.NEW_MESSAGE.MSG"
 
   def localizationVariables = Map {
     "sender" -> messageSender.getDisplayName

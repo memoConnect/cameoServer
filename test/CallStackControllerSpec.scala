@@ -99,7 +99,7 @@ class CallStackControllerSpec extends StartedApp {
   })
 
   val invalidPostBody = new Call("/identity/search", "pOst", Some(Json.obj("foo" -> "baa")), BAD_REQUEST, { js =>
-    (js \ "error").asOpt[JsObject] must beSome
+    (js \ "data").asOpt[JsObject] must beSome
   }
   )
 
@@ -207,7 +207,7 @@ class CallStackControllerSpec extends StartedApp {
       val res = route(req).get
       status(res) must equalTo(BAD_REQUEST)
 
-      (contentAsJson(res) \ "error" \ "maxLength").asOpt[Int] must beSome(50)
+      (contentAsJson(res) \ "data" \ "maxLength").asOpt[Int] must beSome(50)
     }
 
   }

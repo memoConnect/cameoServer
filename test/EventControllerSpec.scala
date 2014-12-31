@@ -1,3 +1,4 @@
+import helper.TestValueStore
 import org.specs2.matcher.{ MatchResult, Matcher, SomeMatcher }
 import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.{ Logger, Play }
@@ -5,7 +6,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import scala.annotation.tailrec
 import scala.concurrent.Future
-import testHelper.{ TestConfig, StartedApp }
+import testHelper.{Stuff, TestConfig, StartedApp}
 import testHelper.Stuff._
 import testHelper.TestConfig._
 import play.api.Play.current
@@ -240,6 +241,77 @@ class EventControllerSpec extends StartedApp {
       1 === 1
     }
 
+    "Reject friend request" in {
+      val path = basePath + "/friendRequest/answer"
+
+      val json = Json.obj("answerType" -> "reject", "identityId" -> testUser2.identityId)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "friendRequest:rejected event should appear in both subscriptions of first user" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
+        (js \ "data" \ "from").asOpt[String] must beSome(testUser2.identityId)
+      }
+
+      checkEvent(events1, eventNameFinder("friendRequest:rejected"), eventCheck)
+      checkEvent(events2, eventNameFinder("friendRequest:rejected"), eventCheck)
+    }
+
+    "friendRequest:rejected event should appear in subscription of second user" in {
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
+        (js \ "data" \ "from").asOpt[String] must beSome(testUser2.identityId)
+      }
+
+      checkEvent(events1, eventNameFinder("friendRequest:rejected"), eventCheck)
+    }
+
+    "Send another FriendRequest" in {
+      val path = basePath + "/friendRequest"
+
+      val json = Json.obj("identityId" -> testUser1.identityId, "message" -> friendRequestMessage)
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser2.token)).withJsonBody(json)
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "friendRequest:new event should appear in both subscriptions" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject): MatchResult[Option[String]] = {
+        (js \ "data" \ "friendRequest" \ "message").asOpt[String] must beSome(friendRequestMessage)
+        (js \ "data" \ "friendRequest" \ "identity").asOpt[JsObject] must beSome
+        (js \ "data" \ "to").asOpt[String] must beSome(testUser1.identityId)
+      }
+      checkEvent(events1, eventNameFinder("friendRequest:new"), eventCheck)
+      checkEvent(events2, eventNameFinder("friendRequest:new"), eventCheck)
+    }
+
+    "Events should be cleared" in {
+      waitForEvents(testUser1.token, subscriptionId, 0)
+      waitForEvents(testUser1.token, subscriptionId2, 0)
+      1 === 1
+    }
+
     "Accept friend request" in {
       val path = basePath + "/friendRequest/answer"
 
@@ -281,6 +353,9 @@ class EventControllerSpec extends StartedApp {
 
       checkEvent(events1, eventNameFinder("friendRequest:accepted"), eventCheck)
     }
+
+
+
 
     val numberOfMessages = 3
     val text = "the FooBaaMoep"
@@ -731,6 +806,123 @@ class EventControllerSpec extends StartedApp {
       checkEvent(events1, eventNameFinder("identity:new"), eventCheck)
       checkEvent(events2, eventNameFinder("identity:new"), eventCheck)
     }
+
+    step(TestValueStore.start())
+    val newMail = "devnull2@cameo.io"
+    "edit email of account" in {
+      val path = basePath + "/account"
+      val json = Json.obj("email" -> newMail)
+
+      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(testUser1.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    var verifyEmail = ""
+    "should have received verification email with link" in {
+      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      val email = TestValueStore.getValues("mail")(0)
+      (email \ "body").as[String] must contain("https://")
+      verifyEmail = (email \ "body").as[String].split("\"")(1)
+      1 === 1
+    }
+    step(TestValueStore.stop())
+
+    "verify email"  in {
+      val path = basePath + "/verify/" + verifyEmail
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(testUser1.token))
+      val res = route(req).get
+
+      if (status(res) != OK) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(OK)
+    }
+
+    "should receive account:update event" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome
+        (js \ "data" \ "email" \ "value").asOpt[String] must beSome(newMail)
+        (js \ "data" \ "email" \ "isVerified").asOpt[Boolean] must beSome(true)
+      }
+
+      checkEvent(events1, eventNameFinder("account:update"), eventCheck)
+      checkEvent(events2, eventNameFinder("account:update"), eventCheck)
+    }
+
+//    val newName = "moepmeop"
+//    val newAvatar = "moepmeopav"
+//    "edit an identity" in {
+//      val path = basePath + "/identity"
+//
+//      val json = Json.obj("displayName" -> newName, "avatar" -> newAvatar)
+//
+//      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(testUser1.token))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response " + status(res) + ": " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//    }
+//
+//    "should receive identity:update event" in {
+//      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+//      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+//
+//      def eventCheck(js: JsObject) = {
+//        (js \ "data" \ "id").asOpt[String] must beSome(testUser1.identityId)
+//        (js \ "data" \ "displayName").asOpt[String] must beSome(newName)
+//        (js \ "data" \ "avatar").asOpt[String] must beSome(newAvatar)
+//        (js \ "data" \ "email" \ "value").asOpt[String] must beNone
+//        (js \ "data" \ "phoneNumber" \ "value").asOpt[String] must beNone
+//      }
+//
+//      checkEvent(events1, eventNameFinder("identity:update"), eventCheck)
+//      checkEvent(events2, eventNameFinder("identity:update"), eventCheck)
+//    }
+//
+//    val newMail2 = "devnull3@cameo.io"
+//    val newPhoneNumber = "+49123456789"
+//    "edit some other values in the identity" in {
+//      val path = basePath + "/identity"
+//
+//      val json = Json.obj("email" -> newMail2, "phoneNumber" -> newPhoneNumber)
+//
+//      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(testUser1.token))
+//      val res = route(req).get
+//
+//      if (status(res) != OK) {
+//        Logger.error("Response " + status(res) + ": " + contentAsString(res))
+//      }
+//      status(res) must equalTo(OK)
+//    }
+//
+//    "should receive identity:update event" in {
+//      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+//      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+//
+//      def eventCheck(js: JsObject) = {
+//        (js \ "data" \ "id").asOpt[String] must beSome(testUser1.identityId)
+//        (js \ "data" \ "email" \ "value").asOpt[String] must beSome(newMail2)
+//        (js \ "data" \ "phoneNumber" \ "value").asOpt[String] must beSome(newPhoneNumber)
+//        (js \ "data" \ "displayName").asOpt[String] must beNone
+//        (js \ "data" \ "avatar").asOpt[String] must beNone
+//      }
+//
+//      checkEvent(events1, eventNameFinder("identity:update"), eventCheck)
+//      checkEvent(events2, eventNameFinder("identity:update"), eventCheck)
+//    }
+
+
 
   }
 }

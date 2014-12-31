@@ -15,6 +15,14 @@ import scala.sys.process.stringSeqToProcess
  */
 object Utils {
 
+  def decodeBasicAuth(auth: String): (String, String) = {
+    val baStr = auth.replaceFirst("Basic ", "").replace(" ", "")
+    new String(new sun.misc.BASE64Decoder().decodeBuffer(baStr), "UTF-8").split(":") match {
+      case Array(user: String, pass: String) => (user, pass)
+      case _                                 => ("", "")
+    }
+  }
+
   def safeStringToInt(str: String): Option[Int] =
     try {
       Some(str.toInt)

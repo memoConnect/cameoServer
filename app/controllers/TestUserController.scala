@@ -102,10 +102,10 @@ object TestUserController extends ExtendedController {
       MongoCollections.accountCollection.find(accountQuery).one[Account].flatMap {
         case None => Future(resNotFound("Test user"))
         case Some(account) =>
-          Identity.findAll(Json.obj("accountId" -> account.id)).flatMap {
+          Identity.findByAccountId(account.id).flatMap {
             identities =>
 
-              val query = Json.obj("$or" -> identities.map(i => Json.obj("identityId" -> i.id)))
+              val query = Json.obj("$or" -> (identities.map(i => Json.obj("identityId" -> i.id)) :+ Json.obj("identityId" -> account.id)))
               TestUserNotification.findAll(query).map { seq =>
                 // delete them
                 TestUserNotification.deleteAll(query)

@@ -1,8 +1,9 @@
 package models
 
-import helper.IdHelper
-import play.api.libs.json.{ Format, JsObject, Json, Writes }
+import helper.{ JsonHelper, IdHelper }
+import play.api.libs.json._
 import traits.SubModel
+import play.api.libs.functional.syntax._
 
 /**
  * User: Björn Reimer
@@ -11,7 +12,8 @@ import traits.SubModel
  */
 
 case class Recipient(identityId: MongoId,
-                     messagesRead: Option[Int]) {
+                     messagesRead: Option[Int],
+                     keys: Option[Seq[RecipientKey]]) {
   def toJson: JsObject = Json.toJson(this)(Recipient.outputWrites).as[JsObject]
 }
 
@@ -22,6 +24,7 @@ object Recipient extends SubModel[Recipient, Conversation] {
 
   override val idName = "identityId"
 
+  implicit val mongoKeyFormat = RecipientKey.format
   implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
   def docVersion = 0
@@ -29,18 +32,25 @@ object Recipient extends SubModel[Recipient, Conversation] {
 
   def outputWrites: Writes[Recipient] = Writes[Recipient] {
     r =>
-      Json.obj("identityId" -> r.identityId.toJson)
+      Json.obj("identityId" -> r.identityId.toJson) ++
+        JsonHelper.maybeEmptyJson("keys", r.keys)
   }
 
-  def create(identityId: MongoId): Recipient = {
-    new Recipient(identityId, None)
-  }
+  def createReads: Reads[Recipient] = (
+    (__ \ 'identityId).read[MongoId](MongoId.createReads) and
+    Reads.pure[Option[Int]](None) and
+    (__ \ 'keys).readNullable[Seq[RecipientKey]]
+  )(Recipient.apply _)
 
-  def create(identityId: String): Recipient = {
-    new Recipient(new MongoId(identityId), None)
+  def create(identityId: MongoId, keys: Seq[RecipientKey] = Seq()): Recipient = {
+    val keysOption = if(keys.isEmpty) None else Some(keys)
+    new Recipient(identityId, None, keysOption)
   }
 
   override def createDefault(): Recipient = {
-    new Recipient(IdHelper.generateRecipientId(), None)
+    new Recipient(IdHelper.generateRecipientId(), None, None)
   }
 }
+
+case class RecipientKey(id: String)
+object RecipientKey { implicit val format = Json.format[RecipientKey] }

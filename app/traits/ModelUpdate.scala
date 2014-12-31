@@ -158,14 +158,14 @@ trait ModelUpdate {
       .map {
         js => action(js)
       }.recoverTotal {
-        error => Future(resBadRequest(JsError.toFlatJson(error)))
+        error => Future(resBadRequest("invalid json", data = Some(JsError.toFlatJson(error))))
       }
   }
 
   def fromMap(setValues: Map[String, Any]): JsObject = {
     setValues.foldLeft[JsObject](Json.obj()) {
       (res, setValue) =>
-        // todo: again kinda typchecking at runtime
+        // todo: again kinda type checking at runtime
         values.find(_.name.equals(setValue._1)) match {
           case None =>
             Logger.error("trying to update value that doesn't exist: " + setValue._1)

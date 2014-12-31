@@ -25,10 +25,10 @@ class PushNotificationControllerSpec extends StartedApp {
     val deviceId3 = "moepDevice3"
     val platform3 = "meopPlatform3"
 
-    val languageValidEn = "en-US"
-    val languageValidEn2 = "en-GB"
-    val languageValidDe = "de-DE"
-    val languageValidFr = "fr-FR"
+    val languageValidEn = "en"
+    val languageValidEn2 = "en"
+    val languageValidDe = "de"
+    val languageValidFr = "fr"
     val languageInvalid = "moep"
 
     "register ios device" in {

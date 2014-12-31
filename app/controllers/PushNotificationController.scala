@@ -5,7 +5,7 @@ import models.Identity
 import play.api.i18n.Lang
 import play.api.libs.json._
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, PushdConnector }
+import services.PushdConnector
 import services.PushdConnector._
 import traits.ExtendedController
 
@@ -49,12 +49,12 @@ object PushNotificationController extends ExtendedController {
               request.identity.accountId match {
                 case None => Future(resBadRequest("no account"))
                 case Some(accountId) =>
-                  Identity.findAll(Json.obj("accountId" -> accountId)).flatMap {
+                  Identity.findByAccountId(accountId).flatMap {
                     identities =>
                       val identityIds = identities.map(_.id.id)
                       setSubscriptions(id, identityIds).map {
                         case false => resKo("could not set subscription")
-                        case true  => resOk()
+                        case true  => resOk("added")
                       }
                   }
               }
@@ -67,13 +67,13 @@ object PushNotificationController extends ExtendedController {
       validateFuture(JsString(platform), PushdConnector.platformReads) {
         platform =>
           // get id for this token
-          PushdConnector.getSubscriberId(id, platform, Lang("en-US")).flatMap {
+          PushdConnector.getSubscriberId(id, platform, Lang("en")).flatMap {
             case None => Future(resKo("Pushd is down"))
             case Some(subscriberId) =>
               // set subscription to identityId of this user
               setSubscriptions(subscriberId, Seq()).map {
                 case false => resKo("Pushd is down")
-                case true  => resOk()
+                case true  => resOk("deleted")
               }
           }
       }

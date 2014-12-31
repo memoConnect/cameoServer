@@ -21,7 +21,7 @@ case class Contact(id: MongoId,
 
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
-  def toJsonWithIdentity(publicKeySignatures: Option[Map[String, Signature]], identities: Seq[Identity]): JsObject = {
+  def toJsonWithIdentity(publicKeySignatures: Map[String, Signature], identities: Seq[Identity]): JsObject = {
     identities.find(_.id.equals(this.identityId)).map {
       identity =>
         val contactType = identity.accountId match {
@@ -39,7 +39,7 @@ case class Contact(id: MongoId,
   }
 
   // todo: update to new ModelUpdate
-  def update(contactUpdate: ContactUpdate): Future[Boolean] = {
+  def update(contactUpdate: ContactModelUpdate): Future[Boolean] = {
 
     // edit groups
     val updatedGroups = contactUpdate.groups match {
@@ -121,11 +121,11 @@ object ContactEvolutions {
   }
 }
 
-case class ContactUpdate(groups: Option[Seq[String]],
-                         displayName: Option[String],
-                         email: Option[String],
-                         phoneNumber: Option[String])
+case class ContactModelUpdate(groups: Option[Seq[String]],
+                              displayName: Option[String],
+                              email: Option[String],
+                              phoneNumber: Option[String])
 
-object ContactUpdate {
-  implicit val format = Json.format[ContactUpdate]
+object ContactModelUpdate {
+  implicit val format = Json.format[ContactModelUpdate]
 }

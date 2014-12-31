@@ -4,7 +4,6 @@ import helper.ResultHelper._
 import models.cockpit.CockpitEdit
 import play.api.libs.json.JsObject
 import play.api.mvc.BodyParsers.parse
-import services.AuthenticationActions
 import services.AuthenticationActions._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -35,7 +34,7 @@ object EditController {
           case Some(definition) => definition.update(id, request.body.as[JsObject]).map {
             case None        => resBadRequest("invalid element id or update values")
             case Some(false) => resServerError("error saving update")
-            case Some(true)  => resOk()
+            case Some(true)  => resOk("modified")
           }
         }
       }

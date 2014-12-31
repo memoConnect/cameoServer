@@ -18,7 +18,7 @@ import play.api.mvc._
 import reactivemongo.api.gridfs.DefaultFileToSave
 import reactivemongo.bson.{ BSONDocument, BSONObjectID, _ }
 import services.AuthenticationActions.AuthAction
-import services.{ AuthenticationActions, ImageScaler }
+import services.ImageScaler
 import sun.misc.BASE64Decoder
 import traits.ExtendedController
 import reactivemongo.api.gridfs.Implicits.DefaultReadFileReader
@@ -67,7 +67,7 @@ object FileController extends ExtendedController {
           fileSize.get.toInt <= Play.configuration.getInt("files.size.max").get match {
             case false =>
               val errorJson = Json.obj("maxFileSize" -> Play.configuration.getInt("files.size.max").get)
-              Future(resBadRequest(errorJson, ErrorCodes.FILE_UPLOAD_FILESIZE_EXCEEDED))
+              Future(resBadRequest("file too large", ErrorCodes.FILE_UPLOAD_FILESIZE_EXCEEDED, data = Some(errorJson)))
             case true =>
               // check quota
               for {
@@ -78,7 +78,7 @@ object FileController extends ExtendedController {
                     createFile()
                   } else {
                     val errorJson = Json.obj("totalQuota" -> quota, "quotaLeft" -> (quota - size), "fileSize" -> fileSize.get.toInt)
-                    Future(resBadRequest(errorJson, ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED))
+                    Future(resBadRequest("quota exceeded", ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED, data = Some(errorJson)))
                   }
                 }
               } yield result
@@ -126,7 +126,7 @@ object FileController extends ExtendedController {
               case false => resBadRequest("actual fileSize is bigger than submitted value. Actual: " + totalSize + " Submitted: " + fileMeta.fileSize)
               case true =>
                 fileMeta.addChunk(request.body)
-                resOk()
+                resOk("uploaded")
             }
         }
       }

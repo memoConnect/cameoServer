@@ -1,7 +1,7 @@
 package actors
 
 import akka.actor.Actor
-import events.{PushEvent, EventDefinition}
+import events.{ EventDefinition, PushEvent }
 import models.Identity
 import services.{ LocalizationMessages, PushdConnector }
 

@@ -31,6 +31,7 @@ import scala.concurrent.Future
 case class Conversation(id: MongoId,
                         subject: Option[String],
                         recipients: Seq[Recipient],
+                        conversationSignatures: Option[Seq[Signature]],
                         messages: Seq[Message],
                         aePassphraseList: Seq[EncryptedPassphrase],
                         sePassphrase: Option[String],
@@ -65,7 +66,8 @@ case class Conversation(id: MongoId,
   def toSummaryJson(identityId: MongoId, settings: Option[AccountUserSettings], keyIds: Seq[String]): JsObject = {
     Json.toJson(this)(Conversation.summaryWrites).as[JsObject] ++
       Json.obj("aePassphraseList" -> getPassphraseList(keyIds)) ++
-      Json.obj("unreadMessages" -> getNumberOfUnreadMessages(identityId, settings))
+      Json.obj("unreadMessages" -> getNumberOfUnreadMessages(identityId, settings)) ++
+      Json.obj("conversationSignatures" -> getConversationSignatures)
   }
 
   def query = Json.obj("_id" -> this.id)
@@ -170,6 +172,13 @@ case class Conversation(id: MongoId,
     Future.sequence(futureKeys).map(_.flatten)
   }
 
+  def getConversationSignatures: Seq[Signature] = {
+    conversationSignatures  match {
+      case Some(sigs) => sigs
+      case None => Seq.empty
+    }
+  }
+
   def markMessageRead(identityId: MongoId, stillUnread: Int): Future[Boolean] = {
     val query = Json.obj("_id" -> this.id, "recipients.identityId" -> identityId)
     val set = Json.obj("$set" -> Json.obj("recipients.$.messagesRead" -> (this.numberOfMessages - stillUnread)))
@@ -185,9 +194,10 @@ object Conversation extends Model[Conversation] {
 
   def docVersion = 3
 
-  def createReads(sender: Recipient): Reads[Conversation] = (
+  def createReads: Reads[Conversation] = (
     (__ \ "subject").readNullable[String] and
-    Reads.pure(Seq(sender)) and
+    Reads.pure(Seq()) and
+    (__ \ "conversationSignatures").readNullable[Seq[Signature]] and
     (__ \ "passCaptcha").readNullable[String] and
     (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
     (__ \ "sePassphrase").readNullable[String] and
@@ -205,6 +215,7 @@ object Conversation extends Model[Conversation] {
         maybeEmptyJson("subject", c.subject) ++
         maybeEmptyJson("keyTransmission", c.keyTransmission) ++
         maybeEmptyJson("passCaptcha", c.passCaptcha.map(_.toString)) ++
+        maybeEmptyJson("conversationSignatures", c.conversationSignatures) ++
         addCreated(c.created) ++
         addLastUpdated(c.lastUpdated)
   }
@@ -293,12 +304,13 @@ object Conversation extends Model[Conversation] {
 
   def create(subject: Option[String] = None,
              recipients: Seq[Recipient] = Seq(),
+             conversationSignatures: Option[Seq[Signature]] = None,
              passCaptcha: Option[String] = None,
              aePassphraseList: Option[Seq[EncryptedPassphrase]] = None,
              sePassphrase: Option[String] = None,
              keyTransmission: Option[String] = Some(KeyTransmission.KEY_TRANSMISSION_NONE)): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, subject, recipients, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, 0)
+    new Conversation(id, subject, recipients, conversationSignatures, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, 0)
   }
 
   def evolutions = Map(
@@ -307,9 +319,7 @@ object Conversation extends Model[Conversation] {
     2 -> ConversationEvolutions.fixNameMixup
   )
 
-  def createDefault(): Conversation = {
-    new Conversation(IdHelper.generateConversationId(), None, Seq(), Seq(), Seq(), None, None, 0, new Date, new Date, None, 0)
-  }
+  def createDefault(): Conversation = create()
 }
 
 object ConversationModelUpdate extends ModelUpdate {

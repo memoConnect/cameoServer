@@ -23,6 +23,14 @@ HOST: http://cameo.io
           }
         }
 
+
++ Response 232
+
+        {
+            "res": "KO",
+            "errorCode" : "ACCOUNT.MISSING.IDENTITY"
+        }
+
 ## Delete Token [/token/{token}]
 
 ### DELETE
@@ -70,9 +78,15 @@ Account Management
 
 + Request (application/json)
 
-        {
-            "loginName":"testtest"
-        }
+    + Headers
+
+                Authorization: Basic (optional)
+
+    + Body
+
+            {
+                "loginName":"testtest"
+            }
 
 + Response 200
 
@@ -103,8 +117,6 @@ Create new account
         {
           "loginName": "testtest",
           "password": "password",
-          "email": "mail",
-          "phoneNumber": "12335",
           "reservationSecret":"VaXdx3xAAzk3cTXvdDlC"
         }
 
@@ -114,9 +126,6 @@ Create new account
           "res": "OK",
           "data": {
             "loginName": "test",
-            "identities": [
-              "ZVtXkxMmPj4WtLYea8ci"
-            ],
             "phoneNumber": "12335",
             "email": "mail",
             "created": "22.01.2014 16:34:54",
@@ -223,6 +232,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
     + Headers
     
             Authorization: {token}
+
     + Body
     
             {
@@ -237,18 +247,128 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
         }
 
 
-## Confirm Verification [/verify/{secret}]
+## Confirm Verification [/verify/{code}]
 
-### GET
+### POST
 
 + Parameters
-    + secret ... The secret that is contained in the verification link
+    + code ... The code from the verification message
 
 + Response 200
 
         {
             "res": "OK",
             "data": "verified"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"VERIFY.EXPIRED"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"VERIFY.VALUE.CHANGED"
+        }
+
+
+## Request password reset [/passwordReset]
+
+### POST
+
++ Request
+
+    + Body
+
+            {
+              "identifier": "loginName/cameoId/phoneNumber/email"
+            }
+
+
++ Response 200
+
+        {
+            "res": "OK",
+            "data": "send confirmation"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.EMAIL.NOT.FOUND"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.LOGIN.NOT.FOUND"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.PHONENUMBER.NOT.FOUND"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.NO.EMAIL.PHONENUMBER"
+        }
+
+
+### GET
+
++ Response 200
+
+        {
+            "code": "submitted code",
+            "id": "id"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.EXPIRED"
+        }
+
+
+## Reset Password [/passwordReset/{code}]
+
+### POST
+
++ Parameters
+    + code ... The code from the verification message
+
++ Request
+
+    + Body
+
+            {
+              "newPassword": "new password"
+            }
+
++ Response 200
+
+        {
+            "res": "OK",
+            "data": "updated"
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCode" :"PASSWORD.RESET.EXPIRED"
         }
 
 
@@ -396,6 +516,24 @@ Add a new identity to account
           }
         }
         
+
+## Create initial identity for account [/identity/initial]
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: Basic
+
+    + Body
+
+            { same as POST /identity }
+
++ Response 200
+
+            { same as POST /identity }
+
 
         
 ## Add public key to identity [/publicKey]
@@ -2027,17 +2165,26 @@ Events will be deleted after each call
                "name": "friendRequest:accepted",
                "data": {
                  "from": "identityId",
-                 "to": "identityId"
+                 "to": "identityId",
+                 "contact" : {new contact object}
                }
              },
              {
-               "name": "identity:updated",
+                "name": "friendRequest:rejected",
+                "data": {
+                  "from": "identityId",
+                  "to": "identityId"
+                }
+             },
+             {
+               "name": "identity:update",
                "data": { identity object (updated fields only)}
              },
              {
                "name": "identity:new",
                "data": { identity object  }
              },
+
              {
                "name": "conversation:new-aePassphrase",
                "data": {
@@ -2051,6 +2198,19 @@ Events will be deleted after each call
                "name": "conversation:update",
                "data": {
                  "unreadMessages": 4
+               }
+             },
+             {
+               "name": "account:update",
+               "data": {
+                 "email": {
+                   "isVerified": true,
+                   "value": "foooo@cameo.io",
+                 "phoneNumber": {
+                   "isVerified": true,
+                   "value": "+12341234"
+                 },
+                 "id": "jTJSuuSh2FwNn5o4pHEb"
                }
              }
            }
