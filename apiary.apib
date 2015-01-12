@@ -1238,6 +1238,30 @@ Sending and reading messages
             }
 
 
+## Search for conversation [/conversations/search]
+Matches the subject of a conversation or the cameoId or display name of a recipient
+
+### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "search" :"search term (min length: 3"
+            }
+
++ Response 200
+
+            {
+                "conversations" : [ conversation summary objects ]
+                "numberOfMatches" : 1337
+            }
+
+
 ## Add new Recipient to Conversation [/conversation/{id}/recipient]
 
 ### POST

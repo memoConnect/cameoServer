@@ -69,6 +69,11 @@ case class Identity(id: MongoId,
     Contact.delete(this.id, contactId).map(_.updatedExisting)
   }
 
+  def getContactIdentities: Future[Seq[Identity]] = {
+    val query = Json.obj("_id" -> Json.obj("$in" -> this.contacts.map(_.identityId)))
+    Identity.findAll(query)
+  }
+
   def addAsset(assetId: MongoId): Future[Boolean] = {
     val set = Json.obj("$addToSet" -> Json.obj("assets" -> assetId))
     Identity.col.update(query, set).map(_.updatedExisting)
@@ -291,7 +296,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   def getProjection(includeContacts: Boolean = false, includeTokens: Boolean = false): JsObject = {
     val contactProjection = if (includeContacts) Json.obj() else limitArray("contacts", 1, 0)
     val tokenProjection = if (includeTokens) Json.obj() else limitArray("tokens", 1, 0)
-
     contactProjection ++ tokenProjection
   }
 

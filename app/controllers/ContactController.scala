@@ -156,10 +156,7 @@ object ContactController extends ExtendedController {
                 Json.obj("contactType" -> CONTACT_TYPE_PENDING)
           }
         }
-        identities <- {
-          val query = Json.obj("_id" -> Json.obj("$in" -> request.identity.contacts.map(_.identityId)))
-          Identity.findAll(query)
-        }
+        identities <- request.identity.getContactIdentities
       } yield {
         // use identities to get contact jsons
         val contactJsons = request.identity.contacts.map {

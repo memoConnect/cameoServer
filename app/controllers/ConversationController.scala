@@ -7,10 +7,12 @@ import helper.ResultHelper._
 import models._
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
 import traits.ExtendedController
+import play.api.libs.functional.syntax._
 
 import scala.concurrent.Future
 
@@ -252,6 +254,46 @@ object ConversationController extends ExtendedController {
       } else {
         Logger.error("User with disabled unread message submitted message read. IdentityId: " + request.identity.id.id)
         Future(resBadRequest("unread messages are disabled"))
+      }
+  }
+
+  case class FindConversationRequest(search: String,
+                                     foo: Boolean // needed because foo 
+                                     )
+  object FindConversationRequest {
+    implicit val reads = (
+      (__ \ 'search).read[String](minLength[String](3)) and
+      Reads.pure(true)
+    )(FindConversationRequest.apply _)
+  }
+
+  def findConversations(offset: Int, limit: Int, keyId: List[String]) = AuthAction(includeContacts = true, getAccount = true).async(parse.tolerantJson) {
+    request =>
+      validateFuture[FindConversationRequest](request.body, FindConversationRequest.reads) {
+        fcr =>
+          val searchTerm = fcr.search.toLowerCase
+
+          request.identity.getContactIdentities.flatMap {
+            identities =>
+              // filter all identities that match the search term
+              val matchingIdentities = (identities :+ request.identity).filter {
+                i =>
+                  i.cameoId.toLowerCase.contains(searchTerm) ||
+                    i.displayName.exists(_.toLowerCase.contains(searchTerm))
+              }
+
+              // search conversations that match the subject or recipient
+              Conversation.search(request.identity.id, Some(fcr.search), matchingIdentities.map(_.id)).map {
+                conversations =>
+                  val sorted = conversations.sortBy(_.lastUpdated).reverse
+                  val limited = OutputLimits.applyLimits(sorted, offset, limit)
+                  val res = Json.obj(
+                    "conversations" -> limited.map(_.toSummaryJson(request.identity.id, request.account.map(_.userSettings), keyId)),
+                    "numberOfMatches" -> conversations.length
+                  )
+                  resOk(res)
+              }
+          }
       }
   }
 }

@@ -1428,5 +1428,97 @@ class ConversationControllerSpec extends StartedApp {
 
       (data \ "unreadMessages").asOpt[Int] must beSome(0)
     }
+
+    "refuse to search for conversations with term that is only two chars long" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "ab")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+
+    }
+
+    "search for conversations using the subject" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "91npI")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "numberOfMatches").asOpt[Int] must beSome(1)
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(1)
+    }
+
+    "search for conversation using the display name of recipient" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "mmmoooeeeppp")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(6)
+    }
+
+    "search for conversation using the cameoId of recipient" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "95Jo366N")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(6)
+    }
+
+    "search for conversation with term that matches both subject and recipient display name" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "91np")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(7)
+    }
+
+    "only find conversations that the user is a member of" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "dPxAk")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(0)
+    }
   }
 }

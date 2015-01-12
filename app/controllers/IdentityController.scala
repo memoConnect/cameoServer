@@ -83,7 +83,7 @@ object IdentityController extends ExtendedController {
               val cameoId = if (identitySearch.fields.contains("cameoId")) Some(identitySearch.search) else None
               val displayName = if (identitySearch.fields.contains("displayName")) Some(identitySearch.search) else None
 
-              // find all pending friend request
+              // find all pending friend requests
               Identity.findAll(Json.obj("friendRequests.identityId" -> request.identity.id)).flatMap {
                 pendingFriendRequest =>
                   val exclude =

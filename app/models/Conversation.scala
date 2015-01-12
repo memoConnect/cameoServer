@@ -7,7 +7,7 @@ import controllers.PublicKeyController.AePassphrase
 import helper.JsonHelper._
 import helper.MongoCollections._
 import helper.ResultHelper._
-import helper.{ IdHelper, MongoCollections }
+import helper.{ JsonHelper, IdHelper, MongoCollections }
 import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -268,6 +268,18 @@ object Conversation extends Model[Conversation] {
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
     val query = Json.obj("recipients.identityId" -> id)
     col.find(query, limitArray("messages", 1, 0)).cursor[Conversation].collect[Seq]()
+  }
+
+  def search(searchingIdentity: MongoId, subject: Option[String], recipients: Seq[MongoId]): Future[Seq[Conversation]] = {
+    val query = Json.obj(
+      "recipients.identityId" -> searchingIdentity,
+      "$or" -> Seq(
+        JsonHelper.maybeEmptyJson("subject", subject.map(s => Json.obj("$regex" -> s, "$options" -> "i"))),
+        Json.obj("recipients.identityId" -> Json.obj("$in" -> recipients))
+      )
+    )
+
+    findAll(query)
   }
 
   def getAePassphrases(identityId: MongoId, oldKeyId: MongoId, newKeyId: MongoId, limit: Option[Int]): Future[Seq[AePassphrase]] = {
