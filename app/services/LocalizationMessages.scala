@@ -82,9 +82,10 @@ object LocalizationMessages {
   }
 
   def get(key: String, language: Lang, variables: Map[String, String] = Map()): String = {
-    val withVariables = messages.get(language) match {
-      case Some(json) => getKeyFromJson(json, key, key)
-      case None       => get(key, defaultLanguage, variables)
+
+    val withVariables = messages.find(l => language.satisfies(l._1)) match {
+      case Some((l, json)) => getKeyFromJson(json, key, key)
+      case None            => get(key, defaultLanguage, variables)
     }
 
     replaceVariables(withVariables, variables)
