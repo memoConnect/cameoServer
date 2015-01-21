@@ -1520,5 +1520,156 @@ class ConversationControllerSpec extends StartedApp {
 
       conversations.length must beEqualTo(0)
     }
+
+    "leave conversation" should {
+
+      var cidNew4 = ""
+
+      "create conversation with two recipients" in {
+        val path = basePath + "/conversation"
+
+        val json = Json.obj("recipients" -> Seq(internalContactIdentityId))
+
+        val req = FakeRequest(POST, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "id").asOpt[String] must beSome
+        cidNew4 = (data \ "id").as[String]
+        1 === 1
+      }
+
+      var keyId = ""
+      val keyId2 = "moepIdMoep2"
+
+      "add key for first recipient" in {
+        val path = basePath + "/publicKey"
+
+        val json = Json.obj("name" -> "foo", "key" -> "blablalbalbablalalkasdkljasdfalkasmoepdfakjasdfasiudghl", "keySize" -> 1028)
+
+        val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        keyId = (data \ "id").as[String]
+
+        1 === 1
+      }
+
+      "add aePassphrase for first recipient" in {
+        val path = basePath + "/conversation/" + cidNew4 + "/aePassphrases"
+
+        val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> keyId, "encryptedPassphrase" -> "foomoep")))
+
+        val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(json)
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+      }
+
+      "add aePassphrase for second recipient" in {
+        val path = basePath + "/conversation/" + cidNew4 + "/aePassphrases"
+
+        val json = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> keyId2, "encryptedPassphrase" -> "fooomoep")))
+
+        val req = FakeRequest(POST, path).withHeaders(tokenHeader(internalContactToken)).withJsonBody(json)
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+      }
+
+      "second recipient should see the conversation" in {
+        val path = basePath + "/conversation/" + cidNew4 + "?keyId=" + keyId
+
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContactToken))
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "recipients").as[Seq[JsObject]] must haveLength(2)
+        (data \ "aePassphraseList").as[Seq[JsObject]] must haveLength(1)
+      }
+
+      "first recipient leaves the conversation" in {
+        val path = basePath + "/conversation/" + cidNew4 + "/recipient"
+
+        val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+      }
+
+      "the first recipient should not be able get the conversation" in {
+        val path = basePath + "/conversation/" + cidNew4
+
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        if (status(res) != UNAUTHORIZED) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(UNAUTHORIZED)
+      }
+
+      "the second recipient should still be able get the conversation and it must not contain the first recipient and its aePassphrase" in {
+        val path = basePath + "/conversation/" + cidNew4 + "?keyId=" + keyId
+
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContactToken))
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "recipients").as[Seq[JsObject]] must haveLength(1)
+        (data \ "aePassphraseList").as[Seq[JsObject]] must haveLength(0)
+      }
+
+      "the aePassphrase of the second recipient should still be there" in {
+        val path = basePath + "/conversation/" + cidNew4 + "?keyId=" + keyId2
+
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContactToken))
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+
+        (data \ "recipients").as[Seq[JsObject]] must haveLength(1)
+        (data \ "aePassphraseList").as[Seq[JsObject]] must haveLength(1)
+      }
+    }
   }
 }

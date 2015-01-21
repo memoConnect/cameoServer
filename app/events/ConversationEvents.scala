@@ -56,3 +56,11 @@ case class ConversationUpdate(sendToIdentity: MongoId, conversationId: MongoId, 
   def toEventContent: JsObject = updatedValues ++ Json.obj("id" -> conversationId.toJson)
 
 }
+
+case class ConversationDeleted(sendToIdentity: MongoId, conversationId: MongoId) extends EventDefinition {
+
+  def eventType: String = "conversation:deleted"
+
+  def toEventContent = Json.obj("id" -> conversationId.toJson)
+
+}

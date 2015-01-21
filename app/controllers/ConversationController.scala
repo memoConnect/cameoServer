@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ExternalMessage
-import events.{ ConversationNew, ConversationUpdate }
+import events.{ConversationDeleted, ConversationNew, ConversationUpdate}
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -74,7 +74,7 @@ object ConversationController extends ExtendedController {
         }
 
         def insertConversation(conversation: Conversation): Future[Result] = {
-          Conversation.col.insert(conversation).map {
+          Conversation.insert(conversation).map {
             le =>
               // send conversation:new event to all recipients
               conversation.recipients.foreach {
@@ -293,6 +293,24 @@ object ConversationController extends ExtendedController {
                   )
                   resOk(res)
               }
+          }
+      }
+  }
+
+  def deleteOwnRecipient(id: String) = AuthAction().async {
+    request =>
+      Conversation.find(id).map{
+        case None => resNotFound("conversation")
+        case Some(conversation) =>
+          conversation.hasMemberResult(request.identity.id) {
+            // delete recipient
+            conversation.deleteRecipient(request.identity.id)
+            // delete his aepassphrases
+            conversation.deleteAePassphrases(request.identity.publicKeys.map(_.id.toString))
+            // send event
+            actors.eventRouter ! ConversationDeleted(request.identity.id, conversation.id)
+
+            resOk("deleted")
           }
       }
   }
