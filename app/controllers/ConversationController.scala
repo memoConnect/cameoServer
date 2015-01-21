@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ExternalMessage
-import events.{ ConversationNew, ConversationUpdate }
+import events.{ConversationDeleted, ConversationNew, ConversationUpdate}
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -307,6 +307,9 @@ object ConversationController extends ExtendedController {
             conversation.deleteRecipient(request.identity.id)
             // delete his aepassphrases
             conversation.deleteAePassphrases(request.identity.publicKeys.map(_.id.toString))
+            // send event
+            actors.eventRouter ! ConversationDeleted(request.identity.id, conversation.id)
+
             resOk("deleted")
           }
       }
