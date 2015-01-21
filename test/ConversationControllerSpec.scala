@@ -1670,6 +1670,23 @@ class ConversationControllerSpec extends StartedApp {
         (data \ "recipients").as[Seq[JsObject]] must haveLength(1)
         (data \ "aePassphraseList").as[Seq[JsObject]] must haveLength(1)
       }
+
+      "the talk should not appear in the conversation list of the first recipient" in {
+        val path = basePath + "/conversations"
+
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+
+        val data = (contentAsJson(res) \ "data").as[JsObject]
+        val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+        conversations.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew4))) must beFalse
+      }
     }
   }
 }
