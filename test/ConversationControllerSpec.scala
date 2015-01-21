@@ -1687,6 +1687,31 @@ class ConversationControllerSpec extends StartedApp {
 
         conversations.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew4))) must beFalse
       }
+
+      "the second recipient leaves the conversation" in {
+        val path = basePath + "/conversation/" + cidNew4 + "/recipient"
+
+        val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(internalContactToken))
+        val res = route(req).get
+
+        if (status(res) != OK) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(OK)
+      }
+
+      "the second should not see the conversation anymore, and it should be deleted" in {
+        val path = basePath + "/conversation/" + cidNew4
+
+        val req = FakeRequest(GET, path).withHeaders(tokenHeader(internalContactToken))
+        val res = route(req).get
+
+        if (status(res) != NOT_FOUND) {
+          Logger.error("Response: " + contentAsString(res))
+        }
+        status(res) must equalTo(NOT_FOUND)
+
+      }
     }
   }
 }

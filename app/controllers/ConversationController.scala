@@ -303,13 +303,18 @@ object ConversationController extends ExtendedController {
         case None => resNotFound("conversation")
         case Some(conversation) =>
           conversation.hasMemberResult(request.identity.id) {
-            // delete recipient
-            conversation.deleteRecipient(request.identity.id)
-            // delete his aepassphrases
-            conversation.deleteAePassphrases(request.identity.publicKeys.map(_.id.toString))
+            conversation.recipients.length match {
+              case 1 =>
+                // delete the whole conversation
+                Conversation.delete(conversation.id)
+              case _ =>
+                // delete recipient
+                conversation.deleteRecipient(request.identity.id)
+                // delete his aePassphrases
+                conversation.deleteAePassphrases(request.identity.publicKeys.map(_.id.toString))
+            }
             // send event
             actors.eventRouter ! ConversationDeleted(request.identity.id, conversation.id)
-
             resOk("deleted")
           }
       }
