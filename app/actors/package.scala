@@ -41,27 +41,27 @@ package object actors {
   }
 
   lazy val eventRouter: ActorRef = {
-    val props = RoundRobinPool(5).props(Props[EventActor])
+    val props = new RoundRobinPool(5).props(Props[EventActor])
     Akka.system.actorOf(props, "event_router")
   }
 
   lazy val externalMessageRouter: ActorRef = {
-    val props = RoundRobinPool(5).props(Props[ExternalMessageActor])
+    val props = new RoundRobinPool(5).props(Props[ExternalMessageActor])
     Akka.system.actorOf(props, "external_messages_router")
   }
 
   lazy val pushNotificationRouter: ActorRef = {
-    val props = RoundRobinPool(1).props(PushNotificationActorProps)
+    val props = new RoundRobinPool(1).props(PushNotificationActorProps)
     Akka.system.actorOf(props, "push_notification_router")
   }
 
   lazy val verificationRouter: ActorRef = {
-    val props = RoundRobinPool(5).props(Props[VerificationActor])
+    val props = new RoundRobinPool(5).props(Props[VerificationActor])
     Akka.system.actorOf(props, "verification_router")
   }
 
   lazy val resetPasswordRouter: ActorRef = {
-    val props = RoundRobinPool(5).props(Props[ResetPasswordActor])
+    val props = new RoundRobinPool(5).props(Props[ResetPasswordActor])
     Akka.system.actorOf(props, "reset_password_router")
   }
 }

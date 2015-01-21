@@ -1,6 +1,7 @@
 package traits
 
 import models.MongoId
+import play.api.Logger
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import reactivemongo.core.commands.LastError
@@ -104,14 +105,18 @@ trait SubModel[A, Parent] extends Model[A] {
     append(parentId, Seq(appendee))
   }
 
+  def delete(parentId: String, id: String): Future[LastError] = delete(new MongoId(parentId), new MongoId(id))
+
   def delete(parentId: MongoId, id: MongoId): Future[LastError] = {
-    val query = Json.obj("_id" -> parentId)
-    val set = Json.obj("$pull" ->
-      Json.obj(elementName -> Json.obj(idName -> id)))
-    parentModel.col.update(query, set)
+    val query = Json.obj(idName -> id)
+    deleteAll(parentId, query)
   }
 
-  def delete(parentId: String, id: String): Future[LastError] = delete(new MongoId(parentId), new MongoId(id))
+  def deleteAll(parentId: MongoId, query: JsObject): Future[LastError] = {
+    val parentQuery = Json.obj("_id" -> parentId)
+    val set = Json.obj("$pull" -> Json.obj(elementName -> query))
+    parentModel.col.update(parentQuery, set)
+  }
 
   override def delete(id: MongoId): Future[LastError] = {
     val query = Json.obj(elementName + "." + idName -> id)

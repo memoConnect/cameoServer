@@ -157,6 +157,11 @@ case class Conversation(id: MongoId,
     Conversation.addAePassphrases(aePassphrases, this.id)
   }
 
+  def deleteAePassphrases(keyIds: Seq[String]): Future[Boolean] = {
+    val query = Json.obj("$or" -> keyIds.map(keyId => Json.obj("keyId" -> keyId)))
+    EncryptedPassphrase.deleteAll(this.id, query).map(_.updatedExisting)
+  }
+
   def getMissingPassphrases: Future[Seq[String]] = {
 
     // get keyIds of all recipients. Todo: this takes quite a lot of db lookups, reduce!
