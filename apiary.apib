@@ -2178,6 +2178,25 @@ Events will be deleted after each call
                "data": { conversation object }
              },
              {
+               "name": "conversation:new-aePassphrase",
+               "data": {
+                 "keyId": "EWhm5RVlKxVLpKvUiKUI",
+                 "conversationIds": [
+                   "VqkdgXcpj9HnGK7V1dVI"
+                 ]
+               }
+             },
+             {
+               "name": "conversation:update",
+               "data": {
+                 "unreadMessages": 4
+               }
+             },
+             {
+               "name": "conversation:deleted",
+               "data": { "id": "conversationId" }
+             },
+             {
                "name": "friendRequest:new",
                "data": {
                  "friendRequest":{ object },
@@ -2206,22 +2225,6 @@ Events will be deleted after each call
              {
                "name": "identity:new",
                "data": { identity object  }
-             },
-
-             {
-               "name": "conversation:new-aePassphrase",
-               "data": {
-                 "keyId": "EWhm5RVlKxVLpKvUiKUI",
-                 "conversationIds": [
-                   "VqkdgXcpj9HnGK7V1dVI"
-                 ]
-               }
-             },
-             {
-               "name": "conversation:update",
-               "data": {
-                 "unreadMessages": 4
-               }
              },
              {
                "name": "account:update",
