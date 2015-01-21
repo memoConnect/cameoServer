@@ -1262,9 +1262,10 @@ Matches the subject of a conversation or the cameoId or display name of a recipi
             }
 
 
-## Add new Recipient to Conversation [/conversation/{id}/recipient]
+## Recipients to Conversation [/conversation/{id}/recipient]
 
 ### POST
+Add a recipient to to conversation
 
 + Parameters
     + id ... Conversation id
@@ -1292,14 +1293,12 @@ Matches the subject of a conversation or the cameoId or display name of a recipi
           "data": "updated"
         }
 
-## Recipients in the conversation conversation [/conversation/{id}/recipient/{recipientId}]
 
 ### DELETE
+Remove user from conversation
 
 + Parameters
     + id ... Conversation id
-    + recipientId ... Recipient to be deleted
-
 
 + Request
     + Headers
@@ -2179,6 +2178,25 @@ Events will be deleted after each call
                "data": { conversation object }
              },
              {
+               "name": "conversation:new-aePassphrase",
+               "data": {
+                 "keyId": "EWhm5RVlKxVLpKvUiKUI",
+                 "conversationIds": [
+                   "VqkdgXcpj9HnGK7V1dVI"
+                 ]
+               }
+             },
+             {
+               "name": "conversation:update",
+               "data": {
+                 "unreadMessages": 4
+               }
+             },
+             {
+               "name": "conversation:deleted",
+               "data": { "id": "conversationId" }
+             },
+             {
                "name": "friendRequest:new",
                "data": {
                  "friendRequest":{ object },
@@ -2207,22 +2225,6 @@ Events will be deleted after each call
              {
                "name": "identity:new",
                "data": { identity object  }
-             },
-
-             {
-               "name": "conversation:new-aePassphrase",
-               "data": {
-                 "keyId": "EWhm5RVlKxVLpKvUiKUI",
-                 "conversationIds": [
-                   "VqkdgXcpj9HnGK7V1dVI"
-                 ]
-               }
-             },
-             {
-               "name": "conversation:update",
-               "data": {
-                 "unreadMessages": 4
-               }
              },
              {
                "name": "account:update",
