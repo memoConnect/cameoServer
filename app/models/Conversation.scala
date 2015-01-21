@@ -173,9 +173,9 @@ case class Conversation(id: MongoId,
   }
 
   def getConversationSignatures: Seq[Signature] = {
-    conversationSignatures  match {
+    conversationSignatures match {
       case Some(sigs) => sigs
-      case None => Seq.empty
+      case None       => Seq.empty
     }
   }
 

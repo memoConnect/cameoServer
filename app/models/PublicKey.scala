@@ -29,7 +29,7 @@ case class PublicKey(id: MongoId,
 
   def toJson(additionalPublicKeySignatures: Map[String, Signature] = Map()): JsObject = {
     val allSignatures = additionalPublicKeySignatures.get(this.id.id) match {
-      case None => signatures
+      case None            => signatures
       case Some(signature) => signatures :+ signature
     }
 

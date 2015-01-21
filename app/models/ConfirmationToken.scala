@@ -58,7 +58,7 @@ object ConfirmationToken extends Model[ConfirmationToken] {
     val query = Json.obj("accountId" -> accountId, "confirmationType" -> confirmationType) ++ {
       confirmationPath match {
         case CONFIRMATION_PATH_ANY => Json.obj()
-        case path                   => Json.obj("confirmationPath" -> confirmationPath)
+        case path                  => Json.obj("confirmationPath" -> confirmationPath)
       }
     }
     ConfirmationToken.deleteAll(query).map {

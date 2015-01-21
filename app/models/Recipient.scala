@@ -43,7 +43,7 @@ object Recipient extends SubModel[Recipient, Conversation] {
   )(Recipient.apply _)
 
   def create(identityId: MongoId, keys: Seq[RecipientKey] = Seq()): Recipient = {
-    val keysOption = if(keys.isEmpty) None else Some(keys)
+    val keysOption = if (keys.isEmpty) None else Some(keys)
     new Recipient(identityId, None, keysOption)
   }
 

@@ -152,83 +152,83 @@ object AccountController extends ExtendedController {
 
   def doReserveLogin(body: JsValue, ownLogin: Option[String]): Future[Result] = {
 
-      def checkLoginExists(value: String):Future[Boolean] = {
-        for {
-          account <- Account.findByLoginName(value)
-          identity <- Identity.findByCameoId(value)
-        } yield {
-          (account.isDefined && !ownLogin.exists(_.equals(account.get.loginName))) || identity.isDefined
-        }
+    def checkLoginExists(value: String): Future[Boolean] = {
+      for {
+        account <- Account.findByLoginName(value)
+        identity <- Identity.findByCameoId(value)
+      } yield {
+        (account.isDefined && !ownLogin.exists(_.equals(account.get.loginName))) || identity.isDefined
       }
+    }
 
-      def findAlternative(value: String, count: Int = 1): Future[String] = {
-        val currentTry = value + "_" + count
+    def findAlternative(value: String, count: Int = 1): Future[String] = {
+      val currentTry = value + "_" + count
 
-        checkLoginExists(currentTry).flatMap {
-          case true => findAlternative(value, count + 1) // recursive futures ftw!
-          case false =>
-            // check if it is reserved
-            AccountReservation.findByLoginName(currentTry).flatMap {
-              case Some(r) => findAlternative(value, count + 1)
-              case None    => Future(currentTry)
-            }
-        }
-      }
-
-      def reserveOrAlternative(login: String, ownLogin: Option[String]): Future[Result] = {
-
-        checkLogin(login) match {
-          case false => Future(resBadRequest("invalid loginName/cameoId"))
-          case true =>
-            // check if loginName exists or is a cameoId
-            checkLoginExists(login).flatMap {
-              case true =>
-                // it exists, find alternative
-                findAlternative(login).map {
-                  newLoginName => resKo(Json.obj("alternative" -> newLoginName))
-                }
-              case false =>
-                // it does not exist, check if it is reserved
-                AccountReservation.findByLoginName(login).flatMap {
-                  // it is reserved, get alternative
-                  case Some(ra) =>
-                    findAlternative(login).map {
-                      newLoginName => resKo(Json.obj("alternative" -> newLoginName))
-                    }
-                  // not reserved, reserve it and return reservation Secret
-                  case None =>
-                    AccountReservation.reserve(login).map {
-                      res =>
-                        resOk(res.toJson)
-                    }
-                }
-            }
-        }
-      }
-
-      validateFuture[CheckLoginRequest](body, CheckLoginRequest.format) {
-        checkLoginRequest =>
-          Logger.info("Login check: " + checkLoginRequest)
-          checkLoginRequest match {
-            case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
-            case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName"))
-            case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId, ownLogin)
-            case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName, None)
+      checkLoginExists(currentTry).flatMap {
+        case true => findAlternative(value, count + 1) // recursive futures ftw!
+        case false =>
+          // check if it is reserved
+          AccountReservation.findByLoginName(currentTry).flatMap {
+            case Some(r) => findAlternative(value, count + 1)
+            case None    => Future(currentTry)
           }
       }
+    }
+
+    def reserveOrAlternative(login: String, ownLogin: Option[String]): Future[Result] = {
+
+      checkLogin(login) match {
+        case false => Future(resBadRequest("invalid loginName/cameoId"))
+        case true =>
+          // check if loginName exists or is a cameoId
+          checkLoginExists(login).flatMap {
+            case true =>
+              // it exists, find alternative
+              findAlternative(login).map {
+                newLoginName => resKo(Json.obj("alternative" -> newLoginName))
+              }
+            case false =>
+              // it does not exist, check if it is reserved
+              AccountReservation.findByLoginName(login).flatMap {
+                // it is reserved, get alternative
+                case Some(ra) =>
+                  findAlternative(login).map {
+                    newLoginName => resKo(Json.obj("alternative" -> newLoginName))
+                  }
+                // not reserved, reserve it and return reservation Secret
+                case None =>
+                  AccountReservation.reserve(login).map {
+                    res =>
+                      resOk(res.toJson)
+                  }
+              }
+          }
+      }
+    }
+
+    validateFuture[CheckLoginRequest](body, CheckLoginRequest.format) {
+      checkLoginRequest =>
+        Logger.info("Login check: " + checkLoginRequest)
+        checkLoginRequest match {
+          case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
+          case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName"))
+          case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId, ownLogin)
+          case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName, None)
+        }
+    }
   }
 
   def reserveLoginNonAuth(request: Request[Any]): Future[Result] = {
     request.body match {
       case js: JsValue => doReserveLogin(js, None)
-      case _ => Future(resBadRequest("bad content type"))
+      case _           => Future(resBadRequest("bad content type"))
     }
   }
 
   def reserveLogin() = BasicAuthAction(reserveLoginNonAuth).async(parse.tolerantJson) {
     request =>
-    Logger.debug("BASIC TRUTH")
-    doReserveLogin(request.body, Some(request.account.loginName))
+      Logger.debug("BASIC TRUTH")
+      doReserveLogin(request.body, Some(request.account.loginName))
   }
 
   def deleteAccount(loginName: String) = AuthAction().async {
@@ -244,9 +244,9 @@ object AccountController extends ExtendedController {
           }
       }
   }
-  
+
   def doAccountUpdate(body: JsValue, account: Account, lang: Lang): Future[Result] = {
-    
+
     def doUpdate(update: JsObject): Future[Result] = {
       Account.update(account.id, update).map {
         case false => resServerError("could not update")
@@ -272,17 +272,17 @@ object AccountController extends ExtendedController {
           case (None, _)           => doUpdate(js)
           case (Some(newPw), None) => Future(resBadRequest("old password required"))
           case (Some(newPw), Some(oldPw)) =>
-                BCrypt.checkpw(oldPw, account.password) match {
-                  case false => Future(resBadRequest("invalid old password"))
-                  case true =>
-                    val set = Map("password" -> newPw)
-                    val update = js.deepMerge(AccountModelUpdate.fromMap(set))
-                    doUpdate(update)
-                }
+            BCrypt.checkpw(oldPw, account.password) match {
+              case false => Future(resBadRequest("invalid old password"))
+              case true =>
+                val set = Map("password" -> newPw)
+                val update = js.deepMerge(AccountModelUpdate.fromMap(set))
+                doUpdate(update)
             }
         }
     }
-  
+  }
+
   def updateAccount() = AuthAction(getAccount = true).async(parse.tolerantJson) {
     request =>
       val lang = LocalizationMessages.getBrowserLanguage(request)
@@ -290,18 +290,17 @@ object AccountController extends ExtendedController {
       request.identity.accountId match {
         case None => Future(resBadRequest("no account"))
         case Some(accountId) =>
-          Account.find(accountId).flatMap{
-            case None => Future(resServerError("Error getting account"))
+          Account.find(accountId).flatMap {
+            case None          => Future(resServerError("Error getting account"))
             case Some(account) => doAccountUpdate(request.body, account, lang)
           }
       }
   }
-  
+
   def updateInitialAccount() = BasicAuthAction().async(parse.tolerantJson) {
     request =>
       val lang = LocalizationMessages.getBrowserLanguage(request)
       doAccountUpdate(request.body, request.account, lang)
   }
-  
-  
+
 }

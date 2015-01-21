@@ -118,7 +118,7 @@ object PublicKeyController extends ExtendedController {
             case None =>
               request.identity.addPublicKeySignature(id, signature).flatMap {
                 case false => Future(resBadRequest("could not add"))
-                case true  =>
+                case true =>
                   val query = Json.obj("publicKeys._id" -> MongoId(id))
                   Identity.find(query).map {
                     case None => resNotFound("key")
