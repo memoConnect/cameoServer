@@ -3,7 +3,7 @@ import play.api.libs.json.{ JsObject, Json }
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import testHelper.StartedApp
-import testHelper.Stuff._
+import testHelper.Helper._
 import testHelper.TestConfig._
 
 /**

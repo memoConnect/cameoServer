@@ -6,8 +6,8 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import scala.annotation.tailrec
 import scala.concurrent.Future
-import testHelper.{Stuff, TestConfig, StartedApp}
-import testHelper.Stuff._
+import testHelper.{Helper, TestConfig, StartedApp}
+import testHelper.Helper._
 import testHelper.TestConfig._
 import play.api.Play.current
 
@@ -25,9 +25,9 @@ class EventControllerSpec extends StartedApp {
   var subscription2Id = ""
   var subscription3Id = ""
 
-  val testUser1 = createTestUser()
-  val testUser2 = createTestUser()
-  val testUser3 = createTestUser()
+  val testUser1 = TestUser.create()
+  val testUser2 = TestUser.create()
+  val testUser3 = TestUser.create()
 
   def eventNameFinder(name: String): JsObject => Boolean = {
     js => (js \ "name").as[String].equals(name)
@@ -824,7 +824,7 @@ class EventControllerSpec extends StartedApp {
 
     var verifyEmail = ""
     "should have received verification email with link" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val email = TestValueStore.getValues("mail")(0)
       (email \ "body").as[String] must contain("https://")
       verifyEmail = (email \ "body").as[String].split("\"")(1)

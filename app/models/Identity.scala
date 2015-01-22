@@ -3,7 +3,6 @@ package models
 import java.util.Date
 
 import constants.Contacts._
-import constants.Messaging._
 import helper.JsonHelper._
 import helper.MongoCollections._
 import helper.{ IdHelper, JsonHelper }
@@ -14,6 +13,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.{ Logger, Play }
+import play.modules.reactivemongo.json.collection.JSONCollection
 import services.AvatarGenerator
 import traits._
 
@@ -32,7 +32,6 @@ case class Identity(id: MongoId,
                     email: Option[VerifiedString],
                     phoneNumber: Option[VerifiedString],
                     cameoId: String,
-                    preferredMessageType: String, // "mail" or "sms"
                     userKey: String,
                     contacts: Seq[Contact],
                     tokens: Seq[Token],
@@ -218,11 +217,19 @@ case class Identity(id: MongoId,
   def getDisplayName: String = {
     this.displayName.getOrElse(this.cameoId)
   }
+
+  def deleteDetails(deleteDisplayName: Boolean): Future[Boolean] = {
+    val deleteValues: Seq[String] = Seq("email", "phoneNumber") ++ {
+      if(deleteDisplayName) Seq("displayName") else Nil
+    }
+
+    Identity.deleteValues(this.id, deleteValues).map(_.updatedExisting)
+  }
 }
 
 object Identity extends Model[Identity] with CockpitEditable[Identity] {
 
-  implicit def col = identityCollection
+  implicit def col: JSONCollection = identityCollection
 
   implicit val mongoFormat: Format[Identity] = createMongoFormat(Json.reads[Identity], Json.writes[Identity])
 
@@ -233,7 +240,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
     (__ \ 'phoneNumber).readNullable[VerifiedString](verifyPhoneNumber andThen VerifiedString.createReads) and
     ((__ \ 'cameoId).read[String] or Reads.pure[String](IdHelper.generateCameoId)) and
-    ((__ \ 'preferredMessageType).read[String] or Reads.pure[String](MESSAGE_TYPE_DEFAULT)) and // TODO: check for right values
     Reads.pure[String](IdHelper.generateUserKey()) and
     Reads.pure[Seq[Contact]](Seq()) and
     Reads.pure[Seq[Token]](Seq()) and
@@ -255,7 +261,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
         getCameoId(i.cameoId) ++
         maybeEmptyJson("email", i.email.map(_.toJson)) ++
         maybeEmptyJson("phoneNumber", i.phoneNumber.map(_.toJson)) ++
-        Json.obj("preferredMessageType" -> i.preferredMessageType) ++
         Json.obj("publicKeys" -> i.publicKeys.filterNot(_.deleted).map(_.toJson())) ++
         Json.obj("userType" -> (if (i.accountId.isDefined) CONTACT_TYPE_INTERNAL else CONTACT_TYPE_EXTERNAL)) ++
         maybeEmptyJson("avatar", i.avatar.map(_.toJson)) ++
@@ -307,7 +312,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
       VerifiedString.createOpt(email),
       VerifiedString.createOpt(phoneNumber),
       cameoId,
-      MESSAGE_TYPE_DEFAULT,
       IdHelper.generateUserKey(),
       Seq(),
       Seq(),
@@ -420,7 +424,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   )
 
   def cockpitMapping: Seq[CockpitAttribute] = {
-    val pmtOptions = Seq(MESSAGE_TYPE_DEFAULT, MESSAGE_TYPE_EMAIL, MESSAGE_TYPE_SMS)
 
     Seq(
       CockpitAttributeFilter(name = "accountId", displayName = "Account Id", listName = "account", filterName = "ID"),

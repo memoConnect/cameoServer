@@ -7,7 +7,7 @@ import play.api.libs.json._
 import play.api.test.Helpers._
 import play.api.test._
 import play.api.{Logger, Play}
-import testHelper.Stuff._
+import testHelper.Helper._
 import testHelper.TestConfig._
 import testHelper.{StartedApp, TestConfig}
 

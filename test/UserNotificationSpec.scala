@@ -3,8 +3,8 @@ import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import testHelper.{ Stuff, StartedApp }
-import testHelper.Stuff._
+import testHelper.{ Helper, StartedApp }
+import testHelper.Helper._
 import testHelper.TestConfig._
 
 /**
@@ -28,22 +28,22 @@ class UserNotificationSpec extends StartedApp {
     val telExt2 = "+491234"
     val telExt3 = "+494561"
 
-    val testUser1 = createTestUser(email = Some(mailInt1))
-    val testUser2 = createTestUser(tel = Some(telInt2))
-    val testUser3 = createTestUser(tel = Some(telInt3), email = Some(mailInt3))
+    val testUser1 = TestUser.create(email = Some(mailInt1))
+    val testUser2 = TestUser.create(tel = Some(telInt2))
+    val testUser3 = TestUser.create(tel = Some(telInt3), email = Some(mailInt3))
 
-    val externalContactId1 = addExternalContact(testUser1.token, email = Some(mailExt1))
-    val externalContactId2 = addExternalContact(testUser1.token, tel = Some(telExt2))
-    val externalContactId3 = addExternalContact(testUser1.token, tel = Some(telExt3), email = Some(mailExt3))
+    val externalContactIdentityId1 = testUser1.addExternalContact( email = Some(mailExt1))._2
+    val externalContactIdentityId2 = testUser1.addExternalContact( tel = Some(telExt2))._2
+    val externalContactIdentityId3 = testUser1.addExternalContact( tel = Some(telExt3), email = Some(mailExt3))._2
 
-    makeFriends(testUser1, testUser2)
-    makeFriends(testUser1, testUser3)
+    testUser1. makeFriends(testUser2)
+    testUser1.makeFriends( testUser3)
 
     var conversationId = ""
     "start conversation with external and internal contacts" in {
       val path = basePath + "/conversation"
 
-      val recipients = Seq(externalContactId1, externalContactId2, externalContactId3, testUser2.identityId, testUser3.identityId)
+      val recipients = Seq(externalContactIdentityId1, externalContactIdentityId2, externalContactIdentityId3, testUser2.identityId, testUser3.identityId)
 
       val json = Json.obj("recipients" -> recipients)
 
@@ -78,7 +78,7 @@ class UserNotificationSpec extends StartedApp {
 
     "all users except the sender should have received notifications" in {
       // wait until notifications have arrived
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 4)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 4)
 
       val mails = TestValueStore.getValues("mail")
       val sms = TestValueStore.getValues("sms")
@@ -159,7 +159,7 @@ class UserNotificationSpec extends StartedApp {
 
     "users with event subscriptions should not get notifications" in {
       // wait until notifications have arrived
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 0 && TestValueStore.getValues("sms").length == 3)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 0 && TestValueStore.getValues("sms").length == 3)
 
       val mails = TestValueStore.getValues("mail")
       val sms = TestValueStore.getValues("sms")
@@ -194,7 +194,7 @@ class UserNotificationSpec extends StartedApp {
 
     "author of conversation should now receive a notification" in {
       // wait until notifications have arrived
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 3)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 3)
 
       val mails = TestValueStore.getValues("mail")
       val sms = TestValueStore.getValues("sms")

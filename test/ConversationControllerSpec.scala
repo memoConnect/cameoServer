@@ -5,11 +5,11 @@ import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import scala.Some
 import scala.Some
-import testHelper.Stuff._
+import testHelper.Helper._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{ StartedApp, Stuff }
+import testHelper.{ StartedApp, Helper }
 import org.specs2.mutable._
 import testHelper.TestConfig._
 
@@ -459,7 +459,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "Get an existing conversation with offset" in {
 
-      val offset = Stuff.random.nextInt(cidExistingNumberOfMessages)
+      val offset = Helper.random.nextInt(cidExistingNumberOfMessages)
 
       val path = basePath + "/conversation/" + cidExisting + "?offset=" + offset
 
@@ -479,7 +479,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "Get an existing conversation with limit" in {
 
-      val limit = Math.max(Stuff.random.nextInt(cidExistingNumberOfMessages), 1)
+      val limit = Math.max(Helper.random.nextInt(cidExistingNumberOfMessages), 1)
 
       val path = basePath + "/conversation/" + cidExisting + "?limit=" + limit
 
@@ -498,8 +498,8 @@ class ConversationControllerSpec extends StartedApp {
     }
 
     "Get an existing conversation with limit and offset" in {
-      val limit = Math.max(Stuff.random.nextInt(cidExistingNumberOfMessages), 1)
-      val offset = Stuff.random.nextInt(cidExistingNumberOfMessages)
+      val limit = Math.max(Helper.random.nextInt(cidExistingNumberOfMessages), 1)
+      val offset = Helper.random.nextInt(cidExistingNumberOfMessages)
 
       val path = basePath + "/conversation/" + cidExisting + "?offset=" + offset + "&limit=" + limit
 
@@ -601,7 +601,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with offset" in {
 
-      val offset = Stuff.random.nextInt(numberOfConversations)
+      val offset = Helper.random.nextInt(numberOfConversations)
 
       val path = basePath + "/conversations?offset=" + offset
 
@@ -624,7 +624,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit" in {
 
-      val limit = Math.max(Stuff.random.nextInt(numberOfConversations), 1)
+      val limit = Math.max(Helper.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit
 
@@ -647,8 +647,8 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit and offset" in {
 
-      val offset = Stuff.random.nextInt(numberOfConversations)
-      val limit = Math.max(Stuff.random.nextInt(numberOfConversations), 1)
+      val offset = Helper.random.nextInt(numberOfConversations)
+      val limit = Math.max(Helper.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit + "&offset=" + offset
 

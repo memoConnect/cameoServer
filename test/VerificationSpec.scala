@@ -3,8 +3,8 @@ import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import testHelper.{ Stuff, StartedApp }
-import testHelper.Stuff._
+import testHelper.{ Helper, StartedApp }
+import testHelper.Helper._
 import testHelper.TestConfig._
 
 /**
@@ -31,12 +31,12 @@ class VerificationSpec extends StartedApp {
     step(TestValueStore.start())
 
     "create account with email" in {
-      createTestUser(None, Some(mail))
+      TestUser.create(None, Some(mail))
       1 === 1
     }
 
     "should have received verification email with link" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
     }
@@ -46,12 +46,12 @@ class VerificationSpec extends StartedApp {
     step(TestValueStore.start())
 
     "create account with phonenumber" in {
-      createTestUser(Some(phoneNumber), None)
+      TestUser.create(Some(phoneNumber), None)
       1 === 1
     }
 
     "should have received verification sms with link" in {
-      Stuff.waitFor(TestValueStore.getValues("sms").length == 1)
+      Helper.waitFor(TestValueStore.getValues("sms").length == 1)
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
     }
@@ -61,12 +61,12 @@ class VerificationSpec extends StartedApp {
     step(TestValueStore.start())
 
     "create account with phonenumber and email" in {
-      createTestUser(Some(phoneNumber), Some(mail))
+      TestUser.create(Some(phoneNumber), Some(mail))
       1 === 1
     }
 
     "should have received verification sms and email with link" in {
-      Stuff.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("sms")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
@@ -76,7 +76,7 @@ class VerificationSpec extends StartedApp {
     step(TestValueStore.stop())
 
     "create testUser without mail or phoneNumber" in {
-      testUser = createTestUser(None, None)
+      testUser = TestUser.create(None, None)
       1 === 1
     }
 
@@ -96,7 +96,7 @@ class VerificationSpec extends StartedApp {
     }
 
     "should have received verification sms with link" in {
-      Stuff.waitFor(TestValueStore.getValues("sms").length == 1)
+      Helper.waitFor(TestValueStore.getValues("sms").length == 1)
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
     }
@@ -119,7 +119,7 @@ class VerificationSpec extends StartedApp {
     }
 
     "should have received verification email with link" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val email = TestValueStore.getValues("mail")(0)
       (email \ "body").as[String] must contain("https://")
     }
@@ -145,7 +145,7 @@ class VerificationSpec extends StartedApp {
     var verifyPhoneNumber = ""
 
     "should have received verification email and sms with link" in {
-      Stuff.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
@@ -265,7 +265,7 @@ class VerificationSpec extends StartedApp {
     var verifyEmail3 = ""
 
     "should have received verification email with link" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
       verifyEmail2 = (mail \ "body").as[String].split("https:").last.split("/").last
@@ -307,7 +307,7 @@ class VerificationSpec extends StartedApp {
     }
 
     "should have received verification email with link" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
       verifyEmail3 = (mail \ "body").as[String].split("https:").last.split("/").last
@@ -374,7 +374,7 @@ class VerificationSpec extends StartedApp {
     var verifyEmail4 = ""
     var verifyPhoneNumber2 = ""
     "should have received verification email with link" in {
-      Stuff.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
@@ -403,7 +403,7 @@ class VerificationSpec extends StartedApp {
     var verifyPhoneNumberCode = ""
 
     "should have received verification email and sms with link" in {
-      Stuff.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")

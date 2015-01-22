@@ -93,10 +93,7 @@ object AccountController extends ExtendedController {
                           Identity.update(request.identity.id, IdentityModelUpdate.fromMap(map))
                           request.identity.addSupport()
                         }
-                        deleteDetails <- {
-                          val deleteValues = Seq("email", "phoneNumber", "displayName")
-                          Identity.deleteValues(request.identity.id, deleteValues).map(_.updatedExisting)
-                        }
+                        deleteDetails <- request.identity.deleteDetails(deleteDisplayName = true)
                       } yield {
                         addContact && updateIdentity && deleteDetails
                       }

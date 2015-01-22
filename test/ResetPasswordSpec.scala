@@ -3,9 +3,9 @@ import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import testHelper.Stuff._
+import testHelper.Helper._
 import testHelper.TestConfig._
-import testHelper.{ StartedApp, Stuff }
+import testHelper.{ StartedApp, Helper }
 
 /**
  * User: Björn Reimer
@@ -28,14 +28,14 @@ class ResetPasswordSpec extends StartedApp {
 
     step(TestValueStore.start())
     "create account with email and phonenumber" in {
-      testUser = createTestUser(Some(phoneNumber), Some(mail))
+      testUser = TestUser.create(Some(phoneNumber), Some(mail))
       1 === 1
     }
     var verifyEmail = ""
     var verifyPhoneNumber = ""
 
     "receive verification email and sms" in {
-      Stuff.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
@@ -191,7 +191,7 @@ class ResetPasswordSpec extends StartedApp {
     }
 
     "should have receive a confirmation email" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
     }
@@ -212,7 +212,7 @@ class ResetPasswordSpec extends StartedApp {
     }
 
     "should have receive a confirmation email" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
     }
@@ -234,7 +234,7 @@ class ResetPasswordSpec extends StartedApp {
 
     var confirmCodeMail = ""
     "should have receive a confirmation email" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
       confirmCodeMail = (mail \ "body").as[String].split("\"")(1)
@@ -287,7 +287,7 @@ class ResetPasswordSpec extends StartedApp {
     var confirmCodeMail2 = ""
     var confirmCodeSms = ""
     "should have receive a confirmation email and sms" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (mail \ "body").as[String] must contain("https://")
@@ -385,7 +385,7 @@ class ResetPasswordSpec extends StartedApp {
     var confirmCodeMail3 = ""
     var confirmCodeSms2 = ""
     "should have receive a confirmation email and sms" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (mail \ "body").as[String] must contain("https://")

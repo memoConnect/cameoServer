@@ -4,7 +4,7 @@ import play.api.Logger
 import play.api.test._
 import play.api.libs.json.{ JsArray, JsString, Json, JsObject }
 import play.api.test.Helpers._
-import testHelper.Stuff._
+import testHelper.Helper._
 import org.specs2.mutable._
 import testHelper.TestConfig._
 import testHelper.StartedApp
@@ -611,7 +611,7 @@ class PublicKeyControllerSpec extends StartedApp {
       (encPasses(0) \ "encryptedPassphrase").asOpt[String] must beSome(newAePassphrases(1))
     }
 
-    val testUser = createTestUser()
+    val testUser = TestUser.create()
     var newPubKeyId = ""
     val keyId1 = "moep1"
     val keyId2 = "moep2"

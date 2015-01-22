@@ -11,8 +11,8 @@ import play.api.test.Helpers._
 import scala.concurrent.Future
 import scala.Some
 import scala.util.Random
-import testHelper.{Stuff, StartedApp}
-import testHelper.Stuff._
+import testHelper.{Helper, StartedApp}
+import testHelper.Helper._
 import testHelper.TestConfig._
 import helper.JsonHelper._
 

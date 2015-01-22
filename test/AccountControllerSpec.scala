@@ -6,11 +6,11 @@ import play.api.test._
 import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import scala.Some
-import testHelper.Stuff._
+import testHelper.Helper._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.{ Play, Logger }
-import testHelper.{ TestConfig, StartedApp, Stuff }
+import testHelper.{ TestConfig, StartedApp, Helper }
 import org.specs2.mutable._
 import testHelper.TestConfig._
 

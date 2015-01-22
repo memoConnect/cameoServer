@@ -1,9 +1,9 @@
 import helper.TestValueStore
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
-import testHelper.{Stuff, StartedApp}
+import testHelper.{Helper, StartedApp}
 import testHelper.TestConfig._
-import testHelper.Stuff._
+import testHelper.Helper._
 import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.{ FakeRequest, FakeApplication }
 import play.api.test.Helpers._
@@ -168,7 +168,7 @@ class PushNotificationControllerSpec extends StartedApp {
     }
 
     "user should receive push notifications for the message" in {
-      Stuff.waitFor(TestValueStore.getValues("push").length == 1 )
+      Helper.waitFor(TestValueStore.getValues("push").length == 1 )
 
       val pushMessages = TestValueStore.getValues("push")
 
@@ -194,7 +194,7 @@ class PushNotificationControllerSpec extends StartedApp {
     }
 
     "user should receive three push notifications for the friend request in the right languages" in {
-      Stuff.waitFor(TestValueStore.getValues("push").length == 1 )
+      Helper.waitFor(TestValueStore.getValues("push").length == 1 )
 
       val pushMessages = TestValueStore.getValues("push")
 
