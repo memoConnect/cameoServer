@@ -28,7 +28,7 @@ class UserAgentHelper[A](request: Request[A]) {
 
   def getStatsString(isApp: Boolean): String = {
 
-    def createStatsdString(value: String) = "custom.client." + value.replace(" ", "_")
+    def createStatsdString(value: String) = "custom.client_info." + value.replace(" ", "_")
 
     if(isApp) {
         createStatsdString("app." + parsedUserAgent.getOperatingSystem.getFamilyName)
