@@ -57,7 +57,9 @@ object ServicesController extends ExtendedController {
       }
   }
 
-  case class GetBrowserInfo(version: String)
+  case class GetBrowserInfo(version: String,
+                            isApp: Option[Boolean])
+
   object GetBrowserInfo { implicit val format = Json.format[GetBrowserInfo] }
 
   case class GetBrowserInfoResponse(languageCode: String,
@@ -72,13 +74,19 @@ object ServicesController extends ExtendedController {
 
           Statsd.increment("custom.version." + getBrowserInfo.version)
 
+
           val language = LocalizationMessages.getBrowserLanguage(request).code
           val supportedVersion = Play.configuration.getString("client.version.min").getOrElse("0")
           try {
+            // use useragent to determine platfrom
+            val uaHelper = new UserAgentHelper(request)
+            Statsd.increment(uaHelper.getStatsString(getBrowserInfo.isApp.getOrElse(false)))
+            val isDesktop = uaHelper.isDesktop
+
             val supported = Utils.compareVersions(supportedVersion, getBrowserInfo.version)
-            val isDesktop = new UserAgentHelper(request).isDesktop
-            val res = GetBrowserInfoResponse(language, supported, isDesktop)
-            resOk(Json.toJson(res))
+
+            resOk(Json.toJson(GetBrowserInfoResponse(language, supported, isDesktop)))
+
           } catch {
             case InvalidVersionException(msg) => resBadRequest("Invalid version: " + msg)
           }
