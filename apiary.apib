@@ -1894,7 +1894,7 @@ Edit a contact. All values are optional. Only values contained in the json will 
           ]
         }
 
-## Get Frienship Requests [/friendRequests]
+## Get Friend Requests [/friendRequests]
 
 ### GET
 Returns all Friendship Requests for one identity
@@ -1925,10 +1925,10 @@ Returns all Friendship Requests for one identity
             }
         }
 
-## Send Friendship Request [/friendRequest]
+## Send Friend Request [/friendRequest]
 
 ### POST
-Send a Friendship Request to an other identity. Either the identityID or the cameoId can be used as identifier.
+Send a Friend Request to an other identity. Either the identityID or the cameoId can be used as identifier.
 
 
 + Request
@@ -1953,7 +1953,7 @@ Send a Friendship Request to an other identity. Either the identityID or the cam
 ## Answer Friendship Request  [/friendRequest/answer]
 
 ### POST
-Accept or Reject FriendshipRequests
+Accept or Reject Friend Requests
 
 + Request
     + Headers
@@ -1972,6 +1972,30 @@ Accept or Reject FriendshipRequests
         {
             "res": "OK"
         }
+
+
+## Delete Friend Request  [/friendRequest/{id}]
+
+### DELETE
+Delete a friend reqeust
+
+
++ Parameters
+    + id ... IdentityId of friendrequest that should be deleted
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+
++ Response 200
+
+        {
+            "res": "deleted"
+        }
+
 
 # Group Services
 
@@ -2217,6 +2241,13 @@ Events will be deleted after each call
              },
              {
                 "name": "friendRequest:rejected",
+                "data": {
+                  "from": "identityId",
+                  "to": "identityId"
+                }
+             },
+             {
+                "name": "friendRequest:deleted",
                 "data": {
                   "from": "identityId",
                   "to": "identityId"
