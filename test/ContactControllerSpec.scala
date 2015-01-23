@@ -925,5 +925,51 @@ class ContactControllerSpec extends StartedApp {
         data.count(js => (js \ "identityId").as[String].equals(testUser1.identityId)) must beEqualTo(1)
       }
     }
+
+    "delete friend requests" should {
+
+      val testUser1 = TestUser.create()
+      val testUser2 = TestUser.create()
+
+      "send friend request to other identity" in {
+        val body = Json.obj("identityId" -> testUser2.identityId)
+        checkOk(executeRequest(POST, "/friendRequest", OK, Some(testUser1.token), Some(body)))
+      }
+
+      "sender of the friend request should see it in his contacts" in {
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser1.token)))
+
+        data.length must beEqualTo(2)
+        data.find(js => (js \ "identityId").as[String].equals(testUser2.identityId)) must beSome
+      }
+
+      "the receiver should see the friend request" in {
+        val data = getDataSeq(executeRequest(GET, "/friendRequests", OK, Some(testUser2.token)))
+
+        data.length must beEqualTo(1)
+        data.find(js => (js \ "identityId").as[String].equals(testUser1.identityId)) must beSome
+      }
+
+      "refuse to delete friend request that does not exist" in {
+        checkError(executeRequest(DELETE, "/friendRequest/" + identityExisting, BAD_REQUEST, Some(testUser1.token)))
+      }
+
+      "sender deletes friend request" in {
+        checkOk(executeRequest(DELETE, "/friendRequest/" + testUser2.identityId, OK, Some(testUser1.token)))
+      }
+
+      "sender should not see the friend request in his contacts" in {
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser1.token)))
+
+        data.length must beEqualTo(1)
+        data.find(js => (js \ "identityId").as[String].equals(testUser2.identityId)) must beNone
+      }
+
+      "the receiver should not see the friend request" in {
+        val data = getDataSeq(executeRequest(GET, "/friendRequests", OK, Some(testUser2.token)))
+
+        data.length must beEqualTo(0)
+      }
+    }
   }
 }
