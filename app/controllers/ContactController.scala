@@ -3,7 +3,7 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
-import events.{ContactDeleted, FriendRequestAccepted, FriendRequestNew, FriendRequestRejected}
+import events._
 import helper.JsonHelper._
 import helper.ResultHelper._
 import helper.{ CheckHelper, IdHelper, OutputLimits }
@@ -339,6 +339,28 @@ object ContactController extends ExtendedController {
                 Future(resOk(""))
               case _ => Future(resBadRequest("invalid answer type"))
             }
+          }
+      }
+  }
+
+  def deleteFriendRequest(id: String) = AuthAction().async {
+    request =>
+
+      // find other identity
+      Identity.find(id).map{
+        case None=> resNotFound("identity")
+        case Some(otherIdentity) =>
+          // check if that other identity actually has a friend request from this identity
+          otherIdentity.friendRequests.find(_.identityId.equals(request.identity.id)) match {
+            case None => resBadRequest("Friend request does not exist")
+            case Some(friendRequest) =>
+              // delete friend request
+              otherIdentity.deleteFriendRequest(request.identity.id)
+              // send events to both identities
+              actors.eventRouter ! FriendRequestDeleted(request.identity.id, request.identity.id, otherIdentity.id)
+              actors.eventRouter ! FriendRequestDeleted(otherIdentity.id, request.identity.id, otherIdentity.id)
+
+              resOk("deleted")
           }
       }
   }
