@@ -74,6 +74,7 @@ DELETE         /a/v1/contact/:id                                     controllers
 GET            /a/v1/friendRequests                                  controllers.ContactController.getFriendRequests
 POST           /a/v1/friendRequest                                   controllers.ContactController.sendFriendRequest
 POST           /a/v1/friendRequest/answer                            controllers.ContactController.answerFriendRequest
+DELETE         /a/v1/friedRequest/:id                                controllers.ContactController.deleteFriendRequest(id)
 
 # FILES
 POST           /a/v1/file                                            controllers.FileController.uploadFile
