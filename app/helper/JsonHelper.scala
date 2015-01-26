@@ -2,6 +2,7 @@ package helper
 
 import java.util.Date
 
+import constants.ErrorCodes.ErrorCodes
 import models.VerifiedString
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Play
@@ -53,6 +54,13 @@ object JsonHelper {
 
   def addLastUpdated(date: Date): JsObject = {
     Json.obj("lastUpdated" -> PrintDate.toString(date))
+  }
+
+  def addErrorCodes(errorCodes: ErrorCodes): JsObject = {
+    errorCodes.length match {
+      case 0 => Json.obj()
+      case _ => Json.obj("errorCodes" -> errorCodes)
+    }
   }
 
   def maybeEmptyJson[A](key: String, value: Option[A])(implicit writes: Writes[A]): JsObject = {
@@ -139,7 +147,7 @@ object JsonHelper {
     js =>
       js.validate[String].flatMap {
         mail =>
-          CheckHelper.checkAndCleanEmailAddress(mail) match {
+          CheckHelper.checkAndCleanEmail(mail) match {
             case None          => JsError("invalid email: " + mail)
             case Some(checked) => JsSuccess(JsString(checked))
           }

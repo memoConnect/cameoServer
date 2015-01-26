@@ -28,7 +28,7 @@ HOST: http://cameo.io
 
         {
             "res": "KO",
-            "errorCode" : "ACCOUNT.MISSING.IDENTITY"
+            "errorCodes" : "ACCOUNT.MISSING.IDENTITY"
         }
 
 ## Delete Token [/token/{token}]
@@ -265,14 +265,14 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
         {
             "res":"KO",
-            "errorCode" :"VERIFY.EXPIRED"
+            "errorCodes" :"VERIFY.EXPIRED"
         }
 
 + Response 400
 
         {
             "res":"KO",
-            "errorCode" :"VERIFY.VALUE.CHANGED"
+            "errorCodes" :"VERIFY.VALUE.CHANGED"
         }
 
 
@@ -300,28 +300,28 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.EMAIL.NOT.FOUND"
+            "errorCodes" :"PASSWORD.RESET.EMAIL.NOT.FOUND"
         }
 
 + Response 400
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.LOGIN.NOT.FOUND"
+            "errorCodes" :"PASSWORD.RESET.LOGIN.NOT.FOUND"
         }
 
 + Response 400
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.PHONENUMBER.NOT.FOUND"
+            "errorCodes" :"PASSWORD.RESET.PHONENUMBER.NOT.FOUND"
         }
 
 + Response 400
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.NO.EMAIL.PHONENUMBER"
+            "errorCodes" :"PASSWORD.RESET.NO.EMAIL.PHONENUMBER"
         }
 
 
@@ -338,7 +338,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.EXPIRED"
+            "errorCodes" :"PASSWORD.RESET.EXPIRED"
         }
 
 
@@ -368,7 +368,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.EXPIRED"
+            "errorCodes" :"PASSWORD.RESET.EXPIRED"
         }
 
 

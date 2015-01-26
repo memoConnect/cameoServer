@@ -1,3 +1,4 @@
+import constants.ErrorCodes
 import helper.TestValueStore
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
@@ -103,7 +104,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EMAIL.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND)
     }
 
     "refuse to reset password for non-verified email" in {
@@ -117,7 +118,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EMAIL.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND)
     }
 
     "refuse to reset password for non-existing phoneNumber" in {
@@ -131,7 +132,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.PHONENUMBER.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND)
     }
 
     "refuse to reset password for non-verified phoneNumber" in {
@@ -145,7 +146,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.PHONENUMBER.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND)
     }
 
     "refuse password reset without verified mail or phoneNumber" in {
@@ -159,7 +160,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.NO.EMAIL.PHONENUMBER")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_NO_EMAIL_OR_PHONENUMBER)
     }
 
     "verify email" in {
@@ -253,7 +254,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.PHONENUMBER.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND)
     }
 
     "verify phoneNumber" in {
@@ -309,7 +310,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EXPIRED")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EXPIRED)
     }
 
     "change password with confirmation code from mail" in {
@@ -365,7 +366,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EXPIRED")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EXPIRED)
     }
 
     step(TestValueStore.start())
@@ -450,7 +451,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EXPIRED")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EXPIRED)
     }
 
 

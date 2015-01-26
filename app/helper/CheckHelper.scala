@@ -28,21 +28,25 @@ object CheckHelper {
           }
         }
     }
-
   }
 
-  def checkAndCleanEmailAddress(email: String): Option[String] = {
+  def checkPhoneNumber(phoneNumber: String): Boolean = checkAndCleanPhoneNumber(phoneNumber).isDefined
+
+
+  def checkAndCleanEmail(email: String): Option[String] = {
     val trimmed = email.trim
     """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$""".r.unapplySeq(trimmed).isDefined match {
       case true  => Some(trimmed)
       case false => None
     }
   }
+  
+  def checkEmail(email: String): Boolean = checkAndCleanEmail(email).isDefined
 
   // Left: phonenumber, Right: email
   def checkAndCleanMixed(mixed: String): Option[Either[String, String]] = {
     val maybeTel = CheckHelper.checkAndCleanPhoneNumber(mixed)
-    val maybeMail = CheckHelper.checkAndCleanEmailAddress(mixed)
+    val maybeMail = CheckHelper.checkAndCleanEmail(mixed)
     (maybeTel, maybeMail) match {
       case (None, None)        => None
       case (Some(tel), None)   => Some(Left(tel))

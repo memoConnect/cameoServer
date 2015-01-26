@@ -397,7 +397,7 @@ class AccountControllerSpec extends StartedApp {
       }
       status(res) must equalTo(232)
 
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.ACCOUNT_MISSING_IDENTITY.get)
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.ACCOUNT_MISSING_IDENTITY)
     }
 
     "reserve cameoId for new identity" in {
@@ -922,6 +922,24 @@ class AccountControllerSpec extends StartedApp {
       (data \ "identities").asOpt[Seq[JsObject]] must beSome
       (data \ "email").asOpt[JsValue] must beNone
       (data \ "phoneNumber").asOpt[JsValue] must beNone
+    }
+
+    "return error code when adding invalid phonenumber to account" in {
+      val body = Json.obj("phoneNumber" -> invalidPhoneNumbers.head)
+      val response = executeRequest(PUT, "/account", OK, Some(token), Some(body))
+      checkErrorCodes(response, ErrorCodes.PHONENUMBER_INVALID)
+    }
+
+    "return error code when adding invalid email to account" in {
+      val body = Json.obj("email" -> invalidEmails.head)
+      val response = executeRequest(PUT, "/account", OK, Some(token), Some(body))
+      checkErrorCodes(response, ErrorCodes.EMAIL_INVALID)
+    }
+
+    "return error code when adding invalid phonenumber and email to account" in {
+      val body = Json.obj("phoneNumber" -> invalidPhoneNumbers.head, "email" -> invalidEmails.head)
+      val response = executeRequest(PUT, "/account", OK, Some(token), Some(body))
+      checkErrorCodes(response, ErrorCodes.PHONENUMBER_INVALID ++ ErrorCodes.EMAIL_INVALID)
     }
 
     "get token with old password" in {
