@@ -221,7 +221,26 @@ Update existing account
           "data": "updated"
         }
 
++ Response 400
 
+        {
+            "res":"KO",
+            "errorCodes" : ["PHONENUMBER_INVALID"]
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCodes" : ["EMAIL_INVALID", "PHONENUMBER_INVALID"]
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCodes" : ["EMAIL_INVALID"]
+        }
 
 
 
