@@ -924,22 +924,45 @@ class AccountControllerSpec extends StartedApp {
       (data \ "phoneNumber").asOpt[JsValue] must beNone
     }
 
-    "return error code when adding invalid phonenumber to account" in {
-      val body = Json.obj("phoneNumber" -> invalidPhoneNumbers.head)
-      val response = executeRequest(PUT, "/account", OK, Some(token), Some(body))
-      checkErrorCodes(response, ErrorCodes.PHONENUMBER_INVALID)
+    invalidPhoneNumbers.map {
+      invalidPhoneNumber =>
+        "return error code when adding invalid phonenumber to account: " + invalidPhoneNumber in {
+          val body = Json.obj("phoneNumber" -> invalidPhoneNumber)
+          val response = executeRequest(PUT, "/account", BAD_REQUEST, Some(token), Some(body))
+          checkErrorCodes(response, ErrorCodes.PHONENUMBER_INVALID)
+        }
+
+        "return error code when adding invalid phonenumber with valid email to account: " + invalidPhoneNumber in {
+          val body = Json.obj("phoneNumber" -> invalidPhoneNumber, "email" -> validEmails.head)
+          val response = executeRequest(PUT, "/account", BAD_REQUEST, Some(token), Some(body))
+          checkErrorCodes(response, ErrorCodes.PHONENUMBER_INVALID)
+        }
     }
 
-    "return error code when adding invalid email to account" in {
-      val body = Json.obj("email" -> invalidEmails.head)
-      val response = executeRequest(PUT, "/account", OK, Some(token), Some(body))
-      checkErrorCodes(response, ErrorCodes.EMAIL_INVALID)
+    invalidEmails.map {
+      invalidEmail =>
+        "return error code when adding invalid email to account: " + invalidEmail in {
+          val body = Json.obj("email" -> invalidEmail)
+          val response = executeRequest(PUT, "/account", BAD_REQUEST, Some(token), Some(body))
+          checkErrorCodes(response, ErrorCodes.EMAIL_INVALID)
+        }
+
+        "return error code when adding invalid email with valid phonenumber to account: " + invalidEmail in {
+          val body = Json.obj("email" -> invalidEmail, "phoneNumber" -> validPhoneNumbers.head._2)
+          val response = executeRequest(PUT, "/account", BAD_REQUEST, Some(token), Some(body))
+          checkErrorCodes(response, ErrorCodes.EMAIL_INVALID)
+        }
     }
 
-    "return error code when adding invalid phonenumber and email to account" in {
-      val body = Json.obj("phoneNumber" -> invalidPhoneNumbers.head, "email" -> invalidEmails.head)
-      val response = executeRequest(PUT, "/account", OK, Some(token), Some(body))
-      checkErrorCodes(response, ErrorCodes.PHONENUMBER_INVALID ++ ErrorCodes.EMAIL_INVALID)
+    for {
+      invalidPhoneNumber <- invalidPhoneNumbers
+      invalidEmail <- invalidEmails
+    } yield {
+      "return error code when adding invalid phonenumber and email to account: " + invalidPhoneNumber + " + " + invalidEmail in {
+        val body = Json.obj("phoneNumber" -> invalidPhoneNumbers.head, "email" -> invalidEmails.head)
+        val response = executeRequest(PUT, "/account", BAD_REQUEST, Some(token), Some(body))
+        checkErrorCodes(response, ErrorCodes.PHONENUMBER_INVALID ++ ErrorCodes.EMAIL_INVALID)
+      }
     }
 
     "get token with old password" in {

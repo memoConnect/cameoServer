@@ -224,7 +224,6 @@ object AccountController extends ExtendedController {
 
   def reserveLogin() = BasicAuthAction(reserveLoginNonAuth).async(parse.tolerantJson) {
     request =>
-      Logger.debug("BASIC TRUTH")
       doReserveLogin(request.body, Some(request.account.loginName))
   }
 
@@ -263,9 +262,9 @@ object AccountController extends ExtendedController {
 
     // check if email and phonenumber are correct. Return error codes when they are not.
     ((body \ "email").asOpt[String].map(s => s.isEmpty || checkEmail(s)), (body \ "phoneNumber").asOpt[String].map(s => s.isEmpty || checkPhoneNumber(s))) match {
-      case (Some(false), None)        => Future(resBadRequest("invalid email", ErrorCodes.EMAIL_INVALID))
-      case (None, Some(false))        => Future(resBadRequest("invalid phonenumber", ErrorCodes.PHONENUMBER_INVALID))
       case (Some(false), Some(false)) => Future(resBadRequest("invalid email and phonenumber", ErrorCodes.EMAIL_INVALID ++ ErrorCodes.PHONENUMBER_INVALID))
+      case (Some(false), _)           => Future(resBadRequest("invalid email", ErrorCodes.EMAIL_INVALID))
+      case (_, Some(false))           => Future(resBadRequest("invalid phonenumber", ErrorCodes.PHONENUMBER_INVALID))
       case _ =>
 
         AccountModelUpdate.fromRequest(body) {
