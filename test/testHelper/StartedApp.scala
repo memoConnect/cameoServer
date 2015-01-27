@@ -1,5 +1,6 @@
 package testHelper
 
+import constants.ErrorCodes.ErrorCodes
 import org.specs2.matcher.{ AlwaysMatcher, MatchResult }
 import org.specs2.mutable.{ BeforeAfter, Before, Specification }
 import play.api.mvc.AnyContent
@@ -64,6 +65,11 @@ trait StartedApp extends Specification with BeforeAfter {
     val maybeData = (json \ "data").asOpt[Seq[JsObject]]
     maybeData must beSome
     maybeData.get
+  }
+
+  def checkErrorCodes(json: JsValue, errorCodes: ErrorCodes) = {
+    val maybeErrorCodes = (json \ "errorCodes").asOpt[Seq[String]]
+    maybeErrorCodes must beSome(containTheSameElementsAs(errorCodes))
   }
 
   def checkError(json: JsValue) = {

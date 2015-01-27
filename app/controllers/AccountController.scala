@@ -224,7 +224,6 @@ object AccountController extends ExtendedController {
 
   def reserveLogin() = BasicAuthAction(reserveLoginNonAuth).async(parse.tolerantJson) {
     request =>
-      Logger.debug("BASIC TRUTH")
       doReserveLogin(request.body, Some(request.account.loginName))
   }
 
@@ -244,6 +243,8 @@ object AccountController extends ExtendedController {
 
   def doAccountUpdate(body: JsValue, account: Account, lang: Lang): Future[Result] = {
 
+    import helper.CheckHelper._
+
     def doUpdate(update: JsObject): Future[Result] = {
       Account.update(account.id, update).map {
         case false => resServerError("could not update")
@@ -259,22 +260,30 @@ object AccountController extends ExtendedController {
       }
     }
 
-    AccountModelUpdate.fromRequest(body) {
-      js =>
-        // check if there is a password change
-        val newPassword = (body \ "password").asOpt[String](JsonHelper.hashPassword)
-        val oldPassword = (body \ "oldPassword").asOpt[String]
+    // check if email and phonenumber are correct. Return error codes when they are not.
+    ((body \ "email").asOpt[String].map(s => s.isEmpty || checkEmail(s)), (body \ "phoneNumber").asOpt[String].map(s => s.isEmpty || checkPhoneNumber(s))) match {
+      case (Some(false), Some(false)) => Future(resBadRequest("invalid email and phonenumber", ErrorCodes.EMAIL_INVALID ++ ErrorCodes.PHONENUMBER_INVALID))
+      case (Some(false), _)           => Future(resBadRequest("invalid email", ErrorCodes.EMAIL_INVALID))
+      case (_, Some(false))           => Future(resBadRequest("invalid phonenumber", ErrorCodes.PHONENUMBER_INVALID))
+      case _ =>
 
-        (newPassword, oldPassword) match {
-          case (None, _)           => doUpdate(js)
-          case (Some(newPw), None) => Future(resBadRequest("old password required"))
-          case (Some(newPw), Some(oldPw)) =>
-            BCrypt.checkpw(oldPw, account.password) match {
-              case false => Future(resBadRequest("invalid old password"))
-              case true =>
-                val set = Map("password" -> newPw)
-                val update = js.deepMerge(AccountModelUpdate.fromMap(set))
-                doUpdate(update)
+        AccountModelUpdate.fromRequest(body) {
+          js =>
+            // check if there is a password change
+            val newPassword = (body \ "password").asOpt[String](JsonHelper.hashPassword)
+            val oldPassword = (body \ "oldPassword").asOpt[String]
+
+            (newPassword, oldPassword) match {
+              case (None, _)           => doUpdate(js)
+              case (Some(newPw), None) => Future(resBadRequest("old password required"))
+              case (Some(newPw), Some(oldPw)) =>
+                BCrypt.checkpw(oldPw, account.password) match {
+                  case false => Future(resBadRequest("invalid old password"))
+                  case true =>
+                    val set = Map("password" -> newPw)
+                    val update = js.deepMerge(AccountModelUpdate.fromMap(set))
+                    doUpdate(update)
+                }
             }
         }
     }

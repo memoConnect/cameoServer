@@ -1,6 +1,6 @@
 package helper
 
-import constants.ErrorCodes.ErrorCode
+import constants.ErrorCodes.ErrorCodes
 import constants.Notifications._
 import play.api.Logger
 import play.api.libs.json._
@@ -16,7 +16,7 @@ import play.api.mvc.Results._
 object ResultHelper {
 
   val CAMEO_ERROR_CODE = 232
-  val noErrorCode: ErrorCode = None
+  val noErrorCode: ErrorCodes = Nil
 
   // OK
   def resOk[A](data: A)(implicit writes: Writes[A], depreciated: Boolean = false): Result = {
@@ -36,24 +36,24 @@ object ResultHelper {
   def resNotModified(): Result = NotModified
 
   // OK but could not fullfill request
-  def resKo[A](data: A, errorCode: ErrorCode = noErrorCode)(implicit writes: Writes[A], depreciated: Boolean = false): Result = {
+  def resKo[A](data: A, errorCodes: ErrorCodes = noErrorCode)(implicit writes: Writes[A], depreciated: Boolean = false): Result = {
     val body = Json.obj(
       "res" -> "KO",
       "data" -> data
     ) ++
-      JsonHelper.maybeEmptyJson("errorCode", errorCode)
+      JsonHelper.addErrorCodes(errorCodes)
 
     response(Status(CAMEO_ERROR_CODE), body)
   }
 
   // Bad Request
-  def resBadRequest(error: String, errorCode: ErrorCode = noErrorCode, data: Option[JsObject] = None)(implicit depreciated: Boolean = false): Result = {
+  def resBadRequest(error: String, errorCodes: ErrorCodes = noErrorCode, data: Option[JsObject] = None)(implicit depreciated: Boolean = false): Result = {
     val body = Json.obj(
       "res" -> "KO",
       "error" -> error
     ) ++
       JsonHelper.maybeEmptyJson("data", data) ++
-      JsonHelper.maybeEmptyJson("errorCode", errorCode)
+      JsonHelper.addErrorCodes(errorCodes)
 
     response(BadRequest, body)
   }

@@ -35,7 +35,7 @@ object ServicesController extends ExtendedController {
     request =>
       val jsBody: JsValue = request.body
       (jsBody \ "emailAddress").asOpt[String] match {
-        case Some(email) => CheckHelper.checkAndCleanEmailAddress(email) match {
+        case Some(email) => CheckHelper.checkAndCleanEmail(email) match {
           case None    => resKo("invalid emailAddress: " + email)
           case Some(e) => resOk(Json.obj("email" -> e))
         }
