@@ -29,6 +29,7 @@ case class Account(id: MongoId,
                    email: Option[VerifiedString],
                    properties: AccountProperties,
                    userSettings: AccountUserSettings,
+                   registrationIncomplete: Option[Boolean],
                    created: Date,
                    lastUpdated: Date) {
 
@@ -59,6 +60,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
         maybeEmptyJson("phoneNumber", a.phoneNumber.map(_.toJson)) ++
         maybeEmptyJson("email", a.email.map(_.toJson)) ++
         Json.obj("userSettings" -> a.userSettings) ++
+        maybeEmptyJson("registrationIncomplete", a.registrationIncomplete) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
@@ -73,6 +75,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
       Reads.pure[AccountProperties](AccountProperties.defaultProperties) and
       Reads.pure[AccountUserSettings](AccountUserSettings.defaultSettings) and
+      Reads.pure[Option[Boolean]](Some(false)) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
@@ -91,6 +94,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       email,
       AccountProperties.defaultProperties,
       AccountUserSettings.defaultSettings,
+      Some(true),
       new Date,
       new Date
     )
@@ -261,6 +265,7 @@ object AccountModelUpdate extends ModelUpdate {
     VerifiedStringUpdateValue("email", JsonHelper.verifyMail, externalEdit = true),
     VerifiedStringUpdateValue("phoneNumber", JsonHelper.verifyPhoneNumber, externalEdit = true),
     StringUpdateValue("password"),
+    BooleanUpdateValue("registrationIncomplete", externalEdit = true),
     BooleanUpdateSubvalue("userSettings", "enableUnreadMessages", externalEdit = true),
     BooleanUpdateSubvalue("userSettings", "convertSmileysToEmojis", externalEdit = true),
     BooleanUpdateSubvalue("userSettings", "sendOnReturn", externalEdit = true),

@@ -172,7 +172,7 @@ object PublicKeyController extends ExtendedController {
       }
   }
 
-  def addAePassphrases(id: String) = AuthAction()(parse.tolerantJson) {
+  def addAePassphrases(id: String) = AuthAction()(parse.tolerantJson(1024 * 512)) {
     request =>
       validate[Seq[AePassphrase]](request.body, Reads.seq(AePassphrase.format)) {
         list =>
