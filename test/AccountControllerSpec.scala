@@ -48,17 +48,9 @@ class AccountControllerSpec extends StartedApp {
   "AccountController" should {
 
     "Get existing account" in {
-      val path = basePath + "/account"
 
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
+      val data = getData(executeRequest(GET, "/account", OK, Some(tokenExisting)))
 
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
       (data \ "id").asOpt[String] must beSome
       (data \ "loginName").asOpt[String] must beSome
       (data \ "phoneNumber" \ "value").asOpt[String] must beSome
@@ -85,62 +77,26 @@ class AccountControllerSpec extends StartedApp {
     )
 
     "Edit account settings" in {
-      val path = basePath + "/account"
-      val json = Json.obj("userSettings" -> newSettings)
-
-      val req = FakeRequest(PUT, path).withJsonBody(json).withHeaders(tokenHeader(tokenExisting2))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
+      val body = Json.obj("userSettings" -> newSettings)
+      checkOk(executeRequest(PUT, "/account", OK, Some(tokenExisting2), Some(body)))
     }
 
     "Account should contain new settings" in {
-      val path = basePath + "/account"
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting2))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val data = getData(executeRequest(GET, "/account", OK, Some(tokenExisting2)))
       (data \ "userSettings").asOpt[JsObject] must beSome(newSettings)
     }
 
-    "Refuse invalid Logins" in {
-      val path = basePath + "/account/check"
-
-      invalidLogins.map {
-        l =>
-          {
-            val json = Json.obj("loginName" -> l)
-
-            val req = FakeRequest(POST, path).withJsonBody(json)
-            val res = route(req).get
-
-            status(res) aka ("UserName " + l) must equalTo(BAD_REQUEST)
-          }
-      }
+    invalidLogins.map {
+      invalidLogin =>
+        "Refuse invalid Login: " + invalidLogin in {
+          val body = Json.obj("loginName" -> invalidLogin)
+          checkError(executeRequest(POST, "/account/check", BAD_REQUEST, body = Some(body)))
+        }
     }
 
     "Reserve Login" in {
-      val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> login)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val body = Json.obj("loginName" -> login)
+      val data = getData(executeRequest(POST, "/account/check", OK, body = Some(body)))
 
       val regSeqOpt = (data \ "reservationSecret").asOpt[String]
 
@@ -152,97 +108,45 @@ class AccountControllerSpec extends StartedApp {
     }
 
     "Reserve another Login" in {
-      val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> login2)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-      val data = (contentAsJson(res) \ "data").as[JsObject]
+      val body = Json.obj("loginName" -> login2)
+      val data = getData(executeRequest(POST, "/account/check", OK, body = Some(body)))
 
       val regSeqOpt = (data \ "reservationSecret").asOpt[String]
 
-      if (regSeqOpt.isDefined) {
-        regSec2 = regSeqOpt.get
-      }
+      regSeqOpt must beSome
+      regSec2 = regSeqOpt.get
 
-      regSeqOpt aka "returned registration secret" must beSome
+      1 === 1
     }
 
-    "Test some other valid logins" in {
-
-      validLogins.map {
-        l =>
-          val path = basePath + "/account/check"
-          val json = Json.obj("loginName" -> l)
-
-          val req = FakeRequest(POST, path).withJsonBody(json)
-          val res = route(req).get
-
-          if (status(res) != OK) {
-            Logger.error("Response: " + contentAsString(res))
-          }
-          status(res) must equalTo(OK)
+    validLogins.map{ validLogin =>
+      "Accept valid login: " + validLogin in {
+        val body = Json.obj("loginName" -> validLogin)
+        checkOk(executeRequest(POST, "/account/check", OK, body = Some(body)))
       }
     }
 
     "Refuse to reserve reserved loginName and return alternative" in {
-      val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> login)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
+      val body = Json.obj("loginName" -> login)
+      val data = getData(executeRequest(POST, "/account/check", 232, body = Some(body)))
       (data \ "alternative").asOpt[String] must beSome(login + "_1")
     }
 
     "Refuse to reserve existing login and return alternative" in {
-      val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> loginExisting)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
+      val body = Json.obj("loginName" -> loginExisting)
+      val data = getData(executeRequest(POST, "/account/check", 232, body = Some(body)))
       (data \ "alternative").asOpt[String] must beSome(loginExisting + "_1")
     }
 
     "Refuse to reserve reserved existing cameoId and return alternative" in {
-      val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> cameoIdExisting)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
+      val body = Json.obj("loginName" -> cameoIdExisting)
+      val data = getData(executeRequest(POST, "/account/check", 232, body = Some(body)))
       (data \ "alternative").asOpt[String] must beSome(cameoIdExisting + "_1")
     }
 
-    def checkLogin(loginName: String): MatchResult[Int] = {
-      val path = basePath + "/account/check"
-      val json = Json.obj("loginName" -> loginName)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
+    def checkLogin(loginName: String) = {
+      val body = Json.obj("loginName" -> loginName)
+      checkOk(executeRequest(POST, "/account/check", OK, body = Some(body)))
     }
 
     "allow to reserve loginName that contains a reserved name" in {
@@ -294,56 +198,26 @@ class AccountControllerSpec extends StartedApp {
     }
 
     "Refuse to reserve reserved loginName with different capitalization" in {
-      val path = basePath + "/account/check"
-      val loginUpper = login.toUpperCase
-      val json = Json.obj("loginName" -> loginUpper)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(232)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
-      (data \ "alternative").asOpt[String] must beSome(loginUpper + "_1")
+      val body = Json.obj("loginName" -> login.toUpperCase)
+      val data = getData(executeRequest(POST, "/account/check", 232, body = Some(body)))
+      (data \ "alternative").asOpt[String] must beSome(login.toUpperCase + "_1")
     }
 
     "Refuse to claim reserved login without secret" in {
-      val path = basePath + "/account"
-      val json = createUser(login, pass)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(BAD_REQUEST)
+      val body = createUser(login, pass)
+      checkError(executeRequest(POST, "/account", BAD_REQUEST, body = Some(body)))
     }
 
     "Refuse to register with wrong loginName for secret" in {
-      val path = basePath + "/account"
-      val json = createUser(login + "a", pass) ++ Json.obj("reservationSecret" -> regSec)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      status(res) must equalTo(BAD_REQUEST)
+      val body = createUser(login + "a", pass) ++ Json.obj("reservationSecret" -> regSec)
+      checkError(executeRequest(POST, "/account", BAD_REQUEST, body = Some(body)))
     }
 
     "Create Account" in {
-      val path = basePathV2 + "/account"
-      val json = createUser(login, pass) ++
-        Json.obj("reservationSecret" -> regSec)
-
-      val req = FakeRequest(POST, path).withJsonBody(json)
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-
-      val data = (contentAsJson(res) \ "data").as[JsObject]
-
+      val body = createUser(login, pass) ++ Json.obj("reservationSecret" -> regSec)
+      val data = getData(executeRequest(POST, "/account", OK, body = Some(body), apiVersion = "v2"))
       (data \ "identities").asOpt[Seq[JsObject]] must beNone
+      (data \ "registrationIncomplete").asOpt[Boolean] must beSome(true)
     }
 
     "Refuse to register again with same secret" in {
@@ -566,6 +440,21 @@ class AccountControllerSpec extends StartedApp {
 
       val data = (contentAsJson(res) \ "data").as[JsObject]
       (data \ "token").asOpt[String] must beSome
+    }
+
+    "Registration should be marked as incomplete" in {
+      val data = getData(executeRequest(GET, "/account", OK, Some(token)))
+      (data \ "registrationIncomplete").asOpt[Boolean] must beSome(true)
+    }
+
+    "Mark registration complete" in {
+      val body = Json.obj("registrationIncomplete" -> false)
+      checkOk(executeRequest(PUT, "/account", OK, Some(token), Some(body)))
+    }
+
+    "Registration should now be marked as completed" in {
+      val data = getData(executeRequest(GET, "/account", OK, Some(token)))
+      (data \ "registrationIncomplete").asOpt[Boolean] must beSome(false)
     }
 
     var fileId = ""

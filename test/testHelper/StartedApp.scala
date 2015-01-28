@@ -5,7 +5,7 @@ import org.specs2.matcher.{ AlwaysMatcher, MatchResult }
 import org.specs2.mutable.{ BeforeAfter, Before, Specification }
 import play.api.mvc.AnyContent
 import play.api.{ Logger, Play }
-import play.api.libs.json.{Json, JsValue, JsObject}
+import play.api.libs.json.{ Json, JsValue, JsObject }
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import testHelper.TestConfig._
@@ -36,9 +36,10 @@ trait StartedApp extends Specification with BeforeAfter {
                      path: String,
                      expectedResult: Int,
                      token: Option[String] = None,
-                     body: Option[JsObject] = None): JsValue = {
+                     body: Option[JsObject] = None,
+                     apiVersion: String = "v1"): JsValue = {
 
-    val basicRequest = FakeRequest(method, basePath + path)
+    val basicRequest = FakeRequest(method, "/a/" + apiVersion + path)
 
     val result = (token, body) match {
       case (None, None)       => route(basicRequest).get
