@@ -60,7 +60,7 @@ case class Identity(id: MongoId,
     this.contacts.find(_.identityId.equals(contact.identityId)) match {
       case Some(c) => Future(true)
       case None =>
-        Contact.append(this.id, contact).map(_.updatedExisting)
+        Contact.append(this.id, contact)
     }
   }
 
@@ -400,7 +400,7 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
   }
 
   def addTokenToIdentity(identityId: MongoId, token: Token): Future[Boolean] = {
-    Token.append(identityId, token).map(_.updatedExisting)
+    Token.append(identityId, token)
   }
 
   def createDefault(): Identity = {

@@ -31,6 +31,7 @@ import scala.concurrent.Future
 case class Conversation(id: MongoId,
                         subject: Option[String],
                         recipients: Seq[Recipient],
+                        inactiveRecipients: Seq[Recipient],
                         conversationSignatures: Option[Seq[Signature]],
                         messages: Seq[Message],
                         aePassphraseList: Seq[EncryptedPassphrase],
@@ -112,6 +113,23 @@ case class Conversation(id: MongoId,
 
   def deleteRecipient(identityId: MongoId): Future[Boolean] = {
     Recipient.delete(this.id, identityId).map(_.updatedExisting)
+  }
+
+  def markRecipientInactive(identityId: MongoId): Future[Boolean] = {
+    this.recipients.find(_.identityId.equals(identityId)) match {
+      case None => Future(false)
+      case Some(recipient) =>
+        // delete from recipient list and add to inactive list
+        for {
+          delete <- deleteRecipient(identityId)
+          add <- {
+            val update = Json.obj("$push" -> Json.obj("inactiveRecipients" -> Json.toJson(recipient)))
+            Conversation.update(this.id, update)
+          }
+        } yield{
+          delete && add
+        }
+    }
   }
 
   def hasMember(identityId: MongoId): Boolean = {
@@ -197,7 +215,6 @@ object Conversation extends Model[Conversation] {
 
   implicit val mongoFormat: Format[Conversation] = createMongoFormat(Json.reads[Conversation], Json.writes[Conversation])
 
-  def docVersion = 3
 
   def createReads: Reads[Conversation] = (
     (__ \ "subject").readNullable[String] and
@@ -213,6 +230,7 @@ object Conversation extends Model[Conversation] {
     c =>
       Json.obj("id" -> c.id.toJson) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
+        Json.obj("inactiveRecipients" -> c.inactiveRecipients.map(_.toJson)) ++
         Json.obj("messages" -> c.messages.map(_.toJson)) ++
         Json.obj("aePassphraseList" -> c.aePassphraseList.map(_.toJson)) ++
         Json.obj("numberOfMessages" -> c.numberOfMessages) ++
@@ -271,7 +289,9 @@ object Conversation extends Model[Conversation] {
   }
 
   def findByIdentityId(id: MongoId): Future[Seq[Conversation]] = {
-    val query = Json.obj("recipients.identityId" -> id)
+    val query = Json.obj(
+      "recipients.identityId" -> id
+    )
     col.find(query, limitArray("messages", 1, 0)).cursor[Conversation].collect[Seq]()
   }
 
@@ -314,9 +334,9 @@ object Conversation extends Model[Conversation] {
 
   def addAePassphrases(aePassphrases: Seq[EncryptedPassphrase], conversationId: MongoId): Future[Boolean] = {
     val futureResults = aePassphrases.map { aePassphrase =>
-      EncryptedPassphrase.appendOrUpdate(conversationId, aePassphrase, "keyId")
+      EncryptedPassphrase.appendOrUpdate(conversationId, aePassphrase)
     }
-    Future.sequence(futureResults).map(_.forall(_.ok))
+    Future.sequence(futureResults).map(!_.contains(false))
   }
 
   def create(subject: Option[String] = None,
@@ -327,13 +347,16 @@ object Conversation extends Model[Conversation] {
              sePassphrase: Option[String] = None,
              keyTransmission: Option[String] = Some(KeyTransmission.KEY_TRANSMISSION_NONE)): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, subject, recipients, conversationSignatures, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, 0)
+    new Conversation(id, subject, recipients, Seq(), conversationSignatures, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, 0)
   }
+
+  def docVersion = 4
 
   def evolutions = Map(
     0 -> ConversationEvolutions.addEncPassList,
     1 -> ConversationEvolutions.renameEncPassList,
-    2 -> ConversationEvolutions.fixNameMixup
+    2 -> ConversationEvolutions.fixNameMixup,
+    3 -> ConversationEvolutions.addInactiveRecipients
   )
 
   def createDefault(): Conversation = create()
@@ -370,13 +393,19 @@ object ConversationEvolutions {
 
   val fixNameMixup: Reads[JsObject] = Reads {
     js =>
-      {
         {
           val renameAePassphraseList = __.json.update((__ \ 'aePassphraseList).json.copyFrom((__ \ 'sePassphraseList).json.pick)) andThen (__ \ 'sePassphraseList).json.prune
           val removeAePassphrase = (__ \ 'aePassphrase).json.prune
           val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
           js.transform(renameAePassphraseList andThen removeAePassphrase andThen addVersion)
         }
-      }
+  }
+
+  val addInactiveRecipients: Reads[JsObject] = Reads {
+    js => {
+      val addEmptyList: Reads[JsObject] = __.json.update((__ \ 'inactiveRecipients).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
+      js.transform(addEmptyList andThen addVersion)
+    }
   }
 }

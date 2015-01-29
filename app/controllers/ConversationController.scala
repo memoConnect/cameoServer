@@ -308,8 +308,8 @@ object ConversationController extends ExtendedController {
                 // delete the whole conversation
                 Conversation.delete(conversation.id)
               case _ =>
-                // delete recipient
-                conversation.deleteRecipient(request.identity.id)
+                // we cannot delete the recipient, science it would invalidate the conversation signature, so we mark him inactive
+                conversation.markRecipientInactive(request.identity.id)
                 // delete his aePassphrases
                 conversation.deleteAePassphrases(request.identity.publicKeys.map(_.id.toString))
             }

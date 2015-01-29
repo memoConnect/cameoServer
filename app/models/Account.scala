@@ -75,7 +75,7 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
       Reads.pure[AccountProperties](AccountProperties.defaultProperties) and
       Reads.pure[AccountUserSettings](AccountUserSettings.defaultSettings) and
-      Reads.pure[Option[Boolean]](Some(false)) and
+      Reads.pure[Option[Boolean]](Some(true)) and
       Reads.pure[Date](new Date()) and
       Reads.pure[Date](new Date()))(Account.apply _)
   }
