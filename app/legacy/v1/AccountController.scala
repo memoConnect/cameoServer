@@ -2,7 +2,7 @@ package legacy.v1
 
 import actors.{ ConfirmPhoneNumber, ConfirmMail }
 import controllers.AccountController._
-import events.ContactUpdate
+import events.{AccountUpdate, ContactUpdate}
 import helper.ResultHelper._
 import models._
 import play.api.Play

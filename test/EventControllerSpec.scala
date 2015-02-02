@@ -891,6 +891,25 @@ class EventControllerSpec extends StartedApp {
       checkEvent(events2, eventNameFinder("account:update"), eventCheck)
     }
 
+    "mark registration as complete" in {
+      val body = Json.obj("registrationIncomplete" -> false)
+      checkOk(executeRequest(PUT, "/account", OK, Some(testUser1.token), Some(body)))
+    }
+
+    "should receive account:update event" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome
+        (js \ "data" \ "registrationIncomplete").asOpt[Boolean] must beSome(false)
+      }
+
+      checkEvent(events1, eventNameFinder("account:update"), eventCheck)
+      checkEvent(events2, eventNameFinder("account:update"), eventCheck)
+    }
+
+
 //    val newName = "moepmeop"
 //    val newAvatar = "moepmeopav"
 //    "edit an identity" in {

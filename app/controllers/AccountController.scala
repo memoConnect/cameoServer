@@ -2,7 +2,7 @@ package controllers
 
 import actors.{ ConfirmMail, ConfirmPhoneNumber }
 import constants.ErrorCodes
-import events.ContactUpdate
+import events.{ AccountUpdate, ContactUpdate }
 import helper.JsonHelper._
 import helper.{ CheckHelper, JsonHelper }
 import helper.ResultHelper._
@@ -256,6 +256,17 @@ object AccountController extends ExtendedController {
           if ((body \ "phoneNumber").asOpt[String].isDefined) {
             actors.verificationRouter ! ConfirmPhoneNumber(account.id, lang)
           }
+
+          // check if registration was marked complete, send event if it was
+          if ((body \ "registrationIncomplete").asOpt[Boolean].exists(b => !b)) {
+            Identity.findByAccountId(account.id).map {
+              _.map {
+                identity =>
+                  actors.eventRouter ! AccountUpdate(identity.id, account.id, Json.obj("registrationIncomplete" -> false))
+              }
+            }
+          }
+
           resOk("updated")
       }
     }
