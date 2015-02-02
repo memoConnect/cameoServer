@@ -30,8 +30,8 @@ class UserAgentHelper[A](request: Request[A]) {
 
     def createStatsdString(value: String) = "custom.client_info." + value.replace(" ", "_")
 
-    if(isApp) {
-        createStatsdString("app." + parsedUserAgent.getOperatingSystem.getFamilyName)
+    if (isApp) {
+      createStatsdString("app." + parsedUserAgent.getOperatingSystem.getFamilyName)
     } else {
       createStatsdString("browser." + parsedUserAgent.getOperatingSystem.getFamilyName + "." + parsedUserAgent.getFamily.getName)
     }

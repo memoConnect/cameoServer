@@ -220,7 +220,7 @@ case class Identity(id: MongoId,
 
   def deleteDetails(deleteDisplayName: Boolean): Future[Boolean] = {
     val deleteValues: Seq[String] = Seq("email", "phoneNumber") ++ {
-      if(deleteDisplayName) Seq("displayName") else Nil
+      if (deleteDisplayName) Seq("displayName") else Nil
     }
 
     Identity.deleteValues(this.id, deleteValues).map(_.updatedExisting)

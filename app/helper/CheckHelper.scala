@@ -32,7 +32,6 @@ object CheckHelper {
 
   def checkPhoneNumber(phoneNumber: String): Boolean = checkAndCleanPhoneNumber(phoneNumber).isDefined
 
-
   def checkAndCleanEmail(email: String): Option[String] = {
     val trimmed = email.trim
     """^[a-zA-Z0-9.\-_]+@[a-zA-Z0-9.\-_]+\.[a-zA-Z][a-zA-Z]+$""".r.unapplySeq(trimmed).isDefined match {
@@ -40,7 +39,7 @@ object CheckHelper {
       case false => None
     }
   }
-  
+
   def checkEmail(email: String): Boolean = checkAndCleanEmail(email).isDefined
 
   // Left: phonenumber, Right: email

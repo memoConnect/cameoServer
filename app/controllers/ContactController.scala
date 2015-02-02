@@ -197,7 +197,7 @@ object ContactController extends ExtendedController {
 
               request.identity.deleteContact(c.id).map {
                 case false => resServerError("unable to delete")
-                case true  =>
+                case true =>
                   // send event
                   actors.eventRouter ! ContactDeleted(request.identity.id, c.id)
                   resOk("deleted")
@@ -347,8 +347,8 @@ object ContactController extends ExtendedController {
     request =>
 
       // find other identity
-      Identity.find(id).map{
-        case None=> resNotFound("identity")
+      Identity.find(id).map {
+        case None => resNotFound("identity")
         case Some(otherIdentity) =>
           // check if that other identity actually has a friend request from this identity
           otherIdentity.friendRequests.find(_.identityId.equals(request.identity.id)) match {

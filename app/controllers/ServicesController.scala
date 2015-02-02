@@ -74,7 +74,6 @@ object ServicesController extends ExtendedController {
 
           Statsd.increment("custom.version." + getBrowserInfo.version)
 
-
           val language = LocalizationMessages.getBrowserLanguage(request).code
           val supportedVersion = Play.configuration.getString("client.version.min").getOrElse("0")
           try {

@@ -53,12 +53,12 @@ case class FriendRequestRejected(sendToIdentity: MongoId, fromIdentity: MongoId,
 }
 
 case class FriendRequestDeleted(sendToIdentity: MongoId, fromIdentity: MongoId, toIdentityId: MongoId) extends EventDefinition {
-  
+
   def eventType = "friendRequest:deleted"
-  
-  def toEventContent = 
+
+  def toEventContent =
     Json.obj(
       "from" -> fromIdentity.toJson,
       "to" -> toIdentityId.toJson
-    )  
+    )
 }

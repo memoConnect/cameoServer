@@ -67,12 +67,12 @@ trait SubModel[A, Parent] extends Model[A] {
 
   def update(parentId: MongoId, childId: JsValue, updateJs: JsObject): Future[Boolean] = {
     // get all values that should be updated and construct query
-    val set = updateJs.fields.foldLeft[JsObject](Json.obj()){
+    val set = updateJs.fields.foldLeft[JsObject](Json.obj()) {
       case (acc, field) =>
         val key = field._1
         val value = field._2
         // do not update Id
-        if(!key.equals(this.idName)) {
+        if (!key.equals(this.idName)) {
           acc ++ Json.obj(elementName + ".$." + key -> value)
         } else {
           acc
@@ -82,7 +82,6 @@ trait SubModel[A, Parent] extends Model[A] {
     val update = Json.obj("$set" -> set)
     parentModel.col.update(query, update).map(_.updatedExisting)
   }
-
 
   override def save(js: JsObject): Future[LastError] = {
     val id: MongoId = (js \ idName).as[MongoId]
@@ -106,8 +105,8 @@ trait SubModel[A, Parent] extends Model[A] {
     // mongodb does not support this operation directly, so we need two steps
     // first we try to update
     update(parentId, Json.toJson(appendee).as[JsObject]).flatMap {
-        case true => Future(true)
-        case false => append(parentId, appendee)
+      case true  => Future(true)
+      case false => append(parentId, appendee)
     }
   }
 

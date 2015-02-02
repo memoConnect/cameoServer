@@ -1,7 +1,7 @@
 package controllers
 
 import actors.ExternalMessage
-import events.{ConversationDeleted, ConversationNew, ConversationUpdate}
+import events.{ ConversationDeleted, ConversationNew, ConversationUpdate }
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
@@ -299,7 +299,7 @@ object ConversationController extends ExtendedController {
 
   def deleteOwnRecipient(id: String) = AuthAction().async {
     request =>
-      Conversation.find(id).map{
+      Conversation.find(id).map {
         case None => resNotFound("conversation")
         case Some(conversation) =>
           conversation.hasMemberResult(request.identity.id) {
@@ -321,7 +321,7 @@ object ConversationController extends ExtendedController {
                     )
                     conversation.recipients.foreach {
                       recipient =>
-                        if(!recipient.identityId.equals(deletedRecipient.identityId)) {
+                        if (!recipient.identityId.equals(deletedRecipient.identityId)) {
                           actors.eventRouter ! ConversationUpdate(recipient.identityId, conversation.id, update)
                         }
                     }
