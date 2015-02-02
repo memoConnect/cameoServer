@@ -309,9 +309,23 @@ object ConversationController extends ExtendedController {
                 Conversation.delete(conversation.id)
               case _ =>
                 // we cannot delete the recipient, science it would invalidate the conversation signature, so we mark him inactive
-                conversation.markRecipientInactive(request.identity.id)
-                // delete his aePassphrases
-                conversation.deleteAePassphrases(request.identity.publicKeys.map(_.id.toString))
+                conversation.markRecipientInactive(request.identity.id).map {
+                  case None => // do nothing
+                  case Some(deletedRecipient) =>
+                    // delete his aePassphrases
+                    conversation.deleteAePassphrases(request.identity.publicKeys.map(_.id.toString))
+                    // send event to other recipients
+                    val update = Json.obj(
+                      "inactiveRecipients" -> Seq(deletedRecipient.toJson),
+                      "recipients" -> Seq(Json.obj("identityId" -> deletedRecipient.identityId.toJson, "deleted" -> true))
+                    )
+                    conversation.recipients.foreach {
+                      recipient =>
+                        if(!recipient.identityId.equals(deletedRecipient.identityId)) {
+                          actors.eventRouter ! ConversationUpdate(recipient.identityId, conversation.id, update)
+                        }
+                    }
+                }
             }
             // send event
             actors.eventRouter ! ConversationDeleted(request.identity.id, conversation.id)

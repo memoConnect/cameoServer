@@ -78,7 +78,7 @@ object AccountController extends ExtendedController {
                   // find the user that added the external contact
                   val query = Json.obj("contacts.identityId" -> request.identity.id)
                   Identity.find(query).flatMap {
-                    case None => Future(resBadRequest("this user is in nobodies contact book"))
+                    case None => Future(resBadRequest("this user is in nobodies contact book")) //
                     case Some(otherIdentity) =>
                       val futureRes: Future[Boolean] = for {
                         // add other identity as contact

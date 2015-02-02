@@ -592,6 +592,39 @@ class EventControllerSpec extends StartedApp {
       1 === 1
     }
 
+    "second user leaves conversation" in {
+      checkOk(executeRequest(DELETE, "/conversation/" + conversationId + "/recipient", OK, Some(testUser2.token)))
+    }
+
+    "conversation:delete event should appear in subscription of second user" in {
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
+      }
+
+      checkEvent(events1, eventNameFinder("conversation:deleted"), eventCheck)
+    }
+
+    "conversation:update event should appear in both subscriptions of first user" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
+        (js \ "data" \ "inactiveRecipients").asOpt[Seq[JsObject]] must beSome
+        (js \ "data" \ "recipients").asOpt[Seq[JsObject]] must beSome
+        val inactiveRecipients = (js \ "data" \ "inactiveRecipients").as[Seq[JsObject]]
+        (inactiveRecipients(0) \ "identityId").asOpt[String] must beSome(testUser2.identityId)
+        val recipients = (js \ "data" \ "recipients").as[Seq[JsObject]]
+        (recipients(0) \ "identityId").asOpt[String] must beSome(testUser2.identityId)
+        (recipients(0) \ "deleted").asOpt[Boolean] must beSome(true)
+      }
+
+      checkEvent(events1, eventNameFinder("conversation:update"), eventCheck)
+      checkEvent(events2, eventNameFinder("conversation:update"), eventCheck)
+    }
+
     var pubKeyId = ""
     "add public key" in {
       val path = basePath + "/publicKey"
