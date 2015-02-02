@@ -75,12 +75,12 @@ object AccountController extends ExtendedController {
                 case None =>
                   val account = Account.create(car.loginName, car.password)
 
-                  // find the user that added the external contact
+                  // find the user that added the external contact and add him as contact (if contact still exists)
                   val query = Json.obj("contacts.identityId" -> request.identity.id)
-                  Identity.find(query).flatMap {
-                    case None => Future(resBadRequest("this user is in nobodies contact book")) //
+                  Identity.find(query).map {
+                    case None => // do nothing
                     case Some(otherIdentity) =>
-                      val futureRes: Future[Boolean] = for {
+                      for {
                         // add other identity as contact
                         addContact <- request.identity.addContact(Contact.create(otherIdentity.id))
                         updateIdentity <- {
@@ -95,12 +95,8 @@ object AccountController extends ExtendedController {
                         }
                         deleteDetails <- request.identity.deleteDetails(deleteDisplayName = true)
                       } yield {
-                        addContact && updateIdentity && deleteDetails
-                      }
-                      futureRes.flatMap {
-                        case false => Future(resServerError("unable to update identity"))
-                        case true =>
-                          // send contact update event to other identity
+                        if(updateIdentity) {
+                          // get updated identity todo: this can be done without another db request
                           Identity.find(request.identity.id).map {
                             case None => // do nothing
                             case Some(i) =>
@@ -109,9 +105,10 @@ object AccountController extends ExtendedController {
                                 case Some(contact) => actors.eventRouter ! ContactUpdate(otherIdentity.id, contact, i)
                               }
                           }
-                          storeAccount(account, Some(request.identity.id))
+                        }
                       }
                   }
+                  storeAccount(account, Some(request.identity.id))
               }
           }
       }
