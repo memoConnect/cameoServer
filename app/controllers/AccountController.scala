@@ -73,15 +73,15 @@ object AccountController extends ExtendedController {
               request.identity.accountId match {
                 case Some(i) => Future(resBadRequest("token belongs to a registered user"))
                 case None =>
-                  val account = Account.create(car.loginName, car.password)
+                  val account = Account.create(car.loginName.toLowerCase, car.password)
 
                   // find the user that added the external contact and add him as contact (if contact still exists)
                   val query = Json.obj("contacts.identityId" -> request.identity.id)
-                  Identity.find(query).map {
-                    case None => // do nothing
+                  Identity.find(query).flatMap {
+                    case None => storeAccount(account, Some(request.identity.id))
                     case Some(otherIdentity) =>
                       for {
-                        // add other identity as contact
+                      // add other identity as contact
                         addContact <- request.identity.addContact(Contact.create(otherIdentity.id))
                         updateIdentity <- {
                           // update identity
@@ -94,25 +94,29 @@ object AccountController extends ExtendedController {
                           request.identity.addSupport()
                         }
                         deleteDetails <- request.identity.deleteDetails(deleteDisplayName = true)
-                      } yield {
-                        if(updateIdentity) {
+                        if updateIdentity
+                        eventsSend <- {
                           // get updated identity todo: this can be done without another db request
                           Identity.find(request.identity.id).map {
                             case None => // do nothing
                             case Some(i) =>
                               otherIdentity.contacts.find(_.identityId.equals(request.identity.id)) match {
-                                case None          => // do nothing
+                                case None => // do nothing
                                 case Some(contact) => actors.eventRouter ! ContactUpdate(otherIdentity.id, contact, i)
                               }
                           }
                         }
+                        result <- storeAccount(account, Some(request.identity.id))
+                      } yield {
+                        result
                       }
                   }
-                  storeAccount(account, Some(request.identity.id))
               }
+
           }
       }
   }
+
 
   def storeAccount(account: Account, identityId: Option[MongoId]): Future[Result] = {
     Account.insert(account).flatMap {

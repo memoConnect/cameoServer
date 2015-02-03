@@ -2,7 +2,7 @@ package legacy.v1
 
 import actors.{ ConfirmPhoneNumber, ConfirmMail }
 import controllers.AccountController._
-import events.{AccountUpdate, ContactUpdate}
+import events.{ AccountUpdate, ContactUpdate }
 import helper.ResultHelper._
 import models._
 import play.api.Play
@@ -43,9 +43,9 @@ object AccountController extends ExtendedController {
           validateFuture[Account](jsBody, Account.createReads()) {
             account =>
               {
-                def createAccountWithIdentity(identity: Identity): Future[Result] = {
-                  val accountLowerCase = account.copy(loginName = account.loginName.toLowerCase)
+                val accountLowerCase = account.copy(loginName = account.loginName.toLowerCase)
 
+                def createAccountWithIdentity(identity: Identity): Future[Result] = {
                   // add support user
                   identity.addSupport()
 
@@ -91,48 +91,40 @@ object AccountController extends ExtendedController {
                           case Some(identity) if identity.accountId.isDefined => Future(resBadRequest("token belongs to a registered user"))
                           case Some(identity) =>
 
-                            // find the user that added the external contact
+                            // find the user that added the external contact and add him as contact (if contact still exists)
                             val query = Json.obj("contacts.identityId" -> identity.id)
                             Identity.find(query).flatMap {
-                              case None => Future(resBadRequest("this user is in nobodies contact book"))
+                              case None => storeAccount(accountLowerCase, Some(identity.id))
                               case Some(otherIdentity) =>
-                                val futureRes: Future[Boolean] = for {
-                                  // add other identity as contact
+                                for {
+                                // add other identity as contact
                                   addContact <- identity.addContact(Contact.create(otherIdentity.id))
                                   updateIdentity <- {
-                                    // add update identity with details from registration
-                                    val set = Map("cameoId" -> account.loginName,
+                                    // update identity
+                                    val map = Map(
+                                      "cameoId" -> account.loginName,
                                       "accountId" -> account.id,
-                                      "isDefaultIdentity" -> true,
-                                      "displayName" -> additionalValues.displayName.getOrElse(""))
-                                    Identity.update(identity.id, IdentityModelUpdate.fromMap(set))
+                                      "isDefaultIdentity" -> true
+                                    )
+                                    Identity.update(identity.id, IdentityModelUpdate.fromMap(map))
+                                    identity.addSupport()
                                   }
-                                  deleteDetails <- {
-                                    val deleteValues =
-                                      Seq("email", "phoneNumber") ++ {
-                                        additionalValues.displayName match {
-                                          case None    => Seq("displayName")
-                                          case Some(d) => Seq()
-                                        }
-                                      }
-                                    Identity.deleteValues(identity.id, deleteValues).map(_.updatedExisting)
-                                  }
-                                } yield {
-                                  addContact && updateIdentity && deleteDetails
-                                }
-                                futureRes.flatMap {
-                                  case false => Future(resServerError("unable to update identity"))
-                                  case true =>
-                                    // send contact update event to other identity
+                                  deleteDetails <- identity.deleteDetails(deleteDisplayName = true)
+                                  if updateIdentity
+                                  eventsSend <- {
+                                    // get updated identity todo: this can be done without another db request
                                     Identity.find(identity.id).map {
                                       case None => // do nothing
                                       case Some(i) =>
                                         otherIdentity.contacts.find(_.identityId.equals(identity.id)) match {
-                                          case None          => // do nothing
+                                          case None => // do nothing
                                           case Some(contact) => actors.eventRouter ! ContactUpdate(otherIdentity.id, contact, i)
                                         }
                                     }
-                                    createAccountWithIdentity(identity)
+                                  }
+                                  result <- storeAccount(accountLowerCase, Some(identity.id))
+                                } yield {
+                                  result
                                 }
                             }
                         }
