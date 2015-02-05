@@ -251,6 +251,7 @@ object Conversation extends Model[Conversation] {
       Json.obj("id" -> c.id.toJson) ++
         addLastUpdated(c.lastUpdated) ++
         Json.obj("recipients" -> c.recipients.map(_.toJson)) ++
+        Json.obj("inactiveRecipients" -> c.inactiveRecipients.map(_.toJson)) ++
         Json.obj("numberOfMessages" -> c.numberOfMessages) ++
         maybeEmptyJson("subject", c.subject) ++
         maybeEmptyJson("keyTransmission", c.keyTransmission) ++
