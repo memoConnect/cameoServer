@@ -327,18 +327,7 @@ class ResetPasswordSpec extends StartedApp {
     }
 
     "the old password should not work any more" in {
-      val path = basePath + "/token"
-
-      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((testUser.login + ":" + password).getBytes)
-
-      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
-      val res = route(req).get
-
-      if (status(res) != UNAUTHORIZED) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(UNAUTHORIZED)
-
+      checkError(executeRequestBasicAuth(GET, "/token", UNAUTHORIZED, testUser.login, password, 10))
     }
 
     "allow login with new password" in {

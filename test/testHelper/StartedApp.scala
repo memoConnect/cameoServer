@@ -56,6 +56,33 @@ trait StartedApp extends Specification with BeforeAfter {
     contentAsJson(result)
   }
 
+  def executeRequestBasicAuth(method: String,
+                              path: String,
+                              expectedResult: Int,
+                              loginName: String,
+                              password: String,
+                              repeat: Int = 0,
+                              apiVersion: String = "v1"): JsValue = {
+
+    val basicRequest = FakeRequest(method, "/a/" + apiVersion + path)
+
+    val auth = "Basic " + new sun.misc.BASE64Encoder().encode((loginName + ":" + password).getBytes)
+
+    val result = route(basicRequest.withHeaders(("Authorization", auth))).get
+
+    status(result) match{
+      case res if res == expectedResult => contentAsJson(result)
+      case res if repeat > 0 =>
+        Thread.sleep(100)
+        Logger.debug("Repeating call.")
+        executeRequestBasicAuth(method, path, expectedResult, loginName, password, repeat -1, apiVersion)
+      case res =>
+        Logger.error("Unexpected Result: " + contentAsString(result))
+        status(result) must equalTo(expectedResult)
+        contentAsJson(result)
+    }
+  }
+
   def getData(json: JsValue): JsObject = {
     val maybeData = (json \ "data").asOpt[JsObject]
     maybeData must beSome
