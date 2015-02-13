@@ -7,7 +7,7 @@ import controllers.PublicKeyController.AePassphrase
 import helper.JsonHelper._
 import helper.MongoCollections._
 import helper.ResultHelper._
-import helper.{ JsonHelper, IdHelper, MongoCollections }
+import helper.{JsonHelper, IdHelper, MongoCollections}
 import play.api.Logger
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -15,7 +15,7 @@ import play.api.libs.json._
 import play.api.mvc.Result
 import play.modules.reactivemongo.json.BSONFormats._
 import play.modules.reactivemongo.json.collection.JSONCollection
-import reactivemongo.bson.{ BSONInteger, BSONNull, BSONString }
+import reactivemongo.bson.{BSONInteger, BSONNull, BSONString}
 import reactivemongo.core.commands._
 import traits._
 
@@ -56,8 +56,8 @@ case class Conversation(id: MongoId,
     (settings.map(_.enableUnreadMessages), this.recipients.find(_.identityId.equals(identityId))) match {
       case (_, None) =>
         Logger.error("Trying to get number of messages of recipient who is not member of the conversation"); -1
-      case (None, _)                     => -1
-      case (Some(false), _)              => -1
+      case (None, _) => -1
+      case (Some(false), _) => -1
       case (Some(true), Some(recipient)) => this.numberOfMessages - recipient.messagesRead.getOrElse(0)
     }
   }
@@ -76,10 +76,10 @@ case class Conversation(id: MongoId,
   def setLastUpdated(js: JsObject): JsObject = {
     // check if there already is a $set block
     val set: JsValue = (js \ "$set").asOpt[JsValue] match {
-      case None                => Json.obj("lastUpdated" -> new Date)
+      case None => Json.obj("lastUpdated" -> new Date)
       case Some(obj: JsObject) => obj ++ Json.obj("lastUpdated" -> new Date)
-      case Some(ar: JsArray)   => ar.append(Json.obj("lastUpdated" -> new Date))
-      case Some(other)         => Logger.error("SetLastUpdated: Unable to process: " + js); other
+      case Some(ar: JsArray) => ar.append(Json.obj("lastUpdated" -> new Date))
+      case Some(other) => Logger.error("SetLastUpdated: Unable to process: " + js); other
     }
     js ++ Json.obj("$set" -> set)
   }
@@ -143,14 +143,14 @@ case class Conversation(id: MongoId,
 
   def hasMemberResult(identityId: MongoId)(action: => Result): Result = {
     this.hasMember(identityId) match {
-      case true  => action
+      case true => action
       case false => resUnauthorized("identity is not a member of the conversation")
     }
   }
 
   def hasMemberFutureResult(identityId: MongoId)(action: => Future[Result]): Future[Result] = {
     this.hasMember(identityId) match {
-      case true  => action
+      case true => action
       case false => Future(resUnauthorized("identity is not a member of the conversation"))
     }
   }
@@ -202,7 +202,7 @@ case class Conversation(id: MongoId,
   def getConversationSignatures: Seq[Signature] = {
     conversationSignatures match {
       case Some(sigs) => sigs
-      case None       => Seq.empty
+      case None => Seq.empty
     }
   }
 
@@ -221,13 +221,13 @@ object Conversation extends Model[Conversation] {
 
   def createReads: Reads[Conversation] = (
     (__ \ "subject").readNullable[String] and
-    Reads.pure(Seq()) and
-    (__ \ "conversationSignatures").readNullable[Seq[Signature]] and
-    (__ \ "passCaptcha").readNullable[String] and
-    (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
-    (__ \ "sePassphrase").readNullable[String] and
-    (__ \ "keyTransmission").readNullable[String]
-  )(Conversation.create _)
+      Reads.pure(Seq()) and
+      (__ \ "conversationSignatures").readNullable[Seq[Signature]] and
+      (__ \ "passCaptcha").readNullable[String] and
+      (__ \ "aePassphraseList").readNullable(Reads.seq(EncryptedPassphrase.createReads)) and
+      (__ \ "sePassphrase").readNullable[String] and
+      (__ \ "keyTransmission").readNullable[String]
+    )(Conversation.create _)
 
   def outputWrites = Writes[Conversation] {
     c =>
@@ -323,11 +323,11 @@ object Conversation extends Model[Conversation] {
         Match(toBson(Json.obj("aePassphraseList.keyId" -> oldKeyId.id)).get),
         Project(("aePassphrase", BSONString("$aePassphraseList.value")), ("conversationId", BSONString("$_id.mongoId")))
       ) ++ {
-          limit match {
-            case None      => Seq()
-            case Some(int) => Seq(Limit(int))
-          }
+        limit match {
+          case None => Seq()
+          case Some(int) => Seq(Limit(int))
         }
+      }
 
     val aggregationCommand = Aggregate(col.name, pipeline)
 
@@ -378,39 +378,41 @@ object ConversationModelUpdate extends ModelUpdate {
 object ConversationEvolutions {
 
   val addEncPassList: Reads[JsObject] = Reads {
-    js =>
-      {
-        val addEmptyList: Reads[JsObject] = __.json.update((__ \ 'encPassList).json.put(JsArray()))
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-        js.transform(addEmptyList andThen addVersion)
-      }
+    js => {
+      val addEmptyList: Reads[JsObject] = __.json.update((__ \ 'encPassList).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
+      js.transform(addEmptyList andThen addVersion)
+    }
   }
 
   val renameEncPassList: Reads[JsObject] = Reads {
-    js =>
-      {
-        val rename = __.json.update((__ \ 'sePassphraseList).json.copyFrom((__ \ 'encPassList).json.pick)) andThen (__ \ 'encPassList).json.prune
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
-        js.transform(rename andThen addVersion)
-      }
+    js => {
+      val rename = __.json.update((__ \ 'sePassphraseList).json.copyFrom((__ \ 'encPassList).json.pick)) andThen (__ \ 'encPassList).json.prune
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+      js.transform(rename andThen addVersion)
+    }
   }
 
   val fixNameMixup: Reads[JsObject] = Reads {
-    js =>
-      {
+    js => {
+      if ((__ \ 'aePassphraseList).toJsonString > "") {
+        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
+        js.transform(addVersion)
+      }
+      else {
         val renameAePassphraseList = __.json.update((__ \ 'aePassphraseList).json.copyFrom((__ \ 'sePassphraseList).json.pick)) andThen (__ \ 'sePassphraseList).json.prune
         val removeAePassphrase = (__ \ 'aePassphrase).json.prune
         val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
         js.transform(renameAePassphraseList andThen removeAePassphrase andThen addVersion)
       }
+    }
   }
 
   val addInactiveRecipients: Reads[JsObject] = Reads {
-    js =>
-      {
-        val addEmptyList: Reads[JsObject] = __.json.update((__ \ 'inactiveRecipients).json.put(JsArray()))
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
-        js.transform(addEmptyList andThen addVersion)
-      }
+    js => {
+      val addEmptyList: Reads[JsObject] = __.json.update((__ \ 'inactiveRecipients).json.put(JsArray()))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
+      js.transform(addEmptyList andThen addVersion)
+    }
   }
 }
