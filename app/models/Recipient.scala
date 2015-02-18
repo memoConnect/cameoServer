@@ -27,7 +27,6 @@ object Recipient extends SubModel[Recipient, Conversation] {
   implicit val mongoKeyFormat = RecipientKey.format
   implicit val mongoFormat: Format[Recipient] = createMongoFormat(Json.reads[Recipient], Json.writes[Recipient])
 
-  def docVersion = 0
   def evolutions = Map()
 
   def outputWrites: Writes[Recipient] = Writes[Recipient] {

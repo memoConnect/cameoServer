@@ -27,8 +27,6 @@ object TwoFactorToken extends Model[TwoFactorToken] {
 
   implicit val mongoFormat: Format[TwoFactorToken] = createMongoFormat(Json.reads[TwoFactorToken], Json.writes[TwoFactorToken])
 
-  def docVersion = 0
-
   def evolutions = Map()
 
   def outputWrites = Writes[TwoFactorToken] {
@@ -72,8 +70,6 @@ object TwoFactorSmsKey extends Model[TwoFactorSmsKey] {
   val col = MongoCollections.twoFactorSmsKeyCollection
 
   implicit val mongoFormat: Format[TwoFactorSmsKey] = createMongoFormat(Json.reads[TwoFactorSmsKey], Json.writes[TwoFactorSmsKey])
-
-  def docVersion = 0
 
   def evolutions = Map()
 

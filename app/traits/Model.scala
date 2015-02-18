@@ -69,7 +69,7 @@ trait Model[A] {
 
   def evolutions: Map[Int, Reads[JsObject]]
 
-  def docVersion: Int
+  def docVersion: Int = if (evolutions.isEmpty) 0 else evolutions.keySet.max + 1
 
   def save(js: JsObject): Future[LastError] = {
     col.save(js)

@@ -351,16 +351,11 @@ object Conversation extends Model[Conversation] {
              sePassphrase: Option[String] = None,
              keyTransmission: Option[String] = Some(KeyTransmission.KEY_TRANSMISSION_NONE)): Conversation = {
     val id = IdHelper.generateConversationId()
-    new Conversation(id, subject, recipients, Seq(), conversationSignatures, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, 0)
+    new Conversation(id, subject, recipients, Seq(), conversationSignatures, Seq(), aePassphraseList.getOrElse(Seq()), sePassphrase, passCaptcha.map(new MongoId(_)), 0, new Date, new Date, keyTransmission, docVersion)
   }
 
-  def docVersion = 4
-
   def evolutions = Map(
-    0 -> ConversationEvolutions.addEncPassList,
-    1 -> ConversationEvolutions.renameEncPassList,
-    2 -> ConversationEvolutions.fixNameMixup,
-    3 -> ConversationEvolutions.addInactiveRecipients
+    1 -> ConversationEvolutions.addInactiveRecipients
   )
 
   def createDefault(): Conversation = create()
@@ -377,41 +372,10 @@ object ConversationModelUpdate extends ModelUpdate {
 
 object ConversationEvolutions {
 
-  val addEncPassList: Reads[JsObject] = Reads {
-    js => {
-      val addEmptyList: Reads[JsObject] = __.json.update((__ \ 'encPassList).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-      js.transform(addEmptyList andThen addVersion)
-    }
-  }
-
-  val renameEncPassList: Reads[JsObject] = Reads {
-    js => {
-      val rename = __.json.update((__ \ 'sePassphraseList).json.copyFrom((__ \ 'encPassList).json.pick)) andThen (__ \ 'encPassList).json.prune
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
-      js.transform(rename andThen addVersion)
-    }
-  }
-
-  val fixNameMixup: Reads[JsObject] = Reads {
-    js => {
-      if ((__ \ 'aePassphraseList).toJsonString > "") {
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
-        js.transform(addVersion)
-      }
-      else {
-        val renameAePassphraseList = __.json.update((__ \ 'aePassphraseList).json.copyFrom((__ \ 'sePassphraseList).json.pick)) andThen (__ \ 'sePassphraseList).json.prune
-        val removeAePassphrase = (__ \ 'aePassphrase).json.prune
-        val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(3)))
-        js.transform(renameAePassphraseList andThen removeAePassphrase andThen addVersion)
-      }
-    }
-  }
-
   val addInactiveRecipients: Reads[JsObject] = Reads {
     js => {
       val addEmptyList: Reads[JsObject] = __.json.update((__ \ 'inactiveRecipients).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(4)))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
       js.transform(addEmptyList andThen addVersion)
     }
   }

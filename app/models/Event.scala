@@ -30,6 +30,6 @@ object Event extends SubModel[Event, EventSubscription] {
   implicit def mongoFormat: Format[Event] = createMongoFormat(Json.reads[Event], Json.writes[Event])
 
   def createDefault(): Event = new Event(new MongoId(""), "foo", Json.obj(), None)
-  def docVersion: Int = 0
+
   def evolutions: Map[Int, Reads[JsObject]] = Map()
 }

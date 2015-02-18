@@ -123,8 +123,6 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 6
-
   def evolutions = Map(
     0 -> AccountEvolutions.migrateToVerifiedString,
     1 -> AccountEvolutions.addDeviceIds,
@@ -150,8 +148,6 @@ object AccountReservation extends Model[AccountReservation] {
   implicit val col = reservedAccountCollection
 
   implicit val mongoFormat: Format[AccountReservation] = createMongoFormat(Json.reads[AccountReservation], Json.writes[AccountReservation])
-
-  def docVersion: Int = 0
 
   def evolutions: Map[Int, Reads[JsObject]] = Map()
 

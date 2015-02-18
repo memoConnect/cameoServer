@@ -407,8 +407,6 @@ object Identity extends Model[Identity] with CockpitEditable[Identity] {
     Identity.create(None, IdHelper.generateCameoId, None, None, false)
   }
 
-  def docVersion = 11
-
   def evolutions = Map(
     0 -> IdentityEvolutions.addCameoId,
     1 -> IdentityEvolutions.addFriedRequest,
