@@ -355,7 +355,7 @@ object Conversation extends Model[Conversation] {
   }
 
   def evolutions = Map(
-    1 -> ConversationEvolutions.addInactiveRecipients
+    0 -> ConversationEvolutions.addInactiveRecipients
   )
 
   def createDefault(): Conversation = create()
