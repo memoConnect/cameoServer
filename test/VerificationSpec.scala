@@ -150,8 +150,8 @@ class VerificationSpec extends StartedApp {
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
       (mail \ "body").as[String] must contain("https://")
-      verifyEmail = (mail \ "body").as[String].split("https:").last.split("/").last
-      verifyPhoneNumber = (sms \ "body").as[String].split("https:").last.split("/").last
+      verifyEmail = getCodeFromMessage((mail \ "body").as[String])
+      verifyPhoneNumber = getCodeFromMessage((sms \ "body").as[String])
       1 === 1
     }
     step(TestValueStore.stop())
@@ -268,7 +268,8 @@ class VerificationSpec extends StartedApp {
       Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
-      verifyEmail2 = (mail \ "body").as[String].split("https:").last.split("/").last
+      verifyEmail2 = getCodeFromMessage((mail \ "body").as[String])
+
       1 === 1
     }
     step(TestValueStore.stop())
@@ -310,7 +311,7 @@ class VerificationSpec extends StartedApp {
       Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
-      verifyEmail3 = (mail \ "body").as[String].split("https:").last.split("/").last
+      verifyEmail3 = getCodeFromMessage((mail \ "body").as[String])
       1 === 1
     }
     step(TestValueStore.stop())
@@ -379,8 +380,8 @@ class VerificationSpec extends StartedApp {
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
       (mail \ "body").as[String] must contain("https://")
-      verifyEmail4 = (mail \ "body").as[String].split("https:").last.split("/").last
-      verifyPhoneNumber2 = (sms \ "body").as[String].split("https:").last.split("/").last
+      verifyEmail4 = getCodeFromMessage((mail \ "body").as[String])
+      verifyPhoneNumber2 = getCodeFromMessage((sms \ "body").as[String])
       1 === 1
     }
     step(TestValueStore.stop())
