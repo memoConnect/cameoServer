@@ -26,8 +26,6 @@ object Purl extends Model[Purl] {
 
   implicit val mongoFormat: Format[Purl] = createMongoFormat(Json.reads[Purl], Json.writes[Purl])
 
-  def docVersion = 0
-
   def evolutions = Map()
 
   // Input/output format for the API

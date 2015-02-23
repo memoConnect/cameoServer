@@ -37,8 +37,6 @@ object ConfirmationToken extends Model[ConfirmationToken] {
 
   val col = confirmationCollection
 
-  def docVersion = 0
-
   def evolutions = Map()
 
   def create(accountId: MongoId, confirmationType: String, confirmationPath: String, confirmationValue: String): ConfirmationToken = {

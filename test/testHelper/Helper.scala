@@ -55,6 +55,11 @@ object Helper {
     }
   }
 
+  def getCodeFromMessage(message: String): String = {
+    val pattern = """https:\/\/.*\/(\w*)""".r
+    pattern.findFirstMatchIn(message).fold("")(_.group(1))
+  }
+
 
 
 }

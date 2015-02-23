@@ -64,8 +64,6 @@ object FileMeta extends Model[FileMeta] {
 
   implicit val mongoFormat: Format[FileMeta] = createMongoFormat(Json.reads[FileMeta], Json.writes[FileMeta])
 
-  def docVersion = 2
-
   def evolutions = Map(
     0 -> FileMetaEvolutions.addCompletedFlag,
     1 -> FileMetaEvolutions.addScaleCache()

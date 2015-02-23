@@ -52,5 +52,4 @@ object FriendRequest extends SubModel[FriendRequest, Identity] {
 
   override def createDefault(): FriendRequest = FriendRequest(new MongoId(""), None, new Date)
 
-  override def docVersion: Int = 0
 }

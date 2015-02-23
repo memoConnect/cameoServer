@@ -82,8 +82,6 @@ object PublicKey extends SubModel[PublicKey, Identity] {
       3 -> PublicKeyEvolutions.addDeletedFlag
     )
 
-  def docVersion = 4
-
   override def createDefault(): PublicKey = {
     new PublicKey(IdHelper.generateMongoId, None, "", 0, Seq(), new Date, false, docVersion)
   }

@@ -45,8 +45,6 @@ object EncryptedPassphrase extends SubModel[EncryptedPassphrase, Conversation] {
 
   def evolutions = Map()
 
-  def docVersion = 0
-
   override def createDefault(): EncryptedPassphrase = {
     new EncryptedPassphrase("", "", 0)
   }

@@ -41,8 +41,8 @@ class ResetPasswordSpec extends StartedApp {
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
       (mail \ "body").as[String] must contain("https://")
-      verifyEmail = (mail \ "body").as[String].split("https:").last.split("/").last
-      verifyPhoneNumber = (sms \ "body").as[String].split("https:").last.split("/").last
+      verifyEmail = getCodeFromMessage((mail \ "body").as[String])
+      verifyPhoneNumber = getCodeFromMessage((sms \ "body").as[String])
       1 === 1
     }
     step(TestValueStore.stop())
