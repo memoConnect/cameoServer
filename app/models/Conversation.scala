@@ -375,7 +375,7 @@ object ConversationEvolutions {
   val addInactiveRecipients: Reads[JsObject] = Reads {
     js => {
       val addEmptyList: Reads[JsObject] = __.json.update((__ \ 'inactiveRecipients).json.put(JsArray()))
-      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(2)))
+      val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
       js.transform(addEmptyList andThen addVersion)
     }
   }
