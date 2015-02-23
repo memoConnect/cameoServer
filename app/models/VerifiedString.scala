@@ -29,7 +29,6 @@ object VerifiedString extends Model[VerifiedString] {
 
   implicit val mongoFormat: Format[VerifiedString] = createMongoFormat(Json.reads[VerifiedString], Json.writes[VerifiedString])
 
-  def docVersion = 0
   def evolutions = Map()
 
   val createReads: Reads[VerifiedString] = (

@@ -10,8 +10,7 @@ import traits.SubModel
  * Date: 04.04.14
  * Time: 15:14
  */
-case class EncryptedPassphrase(id: MongoId,
-                               keyId: String,
+case class EncryptedPassphrase(keyId: String,
                                value: String,
                                docVersion: Int) {
 
@@ -24,6 +23,8 @@ object EncryptedPassphrase extends SubModel[EncryptedPassphrase, Conversation] {
   def parentModel = Conversation
   def elementName = "aePassphraseList"
 
+  override val idName = "keyId"
+
   implicit val mongoFormat: Format[EncryptedPassphrase] = createMongoFormat(Json.reads[EncryptedPassphrase], Json.writes[EncryptedPassphrase])
 
   def outputWrites: Writes[EncryptedPassphrase] = Writes {
@@ -33,22 +34,19 @@ object EncryptedPassphrase extends SubModel[EncryptedPassphrase, Conversation] {
   }
 
   def createReads: Reads[EncryptedPassphrase] = (
-    Reads.pure[MongoId](IdHelper.generateMongoId()) and
     (__ \ 'keyId).read[String] and
     (__ \ 'encryptedPassphrase).read[String] and
     Reads.pure[Int](docVersion)
   )(EncryptedPassphrase.apply _)
 
   def create(keyId: String, value: String): EncryptedPassphrase = {
-    new EncryptedPassphrase(IdHelper.generateMongoId(), keyId, value, docVersion)
+    new EncryptedPassphrase(keyId, value, docVersion)
   }
 
   def evolutions = Map()
 
-  def docVersion = 0
-
   override def createDefault(): EncryptedPassphrase = {
-    new EncryptedPassphrase(IdHelper.generateMongoId(), "", "", 0)
+    new EncryptedPassphrase("", "", 0)
   }
 
 }

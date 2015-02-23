@@ -184,7 +184,7 @@ object Global extends WithFilters(new play.modules.statsd.api.StatsdFilter(), Ac
 
     try {
       //////////
-      // weird shit: this needs to be done otherwise we get nullpointers later when serializing conversaton, todo: find out why and fix
+      // weird: this needs to be done otherwise we get nullpointers later when serializing conversaton, todo: find out why and fix
       val foo = Conversation.mongoFormat
       /////////
 

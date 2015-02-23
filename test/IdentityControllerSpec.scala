@@ -3,7 +3,7 @@ import play.api.{ Play, Logger }
 import play.api.test._
 import play.api.libs.json.{ JsValue, JsString, Json, JsObject }
 import play.api.test.Helpers._
-import testHelper.Stuff._
+import testHelper.Helper._
 import org.specs2.mutable._
 import testHelper.TestConfig._
 import testHelper.StartedApp
@@ -623,7 +623,7 @@ class IdentityControllerSpec extends StartedApp {
       (data(0) \ "id").asOpt[String] must beSome(identityExisting4)
     }
 
-    val testUser = createTestUser()
+    val testUser = TestUser.create()
     val newIdentityDisplayName = "Mooeepp"
     val newIdentityTel = "+49123456"
     val newIdentityEmail = "devnull7@cameo.io"

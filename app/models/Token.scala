@@ -25,8 +25,6 @@ object Token extends SubModel[Token, Identity] {
 
   implicit val mongoFormat: Format[Token] = createMongoFormat(Json.reads[Token], Json.writes[Token])
 
-  def docVersion = 0
-
   def evolutions = Map()
 
   def outputWrites = Writes[Token] {

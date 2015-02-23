@@ -3,7 +3,7 @@ package controllers
 import java.util.Date
 
 import constants.Contacts._
-import events.{ FriendRequestAccepted, FriendRequestNew, FriendRequestRejected }
+import events._
 import helper.JsonHelper._
 import helper.ResultHelper._
 import helper.{ CheckHelper, IdHelper, OutputLimits }
@@ -47,7 +47,7 @@ object ContactController extends ExtendedController {
         validateFuture(js, CreateExternalContact.reads) {
           create =>
             def createIdentityAndAddContact(displayName: Option[String], phoneNumber: Option[String], email: Option[String]): Future[Result] = {
-              val identity = Identity.create(None, IdHelper.generateCameoId, email, phoneNumber, true, displayName)
+              val identity = Identity.create(None, IdHelper.generateCameoId, email, phoneNumber, isDefaultIdentity = true, displayName)
               Identity.col.insert(identity).flatMap { error =>
                 error.ok match {
                   case false => Future(resServerError("could not save new identity"))
@@ -132,7 +132,7 @@ object ContactController extends ExtendedController {
         case Some(contact) =>
           // get identity behind contact
           Identity.find(contact.identityId).map {
-            case None => resServerError("could not find matching identity")
+            case None => resServerError("could not find identity")
             case Some(identity) =>
               val res = contact.toJsonWithIdentity(request.identity.publicKeySignatures, Seq(identity))
               resOk(res)
@@ -156,10 +156,7 @@ object ContactController extends ExtendedController {
                 Json.obj("contactType" -> CONTACT_TYPE_PENDING)
           }
         }
-        identities <- {
-          val query = Json.obj("_id" -> Json.obj("$in" -> request.identity.contacts.map(_.identityId)))
-          Identity.findAll(query)
-        }
+        identities <- request.identity.getContactIdentities
       } yield {
         // use identities to get contact jsons
         val contactJsons = request.identity.contacts.map {
@@ -167,7 +164,7 @@ object ContactController extends ExtendedController {
         }
 
         val all = contactJsons ++ futurePendingContacts
-        // remove all empty element (they result from deleted identities)
+        // remove all empty elements (they result from deleted identities)
         val nonEmpty = all.filterNot(_.equals(Json.obj()))
         val sorted = nonEmpty.sortBy(
           js =>
@@ -188,9 +185,23 @@ object ContactController extends ExtendedController {
       res match {
         case None => Future(resNotFound("contact"))
         case Some(c) =>
-          request.identity.deleteContact(c.id).map {
-            case false => resBadRequest("unable to delete")
-            case true  => resOk("deleted")
+          // check if that contact is internal or external
+          Identity.find(c.identityId).flatMap {
+            case None => Future(resNotFound("identity"))
+            case Some(contactIdentity) =>
+
+              // delete identity details if it is an external contact
+              if (contactIdentity.accountId.isEmpty) {
+                contactIdentity.deleteDetails(deleteDisplayName = false)
+              }
+
+              request.identity.deleteContact(c.id).map {
+                case false => resServerError("unable to delete")
+                case true =>
+                  // send event
+                  actors.eventRouter ! ContactDeleted(request.identity.id, c.id)
+                  resOk("deleted")
+              }
           }
       }
   }
@@ -282,7 +293,7 @@ object ContactController extends ExtendedController {
 
   object AnswerFriendRequest { implicit val format = Json.format[AnswerFriendRequest] }
 
-  def answerFriendRequest = AuthAction().async(parse.tolerantJson) {
+  def answerFriendRequest = AuthAction(includeContacts = true).async(parse.tolerantJson) {
     request =>
       validateFuture(request.body, AnswerFriendRequest.format) {
         afr =>
@@ -296,14 +307,13 @@ object ContactController extends ExtendedController {
                 actors.eventRouter ! FriendRequestRejected(MongoId(afr.identityId), MongoId(afr.identityId), request.identity.id)
                 Future(resOk("rejected"))
               case FRIEND_REQUEST_ACCEPT =>
-                // add contact to both identites
+                // add contact to both identities
                 request.identity.deleteFriendRequest(new MongoId(afr.identityId))
-                Identity.find(afr.identityId).flatMap {
+                Identity.findWith(MongoId(afr.identityId), includeContacts = true).flatMap {
                   case None => Future(resNotFound("other identity"))
                   case Some(otherIdentity) =>
                     val contact = Contact.create(otherIdentity.id)
                     val otherContact = Contact.create(request.identity.id)
-
                     // check if accepting identity also has send a friendRequest and remove it
                     otherIdentity.deleteFriendRequest(request.identity.id)
                     for {
@@ -329,6 +339,28 @@ object ContactController extends ExtendedController {
                 Future(resOk(""))
               case _ => Future(resBadRequest("invalid answer type"))
             }
+          }
+      }
+  }
+
+  def deleteFriendRequest(id: String) = AuthAction().async {
+    request =>
+
+      // find other identity
+      Identity.find(id).map {
+        case None => resNotFound("identity")
+        case Some(otherIdentity) =>
+          // check if that other identity actually has a friend request from this identity
+          otherIdentity.friendRequests.find(_.identityId.equals(request.identity.id)) match {
+            case None => resBadRequest("Friend request does not exist")
+            case Some(friendRequest) =>
+              // delete friend request
+              otherIdentity.deleteFriendRequest(request.identity.id)
+              // send events to both identities
+              actors.eventRouter ! FriendRequestDeleted(request.identity.id, request.identity.id, otherIdentity.id)
+              actors.eventRouter ! FriendRequestDeleted(otherIdentity.id, request.identity.id, otherIdentity.id)
+
+              resOk("deleted")
           }
       }
   }

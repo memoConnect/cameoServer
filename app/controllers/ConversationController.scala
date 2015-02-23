@@ -1,16 +1,18 @@
 package controllers
 
 import actors.ExternalMessage
-import events.{ ConversationNew, ConversationUpdate }
+import events.{ ConversationDeleted, ConversationNew, ConversationUpdate }
 import helper.OutputLimits
 import helper.ResultHelper._
 import models._
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Reads._
 import play.api.libs.json._
 import play.api.mvc.Result
 import services.AuthenticationActions.AuthAction
 import traits.ExtendedController
+import play.api.libs.functional.syntax._
 
 import scala.concurrent.Future
 
@@ -72,7 +74,7 @@ object ConversationController extends ExtendedController {
         }
 
         def insertConversation(conversation: Conversation): Future[Result] = {
-          Conversation.col.insert(conversation).map {
+          Conversation.insert(conversation).map {
             le =>
               // send conversation:new event to all recipients
               conversation.recipients.foreach {
@@ -252,6 +254,83 @@ object ConversationController extends ExtendedController {
       } else {
         Logger.error("User with disabled unread message submitted message read. IdentityId: " + request.identity.id.id)
         Future(resBadRequest("unread messages are disabled"))
+      }
+  }
+
+  case class FindConversationRequest(search: String,
+                                     foo: Boolean // needed because foo 
+                                     )
+  object FindConversationRequest {
+    implicit val reads = (
+      (__ \ 'search).read[String](minLength[String](3)) and
+      Reads.pure(true)
+    )(FindConversationRequest.apply _)
+  }
+
+  def findConversations(offset: Int, limit: Int, keyId: List[String]) = AuthAction(includeContacts = true, getAccount = true).async(parse.tolerantJson) {
+    request =>
+      validateFuture[FindConversationRequest](request.body, FindConversationRequest.reads) {
+        fcr =>
+          val searchTerm = fcr.search.toLowerCase
+
+          request.identity.getContactIdentities.flatMap {
+            identities =>
+              // filter all identities that match the search term
+              val matchingIdentities = (identities :+ request.identity).filter {
+                i =>
+                  i.cameoId.toLowerCase.contains(searchTerm) ||
+                    i.displayName.exists(_.toLowerCase.contains(searchTerm))
+              }
+
+              // search conversations that match the subject or recipient
+              Conversation.search(request.identity.id, Some(fcr.search), matchingIdentities.map(_.id)).map {
+                conversations =>
+                  val sorted = conversations.sortBy(_.lastUpdated).reverse
+                  val limited = OutputLimits.applyLimits(sorted, offset, limit)
+                  val res = Json.obj(
+                    "conversations" -> limited.map(_.toSummaryJson(request.identity.id, request.account.map(_.userSettings), keyId)),
+                    "numberOfMatches" -> conversations.length
+                  )
+                  resOk(res)
+              }
+          }
+      }
+  }
+
+  def deleteOwnRecipient(id: String) = AuthAction().async {
+    request =>
+      Conversation.find(id).map {
+        case None => resNotFound("conversation")
+        case Some(conversation) =>
+          conversation.hasMemberResult(request.identity.id) {
+            conversation.recipients.length match {
+              case 1 =>
+                // delete the whole conversation
+                Conversation.delete(conversation.id)
+              case _ =>
+                // we cannot delete the recipient, science it would invalidate the conversation signature, so we mark him inactive
+                conversation.markRecipientInactive(request.identity.id).map {
+                  case None => // do nothing
+                  case Some(deletedRecipient) =>
+                    // delete his aePassphrases
+                    conversation.deleteAePassphrases(request.identity.publicKeys.map(_.id.toString))
+                    // send event to other recipients
+                    val update = Json.obj(
+                      "inactiveRecipients" -> Seq(deletedRecipient.toJson),
+                      "recipients" -> Seq(Json.obj("identityId" -> deletedRecipient.identityId.toJson, "deleted" -> true))
+                    )
+                    conversation.recipients.foreach {
+                      recipient =>
+                        if (!recipient.identityId.equals(deletedRecipient.identityId)) {
+                          actors.eventRouter ! ConversationUpdate(recipient.identityId, conversation.id, update)
+                        }
+                    }
+                }
+            }
+            // send event
+            actors.eventRouter ! ConversationDeleted(request.identity.id, conversation.id)
+            resOk("deleted")
+          }
       }
   }
 }

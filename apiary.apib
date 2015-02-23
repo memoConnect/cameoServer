@@ -28,7 +28,7 @@ HOST: http://cameo.io
 
         {
             "res": "KO",
-            "errorCode" : "ACCOUNT.MISSING.IDENTITY"
+            "errorCodes" : ["ACCOUNT.MISSING.IDENTITY"]
         }
 
 ## Delete Token [/token/{token}]
@@ -172,6 +172,7 @@ Get Account details of current user
               "dateFormat": "dd.MM.yyyy",
               "timeFormat": "HH:mm"
             },
+            "registrationIncomplete": false
             "created": 1392301163329,
             "lastUpdated": 1392301163329,
             "identities": [
@@ -204,6 +205,7 @@ Update existing account
           "oldPassword" : "oldPassword", (required when setting new password)
           "email": "mail",
           "phoneNumber": "12335",
+          "registrationIncomplete": false,
           "userSettings": {
             "enableUnreadMessages": true,
             "convertSmileysToEmojis": true,
@@ -220,6 +222,28 @@ Update existing account
           "res": "OK",
           "data": "updated"
         }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCodes" : ["PHONENUMBER_INVALID"]
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCodes" : ["EMAIL_INVALID", "PHONENUMBER_INVALID"]
+        }
+
++ Response 400
+
+        {
+            "res":"KO",
+            "errorCodes" : ["EMAIL_INVALID"]
+        }
+
 
 
 ## Verification [/verify]
@@ -265,14 +289,14 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
         {
             "res":"KO",
-            "errorCode" :"VERIFY.EXPIRED"
+            "errorCodes" : ["VERIFY.EXPIRED"]
         }
 
 + Response 400
 
         {
             "res":"KO",
-            "errorCode" :"VERIFY.VALUE.CHANGED"
+            "errorCodes" : ["VERIFY.VALUE.CHANGED"]
         }
 
 
@@ -300,28 +324,28 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.EMAIL.NOT.FOUND"
+            "errorCodes" :["PASSWORD.RESET.EMAIL.NOT.FOUND"]
         }
 
 + Response 400
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.LOGIN.NOT.FOUND"
+            "errorCodes" :["PASSWORD.RESET.LOGIN.NOT.FOUND"]
         }
 
 + Response 400
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.PHONENUMBER.NOT.FOUND"
+            "errorCodes" :["PASSWORD.RESET.PHONENUMBER.NOT.FOUND"]
         }
 
 + Response 400
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.NO.EMAIL.PHONENUMBER"
+            "errorCodes" :["PASSWORD.RESET.NO.EMAIL.PHONENUMBER"]
         }
 
 
@@ -338,7 +362,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.EXPIRED"
+            "errorCodes" :["PASSWORD.RESET.EXPIRED"]
         }
 
 
@@ -368,7 +392,7 @@ Send a verification mail/sms. Both parameters in the JSON are optional.
 
         {
             "res":"KO",
-            "errorCode" :"PASSWORD.RESET.EXPIRED"
+            "errorCodes" :["PASSWORD.RESET.EXPIRED"]
         }
 
 
@@ -1238,9 +1262,34 @@ Sending and reading messages
             }
 
 
-## Add new Recipient to Conversation [/conversation/{id}/recipient]
+## Search for conversation [/conversations/search]
+Matches the subject of a conversation or the cameoId or display name of a recipient
 
 ### POST
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+    + Body
+
+            {
+                "search" :"search term (min length: 3"
+            }
+
++ Response 200
+
+            {
+                "conversations" : [ conversation summary objects ]
+                "numberOfMatches" : 1337
+            }
+
+
+## Recipients to Conversation [/conversation/{id}/recipient]
+
+### POST
+Add a recipient to to conversation
 
 + Parameters
     + id ... Conversation id
@@ -1268,14 +1317,12 @@ Sending and reading messages
           "data": "updated"
         }
 
-## Recipients in the conversation conversation [/conversation/{id}/recipient/{recipientId}]
 
 ### DELETE
+Remove user from conversation
 
 + Parameters
     + id ... Conversation id
-    + recipientId ... Recipient to be deleted
-
 
 + Request
     + Headers
@@ -1871,7 +1918,7 @@ Edit a contact. All values are optional. Only values contained in the json will 
           ]
         }
 
-## Get Frienship Requests [/friendRequests]
+## Get Friend Requests [/friendRequests]
 
 ### GET
 Returns all Friendship Requests for one identity
@@ -1902,10 +1949,10 @@ Returns all Friendship Requests for one identity
             }
         }
 
-## Send Friendship Request [/friendRequest]
+## Send Friend Request [/friendRequest]
 
 ### POST
-Send a Friendship Request to an other identity. Either the identityID or the cameoId can be used as identifier.
+Send a Friend Request to an other identity. Either the identityID or the cameoId can be used as identifier.
 
 
 + Request
@@ -1930,7 +1977,7 @@ Send a Friendship Request to an other identity. Either the identityID or the cam
 ## Answer Friendship Request  [/friendRequest/answer]
 
 ### POST
-Accept or Reject FriendshipRequests
+Accept or Reject Friend Requests
 
 + Request
     + Headers
@@ -1949,6 +1996,30 @@ Accept or Reject FriendshipRequests
         {
             "res": "OK"
         }
+
+
+## Delete Friend Request  [/friendRequest/{id}]
+
+### DELETE
+Delete a friend reqeust
+
+
++ Parameters
+    + id ... IdentityId of friendrequest that should be deleted
+
+
++ Request
+    + Headers
+
+            Authorization: {token}
+
+
++ Response 200
+
+        {
+            "res": "deleted"
+        }
+
 
 # Group Services
 
@@ -2155,6 +2226,47 @@ Events will be deleted after each call
                "data": { conversation object }
              },
              {
+               "name": "conversation:new-aePassphrase",
+               "data": {
+                 "keyId": "EWhm5RVlKxVLpKvUiKUI",
+                 "conversationIds": [
+                   "VqkdgXcpj9HnGK7V1dVI"
+                 ]
+               }
+             },
+             {
+               "name": "conversation:update",
+               "data": {
+                 "unreadMessages": 4
+               }
+             },
+             {
+               "name": "conversation:update",
+               "data": {
+                 "inactiveRecipients": [
+                   {
+                     "identityId": "YOP0rRa70ByyYjmtBwDD"
+                   }
+                 ],
+                 "recipients": [
+                   {
+                     "identityId": "YOP0rRa70ByyYjmtBwDD",
+                     "deleted": true
+                   }
+                 ],
+                 "id": "iSqwvU3gQQjoQpNIGHeS"
+               }
+             },
+
+             {
+               "name": "conversation:deleted",
+               "data": { "id": "conversationId" }
+             },
+             {
+               "name": "contact:deleted",
+               "data": { "id": "contactId" }
+             },
+             {
                "name": "friendRequest:new",
                "data": {
                  "friendRequest":{ object },
@@ -2177,28 +2289,19 @@ Events will be deleted after each call
                 }
              },
              {
+                "name": "friendRequest:deleted",
+                "data": {
+                  "from": "identityId",
+                  "to": "identityId"
+                }
+             },
+             {
                "name": "identity:update",
                "data": { identity object (updated fields only)}
              },
              {
                "name": "identity:new",
                "data": { identity object  }
-             },
-
-             {
-               "name": "conversation:new-aePassphrase",
-               "data": {
-                 "keyId": "EWhm5RVlKxVLpKvUiKUI",
-                 "conversationIds": [
-                   "VqkdgXcpj9HnGK7V1dVI"
-                 ]
-               }
-             },
-             {
-               "name": "conversation:update",
-               "data": {
-                 "unreadMessages": 4
-               }
              },
              {
                "name": "account:update",

@@ -38,11 +38,11 @@ POST           /a/v1/conversation                                    controllers
 GET            /a/v1/conversation/:id                                controllers.ConversationController.getConversation(id,  offset: Int ?= 0, limit: Int ?= 0, keyId: List[String], timeLimit: Long ?= 0)
 GET            /a/v1/conversation/:id/messages                       controllers.ConversationController.getConversationMessages(id,  offset: Int ?= 0, limit: Int ?= 0)
 PUT            /a/v1/conversation/:id                                controllers.ConversationController.updateConversation(id)
-#POST           /a/v1/conversation/:id/recipient                      controllers.ConversationController.addRecipients(id)
 POST           /a/v1/conversation/:id/aePassphrases                  controllers.ConversationController.addAePassphrases(id)
-#DELETE         /a/v1/conversation/:id/recipient/:rid                 controllers.ConversationController.deleteRecipient(id, rid)
+DELETE         /a/v1/conversation/:id/recipient                      controllers.ConversationController.deleteOwnRecipient(id)
 GET            /a/v1/conversation/:id/summary                        controllers.ConversationController.getConversationSummary(id: String, keyId: List[String])
 GET            /a/v1/conversations                                   controllers.ConversationController.getConversations(offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
+POST           /a/v1/conversations/search                            controllers.ConversationController.findConversations(offset: Int ?= 0, limit: Int ?= 0, keyId: List[String])
 POST           /a/v1/conversation/:id/message/:messageId/read        controllers.ConversationController.markMessageRead(id, messageId)
 
 
@@ -74,6 +74,7 @@ DELETE         /a/v1/contact/:id                                     controllers
 GET            /a/v1/friendRequests                                  controllers.ContactController.getFriendRequests
 POST           /a/v1/friendRequest                                   controllers.ContactController.sendFriendRequest
 POST           /a/v1/friendRequest/answer                            controllers.ContactController.answerFriendRequest
+DELETE         /a/v1/friendRequest/:id                               controllers.ContactController.deleteFriendRequest(id)
 
 # FILES
 POST           /a/v1/file                                            controllers.FileController.uploadFile
@@ -122,7 +123,7 @@ DELETE         /a/cockpit/v1/:elementName/:id                        controllers
 GET            /a/cockpit/v1/:elementName/:id                        controllers.cockpit.EditController.getEdit(elementName, id)
 PUT            /a/cockpit/v1/:elementName/:id                        controllers.cockpit.EditController.modify(elementName, id)
 
-# Deal with options
+# Deal with options todo: do this properly
 OPTIONS        /a/v1/*foo                                            controllers.TokenController.getTokenOptions(foo)
 OPTIONS        /a/v2/*foo                                            controllers.TokenController.getTokenOptions(foo)
 OPTIONS        /a/cockpit/v1/*foo                                    controllers.TokenController.getTokenOptions(foo)
@@ -138,7 +139,7 @@ DELETE         /a/v1/testUser/:id                                    controllers
 DELETE         /a/v1/testUsers                                       controllers.TestUserController.deleteAllTestUsers()
 
 # check app to support monitoring
-GET            /a/v1/util/checkApp                                   controllers.Application.checkApp()
+GET            /a/v1/util/checkApp                                   controllers.Application.checkApp
 
 # Redirect for Shorturls
 GET            /p/:id                                                controllers.ShortUrlController.redirect(urlType = "p", id: String)

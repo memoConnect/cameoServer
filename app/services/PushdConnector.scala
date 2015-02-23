@@ -110,7 +110,6 @@ object PushdConnector {
   def postRequest(path: String, body: JsValue): Option[Future[WSResponse]] = {
     maybeUrl.map {
       url =>
-        // intellij does not like this for some reason, but it compiles...
         WS.url(url + path).post(body)
     }
   }
@@ -121,7 +120,6 @@ object PushdConnector {
     }
     maybeUrl.map {
       url =>
-        // intellij does not like this for some reason, but it compiles...
         WS.url(url + path).post(bodyWithSeq)
     }
   }

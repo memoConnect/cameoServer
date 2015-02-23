@@ -1,15 +1,19 @@
+import models.Identity
+import org.specs2.time.Duration
 import play.api.libs.json.JsObject
 import play.api.libs.json.{ JsArray, Json, JsObject }
 import play.api.test.{ FakeRequest, FakeApplication }
 import play.api.test.Helpers._
 import scala.Some
-import testHelper.Stuff._
+import testHelper.Helper._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{ StartedApp, Stuff }
+import testHelper.{ StartedApp, Helper }
 import org.specs2.mutable._
 import testHelper.TestConfig._
+import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * User: Björn Reimer
@@ -386,113 +390,83 @@ class ContactControllerSpec extends StartedApp {
         }
     }
 
-//    "get all contact groups" in {
-//      val path = basePath + "/contact-groups"
-//
-//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-//      val res = route(req).get
-//
-//      if (status(res) != OK) {
-//        Logger.error("Response: " + contentAsString(res))
-//      }
-//      status(res) must equalTo(OK)
-//
-//      val data = (contentAsJson(res) \ "data").as[Seq[String]]
-//
-//      data.find(_.equals("group1")) aka "contain group 1" must beSome
-//      data.find(_.equals("group2")) aka "contain group 2" must beSome
-//      data.find(_.equals("group3")) aka "contain group 3" must beSome
-//      data.find(_.equals("group4")) aka "contain group 4" must beSome
-//    }
-//
-//    "get single group" in {
-//      val path = basePath + "/contact-group/group1"
-//
-//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-//      val res = route(req).get
-//
-//      if (status(res) != OK) {
-//        Logger.error("Response: " + contentAsString(res))
-//      }
-//      status(res) must equalTo(OK)
-//
-//      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
-//
-//      data.length must beGreaterThan(20)
-//
-//    }
-//
-//    "get group with internal contact" in {
-//      val path = basePath + "/contact-group/group4"
-//
-//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-//      val res = route(req).get
-//
-//      if (status(res) != OK) {
-//        Logger.error("Response: " + contentAsString(res))
-//      }
-//      status(res) must equalTo(OK)
-//
-//      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
-//
-//      data.length must beEqualTo(1)
-//
-//      (data(0) \ "identityId").asOpt[String] must beSome(internalContactIdentityId)
-//    }
-//
-//    "get group with created external contact" in {
-//      val path = basePath + "/contact-group/group3"
-//
-//      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-//      val res = route(req).get
-//
-//      if (status(res) != OK) {
-//        Logger.error("Response: " + contentAsString(res))
-//      }
-//      status(res) must equalTo(OK)
-//
-//      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
-//
-//      data.length must beEqualTo(1)
-//
-//      (data(0) \ "id").asOpt[String] must beSome(externalContactId)
-//      (data(0) \ "groups")(0).asOpt[String] must beSome("group1")
-//      (data(0) \ "groups")(1).asOpt[String] must beSome("group3")
-//      (data(0) \ "contactType").asOpt[String] must beSome("external")
-//      (data(0) \ "identity" \ "email" \ "value").asOpt[String] must beSome(newContactMail)
-//      (data(0) \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(newContactTel)
-//      (data(0) \ "identity" \ "displayName").asOpt[String] must beSome(newContactName)
-//    }
-
-    "delete Contact" in {
-      val path = basePath + "/contact/" + internalContact3Id
-
-      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      if (status(res) != OK) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(OK)
-    }
-
-    "check deletion" in {
-      val path = basePath + "/contact/" + internalContact3Id
-
-      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(NOT_FOUND)
-    }
-
-    "refuse to delete non-existing contact" in {
-      val path = basePath + "/contact/asdfasdf"
-
-      val req = FakeRequest(DELETE, path).withHeaders(tokenHeader(tokenExisting))
-      val res = route(req).get
-
-      status(res) must equalTo(NOT_FOUND)
-    }
+    //    "get all contact groups" in {
+    //      val path = basePath + "/contact-groups"
+    //
+    //      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //
+    //      val data = (contentAsJson(res) \ "data").as[Seq[String]]
+    //
+    //      data.find(_.equals("group1")) aka "contain group 1" must beSome
+    //      data.find(_.equals("group2")) aka "contain group 2" must beSome
+    //      data.find(_.equals("group3")) aka "contain group 3" must beSome
+    //      data.find(_.equals("group4")) aka "contain group 4" must beSome
+    //    }
+    //
+    //    "get single group" in {
+    //      val path = basePath + "/contact-group/group1"
+    //
+    //      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //
+    //      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+    //
+    //      data.length must beGreaterThan(20)
+    //
+    //    }
+    //
+    //    "get group with internal contact" in {
+    //      val path = basePath + "/contact-group/group4"
+    //
+    //      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //
+    //      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+    //
+    //      data.length must beEqualTo(1)
+    //
+    //      (data(0) \ "identityId").asOpt[String] must beSome(internalContactIdentityId)
+    //    }
+    //
+    //    "get group with created external contact" in {
+    //      val path = basePath + "/contact-group/group3"
+    //
+    //      val req = FakeRequest(GET, path).withHeaders(tokenHeader(tokenExisting))
+    //      val res = route(req).get
+    //
+    //      if (status(res) != OK) {
+    //        Logger.error("Response: " + contentAsString(res))
+    //      }
+    //      status(res) must equalTo(OK)
+    //
+    //      val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
+    //
+    //      data.length must beEqualTo(1)
+    //
+    //      (data(0) \ "id").asOpt[String] must beSome(externalContactId)
+    //      (data(0) \ "groups")(0).asOpt[String] must beSome("group1")
+    //      (data(0) \ "groups")(1).asOpt[String] must beSome("group3")
+    //      (data(0) \ "contactType").asOpt[String] must beSome("external")
+    //      (data(0) \ "identity" \ "email" \ "value").asOpt[String] must beSome(newContactMail)
+    //      (data(0) \ "identity" \ "phoneNumber" \ "value").asOpt[String] must beSome(newContactTel)
+    //      (data(0) \ "identity" \ "displayName").asOpt[String] must beSome(newContactName)
+    //    }
 
     "send FriendRequest with identityId" in {
       val path = basePath + "/friendRequest"
@@ -859,6 +833,143 @@ class ContactControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[Seq[JsObject]]
 
       data.length must beEqualTo(0)
+    }
+
+    "delete Contacts" should {
+
+      val testUser1 = TestUser.create()
+      val testUser2 = TestUser.create()
+
+      testUser1.makeFriends(testUser2)
+      val externalContact = testUser1.addExternalContact(Some("0123456"), Some("foo@moep.de"))
+      var internalContactId = ""
+
+      "get internal contact id" in {
+
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser1.token)))
+
+        data.length must beEqualTo(3)
+        val internalContact = data.find(js => (js \ "identityId").as[String].equals(testUser2.identityId))
+        internalContact must beSome
+
+        internalContactId = (internalContact.get \ "id").as[String]
+
+        1 === 1
+      }
+
+      "refuse to delete non-existing contact" in {
+        checkError(executeRequest(DELETE, "/contact/asdfasdf", NOT_FOUND, Some(testUser1.token)))
+      }
+
+      "delete internal Contact" in {
+        checkOk(executeRequest(DELETE, "/contact/" + internalContactId, OK, Some(testUser1.token)))
+      }
+
+      "the internal contact should be deleted" in {
+        checkError(executeRequest(GET, "/contact/" + internalContactId, NOT_FOUND, Some(testUser1.token)))
+      }
+
+      "the other identity should still have the contact" in {
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser2.token)))
+
+        data.length must beEqualTo(2)
+        data.find(js => (js \ "identityId").as[String].equals(testUser1.identityId)) must beSome
+      }
+
+      "delete external contact" in {
+        checkOk(executeRequest(DELETE, "/contact/" + externalContact._1, OK, Some(testUser1.token)))
+      }
+
+      "the external contact should be deleted" in {
+        checkError(executeRequest(GET, "/contact/" + externalContact._1, NOT_FOUND, Some(testUser1.token)))
+      }
+
+      "the identity of the external contact should still exist, but not have any contact details" in {
+        val maybeIdentity = Await.result(Identity.find(externalContact._2), FiniteDuration(1, "min"))
+
+        maybeIdentity must beSome
+
+        maybeIdentity.get.phoneNumber must beNone
+        maybeIdentity.get.email must beNone
+        maybeIdentity.get.avatar must beSome
+        maybeIdentity.get.displayName must beSome
+      }
+
+      "there should be no more contacts left (except support)" in {
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser1.token)))
+
+        data.length must beEqualTo(1)
+        data.find(js => (js \ "identityId").as[String].equals(testUser2.identityId)) must beNone
+      }
+
+      "the other identity should not be able to send a friend request, since it still has the contact" in {
+        val body = Json.obj("identityId" -> testUser1.identityId, "message" -> "moep")
+        checkError(executeRequest(POST, "/friendRequest", 232, Some(testUser2.token), Some(body)))
+      }
+
+      "send FriendRequest to deleted internal contact and accept it" in {
+        testUser1.makeFriends(testUser2) must beEqualTo(OK)
+      }
+
+      "The first identity should have the other as contact again" in {
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser1.token)))
+
+        data.length must beEqualTo(2)
+        data.count(js => (js \ "identityId").as[String].equals(testUser2.identityId)) must beEqualTo(1)
+      }
+
+      "The other identity should have the other still as contact and only once" in {
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser2.token)))
+
+        data.length must beEqualTo(2)
+        data.count(js => (js \ "identityId").as[String].equals(testUser1.identityId)) must beEqualTo(1)
+      }
+    }
+
+    "delete friend requests" should {
+
+      val testUser1 = TestUser.create()
+      val testUser2 = TestUser.create()
+
+      "send friend request to other identity" in {
+        val body = Json.obj("identityId" -> testUser2.identityId)
+        checkOk(executeRequest(POST, "/friendRequest", OK, Some(testUser1.token), Some(body)))
+      }
+
+      "sender of the friend request should see it in his contacts" in {
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser1.token)))
+
+        data.length must beEqualTo(2)
+        data.find(js => (js \ "identityId").as[String].equals(testUser2.identityId)) must beSome
+      }
+
+      "the receiver should see the friend request" in {
+        val data = getDataSeq(executeRequest(GET, "/friendRequests", OK, Some(testUser2.token)))
+
+        data.length must beEqualTo(1)
+        data.find(js => (js \ "identityId").as[String].equals(testUser1.identityId)) must beSome
+      }
+
+      "refuse to delete friend request that does not exist" in {
+        checkError(executeRequest(DELETE, "/friendRequest/" + identityExisting, BAD_REQUEST, Some(testUser1.token)))
+      }
+
+      "sender deletes friend request" in {
+        checkOk(executeRequest(DELETE, "/friendRequest/" + testUser2.identityId, OK, Some(testUser1.token)))
+      }
+
+      "sender should not see the friend request in his contacts" in {
+        val data = getDataSeq(executeRequest(GET, "/contacts", OK, Some(testUser1.token)))
+
+        data.length must beEqualTo(1)
+        data.find(js => (js \ "identityId").as[String].equals(testUser2.identityId)) must beNone
+      }
+
+      "the receiver should not see the friend request" in {
+        val data = getDataSeq(executeRequest(GET, "/friendRequests", OK, Some(testUser2.token)))
+
+        data.length must beEqualTo(0)
+      }
     }
   }
 }

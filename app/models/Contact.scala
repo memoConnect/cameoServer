@@ -22,7 +22,7 @@ case class Contact(id: MongoId,
   def toJson: JsObject = Json.toJson(this)(Contact.outputWrites).as[JsObject]
 
   def toJsonWithIdentity(publicKeySignatures: Map[String, Signature], identities: Seq[Identity]): JsObject = {
-    identities.find(_.id.equals(this.identityId)).map {
+    identities.find(_.id.equals(this.identityId)).fold(Json.obj()) {
       identity =>
         val contactType = identity.accountId match {
           case None    => CONTACT_TYPE_EXTERNAL
@@ -35,7 +35,7 @@ case class Contact(id: MongoId,
         }
 
         Json.toJson(this)(Contact.outputWrites).as[JsObject] ++ Json.obj("identity" -> identityJson) ++ Json.obj("contactType" -> contactType)
-    }.getOrElse(Json.obj())
+    }
   }
 
   // todo: update to new ModelUpdate
@@ -101,7 +101,6 @@ object Contact extends SubModel[Contact, Identity] {
    * Evolutions
    */
 
-  def docVersion = 1
   def evolutions = Map(
     0 -> ContactEvolutions.addContactType
   )

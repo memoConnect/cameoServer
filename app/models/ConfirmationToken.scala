@@ -37,8 +37,6 @@ object ConfirmationToken extends Model[ConfirmationToken] {
 
   val col = confirmationCollection
 
-  def docVersion = 0
-
   def evolutions = Map()
 
   def create(accountId: MongoId, confirmationType: String, confirmationPath: String, confirmationValue: String): ConfirmationToken = {
@@ -58,7 +56,7 @@ object ConfirmationToken extends Model[ConfirmationToken] {
     val query = Json.obj("accountId" -> accountId, "confirmationType" -> confirmationType) ++ {
       confirmationPath match {
         case CONFIRMATION_PATH_ANY => Json.obj()
-        case path                   => Json.obj("confirmationPath" -> confirmationPath)
+        case path                  => Json.obj("confirmationPath" -> confirmationPath)
       }
     }
     ConfirmationToken.deleteAll(query).map {

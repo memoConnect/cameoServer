@@ -31,9 +31,10 @@ object Message extends SubModel[Message, Conversation] {
 
   implicit val mongoFormat: Format[Message] = createMongoFormat(Json.reads[Message], Json.writes[Message])
 
-  def docVersion = 3
-
-  def evolutions = Map(1 -> MessageEvolutions.splitPlainAndEncrypted, 2 -> MessageEvolutions.filesToFileIds)
+  def evolutions = Map(
+    1 -> MessageEvolutions.splitPlainAndEncrypted,
+    2 -> MessageEvolutions.filesToFileIds
+  )
 
   def createReads(fromIdentityId: MongoId) = (
     Reads.pure[MongoId](IdHelper.generateMessageId()) and

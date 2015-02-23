@@ -9,11 +9,11 @@ import play.api.test.Helpers._
 import play.core.Router
 import scala.concurrent.Await
 import scala.Some
-import testHelper.Stuff._
+import testHelper.Helper._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.{ Play, Logger }
-import testHelper.{ StartedApp, Stuff }
+import testHelper.{ StartedApp, Helper }
 import org.specs2.mutable._
 import testHelper.TestConfig._
 import scala.concurrent.duration._

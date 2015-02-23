@@ -29,8 +29,10 @@ case class Account(id: MongoId,
                    email: Option[VerifiedString],
                    properties: AccountProperties,
                    userSettings: AccountUserSettings,
+                   registrationIncomplete: Option[Boolean],
                    created: Date,
-                   lastUpdated: Date) {
+                   lastUpdated: Date,
+                   docVersion: Int) {
 
   def toJson: JsObject = Json.toJson(this)(Account.outputWrites).as[JsObject]
 
@@ -59,11 +61,12 @@ object Account extends Model[Account] with CockpitEditable[Account] {
         maybeEmptyJson("phoneNumber", a.phoneNumber.map(_.toJson)) ++
         maybeEmptyJson("email", a.email.map(_.toJson)) ++
         Json.obj("userSettings" -> a.userSettings) ++
+        maybeEmptyJson("registrationIncomplete", a.registrationIncomplete) ++
         addCreated(a.created) ++
         addLastUpdated(a.lastUpdated)
   }
 
-  // deprecated. ToDo: delete when legacacy code is deleted
+  // deprecated. ToDo: delete when legacy code is deleted
   def createReads(): Reads[Account] = {
     val id = IdHelper.generateAccountId()
     (Reads.pure[MongoId](id) and
@@ -73,8 +76,11 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       (__ \ 'email).readNullable[VerifiedString](verifyMail andThen VerifiedString.createReads) and
       Reads.pure[AccountProperties](AccountProperties.defaultProperties) and
       Reads.pure[AccountUserSettings](AccountUserSettings.defaultSettings) and
+      Reads.pure[Option[Boolean]](Some(true)) and
       Reads.pure[Date](new Date()) and
-      Reads.pure[Date](new Date()))(Account.apply _)
+      Reads.pure[Date](new Date()) and
+      Reads.pure[Int](docVersion)
+    )(Account.apply _)
   }
 
   def findByLoginName(loginName: String): Future[Option[Account]] = {
@@ -91,8 +97,10 @@ object Account extends Model[Account] with CockpitEditable[Account] {
       email,
       AccountProperties.defaultProperties,
       AccountUserSettings.defaultSettings,
+      Some(true),
       new Date,
-      new Date
+      new Date,
+      docVersion
     )
   }
 
@@ -119,8 +127,6 @@ object Account extends Model[Account] with CockpitEditable[Account] {
     new CockpitListFilter("PhoneNumber", str => Json.obj("phoneNumber" -> Json.obj("$regex" -> str)))
   )
 
-  def docVersion = 6
-
   def evolutions = Map(
     0 -> AccountEvolutions.migrateToVerifiedString,
     1 -> AccountEvolutions.addDeviceIds,
@@ -146,8 +152,6 @@ object AccountReservation extends Model[AccountReservation] {
   implicit val col = reservedAccountCollection
 
   implicit val mongoFormat: Format[AccountReservation] = createMongoFormat(Json.reads[AccountReservation], Json.writes[AccountReservation])
-
-  def docVersion: Int = 0
 
   def evolutions: Map[Int, Reads[JsObject]] = Map()
 
@@ -196,27 +200,9 @@ object AccountEvolutions {
 
   def migrateToVerifiedString: Reads[JsObject] = Reads {
     js =>
-      val movePhoneNumber = __.json.update((__ \ 'phoneNumber \ 'value).json.copyFrom((__ \ 'phoneNumber).json.pick[JsString]))
-      val pnAddVerified = __.json.update((__ \ 'phoneNumber \ 'isVerified).json.put(JsBoolean(false)))
-      val pnAddDate = __.json.update((__ \ 'phoneNumber \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
-      val phoneNumber: Reads[JsObject] =
-        (js \ "phoneNumber").asOpt[String] match {
-          case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
-          case Some(n) => movePhoneNumber andThen pnAddVerified andThen pnAddDate
-        }
-
-      val moveMail = __.json.update((__ \ 'email \ 'value).json.copyFrom((__ \ 'email).json.pick[JsString]))
-      val mAddVerified = __.json.update((__ \ 'email \ 'isVerified).json.put(JsBoolean(false)))
-      val mAddDate = __.json.update((__ \ 'email \ 'lastUpdated).json.put(Json.obj("$date" -> new Date())))
-      val email =
-        (js \ "email").asOpt[String] match {
-          case None    => Reads { js => JsSuccess(js.as[JsObject]) } // do nothing
-          case Some(m) => moveMail andThen mAddVerified andThen mAddDate
-        }
-
+      // deleted migration. It was not needed and caused problems.
       val addVersion = __.json.update((__ \ 'docVersion).json.put(JsNumber(1)))
-
-      js.transform(phoneNumber andThen email andThen addVersion)
+      js.transform(addVersion)
   }
 
   def addDeviceIds: Reads[JsObject] = Reads {
@@ -261,6 +247,7 @@ object AccountModelUpdate extends ModelUpdate {
     VerifiedStringUpdateValue("email", JsonHelper.verifyMail, externalEdit = true),
     VerifiedStringUpdateValue("phoneNumber", JsonHelper.verifyPhoneNumber, externalEdit = true),
     StringUpdateValue("password"),
+    BooleanUpdateValue("registrationIncomplete", externalEdit = true),
     BooleanUpdateSubvalue("userSettings", "enableUnreadMessages", externalEdit = true),
     BooleanUpdateSubvalue("userSettings", "convertSmileysToEmojis", externalEdit = true),
     BooleanUpdateSubvalue("userSettings", "sendOnReturn", externalEdit = true),

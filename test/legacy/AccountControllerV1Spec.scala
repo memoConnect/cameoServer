@@ -7,7 +7,7 @@ import play.api.libs.json._
 import play.api.test.Helpers._
 import play.api.test._
 import play.api.{Logger, Play}
-import testHelper.Stuff._
+import testHelper.Helper._
 import testHelper.TestConfig._
 import testHelper.{StartedApp, TestConfig}
 
@@ -369,7 +369,6 @@ class AccountControllerV1Spec extends StartedApp {
       (identity \ "id").asOpt[String] must beSome(purlExtern3IdentitityId)
       (identity \ "phoneNumber" \ "value").asOpt[String] must beNone
       (identity \ "email" \ "value").asOpt[String] must beNone
-      (identity \ "displayName").asOpt[String] must beSome(displayName2)
     }
 
     var purlExternIdentityToken = ""
@@ -409,7 +408,6 @@ class AccountControllerV1Spec extends StartedApp {
       (data \ "id").asOpt[String] must beSome(purlExtern3IdentitityId)
       (data \ "cameoId").asOpt[String] must beSome(loginExternal + "@" + domain)
       (data \ "avatar").asOpt[String] must beSome
-      (data \ "displayName").asOpt[String] must beSome(displayName2)
     }
 
     "identity should have sender as contact" in {

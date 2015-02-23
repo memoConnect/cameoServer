@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 
 case class ConfirmMail(accountId: MongoId, lang: Lang, confirmationToken: Option[ConfirmationToken] = None)
-case class ConfirmPhoneNumber(accountId: MongoId, lang: Lang, confirmationToken: Option[ConfirmationToken]= None)
+case class ConfirmPhoneNumber(accountId: MongoId, lang: Lang, confirmationToken: Option[ConfirmationToken] = None)
 
 trait ConfirmationActor extends Actor {
 
@@ -46,7 +46,7 @@ trait ConfirmationActor extends Actor {
               val confirmation = ct.getOrElse(ConfirmationToken.createAndInsert(account.id, confirmationType, CONFIRMATION_PATH_MAIL, email.value))
 
               val variables = Map(
-                "link" -> (Play.configuration.getString("shortUrl.address").get + shortUrlPath +"/" + confirmation.id),
+                "link" -> (Play.configuration.getString("shortUrl.address").get + shortUrlPath + "/" + confirmation.id),
                 "code" -> confirmation.code
               )
 
@@ -55,7 +55,7 @@ trait ConfirmationActor extends Actor {
 
               // check if we have a test user and save message
               val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
-              if (account.loginName.startsWith(testUserPrefix.toLowerCase))  {
+              if (account.loginName.startsWith(testUserPrefix.toLowerCase)) {
                 TestUserNotification.createAndInsert(account.id, "email", body, false)
               }
 
@@ -74,7 +74,7 @@ trait ConfirmationActor extends Actor {
               val confirmation = ct.getOrElse(ConfirmationToken.createAndInsert(account.id, confirmationType, CONFIRMATION_PATH_PHONENUMBER, phoneNumber.value))
 
               val variables = Map(
-                "link" -> (Play.configuration.getString("shortUrl.address").get + shortUrlPath +"/" + confirmation.id),
+                "link" -> (Play.configuration.getString("shortUrl.address").get + shortUrlPath + "/" + confirmation.id),
                 "code" -> confirmation.code
               )
 
@@ -83,7 +83,7 @@ trait ConfirmationActor extends Actor {
 
               // check if we have a test user and save message
               val testUserPrefix = Play.configuration.getString("testUser.prefix").getOrElse("foo")
-              if (account.loginName.startsWith(testUserPrefix.toLowerCase))  {
+              if (account.loginName.startsWith(testUserPrefix.toLowerCase)) {
                 TestUserNotification.createAndInsert(account.id, "sms", body, false)
               }
 
@@ -105,7 +105,6 @@ class VerificationActor extends ConfirmationActor {
   val smsMessage: String = "BACKEND.VERIFICATION.SMS.MESSAGE"
   val smsSender: String = "BACKEND.VERIFICATION.SMS.SENDER"
 }
-
 
 class ResetPasswordActor extends ConfirmationActor {
   val confirmationType: String = Confirmation.CONFIRMATION_TYPE_RESET_PASSWORD

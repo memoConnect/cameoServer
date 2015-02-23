@@ -1,11 +1,12 @@
+import constants.ErrorCodes
 import helper.TestValueStore
 import play.api.Logger
 import play.api.libs.json.{ JsObject, Json }
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import testHelper.Stuff._
+import testHelper.Helper._
 import testHelper.TestConfig._
-import testHelper.{ StartedApp, Stuff }
+import testHelper.{ StartedApp, Helper }
 
 /**
  * User: Björn Reimer
@@ -28,20 +29,20 @@ class ResetPasswordSpec extends StartedApp {
 
     step(TestValueStore.start())
     "create account with email and phonenumber" in {
-      testUser = createTestUser(Some(phoneNumber), Some(mail))
+      testUser = TestUser.create(Some(phoneNumber), Some(mail))
       1 === 1
     }
     var verifyEmail = ""
     var verifyPhoneNumber = ""
 
     "receive verification email and sms" in {
-      Stuff.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("sms").length == 1 && TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (sms \ "body").as[String] must contain("https://")
       (mail \ "body").as[String] must contain("https://")
-      verifyEmail = (mail \ "body").as[String].split("https:").last.split("/").last
-      verifyPhoneNumber = (sms \ "body").as[String].split("https:").last.split("/").last
+      verifyEmail = getCodeFromMessage((mail \ "body").as[String])
+      verifyPhoneNumber = getCodeFromMessage((sms \ "body").as[String])
       1 === 1
     }
     step(TestValueStore.stop())
@@ -103,7 +104,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EMAIL.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND)
     }
 
     "refuse to reset password for non-verified email" in {
@@ -117,7 +118,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EMAIL.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EMAIL_NOT_FOUND)
     }
 
     "refuse to reset password for non-existing phoneNumber" in {
@@ -131,7 +132,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.PHONENUMBER.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND)
     }
 
     "refuse to reset password for non-verified phoneNumber" in {
@@ -145,7 +146,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.PHONENUMBER.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND)
     }
 
     "refuse password reset without verified mail or phoneNumber" in {
@@ -159,7 +160,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.NO.EMAIL.PHONENUMBER")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_NO_EMAIL_OR_PHONENUMBER)
     }
 
     "verify email" in {
@@ -191,7 +192,7 @@ class ResetPasswordSpec extends StartedApp {
     }
 
     "should have receive a confirmation email" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
     }
@@ -212,7 +213,7 @@ class ResetPasswordSpec extends StartedApp {
     }
 
     "should have receive a confirmation email" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
     }
@@ -234,7 +235,7 @@ class ResetPasswordSpec extends StartedApp {
 
     var confirmCodeMail = ""
     "should have receive a confirmation email" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       (mail \ "body").as[String] must contain("https://")
       confirmCodeMail = (mail \ "body").as[String].split("\"")(1)
@@ -253,7 +254,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.PHONENUMBER.NOT.FOUND")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_PHONENUMBER_NOT_FOUND)
     }
 
     "verify phoneNumber" in {
@@ -287,7 +288,7 @@ class ResetPasswordSpec extends StartedApp {
     var confirmCodeMail2 = ""
     var confirmCodeSms = ""
     "should have receive a confirmation email and sms" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (mail \ "body").as[String] must contain("https://")
@@ -309,7 +310,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EXPIRED")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EXPIRED)
     }
 
     "change password with confirmation code from mail" in {
@@ -326,18 +327,7 @@ class ResetPasswordSpec extends StartedApp {
     }
 
     "the old password should not work any more" in {
-      val path = basePath + "/token"
-
-      val auth = "Basic " + new sun.misc.BASE64Encoder().encode((testUser.login + ":" + password).getBytes)
-
-      val req = FakeRequest(GET, path).withHeaders(("Authorization", auth))
-      val res = route(req).get
-
-      if (status(res) != UNAUTHORIZED) {
-        Logger.error("Response: " + contentAsString(res))
-      }
-      status(res) must equalTo(UNAUTHORIZED)
-
+      checkError(executeRequestBasicAuth(GET, "/token", UNAUTHORIZED, testUser.login, password, 10))
     }
 
     "allow login with new password" in {
@@ -365,7 +355,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EXPIRED")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EXPIRED)
     }
 
     step(TestValueStore.start())
@@ -385,7 +375,7 @@ class ResetPasswordSpec extends StartedApp {
     var confirmCodeMail3 = ""
     var confirmCodeSms2 = ""
     "should have receive a confirmation email and sms" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1 && TestValueStore.getValues("sms").length == 1)
       val mail = TestValueStore.getValues("mail")(0)
       val sms = TestValueStore.getValues("sms")(0)
       (mail \ "body").as[String] must contain("https://")
@@ -450,7 +440,7 @@ class ResetPasswordSpec extends StartedApp {
         Logger.error("Response: " + contentAsString(res))
       }
       status(res) must equalTo(BAD_REQUEST)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome("PASSWORD.RESET.EXPIRED")
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.PASSWORD_RESET_EXPIRED)
     }
 
 

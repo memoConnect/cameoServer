@@ -36,7 +36,5 @@ object TestUserNotification extends Model[TestUserNotification] {
 
   def createDefault(): TestUserNotification = TestUserNotification(IdHelper.generateMongoId(), new MongoId(""), "", "", false, docVersion)
 
-  def docVersion: Int = 0
-
   def evolutions: Map[Int, Reads[JsObject]] = Map()
 }

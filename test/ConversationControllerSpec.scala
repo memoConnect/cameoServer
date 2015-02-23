@@ -1,3 +1,4 @@
+import models.Conversation
 import play.api.libs.json._
 import play.api.libs.json.JsObject
 import play.api.test._
@@ -5,13 +6,16 @@ import play.api.test.FakeApplication
 import play.api.test.Helpers._
 import scala.Some
 import scala.Some
-import testHelper.Stuff._
+import testHelper.Helper._
 import play.modules.reactivemongo.ReactiveMongoPlugin
 import play.api.Play.current
 import play.api.Logger
-import testHelper.{ StartedApp, Stuff }
+import testHelper.{ StartedApp, Helper }
 import org.specs2.mutable._
 import testHelper.TestConfig._
+
+import scala.concurrent.Await
+import scala.concurrent.duration.FiniteDuration
 
 /**
  * User: Björn Reimer
@@ -459,7 +463,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "Get an existing conversation with offset" in {
 
-      val offset = Stuff.random.nextInt(cidExistingNumberOfMessages)
+      val offset = Helper.random.nextInt(cidExistingNumberOfMessages)
 
       val path = basePath + "/conversation/" + cidExisting + "?offset=" + offset
 
@@ -479,7 +483,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "Get an existing conversation with limit" in {
 
-      val limit = Math.max(Stuff.random.nextInt(cidExistingNumberOfMessages), 1)
+      val limit = Math.max(Helper.random.nextInt(cidExistingNumberOfMessages), 1)
 
       val path = basePath + "/conversation/" + cidExisting + "?limit=" + limit
 
@@ -498,8 +502,8 @@ class ConversationControllerSpec extends StartedApp {
     }
 
     "Get an existing conversation with limit and offset" in {
-      val limit = Math.max(Stuff.random.nextInt(cidExistingNumberOfMessages), 1)
-      val offset = Stuff.random.nextInt(cidExistingNumberOfMessages)
+      val limit = Math.max(Helper.random.nextInt(cidExistingNumberOfMessages), 1)
+      val offset = Helper.random.nextInt(cidExistingNumberOfMessages)
 
       val path = basePath + "/conversation/" + cidExisting + "?offset=" + offset + "&limit=" + limit
 
@@ -601,7 +605,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with offset" in {
 
-      val offset = Stuff.random.nextInt(numberOfConversations)
+      val offset = Helper.random.nextInt(numberOfConversations)
 
       val path = basePath + "/conversations?offset=" + offset
 
@@ -624,7 +628,7 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit" in {
 
-      val limit = Math.max(Stuff.random.nextInt(numberOfConversations), 1)
+      val limit = Math.max(Helper.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit
 
@@ -647,8 +651,8 @@ class ConversationControllerSpec extends StartedApp {
 
     "get conversations with limit and offset" in {
 
-      val offset = Stuff.random.nextInt(numberOfConversations)
-      val limit = Math.max(Stuff.random.nextInt(numberOfConversations), 1)
+      val offset = Helper.random.nextInt(numberOfConversations)
+      val limit = Math.max(Helper.random.nextInt(numberOfConversations), 1)
 
       val path = basePath + "/conversations?limit=" + limit + "&offset=" + offset
 
@@ -1427,6 +1431,184 @@ class ConversationControllerSpec extends StartedApp {
       val data = (contentAsJson(res) \ "data").as[JsObject]
 
       (data \ "unreadMessages").asOpt[Int] must beSome(0)
+    }
+
+    "refuse to search for conversations with term that is only two chars long" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "ab")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      if (status(res) != BAD_REQUEST) {
+        Logger.error("Response: " + contentAsString(res))
+      }
+      status(res) must equalTo(BAD_REQUEST)
+
+    }
+
+    "search for conversations using the subject" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "91npI")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      (data \ "numberOfMatches").asOpt[Int] must beSome(1)
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(1)
+    }
+
+    "search for conversation using the display name of recipient" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "mmmoooeeeppp")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(6)
+    }
+
+    "search for conversation using the cameoId of recipient" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "95Jo366N")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(6)
+    }
+
+    "search for conversation with term that matches both subject and recipient display name" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "91np")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(7)
+    }
+
+    "only find conversations that the user is a member of" in {
+      val path = basePath + "/conversations/search"
+
+      val body = Json.obj("search" -> "dPxAk")
+
+      val req = FakeRequest(POST, path).withHeaders(tokenHeader(tokenExisting)).withJsonBody(body)
+      val res = route(req).get
+
+      val data = (contentAsJson(res) \ "data").as[JsObject]
+
+      val conversations = (data \ "conversations").as[Seq[JsObject]]
+
+      conversations.length must beEqualTo(0)
+    }
+
+    "leave conversation" should {
+
+      var cidNew4 = ""
+
+      "create conversation with two recipients" in {
+        val body = Json.obj("recipients" -> Seq(internalContactIdentityId))
+        val data = getData(executeRequest(POST, "/conversation", OK, Some(tokenExisting), Some(body)))
+
+        (data \ "id").asOpt[String] must beSome
+        cidNew4 = (data \ "id").as[String]
+        1 === 1
+      }
+
+      var keyId = ""
+      val keyId2 = "moepIdMoep2"
+
+      "add key for first recipient" in {
+        val body = Json.obj("name" -> "foo", "key" -> "blablalbalbablalalkasdkljasdfalkasmoepdfakjasdfasiudghl", "keySize" -> 1028)
+        val data = getData(executeRequest(POST, "/publicKey", OK, Some(tokenExisting), Some(body)))
+
+        keyId = (data \ "id").as[String]
+        1 === 1
+      }
+
+      "add aePassphrase for first recipient" in {
+        val body = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> keyId, "encryptedPassphrase" -> "foomoep")))
+        checkOk( executeRequest(POST, "/conversation/" + cidNew4 + "/aePassphrases", OK, Some(tokenExisting), Some(body)))
+      }
+
+      "add aePassphrase for second recipient" in {
+        val body = Json.obj("aePassphraseList" -> Seq(Json.obj("keyId" -> keyId2, "encryptedPassphrase" -> "fooomoep")))
+        checkOk( executeRequest(POST, "/conversation/" + cidNew4 + "/aePassphrases", OK, Some(internalContactToken), Some(body)))
+      }
+
+      "second recipient should see the conversation" in {
+        val data = getData(executeRequest(GET, "/conversation/" + cidNew4 + "?keyId=" + keyId, OK, Some(internalContactToken)))
+
+        (data \ "recipients").as[Seq[JsObject]] must haveLength(2)
+        (data \ "aePassphraseList").as[Seq[JsObject]] must haveLength(1)
+      }
+
+      "first recipient leaves the conversation" in {
+        checkOk(executeRequest(DELETE, "/conversation/" + cidNew4 + "/recipient", OK, Some(tokenExisting)))
+      }
+
+      "the first recipient should not be able get the conversation" in {
+        checkError(executeRequest(GET, "/conversation/" + cidNew4, UNAUTHORIZED, Some(tokenExisting)))
+      }
+
+      "the second recipient should still be able get the conversation and the first recipient should be marked as inactive and his aePassphrase deleted" in {
+        val data = getData(executeRequest(GET, "/conversation/" + cidNew4 + "?keyId=" + keyId, OK, Some(internalContactToken)))
+
+        (data \ "recipients").as[Seq[JsObject]] must haveLength(1)
+        (data \ "inactiveRecipients").as[Seq[JsObject]] must haveLength(1)
+        (data \ "aePassphraseList").as[Seq[JsObject]] must haveLength(0)
+      }
+
+      "the aePassphrase of the second recipient should still be there" in {
+        val data = getData(executeRequest(GET, "/conversation/" + cidNew4 + "?keyId=" + keyId2, OK, Some(internalContactToken)))
+
+        (data \ "recipients").as[Seq[JsObject]] must haveLength(1)
+        (data \ "inactiveRecipients").as[Seq[JsObject]] must haveLength(1)
+        (data \ "aePassphraseList").as[Seq[JsObject]] must haveLength(1)
+      }
+
+      "the talk should not appear in the conversation list of the first recipient" in {
+        val data = getData(executeRequest(GET, "/conversations", OK, Some(tokenExisting)))
+
+        val conversations = (data \ "conversations").as[Seq[JsObject]]
+        conversations.exists(c => (c \ "id").asOpt[String].equals(Some(cidNew4))) must beFalse
+      }
+
+      "the second recipient leaves the conversation" in {
+        checkOk(executeRequest(DELETE, "/conversation/" + cidNew4 + "/recipient", OK, Some(internalContactToken)))
+      }
+
+      "the second should not see the conversation anymore" in {
+        checkError(executeRequest(GET, "/conversation/" + cidNew4, NOT_FOUND, Some(internalContactToken)))
+      }
+
+      "the conversation should be deleted from the database" in {
+        val res = Await.result(Conversation.find(cidNew4), FiniteDuration(1, "min"))
+        res must beNone
+      }
     }
   }
 }

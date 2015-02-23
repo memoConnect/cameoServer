@@ -7,10 +7,10 @@ import play.api.test._
 import play.api.libs.json.{ JsValue, Json, JsObject }
 import play.api.test.Helpers._
 import play.api.test.FakeApplication
-import testHelper.Stuff._
+import testHelper.Helper._
 import scala.concurrent.ExecutionContext
 import play.api.{ Play, Logger, GlobalSettings }
-import testHelper.{ StartedApp, Stuff }
+import testHelper.{ StartedApp, Helper }
 import org.specs2.mutable._
 import testHelper.TestConfig._
 import play.api.Play.current
@@ -26,11 +26,11 @@ class FileControllerSpec extends StartedApp {
     var fileId = ""
 
     val chunks: Seq[String] = {
-      Seq.fill(10)(Stuff.randomString(1024))
+      Seq.fill(10)(Helper.randomString(1024))
     }
 
-    val newChunk = Stuff.randomString(1024)
-    val newChunkIndex = Stuff.random.nextInt(chunks.size)
+    val newChunk = Helper.randomString(1024)
+    val newChunkIndex = Helper.random.nextInt(chunks.size)
 
     "upload file meta data" in {
       val path = basePath + "/file"
@@ -325,7 +325,7 @@ class FileControllerSpec extends StartedApp {
       status(res) must equalTo(BAD_REQUEST)
 
       (contentAsJson(res) \ "data" \ "maxFileSize").asOpt[Int] must beSome(maxSize)
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.FILE_UPLOAD_FILESIZE_EXCEEDED.get)
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.FILE_UPLOAD_FILESIZE_EXCEEDED)
     }
 
     "return error if actual size exceeds submitted size" in {
@@ -397,7 +397,7 @@ class FileControllerSpec extends StartedApp {
       }
       status(res) must equalTo(BAD_REQUEST)
 
-      (contentAsJson(res) \ "errorCode").asOpt[String] must beSome(ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED.get)
+      (contentAsJson(res) \ "errorCodes").asOpt[Seq[String]] must beSome(ErrorCodes.FILE_UPLOAD_QUOTA_EXCEEDED)
     }
 
     "return raw image file" in {

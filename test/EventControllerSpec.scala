@@ -6,8 +6,8 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import scala.annotation.tailrec
 import scala.concurrent.Future
-import testHelper.{Stuff, TestConfig, StartedApp}
-import testHelper.Stuff._
+import testHelper.{Helper, TestConfig, StartedApp}
+import testHelper.Helper._
 import testHelper.TestConfig._
 import play.api.Play.current
 
@@ -25,9 +25,9 @@ class EventControllerSpec extends StartedApp {
   var subscription2Id = ""
   var subscription3Id = ""
 
-  val testUser1 = createTestUser()
-  val testUser2 = createTestUser()
-  val testUser3 = createTestUser()
+  val testUser1 = TestUser.create()
+  val testUser2 = TestUser.create()
+  val testUser3 = TestUser.create()
 
   def eventNameFinder(name: String): JsObject => Boolean = {
     js => (js \ "name").as[String].equals(name)
@@ -592,6 +592,39 @@ class EventControllerSpec extends StartedApp {
       1 === 1
     }
 
+    "second user leaves conversation" in {
+      checkOk(executeRequest(DELETE, "/conversation/" + conversationId + "/recipient", OK, Some(testUser2.token)))
+    }
+
+    "conversation:delete event should appear in subscription of second user" in {
+      val events1 = waitForEvents(testUser2.token, subscription2Id, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
+      }
+
+      checkEvent(events1, eventNameFinder("conversation:deleted"), eventCheck)
+    }
+
+    "conversation:update event should appear in both subscriptions of first user" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome(conversationId)
+        (js \ "data" \ "inactiveRecipients").asOpt[Seq[JsObject]] must beSome
+        (js \ "data" \ "recipients").asOpt[Seq[JsObject]] must beSome
+        val inactiveRecipients = (js \ "data" \ "inactiveRecipients").as[Seq[JsObject]]
+        (inactiveRecipients(0) \ "identityId").asOpt[String] must beSome(testUser2.identityId)
+        val recipients = (js \ "data" \ "recipients").as[Seq[JsObject]]
+        (recipients(0) \ "identityId").asOpt[String] must beSome(testUser2.identityId)
+        (recipients(0) \ "deleted").asOpt[Boolean] must beSome(true)
+      }
+
+      checkEvent(events1, eventNameFinder("conversation:update"), eventCheck)
+      checkEvent(events2, eventNameFinder("conversation:update"), eventCheck)
+    }
+
     var pubKeyId = ""
     "add public key" in {
       val path = basePath + "/publicKey"
@@ -824,7 +857,7 @@ class EventControllerSpec extends StartedApp {
 
     var verifyEmail = ""
     "should have received verification email with link" in {
-      Stuff.waitFor(TestValueStore.getValues("mail").length == 1)
+      Helper.waitFor(TestValueStore.getValues("mail").length == 1)
       val email = TestValueStore.getValues("mail")(0)
       (email \ "body").as[String] must contain("https://")
       verifyEmail = (email \ "body").as[String].split("\"")(1)
@@ -857,6 +890,25 @@ class EventControllerSpec extends StartedApp {
       checkEvent(events1, eventNameFinder("account:update"), eventCheck)
       checkEvent(events2, eventNameFinder("account:update"), eventCheck)
     }
+
+    "mark registration as complete" in {
+      val body = Json.obj("registrationIncomplete" -> false)
+      checkOk(executeRequest(PUT, "/account", OK, Some(testUser1.token), Some(body)))
+    }
+
+    "should receive account:update event" in {
+      val events1 = waitForEvents(testUser1.token, subscriptionId, 1)
+      val events2 = waitForEvents(testUser1.token, subscriptionId2, 1)
+
+      def eventCheck(js: JsObject) = {
+        (js \ "data" \ "id").asOpt[String] must beSome
+        (js \ "data" \ "registrationIncomplete").asOpt[Boolean] must beSome(false)
+      }
+
+      checkEvent(events1, eventNameFinder("account:update"), eventCheck)
+      checkEvent(events2, eventNameFinder("account:update"), eventCheck)
+    }
+
 
 //    val newName = "moepmeop"
 //    val newAvatar = "moepmeopav"

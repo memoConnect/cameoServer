@@ -43,7 +43,7 @@ object AuthenticationActions {
   def BasicAuthAction(nonAuthBlock: Request[Any] => Future[Result] = accessDenied) = new ActionBuilder[BasicAuthRequest] {
     def invokeBlock[A](request: Request[A], block: BasicAuthRequest[A] => Future[Result]) = {
       request.headers.get("Authorization") match {
-        case None => nonAuthBlock(request)
+        case None                                            => nonAuthBlock(request)
         case Some(basicAuth) if !basicAuth.contains("Basic") => nonAuthBlock(request)
         case Some(basicAuth) =>
           val (loginName, password) = Utils.decodeBasicAuth(basicAuth)

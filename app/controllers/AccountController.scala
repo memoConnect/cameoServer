@@ -2,7 +2,7 @@ package controllers
 
 import actors.{ ConfirmMail, ConfirmPhoneNumber }
 import constants.ErrorCodes
-import events.ContactUpdate
+import events.{ AccountUpdate, ContactUpdate }
 import helper.JsonHelper._
 import helper.{ CheckHelper, JsonHelper }
 import helper.ResultHelper._
@@ -73,15 +73,15 @@ object AccountController extends ExtendedController {
               request.identity.accountId match {
                 case Some(i) => Future(resBadRequest("token belongs to a registered user"))
                 case None =>
-                  val account = Account.create(car.loginName, car.password)
+                  val account = Account.create(car.loginName.toLowerCase, car.password)
 
-                  // find the user that added the external contact
+                  // find the user that added the external contact and add him as contact (if contact still exists)
                   val query = Json.obj("contacts.identityId" -> request.identity.id)
                   Identity.find(query).flatMap {
-                    case None => Future(resBadRequest("this user is in nobodies contact book"))
+                    case None => storeAccount(account, Some(request.identity.id))
                     case Some(otherIdentity) =>
-                      val futureRes: Future[Boolean] = for {
-                        // add other identity as contact
+                      for {
+                      // add other identity as contact
                         addContact <- request.identity.addContact(Contact.create(otherIdentity.id))
                         updateIdentity <- {
                           // update identity
@@ -93,32 +93,30 @@ object AccountController extends ExtendedController {
                           Identity.update(request.identity.id, IdentityModelUpdate.fromMap(map))
                           request.identity.addSupport()
                         }
-                        deleteDetails <- {
-                          val deleteValues = Seq("email", "phoneNumber", "displayName")
-                          Identity.deleteValues(request.identity.id, deleteValues).map(_.updatedExisting)
-                        }
-                      } yield {
-                        addContact && updateIdentity && deleteDetails
-                      }
-                      futureRes.flatMap {
-                        case false => Future(resServerError("unable to update identity"))
-                        case true =>
-                          // send contact update event to other identity
+                        deleteDetails <- request.identity.deleteDetails(deleteDisplayName = true)
+                        if updateIdentity
+                        eventsSend <- {
+                          // get updated identity todo: this can be done without another db request
                           Identity.find(request.identity.id).map {
                             case None => // do nothing
                             case Some(i) =>
                               otherIdentity.contacts.find(_.identityId.equals(request.identity.id)) match {
-                                case None          => // do nothing
+                                case None => // do nothing
                                 case Some(contact) => actors.eventRouter ! ContactUpdate(otherIdentity.id, contact, i)
                               }
                           }
-                          storeAccount(account, Some(request.identity.id))
+                        }
+                        result <- storeAccount(account, Some(request.identity.id))
+                      } yield {
+                        result
                       }
                   }
               }
+
           }
       }
   }
+
 
   def storeAccount(account: Account, identityId: Option[MongoId]): Future[Result] = {
     Account.insert(account).flatMap {
@@ -152,83 +150,82 @@ object AccountController extends ExtendedController {
 
   def doReserveLogin(body: JsValue, ownLogin: Option[String]): Future[Result] = {
 
-      def checkLoginExists(value: String):Future[Boolean] = {
-        for {
-          account <- Account.findByLoginName(value)
-          identity <- Identity.findByCameoId(value)
-        } yield {
-          (account.isDefined && !ownLogin.exists(_.equals(account.get.loginName))) || identity.isDefined
-        }
+    def checkLoginExists(value: String): Future[Boolean] = {
+      for {
+        account <- Account.findByLoginName(value)
+        identity <- Identity.findByCameoId(value)
+      } yield {
+        (account.isDefined && !ownLogin.exists(_.equals(account.get.loginName))) || identity.isDefined
       }
+    }
 
-      def findAlternative(value: String, count: Int = 1): Future[String] = {
-        val currentTry = value + "_" + count
+    def findAlternative(value: String, count: Int = 1): Future[String] = {
+      val currentTry = value + "_" + count
 
-        checkLoginExists(currentTry).flatMap {
-          case true => findAlternative(value, count + 1) // recursive futures ftw!
-          case false =>
-            // check if it is reserved
-            AccountReservation.findByLoginName(currentTry).flatMap {
-              case Some(r) => findAlternative(value, count + 1)
-              case None    => Future(currentTry)
-            }
-        }
-      }
-
-      def reserveOrAlternative(login: String, ownLogin: Option[String]): Future[Result] = {
-
-        checkLogin(login) match {
-          case false => Future(resBadRequest("invalid loginName/cameoId"))
-          case true =>
-            // check if loginName exists or is a cameoId
-            checkLoginExists(login).flatMap {
-              case true =>
-                // it exists, find alternative
-                findAlternative(login).map {
-                  newLoginName => resKo(Json.obj("alternative" -> newLoginName))
-                }
-              case false =>
-                // it does not exist, check if it is reserved
-                AccountReservation.findByLoginName(login).flatMap {
-                  // it is reserved, get alternative
-                  case Some(ra) =>
-                    findAlternative(login).map {
-                      newLoginName => resKo(Json.obj("alternative" -> newLoginName))
-                    }
-                  // not reserved, reserve it and return reservation Secret
-                  case None =>
-                    AccountReservation.reserve(login).map {
-                      res =>
-                        resOk(res.toJson)
-                    }
-                }
-            }
-        }
-      }
-
-      validateFuture[CheckLoginRequest](body, CheckLoginRequest.format) {
-        checkLoginRequest =>
-          Logger.info("Login check: " + checkLoginRequest)
-          checkLoginRequest match {
-            case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
-            case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName"))
-            case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId, ownLogin)
-            case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName, None)
+      checkLoginExists(currentTry).flatMap {
+        case true => findAlternative(value, count + 1) // recursive futures ftw!
+        case false =>
+          // check if it is reserved
+          AccountReservation.findByLoginName(currentTry).flatMap {
+            case Some(r) => findAlternative(value, count + 1)
+            case None    => Future(currentTry)
           }
       }
+    }
+
+    def reserveOrAlternative(login: String, ownLogin: Option[String]): Future[Result] = {
+
+      checkLogin(login) match {
+        case false => Future(resBadRequest("invalid loginName/cameoId"))
+        case true =>
+          // check if loginName exists or is a cameoId
+          checkLoginExists(login).flatMap {
+            case true =>
+              // it exists, find alternative
+              findAlternative(login).map {
+                newLoginName => resKo(Json.obj("alternative" -> newLoginName))
+              }
+            case false =>
+              // it does not exist, check if it is reserved
+              AccountReservation.findByLoginName(login).flatMap {
+                // it is reserved, get alternative
+                case Some(ra) =>
+                  findAlternative(login).map {
+                    newLoginName => resKo(Json.obj("alternative" -> newLoginName))
+                  }
+                // not reserved, reserve it and return reservation Secret
+                case None =>
+                  AccountReservation.reserve(login).map {
+                    res =>
+                      resOk(res.toJson)
+                  }
+              }
+          }
+      }
+    }
+
+    validateFuture[CheckLoginRequest](body, CheckLoginRequest.format) {
+      checkLoginRequest =>
+        Logger.info("Login check: " + checkLoginRequest)
+        checkLoginRequest match {
+          case CheckLoginRequest(None, None)                     => Future(resBadRequest("either cameoId or loginName required"))
+          case CheckLoginRequest(Some(loginName), Some(cameoId)) => Future(resBadRequest("can only have either cameoId or loginName"))
+          case CheckLoginRequest(None, Some(cameoId))            => reserveOrAlternative(cameoId, ownLogin)
+          case CheckLoginRequest(Some(loginName), None)          => reserveOrAlternative(loginName, None)
+        }
+    }
   }
 
   def reserveLoginNonAuth(request: Request[Any]): Future[Result] = {
     request.body match {
       case js: JsValue => doReserveLogin(js, None)
-      case _ => Future(resBadRequest("bad content type"))
+      case _           => Future(resBadRequest("bad content type"))
     }
   }
 
   def reserveLogin() = BasicAuthAction(reserveLoginNonAuth).async(parse.tolerantJson) {
     request =>
-    Logger.debug("BASIC TRUTH")
-    doReserveLogin(request.body, Some(request.account.loginName))
+      doReserveLogin(request.body, Some(request.account.loginName))
   }
 
   def deleteAccount(loginName: String) = AuthAction().async {
@@ -244,9 +241,11 @@ object AccountController extends ExtendedController {
           }
       }
   }
-  
+
   def doAccountUpdate(body: JsValue, account: Account, lang: Lang): Future[Result] = {
-    
+
+    import helper.CheckHelper._
+
     def doUpdate(update: JsObject): Future[Result] = {
       Account.update(account.id, update).map {
         case false => resServerError("could not update")
@@ -258,20 +257,38 @@ object AccountController extends ExtendedController {
           if ((body \ "phoneNumber").asOpt[String].isDefined) {
             actors.verificationRouter ! ConfirmPhoneNumber(account.id, lang)
           }
+
+          // check if registration was marked complete, send event if it was
+          if ((body \ "registrationIncomplete").asOpt[Boolean].exists(b => !b)) {
+            Identity.findByAccountId(account.id).map {
+              _.map {
+                identity =>
+                  actors.eventRouter ! AccountUpdate(identity.id, account.id, Json.obj("registrationIncomplete" -> false))
+              }
+            }
+          }
+
           resOk("updated")
       }
     }
 
-    AccountModelUpdate.fromRequest(body) {
-      js =>
-        // check if there is a password change
-        val newPassword = (body \ "password").asOpt[String](JsonHelper.hashPassword)
-        val oldPassword = (body \ "oldPassword").asOpt[String]
+    // check if email and phonenumber are correct. Return error codes when they are not.
+    ((body \ "email").asOpt[String].map(s => s.isEmpty || checkEmail(s)), (body \ "phoneNumber").asOpt[String].map(s => s.isEmpty || checkPhoneNumber(s))) match {
+      case (Some(false), Some(false)) => Future(resBadRequest("invalid email and phonenumber", ErrorCodes.EMAIL_INVALID ++ ErrorCodes.PHONENUMBER_INVALID))
+      case (Some(false), _)           => Future(resBadRequest("invalid email", ErrorCodes.EMAIL_INVALID))
+      case (_, Some(false))           => Future(resBadRequest("invalid phonenumber", ErrorCodes.PHONENUMBER_INVALID))
+      case _ =>
 
-        (newPassword, oldPassword) match {
-          case (None, _)           => doUpdate(js)
-          case (Some(newPw), None) => Future(resBadRequest("old password required"))
-          case (Some(newPw), Some(oldPw)) =>
+        AccountModelUpdate.fromRequest(body) {
+          js =>
+            // check if there is a password change
+            val newPassword = (body \ "password").asOpt[String](JsonHelper.hashPassword)
+            val oldPassword = (body \ "oldPassword").asOpt[String]
+
+            (newPassword, oldPassword) match {
+              case (None, _)           => doUpdate(js)
+              case (Some(newPw), None) => Future(resBadRequest("old password required"))
+              case (Some(newPw), Some(oldPw)) =>
                 BCrypt.checkpw(oldPw, account.password) match {
                   case false => Future(resBadRequest("invalid old password"))
                   case true =>
@@ -282,7 +299,8 @@ object AccountController extends ExtendedController {
             }
         }
     }
-  
+  }
+
   def updateAccount() = AuthAction(getAccount = true).async(parse.tolerantJson) {
     request =>
       val lang = LocalizationMessages.getBrowserLanguage(request)
@@ -290,18 +308,17 @@ object AccountController extends ExtendedController {
       request.identity.accountId match {
         case None => Future(resBadRequest("no account"))
         case Some(accountId) =>
-          Account.find(accountId).flatMap{
-            case None => Future(resServerError("Error getting account"))
+          Account.find(accountId).flatMap {
+            case None          => Future(resServerError("Error getting account"))
             case Some(account) => doAccountUpdate(request.body, account, lang)
           }
       }
   }
-  
+
   def updateInitialAccount() = BasicAuthAction().async(parse.tolerantJson) {
     request =>
       val lang = LocalizationMessages.getBrowserLanguage(request)
       doAccountUpdate(request.body, request.account, lang)
   }
-  
-  
+
 }

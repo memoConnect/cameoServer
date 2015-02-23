@@ -105,6 +105,5 @@ object EventSubscription extends Model[EventSubscription] {
 
   def createDefault(): EventSubscription = new EventSubscription(IdHelper.generateEventSubscriptionId(), Seq(), new Date, new MongoId(""), docVersion)
 
-  def docVersion: Int = 0
   def evolutions: Map[Int, Reads[JsObject]] = Map()
 }

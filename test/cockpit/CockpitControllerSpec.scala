@@ -5,7 +5,7 @@ import play.api.libs.json.{Json, JsObject}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import testHelper.TestConfig._
-import testHelper.Stuff._
+import testHelper.Helper._
 import testHelper.StartedApp
 import helper.TestValueStore
 import scala.concurrent.Await

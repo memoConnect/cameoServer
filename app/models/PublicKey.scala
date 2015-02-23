@@ -29,7 +29,7 @@ case class PublicKey(id: MongoId,
 
   def toJson(additionalPublicKeySignatures: Map[String, Signature] = Map()): JsObject = {
     val allSignatures = additionalPublicKeySignatures.get(this.id.id) match {
-      case None => signatures
+      case None            => signatures
       case Some(signature) => signatures :+ signature
     }
 
@@ -81,8 +81,6 @@ object PublicKey extends SubModel[PublicKey, Identity] {
       2 -> PublicKeyEvolutions.addSignatures,
       3 -> PublicKeyEvolutions.addDeletedFlag
     )
-
-  def docVersion = 4
 
   override def createDefault(): PublicKey = {
     new PublicKey(IdHelper.generateMongoId, None, "", 0, Seq(), new Date, false, docVersion)

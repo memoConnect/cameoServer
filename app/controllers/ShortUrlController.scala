@@ -16,9 +16,9 @@ object ShortUrlController extends Controller {
       val redirect = Play.configuration.getString("shortUrl.redirectTo").get
 
       urlType match {
-        case "p" => Redirect(redirect + "/purl/" + id)
+        case "p"  => Redirect(redirect + "/purl/" + id)
         case "pr" => Redirect(redirect + "/passwordReset/" + id)
-        case _   => Redirect(redirect)
+        case _    => Redirect(redirect)
       }
   }
 }

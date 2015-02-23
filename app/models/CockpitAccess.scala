@@ -16,8 +16,6 @@ object CockpitAccess extends Model[CockpitAccess] {
 
   implicit val mongoFormat: Format[CockpitAccess] = createMongoFormat(Json.reads[CockpitAccess], Json.writes[CockpitAccess])
 
-  def docVersion = 0
-
   def evolutions = Map()
 
   def findByAccountId(id: MongoId): Future[Option[CockpitAccess]] = {
